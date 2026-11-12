@@ -5,7 +5,6 @@ import SevindaPTYProtocol
 import Observation
 import os
 import Synchronization
-import UserNotifications
 
 private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "orchestration")
 
@@ -250,16 +249,11 @@ final class OrchestrationController {
         let context = model.context(of: record)
         let isVisible = model.isShowing(id, in: context)
         guard !isVisible else { return }
-        let content = UNMutableNotificationContent()
-        content.title = switch event.kind {
+        let title = switch event.kind {
         case .permission: String(localized: "\(record.title) needs your permission")
         case .decision: String(localized: "\(record.title) needs your decision")
         }
-        content.body = event.body
-        content.sound = .default
-        content.userInfo = ["session": id.uuidString]
-        let request = UNNotificationRequest(identifier: "orchestration-\(id.uuidString)", content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        UserNotifier.shared.post(identifier: "orchestration-\(id.uuidString)", title: title, body: event.body, session: id)
     }
 }
 

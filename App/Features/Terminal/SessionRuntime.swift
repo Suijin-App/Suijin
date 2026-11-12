@@ -8,7 +8,6 @@ import SevindaUI
 import Observation
 import os
 import SwiftUI
-import UserNotifications
 
 private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "sessions")
 
@@ -105,7 +104,7 @@ final class SessionRuntimeRegistry {
             MainActor.assumeIsolated { self?.tick() }
         }
         // Not awaited: the first request shows a system prompt and must not hold up the sessions.
-        Task { await requestNotificationPermission() }
+        Task { await UserNotifier.shared.requestPermission() }
     }
 
     /// Attaches to host sessions that belong to stored records and marks the others as ended. Host sessions no
@@ -469,9 +468,9 @@ final class SessionRuntimeRegistry {
         guard previous != activity, let record = model.sessions.first(where: { $0.id == id }), record.agent != .shell else { return }
         switch activity {
         case .waitingForInput:
-            notify(record, body: String(localized: "Waiting for your input"))
+            notify(record, .waitingForInput)
         case .idle where previous == .running:
-            notify(record, body: String(localized: "Finished its turn"))
+            notify(record, .finishedTurn)
         default:
             break
         }
@@ -495,7 +494,7 @@ final class SessionRuntimeRegistry {
             record.endedAt = Date()
             await model.upsert(record)
             if record.agent != .shell {
-                notify(record, body: (code ?? 0) == 0 ? String(localized: "Exited") : String(localized: "Exited with code \(code ?? -1)"))
+                notify(record, (code ?? 0) == 0 ? .ended(resumable: model.canResume(record)) : .failed(code: code))
             }
         }
         await release(id)
@@ -587,24 +586,57 @@ final class SessionRuntimeRegistry {
 
     // MARK: Notifications
 
-    private func requestNotificationPermission() async {
-        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
-    }
-
     /// Posts a notification unless the user is looking at that session right now.
-    private func notify(_ record: AgentSessionRecord, body: String) {
+    private func notify(_ record: AgentSessionRecord, _ notice: SessionNotice) {
         guard model.setting(.notifyWhenWaiting) != "false" else { return }
         let context = model.context(of: record)
         guard !model.isShowing(record.id, in: context) else { return }
-        let content = UNMutableNotificationContent()
         let place = model.worktree(record.worktreeID ?? UUID())?.branch ?? model.workspace(record.workspaceID)?.name ?? ""
-        content.title = place.isEmpty ? record.title : "\(record.title) — \(place)"
-        content.body = body
-        content.sound = .default
-        content.userInfo = ["session": record.id.uuidString]
+        let text = notice.text(agent: record.agent, session: displayTitle(of: record), place: place)
         // One notification per session: a newer state replaces the older banner instead of stacking.
-        let request = UNNotificationRequest(identifier: record.id.uuidString, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(request)
+        UserNotifier.shared.post(identifier: record.id.uuidString, title: text.title, body: text.body, session: record.id)
+    }
+}
+
+/// What a session notification tells the user, in plain sentences: which agent, what happened and what to do.
+enum SessionNotice: Equatable {
+    case waitingForInput
+    case finishedTurn
+    /// The agent quit normally; `resumable` when its conversation can be resumed.
+    case ended(resumable: Bool)
+    /// The agent quit with an error; `code` is its exit status when there is one.
+    case failed(code: Int32?)
+
+    /// Title and body for the session titled `session` in `place` (a branch or workspace name, empty when none).
+    func text(agent: AgentKind, session: String, place: String) -> (title: String, body: String) {
+        let name = Self.name(of: agent)
+        let subject = place.isEmpty ? session : String(localized: "\(session) in \(place)")
+        switch self {
+        case .waitingForInput:
+            return (String(localized: "\(name) needs your input"), String(localized: "\(subject) is waiting for you."))
+        case .finishedTurn:
+            return (String(localized: "\(name) finished"), String(localized: "\(subject) is done with its turn."))
+        case .ended(let resumable):
+            return (String(localized: "\(name) stopped"),
+                    resumable ? String(localized: "\(subject) has ended. Open it to resume or start again.")
+                              : String(localized: "\(subject) has ended. Open it to start it again."))
+        case .failed(let code):
+            let body = if let code {
+                String(localized: "\(subject) quit with an error (code \(code)). Open it to see what happened.")
+            } else {
+                String(localized: "\(subject) quit with an error. Open it to see what happened.")
+            }
+            return (String(localized: "\(name) stopped unexpectedly"), body)
+        }
+    }
+
+    /// The agent as notifications name it.
+    static func name(of agent: AgentKind) -> String {
+        switch agent {
+        case .claude: "Claude"
+        case .codex: "Codex"
+        case .shell: String(localized: "Shell")
+        }
     }
 }
 

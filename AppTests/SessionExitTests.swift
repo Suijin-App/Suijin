@@ -200,6 +200,49 @@ struct SessionExitTests {
         await fixture.tearDown()
     }
 
+    /// Tests run the real session code; nothing they do may reach the user's Notification Center.
+    @Test func notificationsAreWithheldUnderTestsAndReadPlainly() async throws {
+        #expect(UserNotifier.isTestHost && !UserNotifier.shared.postsToNotificationCenter)
+        UserNotifier.shared.clearWithheld()
+        let fixture = try await makeFixture()
+        let model = fixture.model
+        let workspace = try #require(model.workspaces.first)
+        let record = AgentSessionRecord(workspaceID: workspace.id, agent: .codex, title: "Codex", cwd: fixture.folder.path)
+        let launch = ShellLaunch.command(fixture.script.path, ["fail"], cwd: fixture.folder, environment: [:], interactive: false)
+        try await model.runtimes.run(record, launch: launch)
+        #expect(await eventually { model.runtimes.runtime(for: record.id) == nil })
+
+        let message = try #require(UserNotifier.shared.withheld.last)
+        #expect(message.identifier == record.id.uuidString)
+        #expect(message.title == "Codex stopped unexpectedly")
+        #expect(message.body == "Codex in work quit with an error (code 3). Open it to see what happened.")
+        await fixture.tearDown()
+    }
+
+    @Test func notificationTextIsPlainSentences() {
+        let all: [(SessionNotice, AgentKind)] = [
+            (.waitingForInput, .claude), (.finishedTurn, .claude), (.ended(resumable: true), .codex),
+            (.ended(resumable: false), .codex), (.failed(code: 1), .codex), (.failed(code: nil), .claude),
+        ]
+        for (notice, agent) in all {
+            for place in ["api", ""] {
+                let text = notice.text(agent: agent, session: "Fix login", place: place)
+                #expect(!text.title.contains("—") && !text.body.contains("—"), "\(notice)")
+                #expect(text.body.hasPrefix(place.isEmpty ? "Fix login " : "Fix login in api "), "\(notice)")
+            }
+        }
+        #expect(SessionNotice.waitingForInput.text(agent: .claude, session: "Fix login", place: "api")
+                == ("Claude needs your input", "Fix login in api is waiting for you."))
+        #expect(SessionNotice.finishedTurn.text(agent: .claude, session: "Fix login", place: "")
+                == ("Claude finished", "Fix login is done with its turn."))
+        #expect(SessionNotice.ended(resumable: true).text(agent: .codex, session: "Codex", place: "my-project")
+                == ("Codex stopped", "Codex in my-project has ended. Open it to resume or start again."))
+        #expect(SessionNotice.ended(resumable: false).text(agent: .codex, session: "Codex", place: "my-project").body
+                == "Codex in my-project has ended. Open it to start it again.")
+        #expect(SessionNotice.failed(code: 1).text(agent: .codex, session: "Codex", place: "my-project")
+                == ("Codex stopped unexpectedly", "Codex in my-project quit with an error (code 1). Open it to see what happened."))
+    }
+
     @Test func anAgentThatExitsLeavesItsTabForTheEndedView() async throws {
         let fixture = try await makeFixture()
         let model = fixture.model

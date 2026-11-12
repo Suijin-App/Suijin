@@ -33,12 +33,12 @@ struct SidebarView: View {
         }
         .listStyle(.sidebar)
         .overlay {
+            // A quiet line, as an empty list in Mail or Notes shows: the detail area already explains workspaces
+            // and offers the actions, so the sidebar does not repeat a second large empty state.
             if model.workspaces.isEmpty {
-                ContentUnavailableView {
-                    Label("No Workspaces", systemImage: "square.stack.3d.up")
-                } description: {
-                    Text("Add a git repository to work in worktrees, or any folder to run agents straight in it.")
-                }
+                Text("No Workspaces")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

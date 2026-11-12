@@ -23,7 +23,10 @@ struct RootView: View {
             // The status bar is part of the detail column's layout, not an overlay, so the terminal above it is
             // sized to the space left and its last row is never hidden.
             VStack(spacing: 0) {
+                // Every state fills the column, so the status bar stays on the bottom edge: an empty state only
+                // asks for its own ideal height, and the column would center the stack.
                 detailContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 StatusBarView()
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { model.detailWidth = $0 }
@@ -103,14 +106,13 @@ struct RootView: View {
                 .inspector(isPresented: $isInspectorShown) {
                     InspectorView(context: context)
                 }
+        } else if model.workspaces.isEmpty {
+            FirstWorkspaceView()
         } else {
             ContentUnavailableView {
                 Label("No Workspace Selected", systemImage: "square.stack.3d.up")
             } description: {
-                Text("Add a git repository or a folder, then start an agent in it.")
-            } actions: {
-                Button("Add Workspace…") { AddWorkspaceFlow.run(model: model) }
-                    .glassProminentButtonStyle()
+                Text("Choose a workspace or worktree in the sidebar.")
             }
         }
     }
@@ -123,6 +125,52 @@ struct RootView: View {
         }
     }
 
+}
+
+/// The detail area before any workspace exists: the app icon, what a workspace is, and the two ways to start.
+private struct FirstWorkspaceView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        ContentUnavailableView {
+            VStack(spacing: SevindaSpacing.l) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 96, height: 96)
+                    .accessibilityHidden(true)
+                Text("Add your first workspace")
+                    .font(.title.bold())
+                    .foregroundStyle(.primary)
+                    .accessibilityAddTraits(.isHeader)
+            }
+        } description: {
+            Text("Add a git repository to give each agent its own worktree, or a plain folder to run agents straight in it.")
+                .frame(maxWidth: 440)
+        } actions: {
+            VStack(spacing: SevindaSpacing.m) {
+                GlassGroup {
+                    HStack(spacing: SevindaSpacing.m) {
+                        Button { AddWorkspaceFlow.run(model: model) } label: {
+                            Label("Add Workspace…", systemImage: "plus")
+                        }
+                        .glassProminentButtonStyle()
+                        .help(Text("Add a git repository or a folder (⇧⌘O)"))
+                        Button { model.showOnboarding() } label: {
+                            Label("Show Welcome Tour", systemImage: "sparkles")
+                        }
+                        .glassButtonStyle()
+                    }
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.large)
+                }
+                Text("or press ⇧⌘O")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityLabel(Text("Keyboard shortcut: Shift Command O"))
+            }
+        }
+    }
 }
 
 /// Hands the hosting window to `onWindow` once the view is in one.

@@ -55,12 +55,15 @@ struct MainToolbar: ToolbarContent {
                 .help(Text("New worktree with an agent (⌘N)"))
             }
         }
-        ToolbarItem(placement: .primaryAction) {
-            Button { isInspectorShown.toggle() } label: {
-                Label("Inspector", systemImage: "sidebar.trailing")
+        // The inspector only describes a selected context; without one the toggle would do nothing.
+        if let context = model.selection, model.directory(of: context) != nil {
+            ToolbarItem(placement: .primaryAction) {
+                Button { isInspectorShown.toggle() } label: {
+                    Label("Inspector", systemImage: "sidebar.trailing")
+                }
+                .help(Text("Show or hide the inspector (⌥⌘I)"))
+                .keyboardShortcut("i", modifiers: [.command, .option])
             }
-            .help(Text("Show or hide the inspector (⌥⌘I)"))
-            .keyboardShortcut("i", modifiers: [.command, .option])
         }
     }
 

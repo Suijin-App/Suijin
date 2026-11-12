@@ -43,6 +43,7 @@ struct MercuryApp: App {
                     await model.loadSettings()
                     model.applyAppearance()
                     await model.load()
+                    model.showOnboardingIfNeeded()
                     await model.runtimes.bootstrap()
                     #if DEBUG
                     await model.openDemoPanesIfRequested()
@@ -114,7 +115,7 @@ final class MercuryAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificat
 }
 
 /// Menu commands: ⌘N new worktree, ⌘T new session, ⌘W close tab (or pane), ⇧⌘O add workspace, pane commands in the
-/// Session menu. ⌘, shows or hides Settings over the main window.
+/// Session menu. ⌘, shows or hides Settings over the main window; Help › Welcome to Mercury opens the welcome tour.
 struct MercuryCommands: Commands {
     let model: AppModel
 
@@ -122,7 +123,11 @@ struct MercuryCommands: Commands {
         // Settings open over the main window rather than in a window of their own.
         CommandGroup(replacing: .appSettings) {
             Button("Settings…") {
-                withAnimation(.easeOut(duration: 0.18)) { model.settingsPage = model.settingsPage == nil ? .general : nil }
+                withAnimation(.easeOut(duration: 0.18)) {
+                    // Settings replace the welcome tour rather than opening under it.
+                    if model.onboarding != nil { model.finishOnboarding() }
+                    model.settingsPage = model.settingsPage == nil ? .general : nil
+                }
                 NSApp.activate()
                 model.mainWindow?.makeKeyAndOrderFront(nil)
             }
@@ -144,10 +149,14 @@ struct MercuryCommands: Commands {
                 .keyboardShortcut("o", modifiers: [.command, .shift])
         }
         CommandGroup(replacing: .saveItem) {
-            // ⌘W acts on sessions only in the main window (closing Settings first when they show); anywhere else
-            // (the gallery) it closes that window.
+            // ⌘W acts on sessions only in the main window (closing the welcome tour or Settings first when they
+            // show); anywhere else (the gallery) it closes that window.
             // In a split tab ⌘W closes the focused pane only, and says so.
             Button(isSplitTab ? "Close Pane" : "Close Tab") {
+                if model.onboarding != nil {
+                    withAnimation(.easeOut(duration: 0.2)) { model.finishOnboarding() }
+                    return
+                }
                 if model.settingsPage != nil {
                     withAnimation(.easeOut(duration: 0.18)) { model.settingsPage = nil }
                     return
@@ -155,6 +164,13 @@ struct MercuryCommands: Commands {
                 model.performCloseCommand()
             }
             .keyboardShortcut("w")
+        }
+        CommandGroup(replacing: .help) {
+            Button("Welcome to Mercury") {
+                withAnimation(.easeOut(duration: 0.2)) { model.showOnboarding() }
+                NSApp.activate()
+                model.mainWindow?.makeKeyAndOrderFront(nil)
+            }
         }
         CommandMenu("Session") {
             Button("Split Right") { if let context = mainContext { model.split(in: context, axis: .sideBySide) } }

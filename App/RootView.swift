@@ -36,12 +36,19 @@ struct RootView: View {
         .frame(minWidth: 760, minHeight: 480)
         // Settings cover the whole window (toolbar included) instead of opening a window of their own. The toolbar
         // goes at once rather than fading with the overlay, and the covered app leaves the accessibility tree.
-        .toolbarVisibility(model.settingsPage == nil ? .automatic : .hidden, for: .windowToolbar)
-        .animation(nil, value: model.settingsPage == nil)
-        .accessibilityHidden(model.settingsPage != nil)
+        // The welcome tour covers the window the same way, and only one of the two shows at a time.
+        .toolbarVisibility(model.settingsPage == nil && model.onboarding == nil ? .automatic : .hidden, for: .windowToolbar)
+        .animation(nil, value: model.settingsPage == nil && model.onboarding == nil)
+        .accessibilityHidden(model.settingsPage != nil || model.onboarding != nil)
         .overlay {
             if let page = model.settingsPage {
                 SettingsOverlay(page: page)
+                    .transition(.opacity)
+            }
+        }
+        .overlay {
+            if let tour = model.onboarding {
+                OnboardingOverlay(tour: tour)
                     .transition(.opacity)
             }
         }

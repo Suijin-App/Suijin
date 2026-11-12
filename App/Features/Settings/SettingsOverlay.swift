@@ -41,7 +41,7 @@ struct SettingsOverlay: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .id(page)
         }
-        .background { SettingsBackdrop() }
+        .background { OverlayBackdrop() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settingsOverlay")
     }
@@ -64,8 +64,8 @@ struct SettingsOverlay: View {
     }
 }
 
-/// The window background with a soft glow of the accent color from the top, as the onboarding screens use.
-private struct SettingsBackdrop: View {
+/// The window background with a soft glow of the accent color from the top, behind Settings and the welcome tour.
+struct OverlayBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
 

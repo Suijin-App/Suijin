@@ -99,6 +99,14 @@ final class UsageController {
         func homes(_ provider: AccountProvider) -> [URL] {
             accounts.filter { $0.provider == provider }.map { URL(fileURLWithPath: $0.homePath, isDirectory: true) }
         }
+        #if DEBUG
+        // Screenshot runs read demo logs instead of the user's own: `-MercuryUsageHome <dir>` stands in for the home
+        // folder, and CLAUDE_CONFIG_DIR / CODEX_HOME from the environment are ignored.
+        if let home = UserDefaults.standard.string(forKey: "MercuryUsageHome") {
+            return UsageSourceSet.standard(environment: [:], homeDirectory: URL(fileURLWithPath: home, isDirectory: true),
+                                           managedClaudeHomes: homes(.claude), managedCodexHomes: homes(.codex))
+        }
+        #endif
         return UsageSourceSet.standard(managedClaudeHomes: homes(.claude), managedCodexHomes: homes(.codex))
     }
 

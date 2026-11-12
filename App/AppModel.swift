@@ -95,6 +95,8 @@ final class AppModel {
     var pendingClose: PendingClose?
     /// The Settings page shown over the main window; nil while the app itself is shown.
     var settingsPage: SettingsPage?
+    /// The welcome tour shown over the main window; nil while it is closed (`OnboardingOverlay.swift`).
+    var onboarding: OnboardingTour?
     /// The main window, so menu commands that act on sessions do nothing while Settings or another window is key.
     @ObservationIgnored weak var mainWindow: NSWindow?
 
@@ -472,6 +474,8 @@ enum SettingKey: String, CaseIterable {
     case codexNoDaemon = "agents.codex.noDaemon"
     /// `AppAppearance` raw value; missing means follow the system.
     case appearance = "ui.appearance"
+    /// "true" once the welcome tour was finished or skipped, so it no longer opens at launch.
+    case onboardingCompleted = "onboarding.completed"
 }
 
 /// The app-wide appearance chosen in Settings → General.

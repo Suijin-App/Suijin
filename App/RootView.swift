@@ -33,7 +33,9 @@ struct RootView: View {
             .toolbar(removing: .title)
             .toolbar { MainToolbar(isInspectorShown: $isInspectorShown) }
         }
-        .frame(minWidth: 760, minHeight: 480)
+        // The smallest window that still fits the sidebar, a readable terminal and the toolbar's buttons without
+        // squeezing them: below this the toolbar overflowed and panes, the diff and the overlays lost their layout.
+        .frame(minWidth: 1000, minHeight: 640)
         // Settings cover the whole window (toolbar included) instead of opening a window of their own. The toolbar
         // goes at once rather than fading with the overlay, and the covered app leaves the accessibility tree.
         // The welcome tour covers the window the same way, and only one of the two shows at a time.

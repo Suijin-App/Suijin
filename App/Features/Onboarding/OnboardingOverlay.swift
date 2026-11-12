@@ -175,6 +175,8 @@ private struct OnboardingWelcomeStep: View {
                 highlight("arrow.triangle.branch", "One Worktree Each", "Every agent gets a branch and a folder of its own.", order: 3)
                 highlight("lock.laptopcomputer", "Local Only", "No servers, no remote hosts. Your code stays on your Mac.", order: 4)
             }
+            // Cards as tall as the tallest one, however their text wraps.
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.top, metrics.isCompact ? 2 : 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -194,7 +196,7 @@ private struct OnboardingWelcomeStep: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(metrics.isCompact ? 12 : 16)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
@@ -238,17 +240,7 @@ private struct OnboardingFeatureStep: View {
             }
             .frame(width: metrics.textColumnWidth, alignment: .leading)
             if let screenshot = step.screenshot {
-                Image(screenshot)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
-                    }
-                    .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                OnboardingScreenshot(name: screenshot)
                     .scaleEffect(isShown || reduceMotion ? 1 : 0.94)
                     .opacity(isShown ? 1 : 0)
                     .animation(reduceMotion ? .easeOut(duration: 0.25) : .spring(response: 0.6, dampingFraction: 0.82).delay(0.1),
@@ -259,6 +251,33 @@ private struct OnboardingFeatureStep: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { isShown = true }
+    }
+}
+
+/// A feature capture that always spans the column up to the tour's trailing margin (where Continue ends): it fills the
+/// width, and when the column is too short for the whole capture, the bottom is cut off instead of the capture
+/// shrinking away from that margin. Captures show the window's top (toolbar, sidebar) where the feature is.
+private struct OnboardingScreenshot: View {
+    let name: String
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = NSImage(named: name)?.size ?? CGSize(width: 4, height: 3)
+            let width = proxy.size.width
+            let height = min(proxy.size.height, width * size.height / max(size.width, 1))
+            Image(name)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fill)
+                .frame(width: width, height: height, alignment: .top)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                }
+                .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+        }
     }
 }
 

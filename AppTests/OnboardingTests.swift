@@ -160,11 +160,11 @@ struct OnboardingTests {
         let wide = OnboardingMetrics(available: CGSize(width: 1400, height: 880))
         #expect(wide.content == CGSize(width: 1080, height: 680))
         #expect(!wide.isCompact)
-        // The window's minimum size (760×480, title bar included).
-        let small = OnboardingMetrics(available: CGSize(width: 760, height: 480))
-        #expect(small.content.width <= 760 - 2 * 24)
-        #expect(small.content.height <= 480 - 2 * 16)
-        #expect(small.isCompact)
+        // The window's minimum size (1000×640, title bar included): still the full layout, inside the margins.
+        let small = OnboardingMetrics(available: CGSize(width: 1000, height: 640))
+        #expect(small.content.width <= 1000 - 2 * 24)
+        #expect(small.content.height <= 640 - 2 * 16)
+        #expect(!small.isCompact)
     }
 
     @Test func shortcutsAreSpokenByName() {

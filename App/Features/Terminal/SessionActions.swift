@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import MercuryCore
 import MercuryTerminal
 
@@ -34,10 +34,22 @@ extension AppModel {
         }
     }
 
-    /// The pane with focus: the second pane of a split tab when the user clicked it, else the tab's session.
+    /// The pane with focus in the selected tab: the pane focused last (`focusPane`, which every terminal reports to
+    /// when it becomes first responder), else the tab's session.
     func activeSession(in context: SessionContext) -> UUID? {
         guard let tab = selectedSession(in: context) else { return nil }
-        return focusedPane[tab] ?? tab
+        let panes = [tab] + (splits[tab].map { [$0.secondary] } ?? [])
+        return focusedPane[tab].flatMap { panes.contains($0) ? $0 : nil } ?? tab
+    }
+
+    /// Marks a pane as its tab's focused pane. The one entry point: the pane's terminal reports here whenever it
+    /// becomes first responder, however the keyboard got there.
+    func focusPane(_ id: UUID) {
+        if splits[id] != nil {
+            if focusedPane[id] != nil { focusedPane[id] = nil }
+        } else if let primary = splits.first(where: { $0.value.secondary == id })?.key, focusedPane[primary] != id {
+            focusedPane[primary] = id
+        }
     }
 
     var defaultAgent: AgentKind {
@@ -87,11 +99,12 @@ extension AppModel {
         selectedTab[context] = tabs[(current + offset + tabs.count) % tabs.count]
     }
 
-    /// Handles a tab or split shortcut typed in a terminal; returns whether it was handled.
-    func handle(_ route: TerminalKeyRoute, in context: SessionContext) -> Bool {
+    /// Handles a tab or split shortcut typed in the terminal of session `pane`; returns whether it was handled. ⌘W
+    /// closes that pane: the terminal that received the key is the one with the keyboard.
+    func handle(_ route: TerminalKeyRoute, in context: SessionContext, from pane: UUID) -> Bool {
         switch route {
         case .newTab: newTab(in: context)
-        case .closeTab: closeActive(in: context)
+        case .closeTab: requestClose(pane)
         case .splitRight: split(in: context, axis: .sideBySide)
         case .splitDown: split(in: context, axis: .stacked)
         case .previousTab: selectAdjacentTab(in: context, offset: -1)
@@ -99,5 +112,23 @@ extension AppModel {
         default: return false
         }
         return true
+    }
+
+    /// The Close Tab command (⌘W when no terminal has the keyboard): in the main window closes the focused pane or
+    /// file tab, leaves the Changes tab for the tab before it, and closes a window with no tabs; in any other window
+    /// (the gallery) closes that window.
+    func performCloseCommand() {
+        guard isMainWindowKey, let context = selection else {
+            NSApp.keyWindow?.performClose(nil)
+            return
+        }
+        let isFileTab = if case .file? = currentTab(in: context) { true } else { false }
+        if activeSession(in: context) != nil || isFileTab {
+            closeActive(in: context)
+        } else if selectedTab[context] == .changes, !tabSessions(in: context).isEmpty {
+            selectAdjacentTab(in: context, offset: -1)
+        } else if selectedTab[context] != .changes {
+            NSApp.keyWindow?.performClose(nil)
+        }
     }
 }

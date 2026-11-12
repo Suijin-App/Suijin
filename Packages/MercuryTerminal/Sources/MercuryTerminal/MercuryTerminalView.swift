@@ -21,8 +21,6 @@ open class MercuryTerminalView: TerminalView {
     /// The working directory the shell reported (OSC 7), when it reports one.
     public var onCurrentDirectoryChange: ((String?) -> Void)?
     public var onBell: (() -> Void)?
-    /// The user clicked into this view (the clicked pane of a split becomes the active one).
-    public var onFocus: (() -> Void)?
     /// Tab and split shortcuts; return `false` to let the event go on to the app's menus.
     public var onKeyRoute: ((TerminalKeyRoute) -> Bool)?
     /// A paste that needs the user's decision. Call `decide` exactly once, with `nil` to cancel. Without a handler,
@@ -64,7 +62,6 @@ open class MercuryTerminalView: TerminalView {
         optionAsMetaKey = false
         setAccessibilityIdentifier("terminal.view")
         Self.installKeyMonitor()
-        Self.installClickMonitor()
     }
 
     /// Size changes closer together than this are coalesced; see `setFrameSize(_:)`.
@@ -130,7 +127,6 @@ open class MercuryTerminalView: TerminalView {
         onPasteReview = nil
         onKeyRoute = nil
         onOpenLink = nil
-        onFocus = nil
         onReplayChange = nil
         onInput = nil
         onSizeChange = nil
@@ -241,22 +237,6 @@ open class MercuryTerminalView: TerminalView {
                 return view.perform(TerminalKeyRouter.route(event))
             }
             return handled ? nil : event
-        }
-    }
-
-    private static var clickMonitor: Any?
-
-    /// SwiftTerm's responder methods are not open to subclasses, so clicks are watched instead; the event goes on to the
-    /// view unchanged.
-    private static func installClickMonitor() {
-        guard clickMonitor == nil else { return }
-        clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { event in
-            MainActor.assumeIsolated {
-                var view = event.window?.contentView?.hitTest(event.locationInWindow)
-                while let current = view, !(current is MercuryTerminalView) { view = current.superview }
-                (view as? MercuryTerminalView)?.onFocus?()
-            }
-            return event
         }
     }
 

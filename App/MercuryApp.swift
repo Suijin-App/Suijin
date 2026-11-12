@@ -147,17 +147,7 @@ struct MercuryCommands: Commands {
                     withAnimation(.easeOut(duration: 0.18)) { model.settingsPage = nil }
                     return
                 }
-                guard let context = mainContext else {
-                    NSApp.keyWindow?.performClose(nil)
-                    return
-                }
-                if model.activeSession(in: context) != nil || { if case .file? = model.currentTab(in: context) { return true }; return false }() {
-                    model.closeActive(in: context)
-                } else if model.selectedTab[context] == .changes, !model.tabSessions(in: context).isEmpty {
-                    model.selectAdjacentTab(in: context, offset: -1)
-                } else if model.selectedTab[context] != .changes {
-                    NSApp.keyWindow?.performClose(nil)
-                }
+                model.performCloseCommand()
             }
             .keyboardShortcut("w")
         }

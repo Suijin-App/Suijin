@@ -13,7 +13,9 @@ struct TerminalPane: View {
     @State private var review: PendingPaste?
 
     var body: some View {
-        TerminalViewHost(view: runtime.terminal.view, background: theme.background.nsColor, isFocused: isFocused && review == nil)
+        let model = model, id = runtime.id
+        TerminalViewHost(view: runtime.terminal.view, background: theme.background.nsColor, isFocused: isFocused && review == nil,
+                         onFocus: { model.focusPane(id) })
             .onAppear { installHandlers() }
             .onChange(of: colorScheme, initial: true) { applyTheme() }
             .onChange(of: model.terminalStyleRevision) { applyTheme() }
@@ -41,13 +43,10 @@ struct TerminalPane: View {
             pending.wrappedValue = PendingPaste(review: review, decide: decide)
         }
         let model = model, context = context, id = runtime.id
-        view.onKeyRoute = { route in model.handle(route, in: context) }
+        // The route names this pane: ⌘W typed here closes this pane, whatever the model last marked as focused.
+        view.onKeyRoute = { route in model.handle(route, in: context, from: id) }
         let directory = model.sessions.first { $0.id == id }.map { URL(fileURLWithPath: $0.cwd, isDirectory: true) }
         view.onOpenLink = { link in model.openTerminalLink(link, in: context, relativeTo: directory) }
-        view.onFocus = {
-            guard let tab = model.selectedSession(in: context) else { return }
-            model.focusedPane[tab] = id == tab ? nil : id
-        }
     }
 
     private var theme: TerminalTheme {
@@ -71,14 +70,13 @@ struct TerminalPane: View {
 
 /// Puts an existing AppKit terminal view in SwiftUI with a small margin, so text does not touch the pane's edges, and
 /// gives it keyboard focus when its pane is focused. The margin takes the terminal's background color, so the pane
-/// reads as one surface.
+/// reads as one surface. `onFocus` runs whenever the terminal really becomes the window's first responder (a click,
+/// the app or AppKit moving the keyboard), so the model's focused pane follows the keyboard.
 private struct TerminalViewHost: NSViewRepresentable {
     let view: MercuryTerminalView
     let background: NSColor
     let isFocused: Bool
-
-    static let horizontalInset: CGFloat = 10
-    static let verticalInset: CGFloat = 6
+    let onFocus: @MainActor () -> Void
 
     func makeNSView(context: Context) -> NSView {
         let container = FocusingContainer()
@@ -86,44 +84,83 @@ private struct TerminalViewHost: NSViewRepresentable {
         // While the pane's size animates, the terminal keeps its size for a moment (its resizes are coalesced); a
         // terminal briefly wider than the pane must not draw over the inspector next to it.
         container.clipsToBounds = true
-        embed(in: container)
+        container.terminal = view
+        container.embedTerminal()
         return container
     }
 
-    func updateNSView(_ container: NSView, context: Context) {
-        if view.superview !== container { embed(in: container) }
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let container = nsView as? FocusingContainer else { return }
+        container.terminal = view
+        // Never from a container on its way out: when a pane moves to a new place in the layout (a split opens or
+        // closes) SwiftUI updates the old container after the new one took the terminal, and taking it back left the
+        // terminal in a container no window shows (a blank pane without keyboard). The new container claims it when
+        // it joins the window.
+        if view.superview !== container, view.window == nil { container.embedTerminal() }
         container.layer?.backgroundColor = background.cgColor
-        (container as? FocusingContainer)?.wantsFocus = isFocused
+        container.wantsFocus = isFocused
+        container.onFocus = onFocus
         if isFocused, container.window != nil, container.window?.firstResponder !== view {
             DispatchQueue.main.async { container.window?.makeFirstResponder(view) }
         }
-    }
-
-    private func embed(in container: NSView) {
-        view.removeFromSuperview()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(view)
-        NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.horizontalInset),
-            view.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.horizontalInset),
-            view.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.verticalInset),
-            view.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -Self.verticalInset),
-        ])
-        container.layer?.backgroundColor = background.cgColor
     }
 }
 
 /// The terminal's container. A pane that should have the keyboard takes it when it joins the window too: the first
 /// SwiftUI update of a new or switched-to pane runs before the view is in a window, and nothing updates it again, so
 /// the keyboard stayed in the sidebar list (where the arrow keys switch sessions).
+///
+/// It also watches the window's first responder (key-value observed): the terminal becoming first responder by any
+/// path reports `onFocus`, and the keyboard falling to the window itself (the focused pane next to this one closed,
+/// so its view left the window) is taken back when this pane should have it.
 private final class FocusingContainer: NSView {
+    weak var terminal: MercuryTerminalView?
     var wantsFocus = false
+    var onFocus: (@MainActor () -> Void)?
+    private var observation: NSKeyValueObservation?
+
+    static let horizontalInset: CGFloat = 10
+    static let verticalInset: CGFloat = 6
+
+    /// Moves the terminal into this container, inset by the pane's margin.
+    func embedTerminal() {
+        guard let terminal, terminal.superview !== self else { return }
+        terminal.removeFromSuperview()
+        terminal.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(terminal)
+        NSLayoutConstraint.activate([
+            terminal.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.horizontalInset),
+            terminal.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.horizontalInset),
+            terminal.topAnchor.constraint(equalTo: topAnchor, constant: Self.verticalInset),
+            terminal.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Self.verticalInset),
+        ])
+    }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        guard wantsFocus, let window else { return }
+        observation = window?.observe(\.firstResponder, options: [.new]) { [weak self] window, _ in
+            MainActor.assumeIsolated { self?.firstResponderChanged(in: window) }
+        }
+        guard let window else { return }
+        // The container that joins the window last is the one on screen: it holds the terminal, even if a container
+        // about to be removed took it meanwhile.
+        embedTerminal()
+        takeFocusIfWanted(in: window)
+    }
+
+    private func firstResponderChanged(in window: NSWindow) {
+        guard let terminal, terminal.superview === self else { return }
+        if window.firstResponder === terminal {
+            onFocus?()
+        } else if wantsFocus, window.firstResponder === window {
+            takeFocusIfWanted(in: window)
+        }
+    }
+
+    private func takeFocusIfWanted(in window: NSWindow) {
+        guard wantsFocus else { return }
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.wantsFocus, self.window === window, let terminal = self.subviews.first,
+            guard let self, self.wantsFocus, self.window === window, let terminal = self.terminal, terminal.superview === self,
                   window.firstResponder !== terminal else { return }
             // Not from a field or sheet the user is typing in; only from the window itself or the sidebar list.
             guard window.firstResponder === window || window.firstResponder is NSTableView else { return }

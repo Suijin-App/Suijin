@@ -121,7 +121,7 @@ struct LegalDocument: Identifiable {
             Section(heading: String(localized: "Connections Sevinda makes"), blocks: [
                 .bullets([
                     AttributedString(localized: "**Usage limits.** For each Claude or Codex login whose limits Sevinda shows, it asks Anthropic (`api.anthropic.com`) or OpenAI (`chatgpt.com`) with that login's own token, now and then and when you click refresh. Only the token (and the Codex account ID) is sent; the reply holds percentages and reset times."),
-                    AttributedString(localized: "**Updates.** Once a day by default, Sevinda asks Tekmium's update feed (`sevinda.tekmium.com`) whether a new version exists. You can turn this off in Settings → General. Sparkle's optional system profile is not turned on."),
+                    AttributedString(localized: "**Updates.** This version of Sevinda does not check for updates. When a later version does, this policy will name the address it asks and how to turn the check off."),
                     AttributedString(localized: "**GitHub.** If the GitHub CLI (`gh`) is installed, Sevinda uses it with your own GitHub sign-in to show a branch's pull request and checks, and to create pull requests you ask for. When you ask for a workspace's GitHub avatar, Sevinda downloads the repository owner's public picture from github.com."),
                     AttributedString(localized: "**Git.** Sevinda pushes a branch only when you ask, using your own remotes and git credentials."),
                     AttributedString(localized: "**Markdown files.** When a Markdown file you open shows images from the web, they load from their addresses, as in a browser."),

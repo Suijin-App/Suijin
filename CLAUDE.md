@@ -1,8 +1,8 @@
-# Mercury — repository rules
+# Sevinda — repository rules
 
 These rules apply to everyone working in this repository, people and AI agents alike.
 
-Mercury is a native macOS app (Swift 6, SwiftUI/AppKit, macOS 15+, real Liquid Glass on macOS 26+) that runs several
+Sevinda is a native macOS app (Swift 6, SwiftUI/AppKit, macOS 15+, real Liquid Glass on macOS 26+) that runs several
 Claude Code and Codex agents side by side, one git worktree each, with multiple managed accounts and a native diff
 viewer. Local only: no SSH, no remote hosts, no cloud.
 
@@ -39,18 +39,18 @@ Check: `Tools/comment-lint/comment-lint.py` (also runs in `scripts/ci-local.sh c
   `NSHostingView` snapshot) at a narrow and a wide window width in light and dark mode, look at the images, and fix
   anything clipped, misaligned or overflowing.
 
-## Mercury-specific rules
+## Sevinda-specific rules
 
 - **Workspaces, not repositories.** A workspace is a git repository (`kind == .git`: worktrees and diffs) or a plain
   folder (`kind == .folder`: agents run straight in it). Shared code (sidebar, sessions, status, accounts) never
   assumes git; only worktree creation/removal and the diff viewer require `kind == .git`.
 - **Never touch the user's own logins.** Nothing writes to `~/.claude`, `~/.claude.json`, `~/.codex` or the default
-  `Claude Code-credentials` Keychain item. Managed accounts live under `~/Library/Application Support/Mercury`.
+  `Claude Code-credentials` Keychain item. Managed accounts live under `~/Library/Application Support/Sevinda`.
   Claude hooks are passed with `claude --settings <file>`, never installed into the user's settings.
 - **Never print, log or persist tokens.** Credentials are read into memory only; profile directories are 700, files 600.
-- **No orphan processes.** Every terminal runs in the PTY host helper (`MercuryPTYHost`) so it survives the app
+- **No orphan processes.** Every terminal runs in the PTY host helper (`SevindaPTYHost`) so it survives the app
   quitting; closing a tab terminates its session (SIGHUP, then SIGKILL). Tests that spawn processes clean them up.
 - **Package boundaries.** The graph is documented in `docs/architecture.md`; packages never import the app, and
-  `MercuryUI` imports no domain package.
+  `SevindaUI` imports no domain package.
 - **Verify before done.** `scripts/ci-local.sh` must be green (package tests, app build, no compiler warnings in
-  Mercury code).
+  Sevinda code).

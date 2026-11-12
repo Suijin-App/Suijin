@@ -21,8 +21,14 @@ extension AppModel {
     /// them in their default app. Relative paths are resolved against `directory`, the session's working directory; a
     /// `:line` or `:line:column` suffix is split off (`TerminalPathResolver.locations(for:bases:)`).
     func openTerminalLink(_ link: String, in context: SessionContext, relativeTo directory: URL?) -> Bool {
+        openTerminalLink(link, in: context, relativeTo: [directory])
+    }
+
+    /// As above, a relative path tried against each of `directories` in turn (the shell's reported directory, the
+    /// session's, the worktree's root).
+    func openTerminalLink(_ link: String, in context: SessionContext, relativeTo directories: [URL?]) -> Bool {
         guard TerminalPathResolver.namesPath(link) else { return false }
-        let bases = [directory?.standardizedFileURL.path].compactMap { $0 }
+        let bases = TerminalPathResolver.Query(text: link, bases: directories).bases
         guard let probe = TerminalPathResolver.probe(link, bases: bases).result else { return true }
         openTerminalPath(ResolvedTerminalPath(url: URL(fileURLWithPath: probe.path, isDirectory: probe.isDirectory),
                                               isDirectory: probe.isDirectory, line: probe.line, column: probe.column),

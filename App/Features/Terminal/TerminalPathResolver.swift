@@ -66,6 +66,9 @@ final class TerminalPathResolver {
         var bases: [String]
     }
 
+    /// The app's resolver: every terminal shares its cache and its watchers.
+    static let shared = TerminalPathResolver()
+
     init(capacity: Int = 512, timeToLive: Duration = .seconds(2),
          clock: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }) {
         self.capacity = capacity

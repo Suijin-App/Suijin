@@ -127,6 +127,19 @@ struct TerminalPathDetectorTests {
         #expect(TerminalPathDetector.matches(in: three).map(\.text).contains("/aaaa/bbbb/cccc/dddd/ee/f.md"))
     }
 
+    @Test("interface symbols on the next row never join a link or path at the edge")
+    func symbolsDoNotJoin() {
+        let rows = [
+            TerminalTextRow("⏺ Read https://x.org/appkit", columnCount: 28),
+            TerminalTextRow("  ⎿  Edited …/a.swift", columnCount: 28),
+            TerminalTextRow("✻ Thinking… src/a.swift ✓", columnCount: 28),
+        ]
+        let found = TerminalPathDetector.matches(in: rows)
+        #expect(found.filter { $0.kind == .url }.map(\.text) == ["https://x.org/appkit"])
+        #expect(found.contains { $0.text == "src/a.swift" })
+        #expect(!found.contains { $0.text.contains("⎿") || $0.text.contains("✓") || $0.text.contains("⏺") })
+    }
+
     @Test("the longest verified candidate wins over overlapping pieces")
     func preferred() {
         let rows = [TerminalTextRow("Wrote /a/very/long/pa", columnCount: 21), TerminalTextRow("th/file.swift", columnCount: 21)]

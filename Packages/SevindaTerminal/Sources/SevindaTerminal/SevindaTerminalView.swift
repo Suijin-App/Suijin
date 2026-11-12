@@ -38,6 +38,8 @@ open class SevindaTerminalView: TerminalView {
     public static let minimumSize = NSSize(width: 80, height: 40)
 
     private var bridge: DelegateBridge?
+    /// Finds paths and links on screen and underlines them; see `linkResolver`.
+    private(set) var linkController: TerminalLinkController!
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,6 +61,10 @@ open class SevindaTerminalView: TerminalView {
         self.bridge = bridge
         terminalDelegate = bridge
         hideScroller()
+        let linkController = TerminalLinkController(view: self)
+        self.linkController = linkController
+        linkController.overlay.frame = bounds
+        addSubview(linkController.overlay, positioned: .below, relativeTo: nil)
         // Like Terminal.app: Option composes characters (accents on a US layout) instead of acting as Meta.
         optionAsMetaKey = false
         setAccessibilityIdentifier("terminal.view")
@@ -95,7 +101,9 @@ open class SevindaTerminalView: TerminalView {
 
     private func applySize(_ size: NSSize, at time: TimeInterval) {
         if size != frame.size, window != nil { lastResize = time }
+        let changed = size != frame.size
         super.setFrameSize(size)
+        if changed { linkController?.gridChanged() }
     }
 
     private func applyPendingSize() {
@@ -117,6 +125,7 @@ open class SevindaTerminalView: TerminalView {
         didSet {
             alphaValue = isReplayingScrollback ? 0 : 1
             if isReplayingScrollback != oldValue { onReplayChange?(isReplayingScrollback) }
+            if !isReplayingScrollback, oldValue { linkController?.noteChange() }
         }
     }
     /// Called when a scrollback replay starts or finishes, so the host can show progress meanwhile.
@@ -131,6 +140,85 @@ open class SevindaTerminalView: TerminalView {
         onReplayChange = nil
         onInput = nil
         onSizeChange = nil
+        linkResolver = nil
+    }
+
+    // MARK: Paths and links
+
+    /// Confirms which printed paths exist (the host checks the disk); entries line up with the matches, nil for a path
+    /// that names nothing. Setting it turns on underlining paths and web links on screen; nil (the default) turns it off,
+    /// and nothing is scanned or drawn.
+    public var linkResolver: (@MainActor ([TerminalPathMatch]) async -> [TerminalFileTarget?])? {
+        get { linkController.resolve }
+        set { linkController.resolve = newValue }
+    }
+
+    /// What opens an underlined path or link with the mouse.
+    public var linkTrigger: TerminalLinkTrigger {
+        get { linkController.trigger }
+        set { linkController.trigger = newValue }
+    }
+
+    /// The links underlined now, top to bottom (rows count from the top of the scrollback).
+    public var shownLinks: [TerminalLink] { linkController.links }
+
+    /// Scans the screen at once instead of waiting for the output to pause (tests).
+    public func scanLinksNow() { linkController.scanNow() }
+
+    /// How many scans ran, and how long the last one took on the main thread (tests and measurements).
+    public var linkScanCount: Int { linkController.scanCount }
+    public var lastLinkScanDuration: Duration? { linkController.lastScanDuration }
+
+    /// The directory the shell last reported with OSC 7 (`file://host/path`), as a path.
+    public var reportedDirectory: String? {
+        Self.directory(fromOSC7: getTerminal().hostCurrentDirectory)
+    }
+
+    /// The path of an OSC 7 report: `file://host/path` (percent-encoded, though shells often leave spaces as they
+    /// are) or a bare absolute path.
+    nonisolated static func directory(fromOSC7 reported: String?) -> String? {
+        guard var text = reported, !text.isEmpty else { return nil }
+        if text.lowercased().hasPrefix("file://") {
+            text.removeFirst("file://".count)
+            guard let slash = text.firstIndex(of: "/") else { return nil }
+            text = String(text[slash...])
+        }
+        guard text.hasPrefix("/") else { return nil }
+        return text.removingPercentEncoding ?? text
+    }
+
+    /// Output reached the screen (called by `TerminalSession` as it feeds).
+    func noteOutputFed(byteCount: Int) {
+        linkController.noteChange(bytes: byteCount)
+    }
+
+    /// The overlay stays right above the Metal surface, which SwiftTerm inserts (and replaces when the window changes)
+    /// below the caret; without Metal it is the lowest subview, above the text the view draws itself.
+    /// Re-placing a subview from inside `didAddSubview` puts it on top of everything, so it waits one turn.
+    open override func didAddSubview(_ subview: NSView) {
+        super.didAddSubview(subview)
+        guard subview is MTKView else { return }
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated { self?.placeLinkOverlay() }
+        }
+    }
+
+    func placeLinkOverlay() {
+        guard let overlay = linkController?.overlay else { return }
+        let surface = subviews.last { $0 is MTKView }
+        let wanted = surface.flatMap { subviews.firstIndex(of: $0) }.map { $0 + 1 } ?? 0
+        guard subviews.firstIndex(of: overlay) != wanted else { return }
+        overlay.removeFromSuperview()
+        if let surface {
+            addSubview(overlay, positioned: .above, relativeTo: surface)
+        } else {
+            addSubview(overlay, positioned: .below, relativeTo: nil)
+        }
+    }
+
+    open override func viewDidUnhide() {
+        super.viewDidUnhide()
+        linkController?.noteChange()
     }
 
     // MARK: Appearance
@@ -156,11 +244,14 @@ open class SevindaTerminalView: TerminalView {
         } catch {
             try? setUseMetal(false)
         }
+        placeLinkOverlay()
     }
 
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         applyRenderer()
+        // Back on screen: positions depend on the window's scale, and output may have arrived meanwhile.
+        if window != nil { linkController?.gridChanged() }
     }
 
     /// With the Metal renderer on, the terminal's surface is a Metal subview that does not take the keyboard, and a
@@ -182,6 +273,7 @@ open class SevindaTerminalView: TerminalView {
         let font = TerminalTheme.font(family: family, size: fontSize)
         guard self.font != font else { return }
         self.font = font
+        linkController.gridChanged()
     }
 
     // MARK: Paste guard
@@ -311,7 +403,9 @@ private final class DelegateBridge: @preconcurrency TerminalViewDelegate {
         view?.onInput?(data)
     }
 
-    func scrolled(source: TerminalView, position: Double) {}
+    func scrolled(source: TerminalView, position: Double) {
+        view?.linkController?.noteChange()
+    }
 
     func rangeChanged(source: TerminalView, startY: Int, endY: Int) {}
 

@@ -19,6 +19,13 @@ if [[ -r "${__sevinda_zdotdir:h}/codex-shell-function.zsh" ]]; then
   source "${__sevinda_zdotdir:h}/codex-shell-function.zsh"
 fi
 
+# Reports the working directory at every prompt (OSC 7), so paths a command prints relative to it resolve against the
+# directory the shell is in, not the one the session started in.
+function __sevinda_report_cwd {
+  builtin printf '\e]7;file://%s%s\a' "${HOST}" "${PWD//\%/%25}"
+}
+autoload -Uz add-zsh-hook && add-zsh-hook precmd __sevinda_report_cwd
+
 # A non-login shell reads no further file.
 if [[ ! -o login ]]; then
   __sevinda_restore_zdotdir

@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: Lớp highlight và hover
-status: pending
+status: done
 depends_on: [1]
 ---
 

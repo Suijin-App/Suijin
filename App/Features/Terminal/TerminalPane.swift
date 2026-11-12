@@ -11,12 +11,18 @@ struct TerminalPane: View {
     let context: SessionContext
     let isFocused: Bool
     @State private var review: PendingPaste?
+    /// The folder whose changes clear the path resolver's answers while this pane shows.
+    @State private var watchedRoot: URL?
 
     var body: some View {
         let model = model, id = runtime.id
         TerminalViewHost(view: runtime.terminal.view, background: theme.background.nsColor, isFocused: isFocused && review == nil,
                          onFocus: { model.focusPane(id) })
-            .onAppear { installHandlers() }
+            .onAppear {
+                installHandlers()
+                watchRoot()
+            }
+            .onDisappear { unwatchRoot() }
             .onChange(of: colorScheme, initial: true) { applyTheme() }
             .onChange(of: model.terminalStyleRevision) { applyTheme() }
             .confirmationDialog(
@@ -45,8 +51,34 @@ struct TerminalPane: View {
         let model = model, context = context, id = runtime.id
         // The route names this pane: ⌘W typed here closes this pane, whatever the model last marked as focused.
         view.onKeyRoute = { route in model.handle(route, in: context, from: id) }
-        let directory = model.sessions.first { $0.id == id }.map { URL(fileURLWithPath: $0.cwd, isDirectory: true) }
-        view.onOpenLink = { link in model.openTerminalLink(link, in: context, relativeTo: directory) }
+        // Relative paths are relative to the directory the shell last reported (OSC 7), else the session's working
+        // directory, else the worktree's root.
+        let sessionDirectory = model.sessions.first { $0.id == id }.map { URL(fileURLWithPath: $0.cwd, isDirectory: true) }
+        let root = model.directory(of: context)
+        let bases: @MainActor () -> [URL?] = { [weak view] in
+            [view?.reportedDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }, sessionDirectory, root]
+        }
+        view.onOpenLink = { link in model.openTerminalLink(link, in: context, relativeTo: bases()) }
+        let resolver = TerminalPathResolver.shared
+        view.linkResolver = { matches in
+            let directories = bases()
+            let queries = matches.map { TerminalPathResolver.Query(text: $0.text, bases: directories, line: $0.line, column: $0.column) }
+            return await resolver.resolve(queries).map { resolved in
+                resolved.map { TerminalFileTarget(path: $0.path, isDirectory: $0.isDirectory, line: $0.line, column: $0.column) }
+            }
+        }
+    }
+
+    private func watchRoot() {
+        guard watchedRoot == nil, let root = model.directory(of: context) else { return }
+        TerminalPathResolver.shared.watch(root)
+        watchedRoot = root
+    }
+
+    private func unwatchRoot() {
+        guard let root = watchedRoot else { return }
+        TerminalPathResolver.shared.unwatch(root)
+        watchedRoot = nil
     }
 
     private var theme: TerminalTheme {

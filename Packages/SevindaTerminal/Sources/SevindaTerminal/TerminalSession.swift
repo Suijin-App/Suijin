@@ -133,6 +133,7 @@ public final class TerminalSession {
         if count > 0 {
             let end = pendingOffset + count
             view.feed(byteArray: pending[pendingOffset..<end])
+            view.noteOutputFed(byteCount: count)
             pendingOffset = end
             fedByteCount += count
             let scrollback = min(count, pendingScrollback)

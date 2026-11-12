@@ -26,3 +26,13 @@ if [ -r "$__sevinda_integration_dir/codex-shell-function.bash" ]; then
   . "$__sevinda_integration_dir/codex-shell-function.bash"
 fi
 unset __sevinda_integration_dir
+
+# Reports the working directory at every prompt (OSC 7), so paths a command prints relative to it resolve against the
+# directory the shell is in, not the one the session started in.
+__sevinda_report_cwd() {
+  builtin printf '\e]7;file://%s%s\a' "${HOSTNAME}" "${PWD//\%/%25}"
+}
+case ";${PROMPT_COMMAND-};" in
+  *";__sevinda_report_cwd;"*) ;;
+  *) PROMPT_COMMAND="__sevinda_report_cwd${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+esac

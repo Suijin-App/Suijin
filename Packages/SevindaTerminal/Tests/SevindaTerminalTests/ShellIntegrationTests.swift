@@ -81,6 +81,30 @@ struct ShellIntegrationTests {
         #expect(output.value(of: "leftover") == "<none><none>")
     }
 
+    @Test("zsh and bash report the working directory at each prompt (OSC 7)", arguments: ["/bin/zsh", "/bin/bash"])
+    func reportsWorkingDirectory(shell: String) throws {
+        let fixture = try ShellFixture()
+        defer { fixture.remove() }
+        let folder = fixture.home.appending(path: "a b%c", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let hook = shell.hasSuffix("zsh") ? #"print -r -- "hooks=${precmd_functions[*]}""# : #"echo "hooks=$PROMPT_COMMAND""#
+        let output = try fixture.run(shell: shell, script: "\(hook); cd 'a b%c'; __sevinda_report_cwd")
+        #expect(output.value(of: "hooks")?.contains("__sevinda_report_cwd") == true)
+        let report = try #require(output.range(of: "\u{1b}]7;").map { String(output[$0.upperBound...]) })
+        let sequence = try #require(report.split(separator: "\u{07}").first.map(String.init))
+        let reported = try #require(SevindaTerminalView.directory(fromOSC7: sequence))
+        #expect(URL(fileURLWithPath: reported).resolvingSymlinksInPath() == folder.resolvingSymlinksInPath())
+    }
+
+    @Test("an OSC 7 report reads as a path")
+    func osc7Paths() {
+        #expect(SevindaTerminalView.directory(fromOSC7: "file://mac.local/Users/me/a%20b") == "/Users/me/a b")
+        #expect(SevindaTerminalView.directory(fromOSC7: "file:///tmp/x y") == "/tmp/x y")
+        #expect(SevindaTerminalView.directory(fromOSC7: "/tmp") == "/tmp")
+        #expect(SevindaTerminalView.directory(fromOSC7: "file://host") == nil)
+        #expect(SevindaTerminalView.directory(fromOSC7: nil) == nil)
+    }
+
     @Test("zsh reads startup files from the user's own ZDOTDIR and puts it back")
     func zshUserZDOTDIR() throws {
         let fixture = try ShellFixture()

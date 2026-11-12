@@ -215,14 +215,23 @@ public enum TerminalPathDetector {
 
     // MARK: Scanning
 
-    /// Characters that end an unquoted path: whitespace, quotes, brackets, separators, and box-drawing lines that
-    /// interfaces draw around text.
+    /// Characters that end an unquoted path: whitespace, quotes, brackets, separators, and the symbols interfaces draw
+    /// around text.
     static func isDelimiter(_ character: Character) -> Bool {
         if character.isWhitespace || character == "\u{0}" { return true }
         if "\"'`<>[]{}()|,".contains(character) { return true }
         guard let scalar = character.unicodeScalars.first else { return true }
-        // Box drawing, block elements and the private-use area (Nerd Font icons in prompts).
-        return (0x2500...0x259F).contains(scalar.value) || (0xE000...0xF8FF).contains(scalar.value)
+        return isInterfaceSymbol(scalar)
+    }
+
+    /// Symbols agents and prompts draw next to text, never part of a path or link: bullets, arrows, technical symbols
+    /// (`⎿`, `⏺`), box drawing and blocks, geometric shapes, dingbats (`✻`, `✓`), braille spinners and the private-use
+    /// area (Nerd Font icons).
+    static func isInterfaceSymbol(_ scalar: Unicode.Scalar) -> Bool {
+        switch scalar.value {
+        case 0x2022, 0x2190...0x21FF, 0x2300...0x23FF, 0x2500...0x27BF, 0x2800...0x28FF, 0xE000...0xF8FF: return true
+        default: return false
+        }
     }
 
     static func isPathCharacter(_ character: Character) -> Bool { !isDelimiter(character) }
@@ -290,7 +299,7 @@ public enum TerminalPathDetector {
         while end < characters.count {
             let character = characters[end]
             if character.isWhitespace || character == "\u{0}" || "\"'`<>|".contains(character) { break }
-            if let scalar = character.unicodeScalars.first, (0x2500...0x259F).contains(scalar.value) { break }
+            if let scalar = character.unicodeScalars.first, isInterfaceSymbol(scalar) { break }
             end += 1
         }
         while end > index + prefixLength {

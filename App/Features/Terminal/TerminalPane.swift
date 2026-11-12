@@ -18,13 +18,13 @@ struct TerminalPane: View {
         let model = model, id = runtime.id
         TerminalViewHost(view: runtime.terminal.view, background: theme.background.nsColor, isFocused: isFocused && review == nil,
                          onFocus: { model.focusPane(id) })
-            .onAppear {
-                installHandlers()
-                watchRoot()
-            }
+            .onAppear { installHandlers() }
             .onDisappear { unwatchRoot() }
             .onChange(of: colorScheme, initial: true) { applyTheme() }
-            .onChange(of: model.terminalStyleRevision) { applyTheme() }
+            .onChange(of: model.terminalStyleRevision) {
+                applyTheme()
+                applyLinkSettings()
+            }
             .confirmationDialog(
                 Text("Paste \(review?.review.commandLineCount ?? 0) lines?"),
                 isPresented: Binding(get: { review != nil }, set: { if !$0 { review?.decide(nil); review = nil } }),
@@ -51,14 +51,13 @@ struct TerminalPane: View {
         let model = model, context = context, id = runtime.id
         // The route names this pane: ⌘W typed here closes this pane, whatever the model last marked as focused.
         view.onKeyRoute = { route in model.handle(route, in: context, from: id) }
-        // Relative paths are relative to the directory the shell last reported (OSC 7), else the session's working
-        // directory, else the worktree's root.
-        let sessionDirectory = model.sessions.first { $0.id == id }.map { URL(fileURLWithPath: $0.cwd, isDirectory: true) }
-        let root = model.directory(of: context)
-        let bases: @MainActor () -> [URL?] = { [weak view] in
-            [view?.reportedDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }, sessionDirectory, root]
+        let bases = linkBases
+        // ⌘-clicking a link SwiftTerm found itself: with path links off, relative to the session's directory only, as
+        // before path links existed.
+        view.onOpenLink = { link in
+            let enabled = model.setting(.terminalPathLinks) != "false"
+            return model.openTerminalLink(link, in: context, relativeTo: enabled ? bases() : [bases()[1]])
         }
-        view.onOpenLink = { link in model.openTerminalLink(link, in: context, relativeTo: bases()) }
         view.onOpenFileLink = { target in
             model.openTerminalPath(ResolvedTerminalPath(url: URL(fileURLWithPath: target.path, isDirectory: target.isDirectory),
                                                         isDirectory: target.isDirectory, line: target.line, column: target.column),
@@ -68,6 +67,33 @@ struct TerminalPane: View {
             guard let view else { return nil }
             return TerminalLinkMenu(model: model, context: context, view: view, bases: bases()).menu(for: request)
         }
+        applyLinkSettings()
+    }
+
+    /// Folders a relative path printed in this pane is tried against, in order: the directory the shell last reported
+    /// (OSC 7), the session's working directory, the worktree's root.
+    private var linkBases: @MainActor () -> [URL?] {
+        let view = runtime.terminal.view
+        let sessionDirectory = model.sessions.first { $0.id == runtime.id }.map { URL(fileURLWithPath: $0.cwd, isDirectory: true) }
+        let root = model.directory(of: context)
+        return { [weak view] in
+            [view?.reportedDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }, sessionDirectory, root]
+        }
+    }
+
+    /// Turns path links on or off and sets what opens them (Settings › Terminal). Off, nothing is scanned or watched and
+    /// the terminal behaves as it did before path links.
+    private func applyLinkSettings() {
+        let view = runtime.terminal.view
+        view.linkTrigger = TerminalLinkTrigger(rawValue: model.setting(.terminalPathLinkTrigger) ?? "") ?? .commandClick
+        guard model.setting(.terminalPathLinks) != "false" else {
+            view.linkResolver = nil
+            unwatchRoot()
+            return
+        }
+        watchRoot()
+        guard view.linkResolver == nil else { return }
+        let bases = linkBases
         let resolver = TerminalPathResolver.shared
         view.linkResolver = { matches in
             let directories = bases()

@@ -86,7 +86,7 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
             [OnboardingPoint(symbol: "plusminus", text: "Review every change in the native diff viewer on the Changes tab."),
              OnboardingPoint(symbol: "checkmark.circle", text: "Commit, push and create a pull request from the same tab.", shortcuts: ["⌘↩"]),
              OnboardingPoint(symbol: "sidebar.right", text: "Browse the worktree’s files in the inspector.", shortcuts: ["⌥⌘I"]),
-             OnboardingPoint(symbol: "cursorarrow.click", text: "⌘-click a path in a terminal to open the file.")]
+             OnboardingPoint(symbol: "cursorarrow.click", text: "⌘-click an underlined path in a terminal to open it, or right-click it for more.")]
         case .accounts:
             [OnboardingPoint(symbol: "person.crop.circle.badge.plus", text: "Add managed Claude and Codex accounts. Your own logins stay untouched."),
              OnboardingPoint(symbol: "gauge.with.dots.needle.50percent", text: "See each plan’s usage in the status bar."),

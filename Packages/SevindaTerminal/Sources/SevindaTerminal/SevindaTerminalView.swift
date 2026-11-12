@@ -176,6 +176,8 @@ open class SevindaTerminalView: TerminalView {
     /// How many scans ran, and how long the last one took on the main thread (tests and measurements).
     public var linkScanCount: Int { linkController.scanCount }
     public var lastLinkScanDuration: Duration? { linkController.lastScanDuration }
+    /// How long finding the candidates of the last scan took, off the main thread (measurements).
+    public var lastLinkDetectionDuration: Duration? { linkController.lastDetectionDuration }
 
     /// The directory the shell last reported with OSC 7 (`file://host/path`), as a path.
     public var reportedDirectory: String? {

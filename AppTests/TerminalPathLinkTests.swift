@@ -22,6 +22,9 @@ struct TerminalPathLinkTests {
         let window: NSWindow
 
         func close() async {
+            // Removing the pane runs its onDisappear, which stops watching the folder.
+            window.contentView = nil
+            try? await Task.sleep(for: .milliseconds(100))
             window.orderOut(nil)
             await model.closeSession(id)
             try? FileManager.default.removeItem(at: root)
@@ -65,6 +68,15 @@ struct TerminalPathLinkTests {
         window.setFrameOrigin(CGPoint(x: -10_000, y: -10_000))
         window.orderFrontRegardless()
         return Fixture(root: root, folder: folder, model: model, context: context, id: id, view: runtime.terminal.view, window: window)
+    }
+
+    static func waitUntil(_ condition: () -> Bool) async -> Bool {
+        let start = ContinuousClock.now
+        while ContinuousClock.now - start < .seconds(5) {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return condition()
     }
 
     /// The file a link opens, its path with symbolic links resolved (`/var` is `/private/var`).
@@ -129,6 +141,32 @@ struct TerminalPathLinkTests {
         }
         #expect(selected == "let value150 = 150\n")
         #expect(model.fileLineReveal == nil, "the request is used once")
+    }
+
+    @Test func turnedOffInSettingsTerminalsBehaveAsBefore() async throws {
+        let fixture = try await Self.makeFixture()
+        let view = fixture.view
+        let root = try #require(fixture.model.directory(of: fixture.context)).standardizedFileURL.path
+        #expect(await Self.waitUntil { TerminalPathResolver.shared.watchedRoots.contains(root) })
+
+        fixture.model.setSetting(.terminalPathLinks, "false")
+        try await Task.sleep(for: .milliseconds(200))
+        let scans = view.linkScanCount
+        fixture.run(#"d=docs; printf '%s\n' "$d/plan.md""#)
+        try await Task.sleep(for: .seconds(1.5))
+        #expect(view.shownLinks.isEmpty)
+        #expect(view.linkScanCount == scans, "nothing is scanned")
+        #expect(view.linkMenuRequest(at: CGPoint(x: 5, y: view.bounds.height - 5)) == nil)
+        #expect(!TerminalPathResolver.shared.watchedRoots.contains(root), "nothing is watched")
+
+        fixture.model.setSetting(.terminalPathLinkTrigger, "click")
+        fixture.model.setSetting(.terminalPathLinks, nil)
+        #expect(await fixture.waitForLink("docs/plan.md") != nil, "on again, the screen is scanned")
+        #expect(view.linkTrigger == .click)
+        fixture.model.setSetting(.terminalPathLinkTrigger, nil)
+        #expect(await Self.waitUntil { view.linkTrigger == .commandClick })
+        await fixture.close()
+        #expect(!TerminalPathResolver.shared.watchedRoots.contains(root))
     }
 
     /// The inspector's own preferences, which opening a folder writes; the test host shares the app's defaults.

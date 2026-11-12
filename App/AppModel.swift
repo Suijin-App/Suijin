@@ -422,12 +422,13 @@ final class AppModel {
 
     func setting(_ key: SettingKey) -> String? { settingsCache[key.rawValue] ?? nil }
 
-    /// Bumped when a terminal theme or font setting changes, so visible terminals restyle.
+    /// Bumped when a terminal theme, font or path-link setting changes, so visible terminals restyle.
     private(set) var terminalStyleRevision = 0
 
     func setSetting(_ key: SettingKey, _ value: String?) {
         settingsCache[key.rawValue] = value
-        if [.terminalTheme, .terminalFontFamily, .terminalFontSize, .terminalGPURendering].contains(key) { terminalStyleRevision += 1 }
+        if [.terminalTheme, .terminalFontFamily, .terminalFontSize, .terminalGPURendering, .terminalPathLinks,
+            .terminalPathLinkTrigger].contains(key) { terminalStyleRevision += 1 }
         let store = store
         Task.detached { try? store.setSetting(key.rawValue, value) }
     }
@@ -493,6 +494,10 @@ enum SettingKey: String, CaseIterable {
     case terminalFontSize = "terminal.fontSize"
     /// "false" draws terminals with CoreGraphics; missing or "true" uses the Metal renderer.
     case terminalGPURendering = "terminal.gpuRendering"
+    /// "false" turns off underlining paths and links in terminals; missing or "true" leaves it on.
+    case terminalPathLinks = "terminal.pathLinks"
+    /// "click" opens an underlined path with a plain click; missing or "commandClick" needs ⌘.
+    case terminalPathLinkTrigger = "terminal.pathLinkTrigger"
     case notifyWhenWaiting = "notifications.waiting"
     case lastSelection = "ui.lastSelection"
     case codexNoDaemon = "agents.codex.noDaemon"

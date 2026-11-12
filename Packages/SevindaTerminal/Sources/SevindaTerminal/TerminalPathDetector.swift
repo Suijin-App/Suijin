@@ -119,17 +119,29 @@ public enum TerminalPathDetector {
         let lines = logicalLines(rows)
         var result: [TerminalPathMatch] = []
         for line in lines { result += scan(line) }
-        // Paths a program broke over rows with real line breaks: join each run of such rows and keep only what
-        // crosses a break (the pieces were found above).
+        // Paths a program broke over rows with real line breaks: in each run of such rows, only the runs of path
+        // characters that cross a break are scanned again, joined (the pieces were found above).
         for chain in heuristicChains(lines, rows: rows) {
-            let joined = LogicalLine(characters: chain.flatMap(\.characters), cells: chain.flatMap(\.cells))
-            let seams = zip(chain, chain.dropFirst()).compactMap { upper, lower -> (Int, Int)? in
-                guard let above = upper.cells.last?.row, let below = lower.cells.first?.row else { return nil }
-                return (above, below)
+            let joined = LogicalLine(characters: chain.flatMap(\.characters), codes: chain.flatMap(\.codes),
+                                     cells: chain.flatMap(\.cells))
+            var seams: [Int] = []
+            var offset = 0
+            for line in chain.dropLast() {
+                offset += line.characters.count
+                seams.append(offset)
             }
-            result += scan(joined).filter { match in
-                let covered = Set(match.segments.map(\.row))
-                return seams.contains { covered.contains($0.0) && covered.contains($0.1) }
+            var runStart = 0
+            while runStart < joined.codes.count {
+                guard !isDelimiter(code: joined.codes[runStart]) else {
+                    runStart += 1
+                    continue
+                }
+                var runEnd = runStart
+                while runEnd < joined.codes.count, !isDelimiter(code: joined.codes[runEnd]) { runEnd += 1 }
+                if seams.contains(where: { $0 > runStart && $0 < runEnd }) {
+                    result += scan(joined.slice(runStart..<runEnd)).filter { $0.segments.count > 1 }
+                }
+                runStart = runEnd
             }
         }
         return result
@@ -155,22 +167,36 @@ public enum TerminalPathDetector {
         var isExplicitLink: Bool
     }
 
-    /// Rows the terminal soft-wrapped, joined: one character per entry, with the cell it came from.
+    /// Rows the terminal soft-wrapped, joined: one character per entry, with its first Unicode scalar (what the scan
+    /// compares, much cheaper than comparing characters) and the cell it came from.
     struct LogicalLine {
         var characters: [Character]
+        var codes: [UInt32]
         var cells: [CellRef]
+
+        init(characters: [Character], codes: [UInt32]? = nil, cells: [CellRef]) {
+            self.characters = characters
+            self.codes = codes ?? characters.map { $0.unicodeScalars.first?.value ?? 0 }
+            self.cells = cells
+        }
+
+        func slice(_ range: Range<Int>) -> LogicalLine {
+            LogicalLine(characters: Array(characters[range]), codes: Array(codes[range]), cells: Array(cells[range]))
+        }
     }
 
     static func logicalLines(_ rows: [TerminalTextRow]) -> [LogicalLine] {
         var lines: [LogicalLine] = []
         for (index, row) in rows.enumerated() {
             let characters = row.cells.map(\.character)
+            let codes = characters.map { $0.unicodeScalars.first?.value ?? 0 }
             let cells = row.cells.map { CellRef(row: index, column: $0.column, width: max(1, $0.width), isExplicitLink: $0.isExplicitLink) }
             if row.isWrapped, index > 0, !lines.isEmpty {
                 lines[lines.count - 1].characters += characters
+                lines[lines.count - 1].codes += codes
                 lines[lines.count - 1].cells += cells
             } else {
-                lines.append(LogicalLine(characters: characters, cells: cells))
+                lines.append(LogicalLine(characters: characters, codes: codes, cells: cells))
             }
         }
         return lines
@@ -197,57 +223,81 @@ public enum TerminalPathDetector {
     }
 
     private static func canJoin(_ upper: LogicalLine, _ lower: LogicalLine, rows: [TerminalTextRow]) -> Bool {
-        guard let last = upper.characters.last, let lastCell = upper.cells.last, let first = lower.characters.first,
-              isPathCharacter(last), isPathCharacter(first) else { return false }
+        guard let last = upper.codes.last, let lastCell = upper.cells.last, let first = lower.codes.first,
+              !isDelimiter(code: last), !isDelimiter(code: first) else { return false }
         let columns = rows[lastCell.row].columnCount
         // The edge threshold SwiftTerm uses for editor-rendered wraps: the last fifth of the row (at least 2 cells).
         return lastCell.column + lastCell.width >= columns - max(2, columns / 5)
     }
 
     private static func trimmed(_ line: LogicalLine) -> LogicalLine {
-        let isBlank: (Character) -> Bool = { $0.isWhitespace || $0 == "\u{0}" }
-        guard let start = line.characters.firstIndex(where: { !isBlank($0) }),
-              let end = line.characters.lastIndex(where: { !isBlank($0) }) else {
-            return LogicalLine(characters: [], cells: [])
+        guard let start = line.codes.firstIndex(where: { !isBlank(code: $0) }),
+              let end = line.codes.lastIndex(where: { !isBlank(code: $0) }) else {
+            return LogicalLine(characters: [], codes: [], cells: [])
         }
-        return LogicalLine(characters: Array(line.characters[start...end]), cells: Array(line.cells[start...end]))
+        return line.slice(start..<(end + 1))
     }
 
-    // MARK: Scanning
+    // MARK: Character classes
+
+    /// ASCII characters that end an unquoted path: controls, space, quotes, brackets and separators.
+    private static let asciiDelimiters: [Bool] = (0..<128).map { (code: UInt32) in
+        code <= 32 || code == 127 || "\"'`<>[]{}()|,".unicodeScalars.contains { $0.value == code }
+    }
+
+    /// Whitespace beyond ASCII: next line, no-break and typographic spaces, line and paragraph separators.
+    private static func isUnicodeSpace(code: UInt32) -> Bool {
+        switch code {
+        case 0x85, 0xA0, 0x1680, 0x2000...0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000: return true
+        default: return false
+        }
+    }
+
+    static func isBlank(code: UInt32) -> Bool {
+        code <= 32 || code == 127 || isUnicodeSpace(code: code)
+    }
 
     /// Characters that end an unquoted path: whitespace, quotes, brackets, separators, and the symbols interfaces draw
     /// around text.
+    static func isDelimiter(code: UInt32) -> Bool {
+        if code < 128 { return asciiDelimiters[Int(code)] }
+        return isUnicodeSpace(code: code) || isInterfaceSymbol(code: code)
+    }
+
     static func isDelimiter(_ character: Character) -> Bool {
-        if character.isWhitespace || character == "\u{0}" { return true }
-        if "\"'`<>[]{}()|,".contains(character) { return true }
-        guard let scalar = character.unicodeScalars.first else { return true }
-        return isInterfaceSymbol(scalar)
+        isDelimiter(code: character.unicodeScalars.first?.value ?? 0)
     }
 
     /// Symbols agents and prompts draw next to text, never part of a path or link: bullets, arrows, technical symbols
     /// (`⎿`, `⏺`), box drawing and blocks, geometric shapes, dingbats (`✻`, `✓`), braille spinners and the private-use
     /// area (Nerd Font icons).
-    static func isInterfaceSymbol(_ scalar: Unicode.Scalar) -> Bool {
-        switch scalar.value {
+    static func isInterfaceSymbol(code: UInt32) -> Bool {
+        switch code {
         case 0x2022, 0x2190...0x21FF, 0x2300...0x23FF, 0x2500...0x27BF, 0x2800...0x28FF, 0xE000...0xF8FF: return true
         default: return false
         }
     }
 
-    static func isPathCharacter(_ character: Character) -> Bool { !isDelimiter(character) }
+    private static func ascii(_ character: Character) -> UInt32 { UInt32(character.asciiValue!) }
+    private static let colon = ascii(":"), dot = ascii("."), slash = ascii("/"), hash = ascii("#"), at = ascii("@")
+    private static let openParenthesis = ascii("("), closeParenthesis = ascii(")"), comma = ascii(",")
+    private static let letterL = ascii("L"), space = ascii(" ")
+
+    private static func isDigit(_ code: UInt32) -> Bool { code >= 48 && code <= 57 }
+
+    // MARK: Scanning
 
     static func scan(_ line: LogicalLine) -> [TerminalPathMatch] {
-        let characters = line.characters
-        guard !characters.isEmpty else { return [] }
+        let codes = line.codes
+        guard !codes.isEmpty else { return [] }
         var matches: [TerminalPathMatch] = []
         var urlRanges: [Range<Int>] = []
 
         // Web links first: they contain `/` and would otherwise read as paths.
         var index = 0
-        while index < characters.count {
-            if let range = urlRange(at: index, in: characters) {
-                let text = String(characters[range])
-                matches.append(match(kind: .url, text: text, display: range, line: line))
+        while index < codes.count {
+            if codes[index] | 0x20 == 0x68, let range = urlRange(at: index, in: codes) { // `h` or `H`
+                matches.append(match(kind: .url, text: String(line.characters[range]), display: range, line: line))
                 urlRanges.append(range)
                 index = range.upperBound
             } else {
@@ -257,57 +307,65 @@ public enum TerminalPathDetector {
         func insideURL(_ range: Range<Int>) -> Bool { urlRanges.contains { $0.overlaps(range) } }
 
         // Quoted paths, which may contain spaces.
-        for (open, close) in [("`", "`"), ("\"", "\""), ("'", "'")] as [(Character, Character)] {
+        for quote in [ascii("`"), ascii("\""), ascii("'")] {
             var start = 0
-            while let opening = characters[start...].firstIndex(of: open) {
-                guard let closing = characters[(opening + 1)...].firstIndex(of: close) else { break }
+            while let opening = codes[start...].firstIndex(of: quote) {
+                guard let closing = codes[(opening + 1)...].firstIndex(of: quote) else { break }
                 start = closing + 1
                 let inner = (opening + 1)..<closing
-                guard inner.count > 1, characters[inner].contains(" "), !insideURL(inner) else { continue }
+                guard inner.count > 1, codes[inner].contains(space), !insideURL(inner) else { continue }
                 // An apostrophe in prose ("don't") opens nothing: a quote must follow a delimiter or start the line.
-                if opening > 0, !isDelimiter(characters[opening - 1]) { continue }
-                if let found = pathMatch(in: inner, of: characters, allowSpaces: true, line: line) { matches.append(found) }
+                if opening > 0, !isDelimiter(code: codes[opening - 1]) { continue }
+                if let found = pathMatch(in: inner, allowSpaces: true, line: line) { matches.append(found) }
             }
         }
 
         // Unquoted runs.
         index = 0
-        while index < characters.count {
-            guard isPathCharacter(characters[index]) else {
+        while index < codes.count {
+            guard !isDelimiter(code: codes[index]) else {
                 index += 1
                 continue
             }
             var end = index
-            while end < characters.count, isPathCharacter(characters[end]) { end += 1 }
+            while end < codes.count, !isDelimiter(code: codes[end]) { end += 1 }
             let run = index..<end
             index = end
             guard !insideURL(run) else { continue }
-            if let found = pathMatch(in: run, of: characters, allowSpaces: false, line: line) { matches.append(found) }
+            if let found = pathMatch(in: run, allowSpaces: false, line: line) { matches.append(found) }
         }
         return matches
     }
 
+    private static let https = Array("https://".unicodeScalars.map(\.value))
+    private static let http = Array("http://".unicodeScalars.map(\.value))
+    /// Characters that end a link: whitespace and controls, quotes and angle brackets, and interface symbols.
+    private static let asciiURLEnds: [Bool] = (0..<128).map { (code: UInt32) in
+        code <= 32 || code == 127 || "\"'`<>|".unicodeScalars.contains { $0.value == code }
+    }
+
     /// The range of an `http(s)://` link starting at `index`, trailing punctuation and unbalanced closing brackets
     /// removed.
-    static func urlRange(at index: Int, in characters: [Character]) -> Range<Int>? {
-        guard index == 0 || isDelimiter(characters[index - 1]) || characters[index - 1] == "(" else { return nil }
+    static func urlRange(at index: Int, in codes: [UInt32]) -> Range<Int>? {
+        guard index == 0 || isDelimiter(code: codes[index - 1]) || codes[index - 1] == openParenthesis else { return nil }
         let prefixLength: Int
-        if hasPrefix("https://", at: index, in: characters) { prefixLength = 8 }
-        else if hasPrefix("http://", at: index, in: characters) { prefixLength = 7 }
+        if hasPrefix(https, at: index, in: codes) { prefixLength = https.count }
+        else if hasPrefix(http, at: index, in: codes) { prefixLength = http.count }
         else { return nil }
         var end = index + prefixLength
-        while end < characters.count {
-            let character = characters[end]
-            if character.isWhitespace || character == "\u{0}" || "\"'`<>|".contains(character) { break }
-            if let scalar = character.unicodeScalars.first, isInterfaceSymbol(scalar) { break }
+        while end < codes.count, end - index <= maximumLength {
+            let code = codes[end]
+            if code < 128 ? asciiURLEnds[Int(code)] : (isUnicodeSpace(code: code) || isInterfaceSymbol(code: code)) { break }
             end += 1
         }
+        let closers: [UInt32: UInt32] = [ascii(")"): ascii("("), ascii("]"): ascii("["), ascii("}"): ascii("{")]
+        let trailing = Set(".,;:!?*".unicodeScalars.map(\.value))
         while end > index + prefixLength {
-            let last = characters[end - 1]
-            if ".,;:!?*".contains(last) {
+            let last = codes[end - 1]
+            if trailing.contains(last) {
                 end -= 1
-            } else if let open = ([")": "(", "]": "[", "}": "{"] as [Character: Character])[last] {
-                let slice = characters[index..<end]
+            } else if let open = closers[last] {
+                let slice = codes[index..<end]
                 if slice.filter({ $0 == last }).count > slice.filter({ $0 == open }).count { end -= 1 } else { break }
             } else {
                 break
@@ -317,28 +375,31 @@ public enum TerminalPathDetector {
         return index..<end
     }
 
-    private static func hasPrefix(_ prefix: String, at index: Int, in characters: [Character]) -> Bool {
-        let prefix = Array(prefix)
-        guard index + prefix.count <= characters.count else { return false }
-        for (offset, character) in prefix.enumerated() where characters[index + offset].lowercased() != String(character) {
-            return false
+    /// Whether `codes` holds `prefix` at `index`, ASCII letters in either case.
+    private static func hasPrefix(_ prefix: [UInt32], at index: Int, in codes: [UInt32]) -> Bool {
+        guard index + prefix.count <= codes.count else { return false }
+        for offset in prefix.indices {
+            let code = codes[index + offset]
+            let lowered = code >= 65 && code <= 90 ? code + 32 : code
+            if lowered != prefix[offset] { return false }
         }
         return true
     }
 
-    /// A path in `range`, its line suffix split off; nil when the text does not look like a path.
-    static func pathMatch(in range: Range<Int>, of characters: [Character], allowSpaces: Bool,
-                          line: LogicalLine) -> TerminalPathMatch? {
+    /// A path in `range` of `line`, its line suffix split off; nil when the text does not look like a path.
+    static func pathMatch(in range: Range<Int>, allowSpaces: Bool, line: LogicalLine) -> TerminalPathMatch? {
+        let codes = line.codes
         var start = range.lowerBound
         var end = range.upperBound
         // Claude Code mentions files as `@path`.
-        if start < end, characters[start] == "@" { start += 1 }
+        if start < end, codes[start] == at { start += 1 }
         // Trailing sentence punctuation; a final `.` stays when it is part of `..` or `/.`.
+        let sentenceEnds = Set(",;:!?".unicodeScalars.map(\.value))
         while end > start {
-            let last = characters[end - 1]
-            if ",;:!?".contains(last) {
+            let last = codes[end - 1]
+            if sentenceEnds.contains(last) {
                 end -= 1
-            } else if last == ".", end - 2 >= start, characters[end - 2] != ".", characters[end - 2] != "/" {
+            } else if last == dot, end - 2 >= start, codes[end - 2] != dot, codes[end - 2] != slash {
                 end -= 1
             } else {
                 break
@@ -351,33 +412,33 @@ public enum TerminalPathDetector {
         var lineNumber: Int?
         var columnNumber: Int?
         var displayEnd = end
-        if let colon = (start..<end).first(where: { characters[$0] == ":" && $0 + 1 < end && characters[$0 + 1].isASCIIDigit }) {
-            pathEnd = colon
-            var cursor = colon + 1
-            lineNumber = digits(from: &cursor, in: characters, limit: end)
+        if let colonIndex = (start..<end).first(where: { codes[$0] == colon && $0 + 1 < end && isDigit(codes[$0 + 1]) }) {
+            pathEnd = colonIndex
+            var cursor = colonIndex + 1
+            lineNumber = digits(from: &cursor, in: codes, limit: end)
             displayEnd = cursor
-            if cursor + 1 < end, characters[cursor] == ":", characters[cursor + 1].isASCIIDigit {
+            if cursor + 1 < end, codes[cursor] == colon, isDigit(codes[cursor + 1]) {
                 cursor += 1
-                columnNumber = digits(from: &cursor, in: characters, limit: end)
+                columnNumber = digits(from: &cursor, in: codes, limit: end)
                 displayEnd = cursor
             }
-        } else if let hash = (start..<end).last(where: { characters[$0] == "#" }), hash + 2 < end, characters[hash + 1] == "L",
-                  characters[hash + 2].isASCIIDigit {
+        } else if let hashIndex = (start..<end).last(where: { codes[$0] == hash }), hashIndex + 2 < end,
+                  codes[hashIndex + 1] == letterL, isDigit(codes[hashIndex + 2]) {
             // GitHub-style `#L12` (or `#L12-L20`, which opens at the first line).
-            pathEnd = hash
-            var cursor = hash + 2
-            lineNumber = digits(from: &cursor, in: characters, limit: end)
+            pathEnd = hashIndex
+            var cursor = hashIndex + 2
+            lineNumber = digits(from: &cursor, in: codes, limit: end)
             displayEnd = end
-        } else if !allowSpaces, end == range.upperBound, end < characters.count, characters[end] == "(" {
+        } else if !allowSpaces, end == range.upperBound, end < codes.count, codes[end] == openParenthesis {
             // `path(12,4)` or `path(12)`, as compilers on some platforms print it.
             var cursor = end + 1
-            if let number = digits(from: &cursor, in: characters, limit: characters.count) {
+            if let number = digits(from: &cursor, in: codes, limit: codes.count) {
                 var column: Int?
-                if cursor < characters.count, characters[cursor] == "," {
+                if cursor < codes.count, codes[cursor] == comma {
                     cursor += 1
-                    column = digits(from: &cursor, in: characters, limit: characters.count)
+                    column = digits(from: &cursor, in: codes, limit: codes.count)
                 }
-                if cursor < characters.count, characters[cursor] == ")" {
+                if cursor < codes.count, codes[cursor] == closeParenthesis {
                     lineNumber = number
                     columnNumber = column
                     displayEnd = cursor + 1
@@ -385,7 +446,7 @@ public enum TerminalPathDetector {
             }
         }
         guard pathEnd > start, pathEnd - start <= maximumLength else { return nil }
-        var text = String(characters[start..<pathEnd])
+        var text = String(line.characters[start..<pathEnd])
         if !allowSpaces, text.contains(where: \.isWhitespace) { return nil }
         if text.hasPrefix("file://") {
             text = URL(string: text)?.path ?? String(text.dropFirst("file://".count))
@@ -396,10 +457,14 @@ public enum TerminalPathDetector {
         return match(kind: kind, text: text, display: start..<displayEnd, line: line, lineNumber: lineNumber, column: columnNumber)
     }
 
-    private static func digits(from cursor: inout Int, in characters: [Character], limit: Int) -> Int? {
+    private static func digits(from cursor: inout Int, in codes: [UInt32], limit: Int) -> Int? {
         let start = cursor
-        while cursor < limit, characters[cursor].isASCIIDigit, cursor - start < 9 { cursor += 1 }
-        return cursor > start ? Int(String(characters[start..<cursor])) : nil
+        var value = 0
+        while cursor < limit, isDigit(codes[cursor]), cursor - start < 9 {
+            value = value * 10 + Int(codes[cursor] - 48)
+            cursor += 1
+        }
+        return cursor > start ? value : nil
     }
 
     /// File extensions that make a bare name (no `/`) read as a file: `README.md`, `Package.swift`.
@@ -471,6 +536,3 @@ public enum TerminalPathDetector {
     }
 }
 
-private extension Character {
-    var isASCIIDigit: Bool { isASCII && isNumber }
-}

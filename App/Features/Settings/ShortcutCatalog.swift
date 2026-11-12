@@ -181,6 +181,9 @@ enum ShortcutCatalog {
         MouseGesture(id: "openPath", title: "Open a Path or Link",
                      detail: "Files open in a viewer tab, web links in the browser.",
                      gesture: "⌘-click it in a terminal", systemImage: "cursorarrow.click"),
+        MouseGesture(id: "pathActions", title: "Path Actions",
+                     detail: "Open with the default app, reveal in the file tree or Finder, copy, or find the full path of a shortened one.",
+                     gesture: "Right-click a path in a terminal", systemImage: "contextualmenu.and.cursorarrow"),
     ]
 
     private static func focus(_ id: String, _ title: LocalizedStringResource, _ key: KeyEquivalent) -> AppShortcut {

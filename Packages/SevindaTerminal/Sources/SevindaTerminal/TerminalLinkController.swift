@@ -118,6 +118,8 @@ final class TerminalLinkController {
     /// Scans done and the time the last one took on the main thread (tests and diagnostics).
     private(set) var scanCount = 0
     private(set) var lastScanDuration: Duration?
+    /// How long finding the candidates of the last scan took, off the main thread.
+    private(set) var lastDetectionDuration: Duration?
     private static let signposter = OSSignposter(subsystem: "com.tekmium.sevinda", category: "TerminalLinks")
 
     init(view: SevindaTerminalView) {
@@ -194,30 +196,36 @@ final class TerminalLinkController {
         isEnabled && view.window != nil && !view.isHiddenOrHasHiddenAncestor && !view.isReplayingScrollback
     }
 
-    /// Reads the screen, finds candidates and has the paths confirmed; the overlay updates when the answer comes.
+    /// Reads the screen on the main thread (the only part that must run there), finds candidates off it and has the
+    /// paths confirmed; the overlay updates when the answer comes, keeping only links whose text is still on screen.
     func scanNow() {
         guard canScan, let resolve else { return }
         let state = Self.signposter.beginInterval("scan")
         let started = ContinuousClock.now
         let snapshot = view.screenRows()
-        let candidates = TerminalPathDetector.matches(in: snapshot.rows)
-            .filter { !$0.touchesExplicitLink && $0.kind != .elided }
-            .map { snapshot.absolute($0) }
         lastScanDuration = ContinuousClock.now - started
         scanCount += 1
         Self.signposter.endInterval("scan", state)
 
         scanGeneration += 1
         let generation = scanGeneration
-        let paths = candidates.filter { $0.kind == .path }
-        let web: [TerminalLink] = candidates.compactMap { match in
-            guard match.kind == .url, let url = URL(string: match.text), url.host != nil else { return nil }
-            return TerminalLink(match: match, target: .web(url))
-        }
         Task { @MainActor [weak self] in
-            let targets = paths.isEmpty ? [] : await resolve(paths)
+            let (candidates, detection) = await Task.detached(priority: .userInitiated) {
+                let started = ContinuousClock.now
+                let found = TerminalPathDetector.matches(in: snapshot.rows)
+                    .filter { !$0.touchesExplicitLink && $0.kind != .elided }
+                    .map { snapshot.absolute($0) }
+                return (found, ContinuousClock.now - started)
+            }.value
             guard let self, generation == self.scanGeneration, self.isEnabled else { return }
-            var found = web
+            self.lastDetectionDuration = detection
+            let paths = candidates.filter { $0.kind == .path }
+            var found: [TerminalLink] = candidates.compactMap { match in
+                guard match.kind == .url, let url = URL(string: match.text), url.host != nil else { return nil }
+                return TerminalLink(match: match, target: .web(url))
+            }
+            let targets = paths.isEmpty ? [] : await resolve(paths)
+            guard generation == self.scanGeneration, self.isEnabled else { return }
             for (match, target) in zip(paths, targets) {
                 if let target { found.append(TerminalLink(match: match, target: .file(target))) }
             }
@@ -330,13 +338,13 @@ final class TerminalLinkController {
 extension SevindaTerminalView {
     /// Rows of the screen for the detector, with up to a few rows above and below when a wrapped line continues past
     /// the screen's edge.
-    struct ScreenRows {
+    struct ScreenRows: Sendable {
         var rows: [TerminalTextRow]
         /// The scrollback row of `rows[0]`.
         var firstRow: Int
 
         /// The match with its segments in scrollback rows.
-        func absolute(_ match: TerminalPathMatch) -> TerminalPathMatch {
+        nonisolated func absolute(_ match: TerminalPathMatch) -> TerminalPathMatch {
             var match = match
             match.segments = match.segments.map { .init(row: $0.row + firstRow, columns: $0.columns) }
             return match

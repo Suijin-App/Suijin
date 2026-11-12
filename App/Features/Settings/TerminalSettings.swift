@@ -62,6 +62,26 @@ struct TerminalSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
+                Toggle("Highlight file paths", isOn: Binding(
+                    get: { model.setting(.terminalPathLinks) != "false" },
+                    set: { model.setSetting(.terminalPathLinks, $0 ? nil : "false") }
+                ))
+                Picker("Open paths with", selection: Binding(
+                    get: { TerminalLinkTrigger(rawValue: model.setting(.terminalPathLinkTrigger) ?? "") ?? .commandClick },
+                    set: { model.setSetting(.terminalPathLinkTrigger, $0 == .commandClick ? nil : $0.rawValue) }
+                )) {
+                    Text("⌘-Click").tag(TerminalLinkTrigger.commandClick)
+                    Text("Click").tag(TerminalLinkTrigger.click)
+                }
+                .pickerStyle(.segmented)
+                .disabled(model.setting(.terminalPathLinks) == "false")
+            } header: {
+                Text("Paths and Links")
+            } footer: {
+                Text("Files and web links that exist are underlined in terminal output. Open one with the chosen click, or right-click it for more actions. A plain click still selects text and reaches programs that use the mouse.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
                 FontPreview(theme: TerminalThemes.resolve(id: model.setting(.terminalTheme), isDark: colorScheme == .dark),
                             family: family, size: fontSize)
             } header: {

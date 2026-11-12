@@ -88,6 +88,18 @@ struct GeneralSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             UpdateSettingsSection()
+            Section {
+                LabeledContent {
+                    Button("Show Welcome Tour") {
+                        withAnimation(.easeOut(duration: 0.2)) { model.showOnboarding() }
+                    }
+                } label: {
+                    Text("Welcome tour")
+                    Text("A short tour of workspaces, sessions, split panes, changes and accounts.")
+                }
+            } header: {
+                Text("Help")
+            }
         }
         .formStyle(.grouped)
     }

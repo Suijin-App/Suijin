@@ -172,3 +172,105 @@ struct TerminalPathLinkTests {
         await fixture.close()
     }
 }
+
+/// The right-click menu on paths and links, and finding the full path of an elided one.
+@MainActor
+@Suite(.serialized, .timeLimit(.minutes(2)))
+struct TerminalLinkMenuTests {
+    private func titles(_ menu: NSMenu?) -> [String] {
+        menu?.items.map { $0.isSeparatorItem ? "—" : $0.title } ?? []
+    }
+
+    @Test func menusForFilesFoldersLinksElidedAndMissingPaths() async throws {
+        let fixture = try await TerminalPathLinkTests.makeFixture()
+        defer { Task { await fixture.close() } }
+        let view = fixture.view
+        let menu = TerminalLinkMenu(model: fixture.model, context: fixture.context, view: view, bases: [fixture.folder])
+        let point = CGPoint(x: 10, y: 10)
+        func request(_ text: String, kind: TerminalPathMatch.Kind, line: Int? = nil) -> TerminalLinkMenuRequest {
+            TerminalLinkMenuRequest(link: nil, candidates: [TerminalPathMatch(kind: kind, text: text, displayText: text, line: line,
+                                                                              segments: [.init(row: 0, columns: 0..<text.count)])],
+                                    point: point)
+        }
+        let terminal = ["—", "Copy", "Paste", "Select All", "Find…"]
+
+        #expect(titles(menu.menu(for: request("src/a.ts", kind: .path, line: 12))) == [
+            "Open", "Open With Default App", "Reveal in File Tree", "Show in Finder", "—", "Copy Path", "Copy Relative Path",
+            "Copy Path with Line",
+        ] + terminal)
+        #expect(titles(menu.menu(for: request("./src", kind: .path))) == [
+            "Open", "Reveal in File Tree", "Show in Finder", "—", "Copy Path", "Copy Relative Path",
+        ] + terminal)
+        #expect(titles(menu.menu(for: request("https://example.com/a", kind: .url))) == ["Open Link", "Copy Link"] + terminal)
+        #expect(titles(menu.menu(for: request("…/a.ts", kind: .elided))) == ["Find Full Path…", "Copy Text"] + terminal)
+        #expect(titles(menu.menu(for: request("src/none.ts", kind: .path))) == ["Copy Text"] + terminal)
+        #expect(menu.menu(for: request("src/a.ts", kind: .path))?.items.first { $0.title == "Copy" }?.isEnabled == false,
+                "Copy needs a selection")
+
+        // Copy Path with Line puts the absolute path and its line on the pasteboard.
+        let saved = NSPasteboard.general.string(forType: .string)
+        defer { if let saved { TerminalLinkMenu.copy(saved) } }
+        let item = try #require(menu.menu(for: request("src/a.ts", kind: .path, line: 12))?.items.first { $0.title == "Copy Path with Line" })
+        _ = item.target?.perform(item.action, with: item)
+        #expect(NSPasteboard.general.string(forType: .string)?.hasSuffix("/src/a.ts:12") == true)
+    }
+
+    @Test func rightClickOnTheScreenFindsTheCandidateUnderThePointer() async throws {
+        let fixture = try await TerminalPathLinkTests.makeFixture()
+        defer { Task { await fixture.close() } }
+        fixture.run(#"d=docs; printf '%s\n' "see $d/plan.md and …/sub/inner.md and plain words""#)
+        let plan = try #require(await fixture.waitForLink("docs/plan.md"))
+        let view = fixture.view
+        let geometry = try #require(view.cellGeometry())
+        func point(row: Int, column: Int) -> CGPoint {
+            let rect = geometry.rect(row: row - view.getTerminal().buffer.yDisp, columns: column..<(column + 1))
+            return CGPoint(x: rect.midX, y: rect.midY)
+        }
+        let segment = try #require(plan.match.segments.first)
+        let onPlan = try #require(view.linkMenuRequest(at: point(row: segment.row, column: segment.columns.lowerBound + 2)))
+        #expect(onPlan.link == plan)
+        let elidedColumn = segment.columns.upperBound + " and ".count + 2
+        let onElided = try #require(view.linkMenuRequest(at: point(row: segment.row, column: elidedColumn)))
+        #expect(onElided.link == nil && onElided.candidates.first?.kind == .elided)
+        #expect(TerminalLinkMenu.subject(of: onElided, bases: [fixture.folder]) == .elided("…/sub/inner.md"))
+        // Plain words keep the terminal's own (absent) menu.
+        let wordsColumn = segment.columns.upperBound + " and …/sub/inner.md and pl".count
+        #expect(view.linkMenuRequest(at: point(row: segment.row, column: wordsColumn)) == nil)
+    }
+
+    @Test func findFullPathListsMatchesOpensASingleOneAndSaysWhenThereIsNone() async throws {
+        let fixture = try await TerminalPathLinkTests.makeFixture()
+        defer { Task { await fixture.close() } }
+        try FileManager.default.createDirectory(at: fixture.folder.appendingPathComponent("other/sub"), withIntermediateDirectories: true)
+        try "x\n".write(to: fixture.folder.appendingPathComponent("other/sub/inner.md"), atomically: true, encoding: .utf8)
+
+        func show(_ elided: String) async throws -> (NSWindow, () -> Bool) {
+            var dismissed = false
+            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 500, height: 320), styleMask: [.titled],
+                                  backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: FullPathFinder(elided: elided, context: fixture.context) { dismissed = true }
+                .environment(fixture.model))
+            window.setFrameOrigin(CGPoint(x: -10_000, y: -10_000))
+            window.orderFrontRegardless()
+            try await Task.sleep(for: .milliseconds(600))
+            return (window, { dismissed })
+        }
+
+        // Two files end with sub/inner.md: listed, nothing opened yet.
+        let (several, severalDismissed) = try await show("…/sub/inner.md")
+        #expect(!severalDismissed())
+        #expect(fixture.model.openFiles[fixture.context]?.isEmpty ?? true)
+        several.orderOut(nil)
+
+        // One file ends with docs/plan.md: it opens at once.
+        let (single, singleDismissed) = try await show("…/docs/plan.md")
+        #expect(singleDismissed())
+        #expect(fixture.model.openFiles[fixture.context]?.contains { $0.hasSuffix("/docs/plan.md") } == true)
+        single.orderOut(nil)
+
+        let (none, noneDismissed) = try await show("…/nothing/here.md")
+        #expect(!noneDismissed())
+        none.orderOut(nil)
+    }
+}

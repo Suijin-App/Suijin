@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: Menu chuột phải và path bị cắt
-status: pending
+status: done
 depends_on: [3]
 ---
 

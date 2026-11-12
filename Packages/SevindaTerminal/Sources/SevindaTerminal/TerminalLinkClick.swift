@@ -44,3 +44,20 @@ struct TerminalLinkClick: Equatable {
         return .openAfterDoubleClickInterval(link)
     }
 }
+
+/// What a right-click found under the pointer, for the host to build a menu from.
+public struct TerminalLinkMenuRequest {
+    /// The underlined link at the pointer, when there is one.
+    public var link: TerminalLink?
+    /// Every candidate at the pointer, longest first (scrollback rows): paths not confirmed yet or missing, elided
+    /// paths, links. Empty when only `link` is known.
+    public var candidates: [TerminalPathMatch]
+    /// Where the click was, in the terminal view's coordinates (to anchor a popover).
+    public var point: CGPoint
+
+    public init(link: TerminalLink?, candidates: [TerminalPathMatch], point: CGPoint) {
+        self.link = link
+        self.candidates = candidates
+        self.point = point
+    }
+}

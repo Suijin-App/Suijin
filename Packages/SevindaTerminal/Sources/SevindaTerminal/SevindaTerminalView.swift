@@ -141,6 +141,7 @@ open class SevindaTerminalView: TerminalView {
         onInput = nil
         onSizeChange = nil
         onOpenFileLink = nil
+        linkMenuProvider = nil
         linkResolver = nil
         pendingLinkOpen?.cancel()
         pendingLinkOpen = nil
@@ -342,6 +343,31 @@ open class SevindaTerminalView: TerminalView {
             pendingLinkOpen = item
             DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: item)
         }
+    }
+
+    /// Builds the menu for a right-click on a path or link; nil keeps the terminal's own behavior there. Asked only while
+    /// link detection is on and the pointer is on a candidate.
+    public var linkMenuProvider: ((TerminalLinkMenuRequest) -> NSMenu?)?
+
+    /// A right-click (or a program reading the mouse, which never gets right-clicks from SwiftTerm) on a path or link
+    /// shows the host's menu for it; anywhere else the terminal keeps its current behavior.
+    open override func menu(for event: NSEvent) -> NSMenu? {
+        let point = convert(event.locationInWindow, from: nil)
+        if let linkMenuProvider, let request = linkMenuRequest(at: point), let menu = linkMenuProvider(request) { return menu }
+        return super.menu(for: event)
+    }
+
+    /// The link and candidates at `point` (view coordinates); nil when there is nothing there or detection is off.
+    public func linkMenuRequest(at point: CGPoint) -> TerminalLinkMenuRequest? {
+        guard linkController.isEnabled, let cell = bufferCell(at: point) else { return nil }
+        let link = linkController.link(at: point)
+        let snapshot = screenRows()
+        let candidates = TerminalPathDetector.matches(in: snapshot.rows)
+            .map { snapshot.absolute($0) }
+            .filter { $0.contains(row: cell.row, column: cell.column) && !$0.touchesExplicitLink }
+            .sorted { $0.cellCount > $1.cellCount }
+        guard link != nil || !candidates.isEmpty else { return nil }
+        return TerminalLinkMenuRequest(link: link, candidates: candidates, point: point)
     }
 
     /// Opens a link: a path through `onOpenFileLink`, a web link through `onOpenLink` or else the default browser.

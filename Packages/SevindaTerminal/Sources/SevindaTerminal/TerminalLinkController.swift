@@ -414,7 +414,7 @@ extension SevindaTerminalView {
     }
 
     /// The size and text metrics of a cell as SwiftTerm lays out the grid; nil before the view is in a window.
-    func cellGeometry() -> TerminalCellGeometry? {
+    public func cellGeometry() -> TerminalCellGeometry? {
         guard let window else { return nil }
         let scale = window.backingScaleFactor
         guard let pixels = cellSizeInPixels(source: getTerminal()), pixels.width > 0, pixels.height > 0 else { return nil }

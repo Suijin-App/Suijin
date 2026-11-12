@@ -64,6 +64,10 @@ struct TerminalPane: View {
                                                         isDirectory: target.isDirectory, line: target.line, column: target.column),
                                    in: context)
         }
+        view.linkMenuProvider = { [weak view] request in
+            guard let view else { return nil }
+            return TerminalLinkMenu(model: model, context: context, view: view, bases: bases()).menu(for: request)
+        }
         let resolver = TerminalPathResolver.shared
         view.linkResolver = { matches in
             let directories = bases()

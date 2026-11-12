@@ -1,7 +1,7 @@
 import Foundation
 import SevindaCore
 
-/// Usage of the user's own default Claude and Codex logins (the ones `claude` / `codex` use without Mercury).
+/// Usage of the user's own default Claude and Codex logins (the ones `claude` / `codex` use without Sevinda).
 ///
 /// Strictly read-only: the default Keychain item, `~/.claude` (or the user's `CLAUDE_CONFIG_DIR`), `~/.claude.json`
 /// and `~/.codex` (or `CODEX_HOME`) are only read, and tokens stay in memory for the one request.

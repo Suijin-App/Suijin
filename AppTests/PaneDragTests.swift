@@ -14,12 +14,12 @@ struct PaneDragTests {
     let folder: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-drag-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-drag-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
 
-    private var databaseURL: URL { root.appendingPathComponent("data/mercury.sqlite") }
+    private var databaseURL: URL { root.appendingPathComponent("data/sevinda.sqlite") }
 
     private func eventually(_ timeout: Duration = .seconds(5), _ condition: () async throws -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout
@@ -32,7 +32,7 @@ struct PaneDragTests {
 
     /// A split tab of three panes in a row, [s0 | s1 | s2], over session records only (no processes).
     private func makeRow() async throws -> (AppModel, SessionContext, [UUID]) {
-        let model = AppModel(store: try MercuryStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
         var ids: [UUID] = []
@@ -94,7 +94,7 @@ struct PaneDragTests {
 
         // The new arrangement comes back after a relaunch.
         #expect(await eventually {
-            let reopened = AppModel(store: try MercuryStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
+            let reopened = AppModel(store: try SevindaStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
             await reopened.load()
             return reopened.layout(containing: ids[0])?.root == layout.root
         })
@@ -142,7 +142,7 @@ struct PaneDragTests {
         #expect(model.handle(right, in: context, from: ids[0]))
         #expect(model.layout(containing: ids[0])?.panes == [ids[1], ids[0], ids[2]])
         #expect(model.activeSession(in: context) == ids[0])
-        // At the tab's edge nothing moves; the shortcut is still Mercury's, never the agent's.
+        // At the tab's edge nothing moves; the shortcut is still Sevinda's, never the agent's.
         let up = TerminalKeyRouter.route(key: arrow(NSUpArrowFunctionKey), modifiers: modifiers)
         #expect(model.handle(up, in: context, from: ids[0]))
         #expect(model.layout(containing: ids[0])?.panes == [ids[1], ids[0], ids[2]])

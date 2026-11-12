@@ -7,7 +7,7 @@ struct AppearancePicker: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        HStack(alignment: .top, spacing: MercurySpacing.xl) {
+        HStack(alignment: .top, spacing: SevindaSpacing.xl) {
             ForEach(AppAppearance.allCases) { appearance in
                 SelectableCard(isSelected: model.appearance == appearance, title: appearance.title) {
                     model.setAppearance(appearance)
@@ -18,7 +18,7 @@ struct AppearancePicker: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, MercurySpacing.xs)
+        .padding(.vertical, SevindaSpacing.xs)
     }
 }
 
@@ -53,16 +53,16 @@ struct SelectableCard<Content: View>: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: MercurySpacing.s) {
+            VStack(spacing: SevindaSpacing.s) {
                 content
-                    .clipShape(.rect(cornerRadius: MercuryRadius.control))
+                    .clipShape(.rect(cornerRadius: SevindaRadius.control))
                     .overlay {
-                        RoundedRectangle(cornerRadius: MercuryRadius.control)
+                        RoundedRectangle(cornerRadius: SevindaRadius.control)
                             .strokeBorder(.separator, lineWidth: 1)
                     }
                     .padding(3)
                     .overlay {
-                        RoundedRectangle(cornerRadius: MercuryRadius.control + 3)
+                        RoundedRectangle(cornerRadius: SevindaRadius.control + 3)
                             .strokeBorder(Color.accentColor, lineWidth: 3)
                             .opacity(isSelected ? 1 : 0)
                     }

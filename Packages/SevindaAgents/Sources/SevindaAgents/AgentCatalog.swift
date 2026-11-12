@@ -2,7 +2,7 @@ import Foundation
 import SevindaCore
 import Synchronization
 
-/// Static description of a CLI agent Mercury knows how to launch.
+/// Static description of a CLI agent Sevinda knows how to launch.
 public struct AgentDefinition: Sendable, Hashable {
     public var kind: AgentKind
     public var displayName: String
@@ -99,10 +99,10 @@ public enum AgentCatalog {
         return "/bin/zsh"
     }
 
-    static let pathMarker = "__MERCURY_PATH__"
+    static let pathMarker = "__SEVINDA_PATH__"
     /// Prints `PATH` between markers. The marker is assembled by printf, so the literal never
     /// appears in the command line itself (a shell or plugin echoing the command cannot fake it).
-    static let pathScript = "printf '__MERCURY_%s__%s__MERCURY_%s__' PATH \"$PATH\" PATH"
+    static let pathScript = "printf '__SEVINDA_%s__%s__SEVINDA_%s__' PATH \"$PATH\" PATH"
 
     /// Runs `<shell> <arguments> -c <pathScript>` and extracts `PATH` between markers, so banners,
     /// motd lines and prompt escapes printed by the user's startup files do not pollute the result.
@@ -142,7 +142,7 @@ public enum AgentCatalog {
 enum ProcessCapture {
     /// All mutable state is confined to `queue`, hence `@unchecked Sendable`.
     private final class Capture: @unchecked Sendable {
-        let queue = DispatchQueue(label: "com.tekmium.mercury.process-capture")
+        let queue = DispatchQueue(label: "com.tekmium.sevinda.process-capture")
         let pid: pid_t
         let isComplete: @Sendable (Data) -> Bool
         var buffer = Data()

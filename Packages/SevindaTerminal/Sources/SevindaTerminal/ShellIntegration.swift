@@ -1,14 +1,14 @@
 import Foundation
 
-/// Writes the startup files that let Mercury add its `claude` and `codex` functions to the user's own shell setup.
+/// Writes the startup files that let Sevinda add its `claude` and `codex` functions to the user's own shell setup.
 ///
 /// Layout under `<root>/shell-integration`:
 /// - `zsh/.zshenv`, `.zprofile`, `.zshrc`, `.zlogin`: the `ZDOTDIR` wrappers. Each sources the user's file of the same
-///   name from their real `ZDOTDIR` (`MERCURY_USER_ZDOTDIR`, else `$HOME`); `.zshrc` then sources Mercury's
+///   name from their real `ZDOTDIR` (`SEVINDA_USER_ZDOTDIR`, else `$HOME`); `.zshrc` then sources Sevinda's
 ///   functions; the last file read puts the user's `ZDOTDIR` back.
-/// - `mercury.bashrc`: the `--rcfile` for bash, reading what a login shell reads, then Mercury's functions.
+/// - `sevinda.bashrc`: the `--rcfile` for bash, reading what a login shell reads, then Sevinda's functions.
 /// - `claude-shell-function.{zsh,bash}`, `codex-shell-function.{zsh,bash}`: the account-routing functions, which read
-///   `$MERCURY_DATA_ROOT/claude-profiles/selected-host` and `$MERCURY_DATA_ROOT/codex-homes/selected-host`.
+///   `$SEVINDA_DATA_ROOT/claude-profiles/selected-host` and `$SEVINDA_DATA_ROOT/codex-homes/selected-host`.
 public enum ShellIntegration {
     /// Name of the directory created under the root passed to `install(in:)`.
     public static let directoryName = "shell-integration"
@@ -29,7 +29,7 @@ public enum ShellIntegration {
         ("zsh/zprofile.zsh", "zsh/.zprofile"),
         ("zsh/zshrc.zsh", "zsh/.zshrc"),
         ("zsh/zlogin.zsh", "zsh/.zlogin"),
-        ("mercury.bashrc", "mercury.bashrc"),
+        ("sevinda.bashrc", "sevinda.bashrc"),
         ("claude-shell-function.zsh", "claude-shell-function.zsh"),
         ("claude-shell-function.bash", "claude-shell-function.bash"),
         ("codex-shell-function.zsh", "codex-shell-function.zsh"),
@@ -64,7 +64,7 @@ public enum ShellIntegration {
 
     /// The `--rcfile` to start bash with.
     public static func bashRCFile(in integrationDirectory: URL) -> URL {
-        integrationDirectory.appending(path: "mercury.bashrc")
+        integrationDirectory.appending(path: "sevinda.bashrc")
     }
 
     private static func resourcesDirectory() throws -> URL {

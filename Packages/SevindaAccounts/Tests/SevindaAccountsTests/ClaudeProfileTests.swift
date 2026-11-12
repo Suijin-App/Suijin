@@ -25,8 +25,8 @@ import Testing
 
     @Test func rejectsProfilesNestedInDefaultClaudeHomes() throws {
         let box = try Sandbox()
-        for dataRoot in [box.claudeHome.appendingPathComponent("mercury"),
-                         box.realHome.appendingPathComponent(".config/claude/mercury")] {
+        for dataRoot in [box.claudeHome.appendingPathComponent("sevinda"),
+                         box.realHome.appendingPathComponent(".config/claude/sevinda")] {
             let store = ClaudeProfileStore(dataRoot: dataRoot, realHome: box.realHome)
             #expect(throws: AccountsError.self) { try store.validate(home: store.home(for: id)) }
         }

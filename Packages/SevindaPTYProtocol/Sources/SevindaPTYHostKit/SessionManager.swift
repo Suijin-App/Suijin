@@ -30,11 +30,11 @@ public final class SessionManager: @unchecked Sendable {
         var endedAt: Date?
     }
 
-    private static let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "sessions")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "sessions")
 
     public let configuration: Configuration
     private let onIdle: (@Sendable () -> Void)?
-    private let queue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.manager")
+    private let queue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.manager")
 
     // Queue-confined state.
     private var sessions: [String: PTYSession] = [:]
@@ -63,14 +63,14 @@ public final class SessionManager: @unchecked Sendable {
         queue.sync { self.observer = observer }
     }
 
-    /// `<dataRoot>/pty-host/sessions`, with the data root from `MERCURY_DATA_ROOT` or `~/Library/Application Support/Mercury`.
+    /// `<dataRoot>/pty-host/sessions`, with the data root from `SEVINDA_DATA_ROOT` or `~/Library/Application Support/Sevinda`.
     public static func defaultMetadataDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> URL {
         let root: URL
-        if let override = environment["MERCURY_DATA_ROOT"], !override.isEmpty {
+        if let override = environment["SEVINDA_DATA_ROOT"], !override.isEmpty {
             root = URL(fileURLWithPath: (override as NSString).expandingTildeInPath, isDirectory: true)
         } else {
             root = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Application Support/Mercury", isDirectory: true)
+                .appendingPathComponent("Library/Application Support/Sevinda", isDirectory: true)
         }
         return root.appendingPathComponent("pty-host/sessions", isDirectory: true)
     }
@@ -142,7 +142,7 @@ public final class SessionManager: @unchecked Sendable {
         if session != nil { observer?.sessionReceivedInput(sessionID, data: data) }
     }
 
-    /// Input Mercury types itself (an orchestration message); not reported as user input.
+    /// Input Sevinda types itself (an orchestration message); not reported as user input.
     public func injectInput(sessionID: String, data: Data) {
         session(sessionID)?.write(data)
     }

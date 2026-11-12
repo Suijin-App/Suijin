@@ -12,7 +12,7 @@ struct PaneLayoutTests {
     let folder: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-layout-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-layout-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
@@ -28,8 +28,8 @@ struct PaneLayoutTests {
 
     /// A model on a database file in the temporary folder, with one folder workspace and `count` session records
     /// (no processes).
-    private func makeModel(sessions count: Int, store: MercuryStore? = nil) async throws -> (AppModel, SessionContext, [UUID]) {
-        let store = try store ?? MercuryStore(url: root.appendingPathComponent("data/mercury.sqlite"))
+    private func makeModel(sessions count: Int, store: SevindaStore? = nil) async throws -> (AppModel, SessionContext, [UUID]) {
+        let store = try store ?? SevindaStore(url: root.appendingPathComponent("data/sevinda.sqlite"))
         let model = AppModel(store: store, dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
@@ -128,7 +128,7 @@ struct PaneLayoutTests {
 
         // A session deleted while the app was closed loses its pane; the others keep theirs.
         try model.store.deleteSession(id: ids[2])
-        let reopened = AppModel(store: try MercuryStore(url: root.appendingPathComponent("data/mercury.sqlite")),
+        let reopened = AppModel(store: try SevindaStore(url: root.appendingPathComponent("data/sevinda.sqlite")),
                                 dataRoot: root.appendingPathComponent("data"))
         await reopened.load()
         let restored = try #require(reopened.paneLayouts[layoutID])
@@ -139,7 +139,7 @@ struct PaneLayoutTests {
 
         // With one pane left the stored layout goes, and the tab is a plain one again.
         try reopened.store.deleteSession(id: ids[0])
-        let third = AppModel(store: try MercuryStore(url: root.appendingPathComponent("data/mercury.sqlite")),
+        let third = AppModel(store: try SevindaStore(url: root.appendingPathComponent("data/sevinda.sqlite")),
                              dataRoot: root.appendingPathComponent("data"))
         await third.load()
         #expect(third.paneLayouts.isEmpty)
@@ -150,7 +150,7 @@ struct PaneLayoutTests {
     /// ⌘D and ⇧⌘D on real shells: the new pane runs the focused pane's agent, next to it, and a tab holds ten panes.
     @Test func splittingAddsPanesUpToTen() async throws {
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         await model.runtimes.bootstrap()

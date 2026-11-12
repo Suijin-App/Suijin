@@ -20,7 +20,7 @@ final class PTYChannel: @unchecked Sendable {
 
     private let queue: DispatchQueue
     private var fd: Int32
-    /// The parent's slave descriptor, held until the master closes (see `mercury_terminal_spawn`).
+    /// The parent's slave descriptor, held until the master closes (see `sevinda_terminal_spawn`).
     private var slaveFD: Int32
     private var readSource: DispatchSourceRead?
     private var writeSource: DispatchSourceWrite?
@@ -67,12 +67,12 @@ final class PTYChannel: @unchecked Sendable {
         self.fd = fd
         self.slaveFD = slaveFD
         self.ttyDevice = ttyDevice
-        queue = DispatchQueue(label: "mercury.terminal.pty.\(pid)", qos: .userInteractive)
+        queue = DispatchQueue(label: "sevinda.terminal.pty.\(pid)", qos: .userInteractive)
     }
 
     // MARK: Spawning
 
-    /// Starts `launch.executable` under a new PTY through `mercury_terminal_spawn` (C): the child is a session leader
+    /// Starts `launch.executable` under a new PTY through `sevinda_terminal_spawn` (C): the child is a session leader
     /// with the PTY as its controlling terminal, default signal dispositions, an empty signal mask and no descriptors
     /// besides 0, 1 and 2. Exec failures are reported as errors instead of an exit code 127.
     static func spawn(_ launch: TerminalLaunch, size: TerminalSize) throws -> PTYChannel {
@@ -96,11 +96,11 @@ final class PTYChannel: @unchecked Sendable {
         var master: Int32 = -1
         var slave: Int32 = -1
         var stage: Int32 = 0
-        let error = mercury_terminal_spawn(launch.executable, argv.pointer, envp.pointer, launch.cwd,
+        let error = sevinda_terminal_spawn(launch.executable, argv.pointer, envp.pointer, launch.cwd,
                                            UInt16(clamping: size.rows), UInt16(clamping: size.cols),
                                            &pid, &master, &slave, &stage)
         guard error == 0 else {
-            if stage == Int32(MERCURY_TERMINAL_STAGE_CHDIR) { throw TerminalEngineError.invalidWorkingDirectory(launch.cwd) }
+            if stage == Int32(SEVINDA_TERMINAL_STAGE_CHDIR) { throw TerminalEngineError.invalidWorkingDirectory(launch.cwd) }
             throw TerminalEngineError.spawnFailed(error)
         }
         return PTYChannel(pid: pid, fd: master, slaveFD: slave, ttyDevice: slaveDevice(of: slave))

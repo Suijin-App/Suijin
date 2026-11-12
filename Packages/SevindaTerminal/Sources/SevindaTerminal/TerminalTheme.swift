@@ -128,18 +128,18 @@ public struct TerminalTheme: Identifiable, Hashable, Sendable {
     }
 }
 
-/// The built-in themes. Mercury Light and Mercury Dark are the defaults for each appearance. The other palettes are
+/// The built-in themes. Sevinda Light and Sevinda Dark are the defaults for each appearance. The other palettes are
 /// well-known schemes whose licenses allow redistributing the colors; each entry names its source and license.
 public enum TerminalThemes {
-    public static let mercuryLight = TerminalTheme(
-        id: "mercury-light", name: "Mercury Light", appearance: .light,
+    public static let sevindaLight = TerminalTheme(
+        id: "sevinda-light", name: "Sevinda Light", appearance: .light,
         // System-like hues darkened to read on a near-white background.
         background: 0xFAFAFB, foreground: 0x1D1D1F, cursor: 0x007AFF, selection: 0xB3D7FF,
         ansi: [0x1D1D1F, 0xC4262E, 0x1F7A3A, 0x9A5B00, 0x0B5CD5, 0x9B2393, 0x0E7C86, 0x6E6E73,
                0x6E6E73, 0xB3001B, 0x248A3D, 0xB25000, 0x0040DD, 0xAD3BA8, 0x0071A4, 0x8E8E93])
 
-    public static let mercuryDark = TerminalTheme(
-        id: "mercury-dark", name: "Mercury Dark", appearance: .dark,
+    public static let sevindaDark = TerminalTheme(
+        id: "sevinda-dark", name: "Sevinda Dark", appearance: .dark,
         background: 0x1C1C1F, foreground: 0xD8DEE9, cursor: 0x0A84FF, selection: 0x3F638B,
         ansi: [0x3B4252, 0xE06C75, 0x98C379, 0xE5C07B, 0x61AFEF, 0xC678DD, 0x56B6C2, 0xD8DEE9,
                0x5C6370, 0xFF7A85, 0xB5E08F, 0xFFD88A, 0x82C4FF, 0xDD95F0, 0x7FD6E0, 0xFFFFFF])
@@ -233,8 +233,8 @@ public enum TerminalThemes {
                0x414868, 0xF7768E, 0x9ECE6A, 0xE0AF68, 0x7AA2F7, 0xBB9AF7, 0x7DCFFF, 0xC0CAF5])
 
     public static let all: [TerminalTheme] = [
-        mercuryLight, solarizedLight, githubLight, oneLight, tomorrow, gruvboxLight,
-        mercuryDark, solarizedDark, githubDark, oneDark, tomorrowNight, gruvboxDark, nord, dracula, tokyoNight,
+        sevindaLight, solarizedLight, githubLight, oneLight, tomorrow, gruvboxLight,
+        sevindaDark, solarizedDark, githubDark, oneDark, tomorrowNight, gruvboxDark, nord, dracula, tokyoNight,
     ]
 
     public static var light: [TerminalTheme] { all.filter { $0.appearance == .light } }
@@ -242,9 +242,9 @@ public enum TerminalThemes {
 
     public static func theme(id: String) -> TerminalTheme? { all.first { $0.id == id } }
 
-    /// The theme with `id`; an unknown identifier falls back to Mercury's default for the appearance.
+    /// The theme with `id`; an unknown identifier falls back to Sevinda's default for the appearance.
     public static func resolve(id: String?, isDark: Bool) -> TerminalTheme {
-        id.flatMap(theme(id:)) ?? (isDark ? mercuryDark : mercuryLight)
+        id.flatMap(theme(id:)) ?? (isDark ? sevindaDark : sevindaLight)
     }
 
     /// Whether the app currently shows the dark appearance, for terminals created outside a view update.

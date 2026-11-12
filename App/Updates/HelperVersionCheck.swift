@@ -5,11 +5,11 @@ import os
 
 /// Hands the PTY host over to the new version after an update.
 ///
-/// Sparkle replaces Mercury.app (and with it Contents/MacOS/SevindaPTYHost), but the helper launchd started from the
+/// Sparkle replaces Sevinda.app (and with it Contents/MacOS/SevindaPTYHost), but the helper launchd started from the
 /// old bundle keeps running, so the updated app would talk to the old helper. At launch this check compares the app's
 /// `CFBundleVersion` with the build the helper reports in its handshake. On a mismatch with no session running it asks
 /// the helper to exit, and launchd starts the new binary on the next connection. A helper that still runs sessions is
-/// left alone: it exits by itself once those sessions end and Mercury disconnects, and the next launch gets the new one.
+/// left alone: it exits by itself once those sessions end and Sevinda disconnects, and the next launch gets the new one.
 /// A helper that speaks an older but compatible protocol is handled the same way; until it is replaced the app uses
 /// only that protocol's features.
 @MainActor
@@ -27,7 +27,7 @@ enum HelperVersionCheck {
         case unavailable(String)
     }
 
-    private static let logger = Logger(subsystem: "com.tekmium.mercury", category: "helper-version")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda", category: "helper-version")
 
     /// Runs the check once. Call it after the sessions bootstrap registered the helper.
     @discardableResult

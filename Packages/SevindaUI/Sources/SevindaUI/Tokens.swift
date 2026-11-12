@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Mercury design tokens, copied from CapstioUI with a Mercury brand color;
+/// Sevinda design tokens, copied from CapstioUI with a Sevinda brand color;
 /// each color has a light/dark pair and follows the system appearance automatically.
-public enum MercuryColor {
-    /// Mercury brand: a quicksilver teal, darker in light mode for contrast on white.
+public enum SevindaColor {
+    /// Sevinda brand: a quicksilver teal, darker in light mode for contrast on white.
     public static let brand = dynamic(light: 0x0B7A84, dark: 0x3CC4CC)
     public static let accent = Color.accentColor
 
@@ -33,7 +33,7 @@ public enum MercuryColor {
     }
 }
 
-public enum MercurySpacing {
+public enum SevindaSpacing {
     public static let xs: CGFloat = 4
     public static let s: CGFloat = 8
     public static let m: CGFloat = 12
@@ -41,13 +41,13 @@ public enum MercurySpacing {
     public static let xl: CGFloat = 24
 }
 
-public enum MercuryRadius {
+public enum SevindaRadius {
     public static let control: CGFloat = 7
     public static let card: CGFloat = 10
     public static let sheet: CGFloat = 12
 }
 
-public enum MercuryFont {
+public enum SevindaFont {
     public static let mono = Font.system(.body, design: .monospaced)
     public static let monoSmall = Font.system(.caption, design: .monospaced)
     public static let statValue = Font.system(size: 24, weight: .semibold).monospacedDigit()

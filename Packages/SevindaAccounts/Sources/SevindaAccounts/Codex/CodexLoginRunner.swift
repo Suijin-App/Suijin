@@ -9,7 +9,7 @@ import Foundation
 /// because `codex login` revokes and deletes the current credentials first: only a finished login replaces them.
 public struct CodexLoginRunner: Sendable {
     public static let timeout: Duration = .seconds(600)
-    static let stagingName = ".mercury-login-staging"
+    static let stagingName = ".sevinda-login-staging"
     static let authURLMarker = "navigate to this url to authenticate:"
 
     let executable: URL

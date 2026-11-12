@@ -10,11 +10,11 @@ import Testing
 @Suite(.serialized)
 struct TerminalFocusTests {
     @Test func clickedSessionTakesTheKeyboardFromTheList() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-focus-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-focus-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

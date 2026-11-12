@@ -1,17 +1,17 @@
 import Foundation
 
-/// Where Mercury keeps its state. Tests and isolated runs point `dataRoot` elsewhere.
-public enum MercuryPaths {
+/// Where Sevinda keeps its state. Tests and isolated runs point `dataRoot` elsewhere.
+public enum SevindaPaths {
     public static var dataRoot: URL {
-        if let override = ProcessInfo.processInfo.environment["MERCURY_DATA_ROOT"], !override.isEmpty {
+        if let override = ProcessInfo.processInfo.environment["SEVINDA_DATA_ROOT"], !override.isEmpty {
             return URL(fileURLWithPath: override, isDirectory: true)
         }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return support.appendingPathComponent("Mercury", isDirectory: true)
+        return support.appendingPathComponent("Sevinda", isDirectory: true)
     }
 
     public static func database(in root: URL) -> URL {
-        root.appendingPathComponent("mercury.sqlite")
+        root.appendingPathComponent("sevinda.sqlite")
     }
 }
 

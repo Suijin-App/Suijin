@@ -7,7 +7,7 @@ import os
 import Synchronization
 import UserNotifications
 
-private let logger = Logger(subsystem: "com.tekmium.mercury", category: "orchestration")
+private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "orchestration")
 
 /// The app's link to the orchestration broker of its data root, which lives in the PTY host helper.
 ///

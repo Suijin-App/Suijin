@@ -5,15 +5,15 @@ import SevindaTerminal
 import Testing
 @testable import Sevinda
 
-/// Mercury's own stats as the session runtime records them: agent starts count, shells do not, and working time is
+/// Sevinda's own stats as the session runtime records them: agent starts count, shells do not, and working time is
 /// the sum of the agent's `running` intervals. Uses an in-memory store and never starts an agent CLI.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(1)))
-struct MercuryStatsTests {
+struct SevindaStatsTests {
     private func makeModel() throws -> (AppModel, URL) {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-stats-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-stats-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        return (AppModel(store: try MercuryStore.inMemory(), dataRoot: root), root)
+        return (AppModel(store: try SevindaStore.inMemory(), dataRoot: root), root)
     }
 
     @Test func agentStartsCountButShellsDoNot() async throws {
@@ -22,7 +22,7 @@ struct MercuryStatsTests {
         await model.runtimes.countStart(of: .claude)
         await model.runtimes.countStart(of: .codex)
         await model.runtimes.countStart(of: .shell)
-        let stats = try model.store.mercuryStats()
+        let stats = try model.store.sevindaStats()
         #expect(stats.agentsSpawned == 2)
         #expect(stats.trackingSince != nil)
     }
@@ -38,7 +38,7 @@ struct MercuryStatsTests {
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         let id = try #require(await model.runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil))
         await model.closeSession(id)
-        #expect(try model.store.mercuryStats().agentsSpawned == 0)
+        #expect(try model.store.sevindaStats().agentsSpawned == 0)
     }
 
     @Test func workingIntervalsAddUp() async throws {
@@ -55,11 +55,11 @@ struct MercuryStatsTests {
         #expect(model.runtimes.trackWork(runtime, .waitingForInput, at: start.addingTimeInterval(40)) == nil)
         model.runtimes.trackWork(runtime, .running, at: start.addingTimeInterval(100))
         await model.runtimes.trackWork(runtime, .exited(0), at: start.addingTimeInterval(112))?.value
-        #expect(try model.store.mercuryStats().agentWorkSeconds == 42)
+        #expect(try model.store.sevindaStats().agentWorkSeconds == 42)
 
         let shell = SessionRuntime(id: UUID(), agent: .shell, terminal: TerminalSession(engine: SwiftTermEngine()))
         model.runtimes.trackWork(shell, .running, at: start)
         #expect(model.runtimes.trackWork(shell, .idle, at: start.addingTimeInterval(60)) == nil)
-        #expect(try model.store.mercuryStats().agentWorkSeconds == 42)
+        #expect(try model.store.sevindaStats().agentWorkSeconds == 42)
     }
 }

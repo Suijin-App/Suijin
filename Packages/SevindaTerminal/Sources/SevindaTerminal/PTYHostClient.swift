@@ -6,7 +6,7 @@ import Synchronization
 
 /// Why a call to the PTY host failed.
 public enum PTYHostClientError: Error, LocalizedError, Equatable, Sendable {
-    /// The user has to allow Mercury's background item in System Settings > General > Login Items.
+    /// The user has to allow Sevinda's background item in System Settings > General > Login Items.
     case requiresApproval
     /// The LaunchAgent plist is missing from the app bundle.
     case notFound
@@ -23,8 +23,8 @@ public enum PTYHostClientError: Error, LocalizedError, Equatable, Sendable {
     public var errorDescription: String? {
         switch self {
         case .requiresApproval:
-            "Mercury's terminal host needs approval in System Settings > General > Login Items."
-        case .notFound: "The terminal host is missing from the Mercury app bundle."
+            "Sevinda's terminal host needs approval in System Settings > General > Login Items."
+        case .notFound: "The terminal host is missing from the Sevinda app bundle."
         case .registrationFailed(let reason): "Could not register the terminal host: \(reason)"
         case .protocolMismatch(let host, let client):
             "The running terminal host speaks protocol \(host), this app needs \(client). Quit sessions to update it."
@@ -48,7 +48,7 @@ public enum PTYHostClientError: Error, LocalizedError, Equatable, Sendable {
         NSXPCConnection(machServiceName: PTYHostConstants.machServiceName, options: [])
     })
 
-    private nonisolated static let logger = Logger(subsystem: "com.tekmium.mercury", category: "pty-host-client")
+    private nonisolated static let logger = Logger(subsystem: "com.tekmium.sevinda", category: "pty-host-client")
 
     /// Applies to every request that expects a reply.
     public var requestTimeout: TimeInterval = 10

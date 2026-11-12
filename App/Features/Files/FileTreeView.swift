@@ -26,7 +26,7 @@ struct FileTreeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: MercurySpacing.s) {
+            HStack(spacing: SevindaSpacing.s) {
                 TextField("Filter", text: $filter, prompt: Text("Filter files"))
                     .textFieldStyle(.roundedBorder)
                 Button { tree?.reloadAll() } label: { Image(systemName: "arrow.clockwise") }
@@ -34,7 +34,7 @@ struct FileTreeView: View {
                     .help(Text("Reload the folder"))
                     .accessibilityLabel(Text("Reload"))
             }
-            .padding(MercurySpacing.s)
+            .padding(SevindaSpacing.s)
             ScrollViewReader { reader in
                 List(selection: $selection) {
                     if filter.trimmingCharacters(in: .whitespaces).isEmpty {

@@ -86,7 +86,7 @@ import Testing
 @Suite struct GitHubCLIWrapperTests {
     /// A fake `gh` that answers from the arguments it receives and records them.
     private func fakeGH(_ body: String) throws -> (cli: GitHubCLI, dir: URL) {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-gh-\(UUID().uuidString)", isDirectory: true)
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-gh-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let script = dir.appendingPathComponent("gh")
         try ("#!/bin/sh\nprintf '%s\\n' \"$@\" > \"\(dir.path)/args\"\n" + body).write(to: script, atomically: true, encoding: .utf8)
@@ -128,7 +128,7 @@ import Testing
     @Test func createPassesBodyThroughFileAndReturnsURL() async throws {
         let (cli, dir) = try fakeGH("""
         while [ $# -gt 0 ]; do
-          if [ "$1" = "--body-file" ]; then cp "$2" "\(FileManager.default.temporaryDirectory.path)/mercury-gh-body-copy"; fi
+          if [ "$1" = "--body-file" ]; then cp "$2" "\(FileManager.default.temporaryDirectory.path)/sevinda-gh-body-copy"; fi
           shift
         done
         echo 'https://github.com/acme/app/pull/43'
@@ -142,7 +142,7 @@ import Testing
         #expect(args.prefix(3) == ["pr", "create", "--title"])
         #expect(args[3] == "-Leading dash title")
         #expect(args.contains("--draft") && args.contains("--head") && args.contains("--base"))
-        let copy = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-gh-body-copy")
+        let copy = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-gh-body-copy")
         defer { try? FileManager.default.removeItem(at: copy) }
         #expect(try String(contentsOf: copy, encoding: .utf8) == body)
     }

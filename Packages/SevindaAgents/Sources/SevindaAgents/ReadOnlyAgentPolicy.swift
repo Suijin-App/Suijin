@@ -1,8 +1,7 @@
 import Foundation
 
 /// Command lines that run `claude` and `codex` headless for text generation (commit messages, pull request text)
-/// with no way to change files. Flags verified against Claude Code 2.1.322 and codex-cli 0.166.0; see
-/// `plans/261110-2104-mercury-v2-review-git-orchestration/phase-03-commit-and-push.md`, "Verified flags".
+/// with no way to change files. Flags verified against Claude Code 2.1.322 and codex-cli 0.166.0.
 ///
 /// The prompt carries all the context the agent needs (the diff, recent commits), so neither agent gets a tool that
 /// writes, runs commands or reaches the network.
@@ -59,11 +58,11 @@ public enum ReadOnlyAgentPolicy {
         ]
     }
 
-    /// Variables that make a CLI agent think it runs inside another agent session (when Mercury itself was started
-    /// from one), or that point it at Mercury's interactive hook files. They are removed for headless runs.
+    /// Variables that make a CLI agent think it runs inside another agent session (when Sevinda itself was started
+    /// from one), or that point it at Sevinda's interactive hook files. They are removed for headless runs.
     static let isolatedVariables: Set<String> = [
-        "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT", "MERCURY_SESSION_ID", "MERCURY_SESSION_TOKEN",
-        "MERCURY_HOOK_EVENTS",
+        "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT", "SEVINDA_SESSION_ID", "SEVINDA_SESSION_TOKEN",
+        "SEVINDA_HOOK_EVENTS",
         "CODEX_SANDBOX", "CODEX_SANDBOX_NETWORK_DISABLED", "CODEX_THREAD_ID",
     ]
 }

@@ -182,10 +182,10 @@ import Testing
     }
 }
 
-/// Real `claude -p` and `codex exec` on a throwaway repository (opt-in: `MERCURY_HEADLESS_SMOKE=1`). Each agent runs
+/// Real `claude -p` and `codex exec` on a throwaway repository (opt-in: `SEVINDA_HEADLESS_SMOKE=1`). Each agent runs
 /// twice: once with the real commit prompt, once told to write files. The whole tree, `.git` included, must hash the
 /// same before and after. Uses the user's own CLI login, as typing the command in a terminal would.
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_HEADLESS_SMOKE"] == "1"), .serialized)
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_HEADLESS_SMOKE"] == "1"), .serialized)
 struct HeadlessReadOnlySmokeTests {
     @Test(arguments: [AgentKind.claude, .codex])
     func generationDoesNotModifyTheRepository(agent: AgentKind) async throws {
@@ -203,7 +203,7 @@ struct HeadlessReadOnlySmokeTests {
 
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = path
-        let noDaemon = ProcessInfo.processInfo.environment["MERCURY_CODEX_NO_DAEMON"] == "1"
+        let noDaemon = ProcessInfo.processInfo.environment["SEVINDA_CODEX_NO_DAEMON"] == "1"
         let diff = "diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-hello\n+hello world\n"
         let prompts = [
             CommitMessagePrompt.make(stagedDiff: diff, recentSubjects: ["initial"]),

@@ -59,7 +59,7 @@ public enum HeadlessGenerationError: Error, LocalizedError, Equatable, Sendable 
 public enum HeadlessTextGenerator {
     public static func generate(_ request: HeadlessGenerationRequest) async throws -> String {
         let outputFile = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mercury-headless-\(UUID().uuidString).txt")
+            .appendingPathComponent("sevinda-headless-\(UUID().uuidString).txt")
         defer { try? FileManager.default.removeItem(at: outputFile) }
         let arguments: [String]
         switch request.agent {

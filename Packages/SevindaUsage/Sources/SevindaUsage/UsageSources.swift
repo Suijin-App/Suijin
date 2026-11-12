@@ -11,7 +11,7 @@ public struct UsageSourceSet: Sendable, Hashable {
     }
 
     /// The user's own logs (`~/.claude/projects`, `$CLAUDE_CONFIG_DIR/projects`, `~/.codex/sessions`,
-    /// `$CODEX_HOME/sessions`) plus each Mercury-managed home: a Claude home is a `CLAUDE_CONFIG_DIR`
+    /// `$CODEX_HOME/sessions`) plus each Sevinda-managed home: a Claude home is a `CLAUDE_CONFIG_DIR`
     /// (`<home>/projects`), a Codex home is a `CODEX_HOME` (`<home>/sessions`). Duplicates are removed later, after
     /// symlinks are resolved.
     public static func standard(

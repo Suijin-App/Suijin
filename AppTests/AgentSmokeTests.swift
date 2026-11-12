@@ -8,9 +8,9 @@ import Testing
 
 /// Starts the real `claude` and `codex` CLIs (no prompt, so nothing is sent to a model) through the app runtime and
 /// the PTY host, with the user's own login: the TUI must draw, and Claude's SessionStart hook must reach the events
-/// file. Opt-in: `TEST_RUNNER_MERCURY_AGENT_SMOKE=1`. Screen text is checked, never printed (it can show an email).
+/// file. Opt-in: `TEST_RUNNER_SEVINDA_AGENT_SMOKE=1`. Screen text is checked, never printed (it can show an email).
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["MERCURY_AGENT_SMOKE"] == "1"))
+@Suite(.serialized, .timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_AGENT_SMOKE"] == "1"))
 struct AgentSmokeTests {
     private func eventually(_ timeout: Duration, _ condition: () -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout
@@ -23,14 +23,14 @@ struct AgentSmokeTests {
 
     @Test(arguments: [AgentKind.claude, .codex])
     func agentStartsInTheHostAndDraws(_ agent: AgentKind) async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-smoke-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-smoke-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         // A git repository, as agents mostly run in worktrees.
         _ = try await GitRunner().run(["init", "-b", "main"], in: folder)
         let dataRoot = root.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: dataRoot)
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: dataRoot)
         await model.addWorkspace(at: folder)
         await model.runtimes.bootstrap()
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)

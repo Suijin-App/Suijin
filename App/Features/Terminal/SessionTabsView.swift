@@ -423,7 +423,7 @@ struct NewSessionSheet: View {
             Form {
                 if isFolder, !model.sessions(in: context).isEmpty {
                     Label("Another session already works in this folder. Agents here edit the same files.", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(MercuryColor.warningText)
+                        .foregroundStyle(SevindaColor.warningText)
                 }
                 AgentLaunchFields(agent: $agent, accountID: $accountID, prompt: $prompt, allowsShell: true)
             }
@@ -439,7 +439,7 @@ struct NewSessionSheet: View {
                 .glassProminentButtonStyle()
                 .keyboardShortcut(.defaultAction)
             }
-            .padding(MercurySpacing.l)
+            .padding(SevindaSpacing.l)
         }
         .frame(width: 460)
     }
@@ -459,8 +459,8 @@ private struct NoSessionView: View {
     static let cornerRadius: CGFloat = 28
 
     var body: some View {
-        VStack(spacing: MercurySpacing.xl) {
-            VStack(spacing: MercurySpacing.s) {
+        VStack(spacing: SevindaSpacing.xl) {
+            VStack(spacing: SevindaSpacing.s) {
                 Text("Start a Session").font(.title2.weight(.semibold))
                 if let directory = model.directory(of: context) {
                     Label {
@@ -475,8 +475,8 @@ private struct NoSessionView: View {
                     .frame(maxWidth: 520)
                 }
             }
-            GlassGroup(spacing: MercurySpacing.m) {
-                HStack(spacing: MercurySpacing.m) {
+            GlassGroup(spacing: SevindaSpacing.m) {
+                HStack(spacing: SevindaSpacing.m) {
                     card(.claude, title: "Claude Code", detail: detail(for: .claude))
                     card(.codex, title: "Codex", detail: detail(for: .codex))
                     card(.shell, title: "Shell", detail: Text(verbatim: "⌥⌘T"))
@@ -484,7 +484,7 @@ private struct NoSessionView: View {
             }
             .frame(maxWidth: 560)
         }
-        .padding(MercurySpacing.xl)
+        .padding(SevindaSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -501,7 +501,7 @@ private struct NoSessionView: View {
         let button = Button {
             Task { await model.runtimes.start(in: context, agent: agent, accountID: nil, prompt: nil) }
         } label: {
-            VStack(spacing: MercurySpacing.s) {
+            VStack(spacing: SevindaSpacing.s) {
                 Group {
                     if agent == .shell {
                         Image(systemName: "terminal").font(.system(size: 30, weight: .regular))
@@ -514,8 +514,8 @@ private struct NoSessionView: View {
                 detail.font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, MercurySpacing.xl)
-            .padding(.horizontal, MercurySpacing.m)
+            .padding(.vertical, SevindaSpacing.xl)
+            .padding(.horizontal, SevindaSpacing.m)
             // Real interactive Liquid Glass in a generously rounded card (system button styles keep a small radius
             // at this size); a plain control background before macOS 26.
             .floatingGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous), interactive: true)
@@ -530,7 +530,7 @@ private struct NoSessionView: View {
 /// Shown while a session that kept running in the background comes back after launch.
 private struct ReconnectingView: View {
     var body: some View {
-        VStack(spacing: MercurySpacing.m) {
+        VStack(spacing: SevindaSpacing.m) {
             ProgressView().controlSize(.regular)
             Text("Reconnecting to session…").font(.callout).foregroundStyle(.secondary)
         }
@@ -551,10 +551,10 @@ private struct EndedSessionView: View {
     private var failed: Bool { record.state == .failed || (record.exitCode ?? 0) != 0 }
 
     var body: some View {
-        VStack(spacing: MercurySpacing.l) {
-            VStack(spacing: MercurySpacing.m) {
+        VStack(spacing: SevindaSpacing.l) {
+            VStack(spacing: SevindaSpacing.m) {
                 logo
-                VStack(spacing: MercurySpacing.xs) {
+                VStack(spacing: SevindaSpacing.xs) {
                     Text(verbatim: model.runtimes.displayTitle(of: record))
                         .font(.title2.weight(.semibold))
                         .lineLimit(1)
@@ -563,11 +563,11 @@ private struct EndedSessionView: View {
                 }
                 details
             }
-            .padding(MercurySpacing.xl)
+            .padding(SevindaSpacing.xl)
             .frame(maxWidth: .infinity)
             .floatingGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-            GlassGroup(spacing: MercurySpacing.m) {
-                HStack(spacing: MercurySpacing.m) {
+            GlassGroup(spacing: SevindaSpacing.m) {
+                HStack(spacing: SevindaSpacing.m) {
                     action("Start Again", systemImage: "arrow.clockwise", tint: .accentColor) {
                         Task { await model.startAgain(record) }
                     }
@@ -579,7 +579,7 @@ private struct EndedSessionView: View {
             }
         }
         .frame(maxWidth: 440)
-        .padding(MercurySpacing.xl)
+        .padding(SevindaSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -621,7 +621,7 @@ private struct EndedSessionView: View {
 
     /// How long it ran, when it ended and its folder.
     private var details: some View {
-        Grid(alignment: .leading, horizontalSpacing: MercurySpacing.m, verticalSpacing: MercurySpacing.xs) {
+        Grid(alignment: .leading, horizontalSpacing: SevindaSpacing.m, verticalSpacing: SevindaSpacing.xs) {
             if let ended = record.endedAt {
                 GridRow {
                     Text("Ran for").foregroundStyle(.secondary)
@@ -653,7 +653,7 @@ private struct EndedSessionView: View {
                 .font(.headline)
                 .foregroundStyle(tint == nil ? Color.primary : Color.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, MercurySpacing.m)
+                .padding(.vertical, SevindaSpacing.m)
                 .floatingGlass(in: Capsule(), tint: tint, interactive: true)
                 .contentShape(Capsule())
         }

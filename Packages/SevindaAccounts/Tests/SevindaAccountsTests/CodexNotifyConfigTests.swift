@@ -4,8 +4,8 @@ import Testing
 
 @Suite struct CodexNotifyConfigTests {
     @Test func hookAloneWithoutAUserNotify() {
-        #expect(CodexNotifyConfig.launchArguments(cli: "/Apps/Mercury.app/Contents/Helpers/mercury", config: nil)
-                == ["-c", #"notify=["/Apps/Mercury.app/Contents/Helpers/mercury","hook","codex-notify"]"#])
+        #expect(CodexNotifyConfig.launchArguments(cli: "/Apps/Sevinda.app/Contents/Helpers/sevinda", config: nil)
+                == ["-c", #"notify=["/Apps/Sevinda.app/Contents/Helpers/sevinda","hook","codex-notify"]"#])
         #expect(CodexNotifyConfig.launchArguments(cli: "/m", config: "model = \"x\"\n[tui]\nnotify = [\"no\"]\n")
                 == ["-c", #"notify=["/m","hook","codex-notify"]"#], "a notify inside a table is not the top-level one")
     }
@@ -24,8 +24,8 @@ import Testing
         #expect(CodexNotifyConfig.notifyCommand(in: multiline) == ["say", "done \"now\""])
     }
 
-    @Test func neverChainsMercuryTwice() {
-        let config = #"notify = ["/old/mercury", "hook", "codex-notify", "--", "/bin/echo"]"#
+    @Test func neverChainsSevindaTwice() {
+        let config = #"notify = ["/old/sevinda", "hook", "codex-notify", "--", "/bin/echo"]"#
         #expect(CodexNotifyConfig.launchArguments(cli: "/m", config: config) == ["-c", #"notify=["/m","hook","codex-notify"]"#])
     }
 

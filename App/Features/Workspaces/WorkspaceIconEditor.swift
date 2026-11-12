@@ -18,8 +18,8 @@ struct WorkspaceIconEditor: View {
 
     var body: some View {
         if let workspace = model.workspace(workspaceID) {
-            VStack(alignment: .leading, spacing: MercurySpacing.m) {
-                HStack(spacing: MercurySpacing.m) {
+            VStack(alignment: .leading, spacing: SevindaSpacing.m) {
+                HStack(spacing: SevindaSpacing.m) {
                     WorkspaceBadge(workspace: workspace, imageDirectory: model.workspaceIconDirectory, size: 40)
                     VStack(alignment: .leading) {
                         Text(verbatim: workspace.name).font(.headline).lineLimit(1)
@@ -80,7 +80,7 @@ struct WorkspaceIconEditor: View {
                     Button("Reset") { set(icon: nil, color: nil) }
                 }
             }
-            .padding(MercurySpacing.l)
+            .padding(SevindaSpacing.l)
             .frame(width: 340)
             .task { githubOwner = await AppModel.githubOwner(of: workspace) }
         }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Mercury → "Check for Updates…", right under "About Mercury".
+/// Sevinda → "Check for Updates…", right under "About Sevinda".
 struct UpdateCommands: Commands {
     var updater: UpdaterController = .shared
 
@@ -47,13 +47,13 @@ struct UpdateSettingsSection: View {
     @ViewBuilder private var footer: some View {
         switch updater.state {
         case .notConfigured:
-            Text("This build has no update signing key, so it does not check for updates.")
+            Text("Updates are not set up for this build yet, so it does not check for updates.")
                 .font(.caption).foregroundStyle(.secondary)
         case .failed(let message):
             Text("Updates are unavailable: \(message)")
                 .font(.caption).foregroundStyle(.secondary)
         case .idle, .running:
-            Text("Updates are verified with Mercury's signing key before they install. Running sessions keep going while Mercury restarts.")
+            Text("Updates are verified with Sevinda's signing key before they install. Running sessions keep going while Sevinda restarts.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

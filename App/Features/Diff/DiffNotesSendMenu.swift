@@ -98,7 +98,7 @@ struct DiffNotesSettingsSection: View {
         } header: {
             Text("Diff Notes")
         } footer: {
-            Text("Notes sent to an agent are pasted into its prompt. With this on, Mercury also presses Return so the agent starts right away.")
+            Text("Notes sent to an agent are pasted into its prompt. With this on, Sevinda also presses Return so the agent starts right away.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

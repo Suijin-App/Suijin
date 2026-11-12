@@ -4,7 +4,7 @@ import AppKit
 ///
 /// Copy, paste (through the paste guard), select all and find belong to the terminal view. Tab, split and pane
 /// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
-/// `MercuryTerminalView.onKeyRoute`, so the program never receives them as escape sequences. Every other ⌘
+/// `SevindaTerminalView.onKeyRoute`, so the program never receives them as escape sequences. Every other ⌘
 /// shortcut goes on to the app's menus. Keys without ⌘ take the normal event path, where SwiftTerm turns them into
 /// terminal input (and input methods such as Vietnamese Telex compose text), so nothing here touches them.
 public enum TerminalKeyRoute: Equatable, Sendable {

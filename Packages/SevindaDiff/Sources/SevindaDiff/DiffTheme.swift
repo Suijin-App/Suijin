@@ -5,7 +5,7 @@ import SwiftUI
 /// AppKit colors and fonts for the diff viewer, derived from SevindaUI tokens. Every color is dynamic
 /// and resolves against the drawing appearance, so light/dark switches need no reload.
 enum DiffTheme {
-    /// AppKit counterpart of `MercuryFont.mono` (SwiftUI `.body` monospaced, 13 pt on macOS).
+    /// AppKit counterpart of `SevindaFont.mono` (SwiftUI `.body` monospaced, 13 pt on macOS).
     @MainActor static let font = NSFont.monospacedSystemFont(ofSize: NSFont.preferredFont(forTextStyle: .body).pointSize,
                                                   weight: .regular)
     /// Fixed row line height; a little taller than the font's natural height for readability.
@@ -15,26 +15,26 @@ enum DiffTheme {
     @MainActor private static let naturalLineHeight = ceil(font.ascender - font.descender + font.leading)
     @MainActor static let gutterFont = NSFont.monospacedDigitSystemFont(ofSize: font.pointSize - 1, weight: .regular)
 
-    static let background = NSColor(MercuryColor.codeBackground)
+    static let background = NSColor(SevindaColor.codeBackground)
     static let text = NSColor.labelColor
     static let secondaryText = NSColor.secondaryLabelColor
     static let gutterText = NSColor.tertiaryLabelColor
-    static let separator = NSColor(MercuryColor.hairline)
+    static let separator = NSColor(SevindaColor.hairline)
 
-    static let addedBackground = tinted(NSColor(MercuryColor.ok), light: 0.14, dark: 0.16)
-    static let deletedBackground = tinted(NSColor(MercuryColor.error), light: 0.12, dark: 0.16)
-    static let addedGutterBackground = tinted(NSColor(MercuryColor.ok), light: 0.24, dark: 0.26)
-    static let deletedGutterBackground = tinted(NSColor(MercuryColor.error), light: 0.20, dark: 0.26)
-    static let hunkBackground = tinted(NSColor(MercuryColor.brand), light: 0.08, dark: 0.12)
+    static let addedBackground = tinted(NSColor(SevindaColor.ok), light: 0.14, dark: 0.16)
+    static let deletedBackground = tinted(NSColor(SevindaColor.error), light: 0.12, dark: 0.16)
+    static let addedGutterBackground = tinted(NSColor(SevindaColor.ok), light: 0.24, dark: 0.26)
+    static let deletedGutterBackground = tinted(NSColor(SevindaColor.error), light: 0.20, dark: 0.26)
+    static let hunkBackground = tinted(NSColor(SevindaColor.brand), light: 0.08, dark: 0.12)
     /// Word-level marks inside a modified line, on top of the row background.
-    static let addedWordBackground = tinted(NSColor(MercuryColor.ok), light: 0.30, dark: 0.34)
-    static let deletedWordBackground = tinted(NSColor(MercuryColor.error), light: 0.26, dark: 0.34)
+    static let addedWordBackground = tinted(NSColor(SevindaColor.ok), light: 0.30, dark: 0.34)
+    static let deletedWordBackground = tinted(NSColor(SevindaColor.error), light: 0.26, dark: 0.34)
     /// Filler rows of a side-by-side column, opposite a line that only exists on the other side.
     static let paddingBackground = tinted(NSColor.secondaryLabelColor, light: 0.06, dark: 0.08)
     /// Lines chosen for a note while dragging in the gutter or writing the note.
     static let noteSelection = tinted(NSColor.controlAccentColor, light: 0.16, dark: 0.24)
-    static let addedSign = NSColor(MercuryColor.okText)
-    static let deletedSign = NSColor(MercuryColor.errorText)
+    static let addedSign = NSColor(SevindaColor.okText)
+    static let deletedSign = NSColor(SevindaColor.errorText)
 
     static func rowBackground(_ kind: DiffLayout.RowKind) -> NSColor? {
         switch kind {

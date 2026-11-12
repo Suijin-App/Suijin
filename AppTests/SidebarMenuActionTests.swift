@@ -8,10 +8,10 @@ import Testing
 @Suite(.serialized)
 struct SidebarMenuActionTests {
     private func makeModel() async throws -> (AppModel, SessionContext, URL) {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-menu-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-menu-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         await model.runtimes.bootstrap()
         return (model, .workspace(try #require(model.workspaces.first).id), root)

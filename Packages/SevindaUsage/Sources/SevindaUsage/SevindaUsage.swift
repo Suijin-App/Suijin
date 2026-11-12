@@ -25,7 +25,7 @@ import Foundation
 // Parsing, deduplication, Codex token deltas and pricing are ported from Orca (MIT), `src/main/claude-usage`,
 // `src/main/codex-usage` and `src/main/usage`.
 
-/// A coding agent whose logs Mercury reads.
+/// A coding agent whose logs Sevinda reads.
 public enum UsageProvider: String, Codable, Sendable, CaseIterable, Hashable {
     case claude
     case codex

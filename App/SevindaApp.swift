@@ -4,22 +4,22 @@ import SevindaUI
 import SwiftUI
 import UserNotifications
 
-/// Picks the app to run: Mercury itself, or a bare host for the tests XCTest injects (no window, no user data).
+/// Picks the app to run: Sevinda itself, or a bare host for the tests XCTest injects (no window, no user data).
 @main
-enum MercuryMain {
+enum SevindaMain {
     static func main() {
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             TestHostApp.main()
         } else {
             #if DEBUG
-            // Screenshot runs force an appearance: `-MercuryAppearance dark|light`.
-            if let forced = UserDefaults.standard.string(forKey: "MercuryAppearance") {
+            // Screenshot runs force an appearance: `-SevindaAppearance dark|light`.
+            if let forced = UserDefaults.standard.string(forKey: "SevindaAppearance") {
                 NotificationCenter.default.addObserver(forName: NSApplication.didFinishLaunchingNotification, object: nil, queue: .main) { _ in
                     MainActor.assumeIsolated { NSApp.appearance = NSAppearance(named: forced == "dark" ? .darkAqua : .aqua) }
                 }
             }
             #endif
-            MercuryApp.main()
+            SevindaApp.main()
         }
     }
 }
@@ -30,12 +30,12 @@ struct TestHostApp: App {
     }
 }
 
-struct MercuryApp: App {
-    @NSApplicationDelegateAdaptor private var delegate: MercuryAppDelegate
+struct SevindaApp: App {
+    @NSApplicationDelegateAdaptor private var delegate: SevindaAppDelegate
     @State private var model = AppModel.live()
 
     var body: some Scene {
-        Window("Mercury", id: "main") {
+        Window("Sevinda", id: "main") {
             RootView()
                 .environment(model)
                 .task {
@@ -48,7 +48,7 @@ struct MercuryApp: App {
                     #if DEBUG
                     await model.openDemoPanesIfRequested()
                     #endif
-                    #if DEBUG || MERCURY_PERF
+                    #if DEBUG || SEVINDA_PERF
                     PerfProbe.startIfRequested(model: model)
                     #endif
                     await HelperVersionCheck.run()
@@ -60,7 +60,7 @@ struct MercuryApp: App {
         }
         .windowToolbarStyle(.unified)
         .commands {
-            MercuryCommands(model: model)
+            SevindaCommands(model: model)
             UpdateCommands()
         }
 
@@ -73,10 +73,10 @@ struct MercuryApp: App {
 }
 
 /// Quitting detaches from hosted sessions (they keep running in the PTY host) or ends them, as Settings say.
-/// Also the notification delegate: banners show while Mercury is in front (the user is looking at another tab), and
+/// Also the notification delegate: banners show while Sevinda is in front (the user is looking at another tab), and
 /// clicking one opens that session.
 @MainActor
-final class MercuryAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+final class SevindaAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     var model: AppModel?
     private var isShuttingDown = false
 
@@ -115,8 +115,8 @@ final class MercuryAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificat
 }
 
 /// Menu commands: ⌘N new worktree, ⌘T new session, ⌘W close tab (or pane), ⇧⌘O add workspace, pane commands in the
-/// Session menu. ⌘, shows or hides Settings over the main window; Help › Welcome to Mercury opens the welcome tour.
-struct MercuryCommands: Commands {
+/// Session menu. ⌘, shows or hides Settings over the main window; Help › Welcome to Sevinda opens the welcome tour.
+struct SevindaCommands: Commands {
     let model: AppModel
 
     var body: some Commands {
@@ -166,7 +166,7 @@ struct MercuryCommands: Commands {
             .keyboardShortcut("w")
         }
         CommandGroup(replacing: .help) {
-            Button("Welcome to Mercury") {
+            Button("Welcome to Sevinda") {
                 withAnimation(.easeOut(duration: 0.2)) { model.showOnboarding() }
                 NSApp.activate()
                 model.mainWindow?.makeKeyAndOrderFront(nil)

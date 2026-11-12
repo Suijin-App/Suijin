@@ -72,7 +72,7 @@ enum Fixture {
 
         init() {
             url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("mercury-usage-tests-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("sevinda-usage-tests-\(UUID().uuidString)", isDirectory: true)
                 .resolvingSymlinksInPath()
             try! FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         }

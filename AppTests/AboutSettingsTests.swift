@@ -10,11 +10,11 @@ struct AboutSettingsTests {
 
     @Test func identityComesFromTheBundleInfo() {
         let identity = AppIdentity(info: [
-            "CFBundleDisplayName": "Mercury", "CFBundleShortVersionString": "1.2.3", "CFBundleVersion": "45",
+            "CFBundleDisplayName": "Sevinda", "CFBundleShortVersionString": "1.2.3", "CFBundleVersion": "45",
             "NSHumanReadableCopyright": "© 2026 Tekmium Solutions",
         ])
         #expect(identity == AppIdentity(info: [
-            "CFBundleName": "Mercury", "CFBundleShortVersionString": " 1.2.3 ", "CFBundleVersion": "45",
+            "CFBundleName": "Sevinda", "CFBundleShortVersionString": " 1.2.3 ", "CFBundleVersion": "45",
             "NSHumanReadableCopyright": "© 2026 Tekmium Solutions",
         ]))
         #expect(identity.version == "1.2.3")
@@ -24,7 +24,7 @@ struct AboutSettingsTests {
 
     @Test func missingBundleValuesFallBackInsteadOfShowingBlanks() {
         let identity = AppIdentity(info: ["CFBundleShortVersionString": "", "NSHumanReadableCopyright": "  "])
-        #expect(identity.name == "Mercury")
+        #expect(identity.name == "Sevinda")
         #expect(identity.version == "—")
         #expect(identity.build == "—")
         #expect(identity.copyright == nil)

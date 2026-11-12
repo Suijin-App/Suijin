@@ -42,7 +42,7 @@ enum UsageRange: String, CaseIterable, Identifiable {
 }
 
 /// State of Settings → Stats & Usage for the app's lifetime: one `UsageStore` (so the incremental checkpoints stay in
-/// memory between visits), the last usage snapshot, Mercury's own counters, and the selected scope and range.
+/// memory between visits), the last usage snapshot, Sevinda's own counters, and the selected scope and range.
 ///
 /// Nothing runs in the background on its own: the page calls `pageAppeared()` to show the cache and start one
 /// refresh, `refresh()` from its button, and `pageDisappeared()` to cancel a scan still running when it closes.
@@ -51,13 +51,13 @@ enum UsageRange: String, CaseIterable, Identifiable {
 final class UsageController {
     /// The usage last read, from the cache first and then from each refresh; nil until either is available.
     private(set) var snapshot: UsageSnapshot?
-    /// Mercury's own counters; nil until loaded.
-    private(set) var stats: MercuryStats?
+    /// Sevinda's own counters; nil until loaded.
+    private(set) var stats: SevindaStats?
     /// 0…1 while a refresh runs, nil otherwise.
     private(set) var progress: Double?
     /// Why the last refresh failed (already localized); cleared when one succeeds.
     private(set) var refreshError: String?
-    /// Why Mercury's counters could not be read (already localized).
+    /// Why Sevinda's counters could not be read (already localized).
     private(set) var statsError: String?
     var scope: UsageScope = .overview
     var range: UsageRange = .thirtyDays
@@ -66,7 +66,7 @@ final class UsageController {
 
     @ObservationIgnored private let store: UsageStore
     @ObservationIgnored private let sources: @MainActor () -> UsageSourceSet
-    @ObservationIgnored private let loadStats: @MainActor () async throws -> MercuryStats
+    @ObservationIgnored private let loadStats: @MainActor () async throws -> SevindaStats
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     /// Bumped whenever a refresh starts or is abandoned, so late progress reports of an old one are ignored.
     @ObservationIgnored private var generation = 0
@@ -74,7 +74,7 @@ final class UsageController {
 
     init(
         store: UsageStore, sources: @escaping @MainActor () -> UsageSourceSet,
-        loadStats: @escaping @MainActor () async throws -> MercuryStats
+        loadStats: @escaping @MainActor () async throws -> SevindaStats
     ) {
         self.store = store
         self.sources = sources
@@ -90,7 +90,7 @@ final class UsageController {
             sources: { [weak model] in Self.sources(for: model?.accounts ?? []) },
             loadStats: { [weak model] in
                 guard let model else { throw CancellationError() }
-                return try await model.io { try $0.mercuryStats() }
+                return try await model.io { try $0.sevindaStats() }
             })
     }
 
@@ -100,9 +100,9 @@ final class UsageController {
             accounts.filter { $0.provider == provider }.map { URL(fileURLWithPath: $0.homePath, isDirectory: true) }
         }
         #if DEBUG
-        // Screenshot runs read demo logs instead of the user's own: `-MercuryUsageHome <dir>` stands in for the home
+        // Screenshot runs read demo logs instead of the user's own: `-SevindaUsageHome <dir>` stands in for the home
         // folder, and CLAUDE_CONFIG_DIR / CODEX_HOME from the environment are ignored.
-        if let home = UserDefaults.standard.string(forKey: "MercuryUsageHome") {
+        if let home = UserDefaults.standard.string(forKey: "SevindaUsageHome") {
             return UsageSourceSet.standard(environment: [:], homeDirectory: URL(fileURLWithPath: home, isDirectory: true),
                                            managedClaudeHomes: homes(.claude), managedCodexHomes: homes(.codex))
         }
@@ -117,7 +117,7 @@ final class UsageController {
 
     // MARK: Page lifecycle
 
-    /// Shows the cached usage at once, reloads Mercury's counters and starts a refresh.
+    /// Shows the cached usage at once, reloads Sevinda's counters and starts a refresh.
     func pageAppeared() {
         Task { await reloadStats() }
         refresh()

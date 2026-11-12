@@ -13,7 +13,7 @@ struct CodexSharedResources: Sendable {
         "AGENTS.md",
     ]
     /// Global rules are copied with this prefix; it sorts before the home's own `default.rules`, whose approvals win.
-    static let globalRulePrefix = "_mercury-global-"
+    static let globalRulePrefix = "_sevinda-global-"
 
     // MARK: Resource links
 

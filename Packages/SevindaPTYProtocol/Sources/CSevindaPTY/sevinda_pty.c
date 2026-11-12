@@ -51,11 +51,11 @@ static void child_report_and_exit(int status_fd, int stage, int code) {
 
 static void child_run(const char *path, char *const argv[], char *const envp[], const char *cwd,
                       int slave_fd, int status_fd, int max_fd) {
-    if (setsid() < 0) child_report_and_exit(status_fd, MERCURY_PTY_STAGE_SETSID, 126);
-    if (ioctl(slave_fd, TIOCSCTTY, 0) < 0) child_report_and_exit(status_fd, MERCURY_PTY_STAGE_SETSID, 126);
+    if (setsid() < 0) child_report_and_exit(status_fd, SEVINDA_PTY_STAGE_SETSID, 126);
+    if (ioctl(slave_fd, TIOCSCTTY, 0) < 0) child_report_and_exit(status_fd, SEVINDA_PTY_STAGE_SETSID, 126);
 
     if (dup2(slave_fd, STDIN_FILENO) < 0 || dup2(slave_fd, STDOUT_FILENO) < 0 || dup2(slave_fd, STDERR_FILENO) < 0) {
-        child_report_and_exit(status_fd, MERCURY_PTY_STAGE_SETSID, 126);
+        child_report_and_exit(status_fd, SEVINDA_PTY_STAGE_SETSID, 126);
     }
     // dup2 clears FD_CLOEXEC on 0-2; everything else (including the master and the original slave) is closed.
     for (int fd = STDERR_FILENO + 1; fd < max_fd; fd++) {
@@ -74,20 +74,20 @@ static void child_run(const char *path, char *const argv[], char *const envp[], 
     }
 
     if (cwd != NULL && cwd[0] != '\0' && chdir(cwd) < 0) {
-        child_report_and_exit(status_fd, MERCURY_PTY_STAGE_CHDIR, 126);
+        child_report_and_exit(status_fd, SEVINDA_PTY_STAGE_CHDIR, 126);
     }
     execve(path, argv, envp);
-    child_report_and_exit(status_fd, MERCURY_PTY_STAGE_EXEC, 127);
+    child_report_and_exit(status_fd, SEVINDA_PTY_STAGE_EXEC, 127);
 }
 
-static int fail(mercury_pty_spawn_result *result, int stage) {
+static int fail(sevinda_pty_spawn_result *result, int stage) {
     result->stage = stage;
     result->error_number = errno;
     return -1;
 }
 
-int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], const char *cwd,
-                      unsigned short cols, unsigned short rows, mercury_pty_spawn_result *result) {
+int sevinda_pty_spawn(const char *path, char *const argv[], char *const envp[], const char *cwd,
+                      unsigned short cols, unsigned short rows, sevinda_pty_spawn_result *result) {
     memset(result, 0, sizeof(*result));
     result->master_fd = -1;
     result->slave_fd = -1;
@@ -105,7 +105,7 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
     int master = posix_openpt(O_RDWR | O_NOCTTY);
     if (master < 0) {
         pthread_mutex_unlock(&spawn_lock);
-        return fail(result, MERCURY_PTY_STAGE_OPENPT);
+        return fail(result, SEVINDA_PTY_STAGE_OPENPT);
     }
     char slave_name[128];
     if (set_cloexec(master) < 0 || grantpt(master) < 0 || unlockpt(master) < 0 ||
@@ -114,7 +114,7 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
         close(master);
         pthread_mutex_unlock(&spawn_lock);
         errno = saved;
-        return fail(result, MERCURY_PTY_STAGE_OPENPT);
+        return fail(result, SEVINDA_PTY_STAGE_OPENPT);
     }
     int slave = open(slave_name, O_RDWR | O_NOCTTY | O_CLOEXEC);
     if (slave < 0) {
@@ -122,7 +122,7 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
         close(master);
         pthread_mutex_unlock(&spawn_lock);
         errno = saved;
-        return fail(result, MERCURY_PTY_STAGE_OPENPT);
+        return fail(result, SEVINDA_PTY_STAGE_OPENPT);
     }
 
     // Terminal defaults: keep the kernel's cooked mode but declare UTF-8 input so line editing handles multibyte.
@@ -141,7 +141,7 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
         close(slave);
         pthread_mutex_unlock(&spawn_lock);
         errno = saved;
-        return fail(result, MERCURY_PTY_STAGE_PIPE);
+        return fail(result, SEVINDA_PTY_STAGE_PIPE);
     }
     set_cloexec(status_pipe[0]);
     set_cloexec(status_pipe[1]);
@@ -155,7 +155,7 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
         close(status_pipe[1]);
         pthread_mutex_unlock(&spawn_lock);
         errno = saved;
-        return fail(result, MERCURY_PTY_STAGE_FORK);
+        return fail(result, SEVINDA_PTY_STAGE_FORK);
     }
     if (pid == 0) {
         child_run(path, argv, envp, cwd, slave, status_pipe[1], max_fd);
@@ -191,22 +191,22 @@ int mercury_pty_spawn(const char *path, char *const argv[], char *const envp[], 
         close_quietly(master);
         close_quietly(slave);
         errno = saved;
-        return fail(result, MERCURY_PTY_STAGE_OPENPT);
+        return fail(result, SEVINDA_PTY_STAGE_OPENPT);
     }
 
     result->pid = pid;
     result->master_fd = master;
     result->slave_fd = slave;
-    result->stage = MERCURY_PTY_STAGE_NONE;
+    result->stage = SEVINDA_PTY_STAGE_NONE;
     return 0;
 }
 
-int mercury_pty_set_window_size(int fd, unsigned short cols, unsigned short rows) {
+int sevinda_pty_set_window_size(int fd, unsigned short cols, unsigned short rows) {
     struct winsize ws = { rows, cols, 0, 0 };
     return ioctl(fd, TIOCSWINSZ, &ws);
 }
 
-int mercury_pty_exit_code(int wait_status) {
+int sevinda_pty_exit_code(int wait_status) {
     if (WIFEXITED(wait_status)) return WEXITSTATUS(wait_status);
     if (WIFSIGNALED(wait_status)) return 128 + WTERMSIG(wait_status);
     return -1;

@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 
 public enum UsageStoreError: Error, Sendable, Equatable, LocalizedError {
-    /// The cache URL lies inside a log folder, which Mercury never writes to.
+    /// The cache URL lies inside a log folder, which Sevinda never writes to.
     case cacheInsideLogFolder(String)
     /// The cache could not be written (errno); the returned usage is still valid in memory.
     case cacheWriteFailed(path: String, code: Int32)

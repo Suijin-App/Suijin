@@ -279,15 +279,15 @@ private struct DiffFileNotesHeader: View {
 
     var body: some View {
         let notes = headerNotes
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
-            HStack(spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
+            HStack(spacing: SevindaSpacing.s) {
                 Text(verbatim: diff.displayPath)
-                    .font(MercuryFont.monoSmall)
+                    .font(SevindaFont.monoSmall)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(Text(verbatim: diff.displayPath))
-                Spacer(minLength: MercurySpacing.s)
+                Spacer(minLength: SevindaSpacing.s)
                 if isNarrowFallback {
                     Label("Too narrow for side by side", systemImage: "rectangle.split.1x2")
                         .font(.caption)
@@ -307,7 +307,7 @@ private struct DiffFileNotesHeader: View {
             }
             if let book, !notes.isEmpty || draft != nil {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: MercurySpacing.s) {
+                    VStack(alignment: .leading, spacing: SevindaSpacing.s) {
                         ForEach(notes) { note in
                             DiffNoteCard(note: note, onSave: { book.update(note.id, body: $0) },
                                          onDelete: { book.delete(note.id) })
@@ -331,8 +331,8 @@ private struct DiffFileNotesHeader: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, MercurySpacing.m)
-        .padding(.vertical, MercurySpacing.s)
+        .padding(.horizontal, SevindaSpacing.m)
+        .padding(.vertical, SevindaSpacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .bottom) { Divider() }

@@ -52,7 +52,7 @@ struct ClaudeProfileProvisioner: Sendable {
         "telemetry", "todos", "traces", "uploads", "usage-data",
     ]
 
-    /// Conversation history folders; Orca shares them by moving them into the default home, which Mercury never
+    /// Conversation history folders; Orca shares them by moving them into the default home, which Sevinda never
     /// writes, so they stay private to each profile.
     static let historyEntries: [String] = [
         "projects", "session-env", "file-history", "shell-snapshots", "todos", "paste-cache", "tasks", "plans",

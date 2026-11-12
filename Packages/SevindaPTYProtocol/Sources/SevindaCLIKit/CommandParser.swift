@@ -1,13 +1,13 @@
 import Foundation
 
-/// What one `mercury` invocation asks for.
+/// What one `sevinda` invocation asks for.
 public enum CLICommand: Equatable, Sendable {
     /// A broker request: `command` is the wire name, `options` its validated flags.
     case broker(command: String, options: [String: String], json: Bool)
     case skill(name: String)
     case listSkills
     case claudeHook
-    /// `chained`: the user's own notify program (and its arguments), run after Mercury's handling.
+    /// `chained`: the user's own notify program (and its arguments), run after Sevinda's handling.
     case codexNotify(payload: String, chained: [String])
     case help(topic: String?)
     case version
@@ -45,24 +45,24 @@ struct CommandSpec: Sendable {
                     flags: ["spec": "spec", "agent": "agent", "worktree": "worktree", "name": "name", "account": "account",
                             "task": "spec", "prompt": "spec"],
                     switches: [], required: ["spec", "agent"],
-                    usage: "mercury worker start --agent claude|codex --spec <text|@file|-> [--worktree current|new] [--name <short-name>] [--account <id>] [--json]"),
+                    usage: "sevinda worker start --agent claude|codex --spec <text|@file|-> [--worktree current|new] [--name <short-name>] [--account <id>] [--json]"),
         CommandSpec(words: ["worker", "list"], wire: "worker.list", flags: [:], switches: [], required: [],
-                    usage: "mercury worker list [--json]"),
+                    usage: "sevinda worker list [--json]"),
         CommandSpec(words: ["send"], wire: "send",
                     flags: ["to": "to", "body": "body", "message": "body", "dispatch": "to"], switches: [],
-                    required: ["to", "body"], usage: "mercury send --to <dispatch-id> --body <text|@file|-> [--json]"),
+                    required: ["to", "body"], usage: "sevinda send --to <dispatch-id> --body <text|@file|-> [--json]"),
         CommandSpec(words: ["ask"], wire: "ask", flags: ["body": "body", "question": "body"], switches: [],
-                    required: ["body"], usage: "mercury ask --body <question> [--json]   (then end your turn)"),
+                    required: ["body"], usage: "sevinda ask --body <question> [--json]   (then end your turn)"),
         CommandSpec(words: ["reply"], wire: "reply", flags: ["id": "id", "body": "body", "answer": "body"], switches: [],
-                    required: ["id", "body"], usage: "mercury reply --id <question-id> --body <answer> [--json]"),
+                    required: ["id", "body"], usage: "sevinda reply --id <question-id> --body <answer> [--json]"),
         CommandSpec(words: ["done"], wire: "done",
                     flags: ["status": "status", "outcome": "status", "summary": "summary", "body": "summary"],
                     switches: [], required: ["status", "summary"],
-                    usage: "mercury done --status success|failed --summary <what you did, found, left> [--json]"),
+                    usage: "sevinda done --status success|failed --summary <what you did, found, left> [--json]"),
         CommandSpec(words: ["inbox"], wire: "inbox", flags: ["limit": "limit"], switches: ["all"], required: [],
-                    usage: "mercury inbox [--all] [--limit <n>] [--json]"),
+                    usage: "sevinda inbox [--all] [--limit <n>] [--json]"),
         CommandSpec(words: ["whoami"], wire: "whoami", flags: [:], switches: [], required: [],
-                    usage: "mercury whoami [--json]"),
+                    usage: "sevinda whoami [--json]"),
     ]
 
     /// Every spelling an agent may type for a command, for suggestions.
@@ -71,7 +71,7 @@ struct CommandSpec: Sendable {
     }
 }
 
-/// Parses `mercury` arguments. Flags take `--flag value` or `--flag=value`; `--json` works on every broker command.
+/// Parses `sevinda` arguments. Flags take `--flag value` or `--flag=value`; `--json` works on every broker command.
 /// A value `@path` names a file to read (when it exists), `-` reads standard input.
 public struct CommandParser: Sendable {
     public var readFile: @Sendable (String) -> String?
@@ -115,7 +115,7 @@ public struct CommandParser: Sendable {
         guard let spec = CommandSpec.all.first(where: { Array(args.prefix($0.words.count)) == $0.words }) else {
             let typed = args.prefix(2).filter { !$0.hasPrefix("-") }.joined(separator: " ")
             throw CLIUsageError("Unknown command `\(typed.isEmpty ? first : typed)`.",
-                                suggestion: Suggestions.closest(typed.isEmpty ? first : typed, among: CommandSpec.allPhrases).map { "mercury \($0)" })
+                                suggestion: Suggestions.closest(typed.isEmpty ? first : typed, among: CommandSpec.allPhrases).map { "sevinda \($0)" })
         }
         if args.contains("--help") || args.contains("-h") { return .help(topic: spec.words.joined(separator: " ")) }
         return try parseFlags(Array(args.dropFirst(spec.words.count)), spec: spec)
@@ -147,7 +147,7 @@ public struct CommandParser: Sendable {
             }
             guard let key = spec.flags[name] else {
                 let known = Array(spec.flags.keys) + Array(spec.switches) + ["json"]
-                throw CLIUsageError("Unknown flag `--\(name)` for `mercury \(spec.words.joined(separator: " "))`.",
+                throw CLIUsageError("Unknown flag `--\(name)` for `sevinda \(spec.words.joined(separator: " "))`.",
                                     suggestion: Suggestions.closest(name, among: known).map { "--\($0)" } ?? spec.usage)
             }
             let raw: String
@@ -193,13 +193,13 @@ public struct CommandParser: Sendable {
         switch args.first {
         case "get":
             guard let name = args.dropFirst().first else {
-                throw CLIUsageError("Missing skill name.", suggestion: "mercury skills get orchestration")
+                throw CLIUsageError("Missing skill name.", suggestion: "sevinda skills get orchestration")
             }
             return .skill(name: name)
         case "list", nil:
             return .listSkills
         default:
-            throw CLIUsageError("Unknown `skills` command `\(args[0])`.", suggestion: "mercury skills get orchestration")
+            throw CLIUsageError("Unknown `skills` command `\(args[0])`.", suggestion: "sevinda skills get orchestration")
         }
     }
 

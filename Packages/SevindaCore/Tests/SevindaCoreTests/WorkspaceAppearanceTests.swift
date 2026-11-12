@@ -6,7 +6,7 @@ import Testing
 @Suite struct WorkspaceAppearanceTests {
     @Test(arguments: [WorkspaceIcon.symbol("server.rack"), .emoji("🚀"), .image("A1B2.png")])
     func iconAndColorRoundTrip(_ icon: WorkspaceIcon) throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = Workspace(name: "api", path: "/tmp/api", kind: .git, icon: icon, color: "teal")
         try store.save(workspace)
         #expect(try store.workspaces() == [workspace])
@@ -14,10 +14,10 @@ import Testing
 
     /// A database made by the first release (migration v1 only) is backed up, then migrated, and keeps its rows.
     @Test func upgradingAnExistingDatabaseBacksItUpFirst() throws {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-migrate-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-migrate-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
-        let url = folder.appendingPathComponent("mercury.sqlite")
+        let url = folder.appendingPathComponent("sevinda.sqlite")
         let old = try DatabaseQueue(path: url.path)
         try Migrations.migrator.migrate(old, upTo: "v1")
         let id = UUID()
@@ -27,7 +27,7 @@ import Testing
         }
         try old.close()
 
-        let store = try MercuryStore(url: url)
+        let store = try SevindaStore(url: url)
         #expect(try store.workspaces().map(\.name) == ["old"])
         #expect(try store.workspaces().first?.icon == nil)
         let backup = url.appendingPathExtension("backup-v1")
@@ -37,7 +37,7 @@ import Testing
 
         // Opening an up-to-date database makes no further backup.
         try FileManager.default.removeItem(at: backup)
-        _ = try MercuryStore(url: url)
+        _ = try SevindaStore(url: url)
         #expect(!FileManager.default.fileExists(atPath: backup.path))
     }
 }

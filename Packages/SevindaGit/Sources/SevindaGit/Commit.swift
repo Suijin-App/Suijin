@@ -18,7 +18,7 @@ extension SourceControlService {
         guard !trimmed.isEmpty else {
             throw GitError(args: ["commit"], exitCode: 1, stderr: "The commit message is empty.")
         }
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-commit-\(UUID().uuidString).txt")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-commit-\(UUID().uuidString).txt")
         try Data((trimmed + "\n").utf8).write(to: file, options: .atomic)
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
         defer { try? FileManager.default.removeItem(at: file) }

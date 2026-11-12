@@ -22,8 +22,13 @@ struct UpdatesTests {
     @Test func shippedInfoPlistStillCarriesThePlaceholderOrARealKey() throws {
         let key = try #require(Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String)
         #expect(key == UpdaterController.publicKeyPlaceholder || UpdaterController.isUsablePublicKey(key))
-        let feed = try #require(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String)
-        #expect(URL(string: feed)?.scheme == "https")
+    }
+
+    /// There is no update host yet: the app ships without a feed, so the updater stays off and says so.
+    @Test func buildWithoutFeedIsNotConfigured() {
+        #expect(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") == nil)
+        #expect(!UpdaterController.hasFeedURL(in: .main))
+        #expect(!UpdaterController.isConfigured(in: .main))
     }
 
     @Test func hostBuildStringIsParsed() {

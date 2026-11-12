@@ -1,7 +1,7 @@
 import Foundation
 
 /// Whether each agent session is in a turn, from the agents' own signals: Claude's `Stop` / `UserPromptSubmit` /
-/// `Notification` hooks and Codex's `notify` program (both reach the broker through `mercury hook …`). The broker
+/// `Notification` hooks and Codex's `notify` program (both reach the broker through `sevinda hook …`). The broker
 /// types a message into a session only when it is idle and the user has not typed there for a few seconds.
 ///
 /// A session whose state no signal has told yet is `unknown` and never receives messages: guessing from output alone
@@ -9,7 +9,7 @@ import Foundation
 struct TurnTracker {
     enum Phase: Equatable, Sendable {
         case unknown
-        /// In a turn (a prompt was submitted, or Mercury just delivered a message).
+        /// In a turn (a prompt was submitted, or Sevinda just delivered a message).
         case busy
         /// The turn ended; the agent waits at its prompt.
         case idle
@@ -67,7 +67,7 @@ struct TurnTracker {
         set(sessionID, .blocked, now: now)
     }
 
-    /// Mercury typed a message and pressed Return: a turn starts.
+    /// Sevinda typed a message and pressed Return: a turn starts.
     mutating func delivered(_ sessionID: String, now: Date) {
         set(sessionID, .busy, now: now)
     }

@@ -12,11 +12,11 @@ struct ProviderUsageCard: View {
     let hasData: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
-            HStack(spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
+            HStack(spacing: SevindaSpacing.s) {
                 AgentLogo(agent: agent, size: 20)
                 Text(verbatim: name).font(.headline).lineLimit(1)
-                Spacer(minLength: MercurySpacing.s)
+                Spacer(minLength: SevindaSpacing.s)
                 Group {
                     if hasData {
                         Label("Has data", systemImage: "checkmark.circle.fill")
@@ -25,7 +25,7 @@ struct ProviderUsageCard: View {
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(hasData ? AnyShapeStyle(MercuryColor.okText) : AnyShapeStyle(.secondary))
+                .foregroundStyle(hasData ? AnyShapeStyle(SevindaColor.okText) : AnyShapeStyle(.secondary))
                 .lineLimit(1)
             }
             Text(verbatim: detail)
@@ -34,7 +34,7 @@ struct ProviderUsageCard: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(Text(verbatim: detail))
-            Grid(alignment: .leading, horizontalSpacing: MercurySpacing.m, verticalSpacing: MercurySpacing.xs) {
+            Grid(alignment: .leading, horizontalSpacing: SevindaSpacing.m, verticalSpacing: SevindaSpacing.xs) {
                 row("Tokens", UsageFormat.tokens(summary.tokens.total))
                 row("Sessions · turns",
                     "\(UsageFormat.count(summary.sessions)) · \(UsageFormat.count(summary.turns))")

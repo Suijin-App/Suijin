@@ -39,7 +39,7 @@ import Testing
         // The commits themselves, newest first, and what each one changed.
         let commits = await service.commits(notOn: "main")
         #expect(commits.map(\.subject) == ["feature 2", "feature 1"])
-        #expect(commits.allSatisfy { $0.author == "Mercury Tests" && $0.sha.count == 40 })
+        #expect(commits.allSatisfy { $0.author == "Sevinda Tests" && $0.sha.count == 40 })
         #expect(try await service.changedFiles(.commit(commits[0].sha)) == [ChangedFile(path: "b.txt", kind: .added)])
         let first = try await service.diff(for: "a.txt", scope: .commit(commits[1].sha))
         #expect(first.hunks.flatMap(\.lines).filter { $0.kind == .added }.map(\.text) == ["two"])

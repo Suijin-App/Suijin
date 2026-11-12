@@ -2,18 +2,18 @@ import Foundation
 
 /// Names and versions shared by the app and the PTY host helper.
 public enum PTYHostConstants {
-    /// Mach service of the launchd agent Mercury registers (the LaunchAgent plist `MachServices` key).
-    public static let defaultMachServiceName = "com.tekmium.mercury.ptyhost"
+    /// Mach service of the launchd agent Sevinda registers (the LaunchAgent plist `MachServices` key).
+    public static let defaultMachServiceName = "com.tekmium.sevinda.ptyhost"
     /// Environment variable naming another helper instance, for tests that must not share the user's helper (an
     /// end-to-end run with a newer protocol while the user's own sessions keep the installed helper busy). Only names
     /// below `defaultMachServiceName` are honored.
-    public static let machServiceOverrideEnv = "MERCURY_PTYHOST_SERVICE"
+    public static let machServiceOverrideEnv = "SEVINDA_PTYHOST_SERVICE"
     /// The Mach service the app connects to and the helper listens on.
     public static let machServiceName: String = resolveMachServiceName(environment: ProcessInfo.processInfo.environment)
     /// The oldest app protocol a helper still serves; such an app simply never calls the newer methods.
     public static let minimumCompatibleProtocolVersion = 2
-    /// File name of the LaunchAgent plist inside `Mercury.app/Contents/Library/LaunchAgents`.
-    public static let launchAgentPlist = "com.tekmium.mercury.ptyhost.plist"
+    /// File name of the LaunchAgent plist inside `Sevinda.app/Contents/Library/LaunchAgents`.
+    public static let launchAgentPlist = "com.tekmium.sevinda.ptyhost.plist"
     /// Bumped whenever the XPC surface or a JSON payload changes incompatibly.
     /// 2: `ack` flow control (the helper streams at most a window of unacknowledged bytes per attachment).
     /// 3: `orchestrationEndpoint` (the agent orchestration broker lives in the helper).

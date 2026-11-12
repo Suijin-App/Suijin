@@ -58,8 +58,8 @@ struct ToolbarPushButton: View {
                 }
                 if let status, status.ahead > 0 { Text(verbatim: "\(status.ahead)").monospacedDigit() }
                 if let status, status.behind > 0 {
-                    Image(systemName: "arrow.down").foregroundStyle(MercuryColor.warningText)
-                    Text(verbatim: "\(status.behind)").monospacedDigit().foregroundStyle(MercuryColor.warningText)
+                    Image(systemName: "arrow.down").foregroundStyle(SevindaColor.warningText)
+                    Text(verbatim: "\(status.behind)").monospacedDigit().foregroundStyle(SevindaColor.warningText)
                 }
             }
             .font(.callout)
@@ -78,9 +78,9 @@ struct GitOutputSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.m) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
             Label { Text(verbatim: report.title).font(.headline) } icon: {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(MercuryColor.warning)
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SevindaColor.warning)
             }
             Text("Git reported:").foregroundStyle(.secondary)
             ScrollView([.vertical, .horizontal]) {
@@ -88,10 +88,10 @@ struct GitOutputSheet: View {
                     .font(.system(.callout, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(MercurySpacing.s)
+                    .padding(SevindaSpacing.s)
             }
             .frame(minHeight: 140, maxHeight: 360)
-            .background(MercuryColor.codeBackground, in: RoundedRectangle(cornerRadius: MercuryRadius.control))
+            .background(SevindaColor.codeBackground, in: RoundedRectangle(cornerRadius: SevindaRadius.control))
             HStack {
                 Button("Copy Output") {
                     NSPasteboard.general.clearContents()
@@ -102,7 +102,7 @@ struct GitOutputSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(MercurySpacing.l)
+        .padding(SevindaSpacing.l)
         .frame(width: 560)
     }
 }

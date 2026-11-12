@@ -16,7 +16,7 @@ private func makeCodex(_ box: Sandbox, shareSessions: Bool = false) -> CodexAcco
         let home = try codex.createHome(accountID: id)
         #expect(home == codex.store.home(for: id))
         #expect(try posixMode(home) == 0o700)
-        let marker = home.appendingPathComponent(".mercury-managed-home")
+        let marker = home.appendingPathComponent(".sevinda-managed-home")
         #expect(try readText(marker) == id.uuidString.lowercased() + "\n")
         #expect(try posixMode(marker) == 0o600)
         try codex.store.verify(home: home)
@@ -27,7 +27,7 @@ private func makeCodex(_ box: Sandbox, shareSessions: Bool = false) -> CodexAcco
         let codex = makeCodex(box)
         let id = UUID()
         let home = try codex.createHome(accountID: id)
-        try box.write("someone-else\n", to: home.appendingPathComponent(".mercury-managed-home"))
+        try box.write("someone-else\n", to: home.appendingPathComponent(".sevinda-managed-home"))
         #expect(throws: AccountsError.self) { try codex.store.verify(home: home) }
         #expect(throws: AccountsError.self) { try codex.store.create(accountID: id) }
         #expect(throws: AccountsError.self) { try codex.store.verify(home: box.codexHome) }
@@ -40,7 +40,7 @@ private func makeCodex(_ box: Sandbox, shareSessions: Bool = false) -> CodexAcco
         let box = try Sandbox()
         try box.mkdir(box.codexHome)
         let codex = CodexAccountProvider(
-            dataRoot: box.codexHome.appendingPathComponent("mercury"), realHome: box.realHome,
+            dataRoot: box.codexHome.appendingPathComponent("sevinda"), realHome: box.realHome,
             executable: URL(fileURLWithPath: "/nonexistent/codex"), environment: [:], shareSessions: false,
             runner: FakeCommandRunner())
         #expect(throws: AccountsError.self) { try codex.createHome(accountID: UUID()) }
@@ -178,12 +178,12 @@ private func makeCodex(_ box: Sandbox, shareSessions: Bool = false) -> CodexAcco
     }
 
     @Test func daemonGuardTracksTheSocketPathLength() {
-        let long = "/Users/someone/Library/Application Support/Mercury/codex-homes/0f8fad5b-d9cb-469f-a165-70867728950e/home"
+        let long = "/Users/someone/Library/Application Support/Sevinda/codex-homes/0f8fad5b-d9cb-469f-a165-70867728950e/home"
         #expect(CodexConfigMirror.socketPathExceedsLimit(homePath: long))
         #expect(!CodexConfigMirror.socketPathExceedsLimit(homePath: "/tmp/h"))
 
         let guarded = CodexConfigMirror.applyDaemonGuard("model = \"x\"\n", homePath: long)
-        #expect(guarded.contains("[features]\ndaemon_auto_start = false # mercury: CODEX_HOME too long for the daemon socket"))
+        #expect(guarded.contains("[features]\ndaemon_auto_start = false # sevinda: CODEX_HOME too long for the daemon socket"))
         #expect(CodexConfigMirror.applyDaemonGuard(guarded, homePath: long) == guarded)
         #expect(CodexConfigMirror.applyDaemonGuard(guarded, homePath: "/tmp/h") == "model = \"x\"\n")
 
@@ -203,13 +203,13 @@ private func makeCodex(_ box: Sandbox, shareSessions: Bool = false) -> CodexAcco
         try await codex.prepareForLaunch(home: home)
         #expect(symlinkTarget(home.appendingPathComponent("skills")) == box.codexHome.appendingPathComponent("skills").path)
         #expect(symlinkTarget(home.appendingPathComponent("AGENTS.md")) == box.codexHome.appendingPathComponent("AGENTS.md").path)
-        #expect(try readText(home.appendingPathComponent("rules/_mercury-global-default.rules")) == "prefix_rule()")
+        #expect(try readText(home.appendingPathComponent("rules/_sevinda-global-default.rules")) == "prefix_rule()")
 
         try FileManager.default.removeItem(at: box.codexHome.appendingPathComponent("AGENTS.md"))
         try FileManager.default.removeItem(at: box.codexHome.appendingPathComponent("rules/default.rules"))
         try await codex.prepareForLaunch(home: home)
         #expect(symlinkTarget(home.appendingPathComponent("AGENTS.md")) == nil)
-        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("rules/_mercury-global-default.rules").path))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent("rules/_sevinda-global-default.rules").path))
     }
 }
 

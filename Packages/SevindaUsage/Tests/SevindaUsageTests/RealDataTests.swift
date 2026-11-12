@@ -3,20 +3,20 @@ import Testing
 @testable import SevindaUsage
 
 /// Measures a refresh over this machine's real logs, read-only, into a temporary cache. Prints numbers only.
-/// Run with `MERCURY_USAGE_REAL=1 swift test -c release --package-path Packages/SevindaUsage --filter RealDataTests`.
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_USAGE_REAL"] == "1"))
+/// Run with `SEVINDA_USAGE_REAL=1 swift test -c release --package-path Packages/SevindaUsage --filter RealDataTests`.
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_USAGE_REAL"] == "1"))
 struct RealDataTests {
     /// Managed homes as the app lays them out under its data root; only listed, never written.
     private func managedHomes(_ folder: String) -> [URL] {
         let root = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/Mercury/\(folder)", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Sevinda/\(folder)", isDirectory: true)
         let entries = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
         return entries.sorted().map { root.appendingPathComponent($0).appendingPathComponent("home", isDirectory: true) }
     }
 
     @Test func refreshRealLogs() async throws {
         let scratch = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mercury-usage-real-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sevinda-usage-real-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let sources = UsageSourceSet.standard(
             managedClaudeHomes: managedHomes("claude-profiles"), managedCodexHomes: managedHomes("codex-homes"))

@@ -60,9 +60,9 @@ struct ChangedFilesList: View {
                     }
                 } header: {
                     // One line: section headers of a list keep a single line's height.
-                    HStack(spacing: MercurySpacing.s) {
+                    HStack(spacing: SevindaSpacing.s) {
                         section.title.font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                        Spacer(minLength: MercurySpacing.xs)
+                        Spacer(minLength: SevindaSpacing.xs)
                         section.detail.font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     }
                     .textCase(nil)
@@ -96,8 +96,8 @@ struct ChangedFilesList: View {
             commitButton(isChosen: selectedCommit == commit.sha, action: { selectedCommit = commit.sha }) {
                 Image(systemName: "smallcircle.filled.circle").font(.caption).frame(width: 14).foregroundStyle(.secondary)
                 Text(verbatim: commit.subject).lineLimit(1).truncationMode(.tail)
-                Spacer(minLength: MercurySpacing.xs)
-                Text(verbatim: commit.shortSHA).font(MercuryFont.monoSmall).foregroundStyle(.secondary)
+                Spacer(minLength: SevindaSpacing.xs)
+                Text(verbatim: commit.shortSHA).font(SevindaFont.monoSmall).foregroundStyle(.secondary)
                 Text(commit.date, format: .relative(presentation: .numeric, unitsStyle: .narrow))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -128,14 +128,14 @@ struct ChangedFilesList: View {
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(.secondary)
-        .padding(.top, MercurySpacing.s)
+        .padding(.top, SevindaSpacing.s)
         .listRowSeparator(.hidden)
         .selectionDisabled()
     }
 
     private func commitButton<Label: View>(isChosen: Bool, action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
-            HStack(spacing: MercurySpacing.s) { label() }
+            HStack(spacing: SevindaSpacing.s) { label() }
                 .padding(.vertical, 3)
                 .padding(.horizontal, 6)
                 .background(isChosen ? Color.accentColor.opacity(0.15) : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -147,9 +147,9 @@ struct ChangedFilesList: View {
     }
 
     private func row(_ file: ChangedFile) -> some View {
-        HStack(spacing: MercurySpacing.s) {
+        HStack(spacing: SevindaSpacing.s) {
             Text(verbatim: file.kind.letter)
-                .font(MercuryFont.monoSmall.bold())
+                .font(SevindaFont.monoSmall.bold())
                 .foregroundStyle(file.kind.color)
                 .frame(width: 14)
                 .accessibilityLabel(file.kind.label)
@@ -200,9 +200,9 @@ extension FileChangeKind {
 
     var color: Color {
         switch self {
-        case .added: MercuryColor.okText
-        case .deleted: MercuryColor.errorText
-        case .unmerged: MercuryColor.warningText
+        case .added: SevindaColor.okText
+        case .deleted: SevindaColor.errorText
+        case .unmerged: SevindaColor.warningText
         default: .secondary
         }
     }

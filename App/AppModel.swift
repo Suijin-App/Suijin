@@ -37,12 +37,12 @@ struct PresentedError: Identifiable {
     let message: String
 }
 
-/// Root state of the app: workspaces, worktrees, sessions and accounts, persisted through `MercuryStore`.
+/// Root state of the app: workspaces, worktrees, sessions and accounts, persisted through `SevindaStore`.
 /// Lives on the main actor; database and git calls run off the main thread.
 @Observable
 @MainActor
 final class AppModel {
-    let store: MercuryStore
+    let store: SevindaStore
     let dataRoot: URL
 
     private(set) var workspaces: [Workspace] = []
@@ -112,22 +112,22 @@ final class AppModel {
     /// Settings → Stats & Usage: one usage store for the app's lifetime, refreshed only while that page is shown.
     @ObservationIgnored lazy var usage = UsageController(model: self)
 
-    init(store: MercuryStore, dataRoot: URL) {
+    init(store: SevindaStore, dataRoot: URL) {
         self.store = store
         self.dataRoot = dataRoot
     }
 
     /// The live app model on the user's data root.
     static func live() -> AppModel {
-        let root = MercuryPaths.dataRoot
+        let root = SevindaPaths.dataRoot
         do {
-            let store = try MercuryStore(url: MercuryPaths.database(in: root))
+            let store = try SevindaStore(url: SevindaPaths.database(in: root))
             return AppModel(store: store, dataRoot: root)
         } catch {
             // The database could not be opened (disk full, permissions). Run on an in-memory store and tell the user.
-            let model = AppModel(store: try! MercuryStore.inMemory(), dataRoot: root)
+            let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: root)
             model.presentedError = PresentedError(
-                title: String(localized: "Mercury could not open its database"),
+                title: String(localized: "Sevinda could not open its database"),
                 message: error.localizedDescription
             )
             return model
@@ -162,12 +162,12 @@ final class AppModel {
             selection = restoredSelection() ?? workspaces.first.map { .workspace($0.id) }
         }
         #if DEBUG
-        // Screenshot runs open a tab directly: `-MercuryInitialTab changes`.
-        if UserDefaults.standard.string(forKey: "MercuryInitialTab") == "changes", let selection { selectedTab[selection] = .changes }
-        // `-MercuryInitialSettings terminal` shows that Settings page.
-        if let page = UserDefaults.standard.string(forKey: "MercuryInitialSettings").flatMap(SettingsPage.init(rawValue:)) { settingsPage = page }
-        // `-MercuryOpenFile <path>` handles a path as a ⌘-clicked terminal link does (file tab or file-tree reveal).
-        if let file = UserDefaults.standard.string(forKey: "MercuryOpenFile"), let selection {
+        // Screenshot runs open a tab directly: `-SevindaInitialTab changes`.
+        if UserDefaults.standard.string(forKey: "SevindaInitialTab") == "changes", let selection { selectedTab[selection] = .changes }
+        // `-SevindaInitialSettings terminal` shows that Settings page.
+        if let page = UserDefaults.standard.string(forKey: "SevindaInitialSettings").flatMap(SettingsPage.init(rawValue:)) { settingsPage = page }
+        // `-SevindaOpenFile <path>` handles a path as a ⌘-clicked terminal link does (file tab or file-tree reveal).
+        if let file = UserDefaults.standard.string(forKey: "SevindaOpenFile"), let selection {
             _ = openTerminalLink(file, in: selection, relativeTo: nil)
         }
         #endif
@@ -255,7 +255,7 @@ final class AppModel {
 
     // MARK: Worktrees
 
-    /// Reconciles stored worktrees with `git worktree list`: worktrees made outside Mercury appear, removed ones go.
+    /// Reconciles stored worktrees with `git worktree list`: worktrees made outside Sevinda appear, removed ones go.
     func refreshWorktrees(workspaceID: UUID) async {
         guard let workspace = workspace(workspaceID), workspace.kind == .git else { return }
         let service = WorktreeService(repository: URL(fileURLWithPath: workspace.path, isDirectory: true))
@@ -422,7 +422,7 @@ final class AppModel {
     // MARK: Helpers
 
     /// Runs a database call off the main thread.
-    func io<T: Sendable>(_ work: @escaping @Sendable (MercuryStore) throws -> T) async throws -> T {
+    func io<T: Sendable>(_ work: @escaping @Sendable (SevindaStore) throws -> T) async throws -> T {
         let store = store
         return try await Task.detached { try work(store) }.value
     }
@@ -508,11 +508,11 @@ extension AppModel {
         applyAppearance()
     }
 
-    /// Sets `NSApp.appearance` from the setting. In debug builds the `-MercuryAppearance` launch argument (screenshot
+    /// Sets `NSApp.appearance` from the setting. In debug builds the `-SevindaAppearance` launch argument (screenshot
     /// runs) wins over the setting.
     func applyAppearance() {
         #if DEBUG
-        if UserDefaults.standard.string(forKey: "MercuryAppearance") != nil { return }
+        if UserDefaults.standard.string(forKey: "SevindaAppearance") != nil { return }
         #endif
         NSApp?.appearance = appearance.nsAppearance
     }

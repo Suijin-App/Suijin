@@ -6,15 +6,15 @@ import Testing
 @testable import Sevinda
 
 /// Renders the real window through the sidebar's tricky transitions (a session opening and closing, switching to
-/// another worktree, removing a workspace) for review: opt-in with `TEST_RUNNER_MERCURY_SIDEBAR_SHOT=<file>`. At each
+/// another worktree, removing a workspace) for review: opt-in with `TEST_RUNNER_SEVINDA_SIDEBAR_SHOT=<file>`. At each
 /// step the file receives `<step> <window number>` and the window stays up for four seconds while the caller captures
 /// it with `screencapture -l` (the test host may not record the screen itself).
 @MainActor
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_SIDEBAR_SHOT"] != nil))
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SIDEBAR_SHOT"] != nil))
 struct SidebarTransitionTests {
     @Test func sidebarStaysCleanThroughTransitions() async throws {
-        let output = try #require(ProcessInfo.processInfo.environment["MERCURY_SIDEBAR_SHOT"])
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-sidebar-\(UUID().uuidString)", isDirectory: true)
+        let output = try #require(ProcessInfo.processInfo.environment["SEVINDA_SIDEBAR_SHOT"])
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-sidebar-\(UUID().uuidString)", isDirectory: true)
         let repo = root.appendingPathComponent("api", isDirectory: true)
         let folder = root.appendingPathComponent("Projects", isDirectory: true)
         for dir in [repo, folder] { try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) }
@@ -25,7 +25,7 @@ struct SidebarTransitionTests {
         _ = try await git.run(["add", "."], in: repo)
         _ = try await git.run(identity + ["commit", "-m", "i"], in: repo)
 
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: repo)
         await model.addWorkspace(at: folder)
         let gitID = try #require(model.workspaces.first).id

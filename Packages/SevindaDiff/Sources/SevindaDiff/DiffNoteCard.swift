@@ -27,8 +27,8 @@ public struct DiffNoteCard: View {
                                  if body != note.body { onSave(body) }
                              })
         } else {
-            VStack(alignment: .leading, spacing: MercurySpacing.xs) {
-                HStack(spacing: MercurySpacing.s) {
+            VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+                HStack(spacing: SevindaSpacing.s) {
                     Label {
                         Text(verbatim: Self.title(for: note.anchor))
                     } icon: {
@@ -47,7 +47,7 @@ public struct DiffNoteCard: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                         }
                         .font(.caption)
-                        .foregroundStyle(MercuryColor.warningText)
+                        .foregroundStyle(SevindaColor.warningText)
                         .lineLimit(1)
                         .help(Text("The noted lines changed since this note was written; it may no longer match.",
                                    bundle: .module, comment: "Help of the stale note badge"))
@@ -75,10 +75,10 @@ public struct DiffNoteCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, MercurySpacing.m)
-            .padding(.vertical, MercurySpacing.s)
-            .background(MercuryColor.card, in: RoundedRectangle(cornerRadius: MercuryRadius.card))
-            .overlay(RoundedRectangle(cornerRadius: MercuryRadius.card).strokeBorder(MercuryColor.hairline))
+            .padding(.horizontal, SevindaSpacing.m)
+            .padding(.vertical, SevindaSpacing.s)
+            .background(SevindaColor.card, in: RoundedRectangle(cornerRadius: SevindaRadius.card))
+            .overlay(RoundedRectangle(cornerRadius: SevindaRadius.card).strokeBorder(SevindaColor.hairline))
             .accessibilityElement(children: .contain)
         }
     }
@@ -91,7 +91,7 @@ public struct DiffNoteCard: View {
                 Image(systemName: "checkmark.circle.fill")
             }
             .font(.caption)
-            .foregroundStyle(MercuryColor.okText)
+            .foregroundStyle(SevindaColor.okText)
         } else {
             Text("Unsent", bundle: .module, comment: "Badge on a diff note not handed to an agent yet")
                 .font(.caption)

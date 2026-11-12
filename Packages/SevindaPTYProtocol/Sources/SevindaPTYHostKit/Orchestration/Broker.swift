@@ -23,7 +23,7 @@ public protocol OrchestrationAppLink: AnyObject, Sendable {
 /// turn and the user is not typing there. All state is confined to `queue` (hence `@unchecked Sendable`).
 public final class Broker: @unchecked Sendable {
     public struct Tuning: Sendable {
-        /// The user's last keystroke must be at least this old before Mercury types into the session.
+        /// The user's last keystroke must be at least this old before Sevinda types into the session.
         public var inputQuietPeriod: TimeInterval = 3
         /// How long `worker start` waits for the app to report the started worker before answering "starting".
         public var startReplyTimeout: TimeInterval = 45
@@ -31,7 +31,7 @@ public final class Broker: @unchecked Sendable {
         public var submitConfirmationTimeout: TimeInterval = 6
         public var tickInterval: TimeInterval = 1
         /// A worker's turn end escalates only if it still has not asked or reported this long after: an agent can end
-        /// its turn while its last `mercury ask` / `done` is still on the way (Codex returns from a slow command early).
+        /// its turn while its last `sevinda ask` / `done` is still on the way (Codex returns from a slow command early).
         public var escalationGrace: TimeInterval = 5
         /// Overrides `MessageDelivery.submitDelay` (tests).
         public var submitDelay: TimeInterval?
@@ -39,7 +39,7 @@ public final class Broker: @unchecked Sendable {
         public init() {}
     }
 
-    private static let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "orchestration")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "orchestration")
 
     public let dataRoot: URL
     let queue: DispatchQueue
@@ -69,7 +69,7 @@ public final class Broker: @unchecked Sendable {
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.dataRoot = dataRoot
-        self.queue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.orchestration")
+        self.queue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.orchestration")
         self.store = DispatchStore(fileURL: stateFile)
         self.io = io
         self.tuning = tuning
@@ -92,7 +92,7 @@ public final class Broker: @unchecked Sendable {
             store.update { state in
                 for index in state.dispatches.indices where !state.dispatches[index].status.isSettled {
                     state.dispatches[index].status = state.dispatches[index].workerSessionID == nil ? .startFailed : .exited
-                    state.dispatches[index].lastError = "Mercury's terminal host restarted, which ended the worker."
+                    state.dispatches[index].lastError = "Sevinda's terminal host restarted, which ended the worker."
                     state.dispatches[index].updatedAt = at
                 }
                 for index in state.messages.indices where state.messages[index].status == .pending {
@@ -127,7 +127,7 @@ public final class Broker: @unchecked Sendable {
         }
     }
 
-    private static let closedFailure = BrokerFailure(code: "unavailable", message: "Mercury's broker for this data root has closed.")
+    private static let closedFailure = BrokerFailure(code: "unavailable", message: "Sevinda's broker for this data root has closed.")
 
     public func snapshot() -> OrchestrationSnapshot {
         queue.sync { store.state }
@@ -140,7 +140,7 @@ public final class Broker: @unchecked Sendable {
 
     // MARK: Sessions
 
-    /// A terminal Mercury opened started in the helper. Sessions without a token (other data roots' older builds, a
+    /// A terminal Sevinda opened started in the helper. Sessions without a token (other data roots' older builds, a
     /// terminal launched by something else) never get a binding, so they cannot call the broker.
     public func sessionSpawned(hostSessionID: String, sessionID: String, agent: OrchestrationAgent?, token: String) {
         queue.async {
@@ -182,7 +182,7 @@ public final class Broker: @unchecked Sendable {
             self.appID = nil
             // A start the app took but never answered may or may not have launched; never start it twice.
             for dispatch in self.store.state.dispatches where dispatch.status == .starting {
-                self.startFailedLocked(dispatch.id, error: "Mercury quit before the worker started.")
+                self.startFailedLocked(dispatch.id, error: "Sevinda quit before the worker started.")
             }
         }
     }
@@ -205,15 +205,15 @@ public final class Broker: @unchecked Sendable {
         }
         guard request.version == BrokerRequest.currentVersion else {
             reply(.failure(BrokerFailure(code: "version_mismatch",
-                                         message: "This `mercury` speaks request version \(request.version); Mercury's terminal host speaks \(BrokerRequest.currentVersion).",
-                                         hint: "Restart the agent from Mercury after updating.")))
+                                         message: "This `sevinda` speaks request version \(request.version); Sevinda's terminal host speaks \(BrokerRequest.currentVersion).",
+                                         hint: "Restart the agent from Sevinda after updating.")))
             return
         }
         guard let caller = identity.caller(token: request.token) else {
             reply(.failure(BrokerFailure(
                 code: "unknown_session",
-                message: "This terminal was not opened by Mercury (or it already ended), so it cannot use `mercury`.",
-                hint: "Run `mercury` from an agent or shell session that Mercury started.")))
+                message: "This terminal was not opened by Sevinda (or it already ended), so it cannot use `sevinda`.",
+                hint: "Run `sevinda` from an agent or shell session that Sevinda started.")))
             return
         }
         let options = request.options
@@ -230,7 +230,7 @@ public final class Broker: @unchecked Sendable {
         case "hook.codex": reply(codexHook(caller, options))
         default:
             reply(.failure(BrokerFailure(code: "unknown_command", message: "Unknown command `\(request.command)`.",
-                                         hint: "Run `mercury help`.")))
+                                         hint: "Run `sevinda help`.")))
         }
     }
 
@@ -250,7 +250,7 @@ public final class Broker: @unchecked Sendable {
         }
         let leads = store.state.dispatches.contains { $0.coordinatorSessionID == caller.sessionID }
         return .success(WhoAmI(sessionID: caller.sessionID, role: leads ? "coordinator" : "none"),
-                        text: leads ? "You coordinate workers. Run `mercury worker list`." : "No orchestration yet. Start a worker with `mercury worker start`.")
+                        text: leads ? "You coordinate workers. Run `sevinda worker list`." : "No orchestration yet. Start a worker with `sevinda worker start`.")
     }
 
     private struct DispatchView: Encodable {
@@ -282,17 +282,17 @@ public final class Broker: @unchecked Sendable {
         let spec = (options["spec"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !spec.isEmpty else {
             reply(.failure(BrokerFailure(code: "missing_spec", message: "`worker start` needs a task.",
-                                         hint: "mercury worker start --agent codex --spec \"<self-contained task>\"")))
+                                         hint: "sevinda worker start --agent codex --spec \"<self-contained task>\"")))
             return
         }
         guard let agent = (options["agent"]?.lowercased()).flatMap(OrchestrationAgent.init(rawValue:)) else {
             reply(.failure(BrokerFailure(code: "invalid_agent", message: "`--agent` must be `claude` or `codex`.",
-                                         hint: "mercury worker start --agent codex --spec \"…\"")))
+                                         hint: "sevinda worker start --agent codex --spec \"…\"")))
             return
         }
         guard let worktree = WorktreeMode(rawValue: (options["worktree"] ?? "current").lowercased()) else {
             reply(.failure(BrokerFailure(code: "invalid_worktree", message: "`--worktree` must be `current` or `new`.",
-                                         hint: "mercury worker start --worktree new --name <short-name> …")))
+                                         hint: "sevinda worker start --worktree new --name <short-name> …")))
             return
         }
         let name = Self.workerName(options["name"], spec: spec)
@@ -312,8 +312,8 @@ public final class Broker: @unchecked Sendable {
         notifyApp()
         guard app != nil else {
             reply(.success(view(dispatch), text: """
-            Queued worker "\(name)" (dispatch \(dispatch.id), task \(task.id)): the Mercury app is not open, so it starts \
-            when Mercury opens. End your turn; Mercury wakes you when the worker reports or fails to start.
+            Queued worker "\(name)" (dispatch \(dispatch.id), task \(task.id)): the Sevinda app is not open, so it starts \
+            when Sevinda opens. End your turn; Sevinda wakes you when the worker reports or fails to start.
             """))
             return
         }
@@ -323,8 +323,8 @@ public final class Broker: @unchecked Sendable {
             guard let self, let pending = self.startReplies.removeValue(forKey: dispatch.id) else { return }
             let current = self.dispatch(dispatch.id) ?? dispatch
             pending(.success(self.view(current), text: """
-            Mercury is still starting worker "\(name)" (dispatch \(dispatch.id)). Do not start it again. End your turn; \
-            Mercury wakes you when it reports or if it fails to start.
+            Sevinda is still starting worker "\(name)" (dispatch \(dispatch.id)). Do not start it again. End your turn; \
+            Sevinda wakes you when it reports or if it fails to start.
             """))
         }
     }
@@ -354,12 +354,12 @@ public final class Broker: @unchecked Sendable {
                 let place = result.directory.map { " in \($0)" } ?? ""
                 pending(.success(view(started), text: """
                 Started worker "\(started.name)" (\(started.agent.rawValue), dispatch \(started.id), task \(started.taskID))\(place). \
-                Start any other independent workers now, then END YOUR TURN. Do not poll: Mercury types the worker's \
+                Start any other independent workers now, then END YOUR TURN. Do not poll: Sevinda types the worker's \
                 questions and results into this terminal when they arrive.
                 """))
             }
         } else {
-            startFailedLocked(dispatch.id, error: result.error ?? "Mercury did not start the worker.")
+            startFailedLocked(dispatch.id, error: result.error ?? "Sevinda did not start the worker.")
         }
     }
 
@@ -373,7 +373,7 @@ public final class Broker: @unchecked Sendable {
         }
         if let pending = startReplies.removeValue(forKey: dispatchID) {
             pending(.failure(BrokerFailure(code: "start_failed", message: "Worker \"\(dispatch.name)\" could not start: \(error)",
-                                           hint: "Fix the cause, then run `mercury worker start` again (dispatch \(dispatchID) is closed).")))
+                                           hint: "Fix the cause, then run `sevinda worker start` again (dispatch \(dispatchID) is closed).")))
         } else {
             enqueue(kind: .escalation, dispatch: dispatch, from: nil, to: dispatch.coordinatorSessionID,
                     body: Escalation.reasonForStartFailure(error))
@@ -388,7 +388,7 @@ public final class Broker: @unchecked Sendable {
         let dispatches = (led.isEmpty ? own : led).sorted { $0.createdAt < $1.createdAt }
         let views = dispatches.map(view)
         guard !views.isEmpty else {
-            return .success(views, text: "No workers. Start one with: mercury worker start --agent codex --spec \"<task>\"")
+            return .success(views, text: "No workers. Start one with: sevinda worker start --agent codex --spec \"<task>\"")
         }
         let lines = views.map { item in
             var line = "\(item.dispatchID)  \(item.name)  \(item.agent)  \(item.status)"
@@ -413,19 +413,19 @@ public final class Broker: @unchecked Sendable {
         let body = (options["body"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else {
             return .failure(BrokerFailure(code: "missing_body", message: "`send` needs a message.",
-                                          hint: "mercury send --to <dispatch-id> --body \"<message>\""))
+                                          hint: "sevinda send --to <dispatch-id> --body \"<message>\""))
         }
         guard let dispatch = dispatch(target) else {
             return .failure(BrokerFailure(code: "unknown_dispatch", message: "No dispatch `\(target)`.",
-                                          hint: "Run `mercury worker list` for your workers' dispatch IDs."))
+                                          hint: "Run `sevinda worker list` for your workers' dispatch IDs."))
         }
         guard dispatch.coordinatorSessionID == caller.sessionID else {
             return .failure(BrokerFailure(code: "not_coordinator", message: "Only the coordinator that started dispatch \(dispatch.id) can send to it.",
                                           hint: activeDispatch(worker: caller.sessionID) != nil
-                                            ? "As a worker, use `mercury ask --body …` or `mercury done …`." : nil))
+                                            ? "As a worker, use `sevinda ask --body …` or `sevinda done …`." : nil))
         }
         let gone = BrokerFailure(code: "worker_gone", message: "Worker \"\(dispatch.name)\" (\(dispatch.id)) no longer runs.",
-                                 hint: "Start a new worker: mercury worker start --agent \(dispatch.agent.rawValue) --spec \"…\"")
+                                 hint: "Start a new worker: sevinda worker start --agent \(dispatch.agent.rawValue) --spec \"…\"")
         guard dispatch.status != .exited, dispatch.status != .startFailed else { return .failure(gone) }
         guard let workerID = dispatch.workerSessionID else {
             return .failure(BrokerFailure(code: "worker_starting", message: "Worker \"\(dispatch.name)\" has not started yet.",
@@ -449,7 +449,7 @@ public final class Broker: @unchecked Sendable {
             notifyApp()
             pumpLocked()
             return .success(Receipt(messageID: message.id, dispatchID: followUp.id, kind: "send", delivery: "follow_up", taskID: task.id),
-                            text: "Worker \"\(dispatch.name)\" had finished; it gets this as follow-up task \(task.id) (dispatch \(followUp.id)). End your turn; Mercury wakes you when it reports.")
+                            text: "Worker \"\(dispatch.name)\" had finished; it gets this as follow-up task \(task.id) (dispatch \(followUp.id)). End your turn; Sevinda wakes you when it reports.")
         }
         let message = enqueue(kind: .send, dispatch: dispatch, from: caller.sessionID, to: workerID, body: body)
         pumpLocked()
@@ -460,7 +460,7 @@ public final class Broker: @unchecked Sendable {
     private func ask(_ caller: SessionBinding, _ options: [String: String]) -> BrokerResponse {
         let body = (options["body"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else {
-            return .failure(BrokerFailure(code: "missing_body", message: "`ask` needs a question.", hint: "mercury ask --body \"<question>\""))
+            return .failure(BrokerFailure(code: "missing_body", message: "`ask` needs a question.", hint: "sevinda ask --body \"<question>\""))
         }
         guard let dispatch = activeDispatch(worker: caller.sessionID) else { return notWorker(caller) }
         let message = enqueue(kind: .question, dispatch: dispatch, from: caller.sessionID, to: dispatch.coordinatorSessionID, body: body)
@@ -468,7 +468,7 @@ public final class Broker: @unchecked Sendable {
         notifyApp()
         pumpLocked()
         return .success(Receipt(messageID: message.id, dispatchID: dispatch.id, kind: "question", delivery: deliveryState(message.id)),
-                        text: "Question \(message.id) sent to your coordinator. END YOUR TURN now; Mercury types the answer here.")
+                        text: "Question \(message.id) sent to your coordinator. END YOUR TURN now; Sevinda types the answer here.")
     }
 
     private func answer(_ caller: SessionBinding, _ options: [String: String]) -> BrokerResponse {
@@ -476,18 +476,18 @@ public final class Broker: @unchecked Sendable {
         let body = (options["body"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else {
             return .failure(BrokerFailure(code: "missing_body", message: "`reply` needs an answer.",
-                                          hint: "mercury reply --id <question-id> --body \"<answer>\""))
+                                          hint: "sevinda reply --id <question-id> --body \"<answer>\""))
         }
         guard let question = store.state.messages.first(where: { $0.id == questionID && $0.kind == .question }) else {
             return .failure(BrokerFailure(code: "unknown_question", message: "No question `\(questionID)`.",
-                                          hint: "Run `mercury inbox` for the questions sent to you."))
+                                          hint: "Run `sevinda inbox` for the questions sent to you."))
         }
         guard question.toSessionID == caller.sessionID, let dispatch = dispatch(question.dispatchID) else {
             return .failure(BrokerFailure(code: "not_coordinator", message: "Question \(questionID) was not sent to you."))
         }
         guard question.answeredBy == nil else {
             return .failure(BrokerFailure(code: "already_answered", message: "Question \(questionID) already has a reply (\(question.answeredBy ?? "")).",
-                                          hint: "To add something, use: mercury send --to \(dispatch.id) --body \"…\""))
+                                          hint: "To add something, use: sevinda send --to \(dispatch.id) --body \"…\""))
         }
         guard let workerID = dispatch.workerSessionID, identity.binding(sessionID: workerID)?.isRunning == true else {
             return .failure(BrokerFailure(code: "worker_gone", message: "Worker \"\(dispatch.name)\" no longer runs."))
@@ -511,12 +511,12 @@ public final class Broker: @unchecked Sendable {
         case "failed", "failure", "fail": status = .failed
         default:
             return .failure(BrokerFailure(code: "invalid_status", message: "`--status` must be `success` or `failed`.",
-                                          hint: "mercury done --status success --summary \"…\""))
+                                          hint: "sevinda done --status success --summary \"…\""))
         }
         let summary = (options["summary"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !summary.isEmpty else {
             return .failure(BrokerFailure(code: "missing_summary", message: "`done` needs a summary.",
-                                          hint: "mercury done --status success --summary \"<what you did, found, left>\""))
+                                          hint: "sevinda done --status success --summary \"<what you did, found, left>\""))
         }
         guard let dispatch = activeDispatch(worker: caller.sessionID) else { return notWorker(caller) }
         store.update { state in
@@ -538,7 +538,7 @@ public final class Broker: @unchecked Sendable {
                                           hint: "End your turn. Your coordinator can send you a follow-up task."))
         }
         return .failure(BrokerFailure(code: "not_worker", message: "This session is not a worker, so it has no coordinator to ask or report to.",
-                                      hint: "To delegate work, run: mercury worker start --agent codex --spec \"<task>\""))
+                                      hint: "To delegate work, run: sevinda worker start --agent codex --spec \"<task>\""))
     }
 
     private struct InboxItem: Encodable {
@@ -703,7 +703,7 @@ public final class Broker: @unchecked Sendable {
     private func deliverLocked(to recipient: String, messages: [OrchestrationMessage]) {
         guard !messages.isEmpty, !submitting.contains(recipient),
               let binding = identity.binding(sessionID: recipient), binding.isRunning,
-              binding.agent != nil, // a shell has no turns; its messages wait in `mercury inbox`
+              binding.agent != nil, // a shell has no turns; its messages wait in `sevinda inbox`
               turns.readiness(recipient, now: now()) == .ready,
               let io
         else { return }

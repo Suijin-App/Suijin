@@ -1,19 +1,19 @@
 import Foundation
 
-/// Codex's `notify` program for Mercury sessions: Codex runs it after every turn with one JSON argument
+/// Codex's `notify` program for Sevinda sessions: Codex runs it after every turn with one JSON argument
 /// (`{"type":"agent-turn-complete","thread-id":…,"turn-id":…,"cwd":…,"client":…,"input-messages":[…],
-/// "last-assistant-message":…}`, verified with codex-cli 0.166.0), and Mercury's `mercury hook codex-notify` tells the
+/// "last-assistant-message":…}`, verified with codex-cli 0.166.0), and Sevinda's `sevinda hook codex-notify` tells the
 /// orchestration broker that the session's turn ended.
 ///
 /// It is set per launch with `codex -c notify=[…]`, so no `config.toml` is written: not the user's `~/.codex`, and not a
 /// managed home, whose config the mirror rewrites from `~/.codex`. A `notify` the user configured keeps working: it is
-/// chained after Mercury's hook with the same payload.
+/// chained after Sevinda's hook with the same payload.
 public enum CodexNotifyConfig {
     /// `["-c", "notify=[\"<cli>\",\"hook\",\"codex-notify\",\"--\",<user's program…>]"]`.
     /// `config` is the effective `config.toml` text (see `effectiveConfig`), nil when there is none.
     public static func launchArguments(cli: String, config: String?) -> [String] {
         var command = [cli, "hook", "codex-notify"]
-        if let existing = config.flatMap(notifyCommand(in:)), !existing.isEmpty, !isMercuryHook(existing) {
+        if let existing = config.flatMap(notifyCommand(in:)), !existing.isEmpty, !isSevindaHook(existing) {
             command += ["--"] + existing
         }
         return ["-c", "notify=\(tomlArray(command))"]
@@ -28,8 +28,8 @@ public enum CodexNotifyConfig {
         return String(decoding: data, as: UTF8.self)
     }
 
-    /// A previous Mercury hook (a config that already chains through Mercury) is never chained again.
-    static func isMercuryHook(_ command: [String]) -> Bool {
+    /// A previous Sevinda hook (a config that already chains through Sevinda) is never chained again.
+    static func isSevindaHook(_ command: [String]) -> Bool {
         command.count >= 3 && command[1] == "hook" && command[2] == "codex-notify"
     }
 

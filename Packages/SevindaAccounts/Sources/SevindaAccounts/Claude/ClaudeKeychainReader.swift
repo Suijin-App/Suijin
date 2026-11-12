@@ -6,7 +6,7 @@ import Foundation
 /// Claude 2.1+ stores a config dir's login in the generic password `Claude Code-credentials-<sha256(NFC dir)[0:8]>`
 /// (the unsuffixed item belongs to the default login) under the account `$USER`, or `claude-code-user` when the
 /// user name is not Keychain-safe. Reads go through `/usr/bin/security` because the item's ACL trusts that tool and
-/// the `claude` binary, not Mercury, so the Security framework would prompt. Tokens stay in memory only.
+/// the `claude` binary, not Sevinda, so the Security framework would prompt. Tokens stay in memory only.
 public struct ClaudeKeychainReader: Sendable {
     public static let defaultService = "Claude Code-credentials"
     static let fallbackUser = "claude-code-user"
@@ -111,7 +111,7 @@ public struct ClaudeKeychainReader: Sendable {
         throw UsageError.keychainUnavailable
     }
 
-    /// The user's own `CLAUDE_CONFIG_DIR`, if set in `environment` and not one Mercury injected for a profile.
+    /// The user's own `CLAUDE_CONFIG_DIR`, if set in `environment` and not one Sevinda injected for a profile.
     /// A leading `~` is expanded against `realHome`.
     public static func defaultLoginConfigDir(environment: [String: String], realHome: URL) -> URL? {
         guard let raw = environment["CLAUDE_CONFIG_DIR"]?.trimmingCharacters(in: .whitespaces), !raw.isEmpty else {

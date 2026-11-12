@@ -9,7 +9,7 @@ struct CommitComposer: View {
     let surface: SourceControlSurface
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             TextEditor(text: $state.draftMessage)
                 .font(.body)
                 .frame(minHeight: 64, maxHeight: 180)
@@ -26,8 +26,8 @@ struct CommitComposer: View {
                 .accessibilityLabel(Text("Commit message"))
 
             if let error = state.generationError {
-                HStack(alignment: .top, spacing: MercurySpacing.xs) {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(MercuryColor.warningText)
+                HStack(alignment: .top, spacing: SevindaSpacing.xs) {
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SevindaColor.warningText)
                     ScrollView {
                         Text(verbatim: error).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -40,7 +40,7 @@ struct CommitComposer: View {
                 .font(.callout)
             }
 
-            HStack(spacing: MercurySpacing.s) {
+            HStack(spacing: SevindaSpacing.s) {
                 if state.isGenerating {
                     ProgressView().controlSize(.small)
                     Button("Cancel") { state.cancelGeneration() }

@@ -26,7 +26,7 @@ public struct DiffNoteComposer: View {
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             Text(verbatim: title)
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
@@ -36,9 +36,9 @@ public struct DiffNoteComposer: View {
                 .textFieldStyle(.plain)
                 .lineLimit(2...12)
                 .focused($isFocused)
-                .padding(MercurySpacing.s)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: MercuryRadius.control))
-                .overlay(RoundedRectangle(cornerRadius: MercuryRadius.control).strokeBorder(MercuryColor.hairline))
+                .padding(SevindaSpacing.s)
+                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: SevindaRadius.control))
+                .overlay(RoundedRectangle(cornerRadius: SevindaRadius.control).strokeBorder(SevindaColor.hairline))
                 .accessibilityLabel(Text("Note", bundle: .module, comment: "Accessibility label of the diff note editor"))
             HStack {
                 Spacer()
@@ -52,9 +52,9 @@ public struct DiffNoteComposer: View {
             }
             .controlSize(.small)
         }
-        .padding(MercurySpacing.m)
-        .background(MercuryColor.card, in: RoundedRectangle(cornerRadius: MercuryRadius.card))
-        .overlay(RoundedRectangle(cornerRadius: MercuryRadius.card).strokeBorder(MercuryColor.hairline))
+        .padding(SevindaSpacing.m)
+        .background(SevindaColor.card, in: RoundedRectangle(cornerRadius: SevindaRadius.card))
+        .overlay(RoundedRectangle(cornerRadius: SevindaRadius.card).strokeBorder(SevindaColor.hairline))
         .onAppear { isFocused = true }
     }
 }

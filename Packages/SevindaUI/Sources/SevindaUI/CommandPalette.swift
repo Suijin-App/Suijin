@@ -84,7 +84,7 @@ public struct CommandPaletteView: View {
                     .onSubmit(runSelected)
                     .accessibilityIdentifier("palette.query")
             }
-            .padding(MercurySpacing.l)
+            .padding(SevindaSpacing.l)
             Divider()
             ScrollViewReader { proxy in
                 List(Array(results.enumerated()), id: \.element.id) { index, command in

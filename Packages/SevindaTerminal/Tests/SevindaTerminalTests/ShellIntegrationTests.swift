@@ -22,7 +22,7 @@ struct ShellIntegrationTests {
 
         try Data("stale".utf8).write(to: zshrc)
         try ShellIntegration.install(in: fixture.dataRoot)
-        #expect(try String(contentsOf: zshrc, encoding: .utf8).contains("Mercury shell integration"))
+        #expect(try String(contentsOf: zshrc, encoding: .utf8).contains("Sevinda shell integration"))
     }
 
     @Test("interactiveShell points zsh at the wrapper and remembers the user's ZDOTDIR")
@@ -35,7 +35,7 @@ struct ShellIntegrationTests {
         #expect(launch.arguments == ["-l"])
         #expect(launch.cwd == fixture.home.path)
         #expect(launch.environment["ZDOTDIR"] == ShellIntegration.zshDirectory(in: fixture.integration).path)
-        #expect(launch.environment["MERCURY_USER_ZDOTDIR"] == "/custom/zdot")
+        #expect(launch.environment["SEVINDA_USER_ZDOTDIR"] == "/custom/zdot")
         #expect(launch.environment["SHELL"] == "/bin/zsh")
 
         let bash = ShellLaunch.interactiveShell("/bin/bash", cwd: fixture.home, environment: fixture.environment())
@@ -67,7 +67,7 @@ struct ShellIntegrationTests {
             print -r -- "zdotdir=${ZDOTDIR-<unset>}"
             print -r -- "map=${user_map[a]}"
             print -r -- "histfile=$HISTFILE"
-            print -r -- "leftover=${__mercury_zdotdir-<none>}${MERCURY_USER_ZDOTDIR-<none>}"
+            print -r -- "leftover=${__sevinda_zdotdir-<none>}${SEVINDA_USER_ZDOTDIR-<none>}"
             """)
         let steps = output.split(separator: "\n").filter { $0.hasPrefix("step=") }
         #expect(steps == ["step=zshenv", "step=zprofile", "step=zshrc", "step=zlogin"])
@@ -128,7 +128,7 @@ struct ShellIntegrationTests {
         // Switching accounts applies to the next run in the same shell.
         let other = fixture.dataRoot.appending(path: "claude-profiles/B/home").path
         let switched = try fixture.run(shell: "/bin/zsh", script: """
-            claude; printf '%s' '\(other)' > "$MERCURY_DATA_ROOT/claude-profiles/selected-host"; claude
+            claude; printf '%s' '\(other)' > "$SEVINDA_DATA_ROOT/claude-profiles/selected-host"; claude
             """)
         let configs = switched.split(separator: "\n").filter { $0.hasPrefix("claude-config=") }
         #expect(configs == ["claude-config=\(account)", "claude-config=\(other)"])

@@ -116,12 +116,12 @@ public struct GitHubCLIError: Error, LocalizedError, Sendable, Equatable {
         case .failed(let code): return detail.isEmpty ? "gh failed with exit code \(code)" : detail
         case .timedOut: return "gh did not answer in time."
         case .launchFailed: return detail.isEmpty ? "gh could not be started." : detail
-        case .invalidOutput: return "gh returned output Mercury could not read."
+        case .invalidOutput: return "gh returned output Sevinda could not read."
         }
     }
 }
 
-/// The user's GitHub CLI behind a typed API. Mercury never holds a GitHub token: `gh` uses its own login.
+/// The user's GitHub CLI behind a typed API. Sevinda never holds a GitHub token: `gh` uses its own login.
 public struct GitHubCLI: Sendable {
     public var executable: URL
     public var environment: [String: String]
@@ -197,7 +197,7 @@ public struct GitHubCLI: Sendable {
     /// is passed unchanged. When a pull request for the branch already exists, the error's `output` names it.
     public func createPullRequest(title: String, body: String, base: String, head: String, draft: Bool,
                                   in directory: URL) async throws -> URL {
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-pr-body-\(UUID().uuidString).md")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-pr-body-\(UUID().uuidString).md")
         try Data(body.utf8).write(to: file, options: .atomic)
         defer { try? FileManager.default.removeItem(at: file) }
         var args = ["pr", "create", "--title", title, "--body-file", file.path, "--base", base, "--head", head]

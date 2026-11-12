@@ -11,7 +11,7 @@ struct PullRequestStatusSection: View {
         Section {
             switch state.pullRequest {
             case .unknown, .checking:
-                HStack(spacing: MercurySpacing.s) {
+                HStack(spacing: SevindaSpacing.s) {
                     ProgressView().controlSize(.small)
                     Text("Checking for a pull request…").foregroundStyle(.secondary)
                 }
@@ -49,13 +49,13 @@ struct PullRequestSummary: View {
 
     var body: some View {
         let glyph = PullRequestGlyph(pr: pr)
-        VStack(alignment: .leading, spacing: MercurySpacing.xs) {
-            HStack(alignment: .firstTextBaseline, spacing: MercurySpacing.xs) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+            HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.xs) {
                 Image(systemName: glyph.systemImage).foregroundStyle(glyph.color)
                 Text(verbatim: "#\(pr.number)").monospacedDigit().foregroundStyle(.secondary)
                 Text(verbatim: pr.title).lineLimit(2).truncationMode(.tail)
             }
-            HStack(spacing: MercurySpacing.xs) {
+            HStack(spacing: SevindaSpacing.xs) {
                 Tag(glyph.label, tone: glyph.tone)
                 if let review = Self.review(pr.reviewDecision) { Tag(review.0, tone: review.1) }
                 Spacer(minLength: 0)
@@ -84,10 +84,10 @@ struct PullRequestGlyph {
 
     init(pr: PullRequest) {
         switch pr.state {
-        case .merged: (systemImage, color, tone, label) = ("arrow.triangle.merge", MercuryColor.agent, .agent, Text("Merged"))
-        case .closed: (systemImage, color, tone, label) = ("xmark.circle", MercuryColor.error, .error, Text("Closed"))
-        case .open where pr.isDraft: (systemImage, color, tone, label) = ("arrow.triangle.pull", MercuryColor.idle, .idle, Text("Draft"))
-        case .open: (systemImage, color, tone, label) = ("arrow.triangle.pull", MercuryColor.ok, .ok, Text("Open"))
+        case .merged: (systemImage, color, tone, label) = ("arrow.triangle.merge", SevindaColor.agent, .agent, Text("Merged"))
+        case .closed: (systemImage, color, tone, label) = ("xmark.circle", SevindaColor.error, .error, Text("Closed"))
+        case .open where pr.isDraft: (systemImage, color, tone, label) = ("arrow.triangle.pull", SevindaColor.idle, .idle, Text("Draft"))
+        case .open: (systemImage, color, tone, label) = ("arrow.triangle.pull", SevindaColor.ok, .ok, Text("Open"))
         }
     }
 }
@@ -99,14 +99,14 @@ struct PullRequestUnavailableNote: View {
     var body: some View {
         switch state.pullRequest {
         case .ghMissing:
-            note(Text("GitHub CLI is not installed"), "Mercury creates and reads pull requests with your own gh. Install it, then check again.")
+            note(Text("GitHub CLI is not installed"), "Sevinda creates and reads pull requests with your own gh. Install it, then check again.")
             HStack {
                 Link("Get GitHub CLI", destination: URL(string: "https://cli.github.com")!)
                 Spacer()
                 Button("Check Again") { Task { await state.recheckGitHubCLI() } }
             }
         case .notLoggedIn(let host):
-            note(Text("gh is not signed in to \(host)"), "Sign in once in a terminal; Mercury never stores a GitHub token.")
+            note(Text("gh is not signed in to \(host)"), "Sign in once in a terminal; Sevinda never stores a GitHub token.")
             HStack {
                 Button("Sign In in Terminal") { Task { await state.openGitHubLogin(host: host) } }
                 Spacer()
@@ -148,7 +148,7 @@ struct PullRequestBadgeContent: View {
             let failing = pr.state == .open && state.checks.contains { $0.bucket == .fail }
             HStack(spacing: 2) {
                 Image(systemName: glyph.systemImage)
-                    .foregroundStyle(failing ? MercuryColor.error : glyph.color)
+                    .foregroundStyle(failing ? SevindaColor.error : glyph.color)
                 Text(verbatim: "#\(pr.number)").monospacedDigit().foregroundStyle(.secondary)
             }
             .font(.caption)

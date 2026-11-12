@@ -87,7 +87,7 @@ public enum DiffNoteError: Error, LocalizedError, Equatable {
     }
 }
 
-extension MercuryStore {
+extension SevindaStore {
     /// Notes of a worktree, oldest first.
     public func diffNotes(worktreeID: UUID) throws -> [DiffNote] {
         try dbQueue.read { db in

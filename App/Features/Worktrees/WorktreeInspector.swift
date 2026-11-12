@@ -21,7 +21,7 @@ struct WorktreeInspector: View {
                         Section {
                             Label("Agents in a folder share the same files. Run them on separate tasks, or use a git repository for isolated worktrees.",
                                   systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(MercuryColor.warningText)
+                                .foregroundStyle(SevindaColor.warningText)
                                 .font(.callout)
                         }
                     }

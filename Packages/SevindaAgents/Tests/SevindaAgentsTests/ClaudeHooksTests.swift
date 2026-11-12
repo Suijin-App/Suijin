@@ -71,7 +71,7 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", "umask 000; printf '%s' '{\"hook_event_name\":\"Stop\"}' | \(ClaudeHooks.hookCommand)"]
-        process.environment = ["MERCURY_HOOK_EVENTS": hookCreated.path, "PATH": "/usr/bin:/bin"]
+        process.environment = ["SEVINDA_HOOK_EVENTS": hookCreated.path, "PATH": "/usr/bin:/bin"]
         try process.run()
         process.waitUntilExit()
         #expect(process.terminationStatus == 0)
@@ -102,8 +102,8 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
         let id = UUID()
         #expect(installation.eventsFile(sessionID: id).path == "/d/hooks/events/\(id.uuidString).jsonl")
         let env = installation.env(sessionID: id)
-        #expect(env.set["MERCURY_HOOK_EVENTS"] == installation.eventsFile(sessionID: id).path)
-        #expect(env.set["MERCURY_SESSION_ID"] == id.uuidString)
+        #expect(env.set["SEVINDA_HOOK_EVENTS"] == installation.eventsFile(sessionID: id).path)
+        #expect(env.set["SEVINDA_SESSION_ID"] == id.uuidString)
         #expect(env.unset.isEmpty)
     }
 
@@ -112,7 +112,7 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
         defer { try? FileManager.default.removeItem(at: root) }
         let events = root.appendingPathComponent("events/session.jsonl")
         try FileManager.default.createDirectory(at: events.deletingLastPathComponent(), withIntermediateDirectories: true)
-        let env = ["MERCURY_HOOK_EVENTS": events.path, "PATH": "/usr/bin:/bin"]
+        let env = ["SEVINDA_HOOK_EVENTS": events.path, "PATH": "/usr/bin:/bin"]
 
         let pretty = "{\n  \"hook_event_name\": \"Notification\",\n  \"message\": \"Claude needs your permission to use Bash\",\n  \"notification_type\": \"permission_prompt\"\n}\n"
         #expect(try runHookCommand(stdin: pretty, environment: env) == 0)
@@ -130,11 +130,11 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
 
     @Test func hookCommandIsInertWithoutEnvironment() throws {
         #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: ["PATH": "/usr/bin:/bin"]) == 0)
-        #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: ["PATH": "/usr/bin:/bin", "MERCURY_HOOK_EVENTS": ""]) == 0)
+        #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: ["PATH": "/usr/bin:/bin", "SEVINDA_HOOK_EVENTS": ""]) == 0)
     }
 
     @Test func hookCommandNeverFails() throws {
-        let env = ["MERCURY_HOOK_EVENTS": "/nonexistent-dir-\(UUID().uuidString)/x.jsonl", "PATH": "/usr/bin:/bin"]
+        let env = ["SEVINDA_HOOK_EVENTS": "/nonexistent-dir-\(UUID().uuidString)/x.jsonl", "PATH": "/usr/bin:/bin"]
         #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: env) == 0)
     }
 
@@ -204,7 +204,7 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
         defer { watcher.stop() }
 
         try await Task.sleep(for: .milliseconds(100))
-        #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: ["MERCURY_HOOK_EVENTS": file.path, "PATH": "/usr/bin:/bin"]) == 0)
+        #expect(try runHookCommand(stdin: #"{"hook_event_name":"Stop"}"#, environment: ["SEVINDA_HOOK_EVENTS": file.path, "PATH": "/usr/bin:/bin"]) == 0)
         #expect(await collector.wait(forCount: 1) == ["Stop"])
         try append(#"{"hook_event_name":"Notification"}"# + "\n", to: file)
         #expect(await collector.wait(forCount: 2) == ["Stop", "Notification"])

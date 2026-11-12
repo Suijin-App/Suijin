@@ -207,7 +207,7 @@ extension Data {
 
 func makeTemporaryDirectory() throws -> URL {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("mercury-ptyhost-tests-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("sevinda-ptyhost-tests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
 }

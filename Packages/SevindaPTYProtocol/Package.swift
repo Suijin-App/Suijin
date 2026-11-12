@@ -4,7 +4,7 @@ import PackageDescription
 // SevindaPTYProtocol — the XPC contract between the app and the PTY host helper, plus SevindaPTYHostKit:
 // the helper's session logic (PTY spawn, scrollback, session manager) as a library so it can be tested.
 // CSevindaPTY is an internal C shim: the code between fork and exec must stay async-signal-safe, which Swift
-// cannot guarantee. SevindaCLIKit is the `mercury` command's logic (parsing, broker transport), tested here and linked by
+// cannot guarantee. SevindaCLIKit is the `sevinda` command's logic (parsing, broker transport), tested here and linked by
 // the thin `Tools/SevindaCLI` executable.
 let package = Package(
     name: "SevindaPTYProtocol",

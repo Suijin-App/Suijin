@@ -81,7 +81,7 @@ struct RootView: View {
         .alert(item: $model.presentedError) { error in
             Alert(title: Text(verbatim: error.title), message: Text(verbatim: error.message))
         }
-        // Worktrees made or removed outside Mercury (an agent running `git worktree add`) show up when the user
+        // Worktrees made or removed outside Sevinda (an agent running `git worktree add`) show up when the user
         // comes back to the app or selects the repository.
         .onChange(of: model.selection) { _, context in
             guard let context, let id = model.workspaceID(of: context), let workspace = model.workspace(id) else { return }
@@ -116,10 +116,10 @@ struct RootView: View {
     }
 
     private var title: String {
-        guard let context = model.selection else { return "Mercury" }
+        guard let context = model.selection else { return "Sevinda" }
         switch context {
-        case .workspace(let id): return model.workspace(id)?.name ?? "Mercury"
-        case .worktree(let id): return model.worktree(id)?.branch ?? "Mercury"
+        case .workspace(let id): return model.workspace(id)?.name ?? "Sevinda"
+        case .worktree(let id): return model.worktree(id)?.branch ?? "Sevinda"
         }
     }
 

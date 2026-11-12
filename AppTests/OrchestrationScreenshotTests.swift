@@ -7,11 +7,11 @@ import Testing
 @testable import Sevinda
 
 /// Offscreen renders of the worker tree (sidebar), the orchestration inspector and its settings section, light and
-/// dark, narrow and wide. Runs when `MERCURY_SCREENSHOTS` names an output folder; the images are reviewed by eye.
+/// dark, narrow and wide. Runs when `SEVINDA_SCREENSHOTS` names an output folder; the images are reviewed by eye.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["MERCURY_SCREENSHOTS"] != nil))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
 struct OrchestrationScreenshotTests {
-    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["MERCURY_SCREENSHOTS"] ?? NSTemporaryDirectory())
+    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] ?? NSTemporaryDirectory())
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) throws {
         let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .fullSizeContentView],
@@ -32,11 +32,11 @@ struct OrchestrationScreenshotTests {
     }
 
     @Test func workerTreeInspectorAndSettings() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-orch-shots-\(UUID().uuidString)")
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root)
-        let repo = Workspace(name: "mercury-api", path: "/Users/demo/Code/mercury-api", kind: .git, sortOrder: 0)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-orch-shots-\(UUID().uuidString)")
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root)
+        let repo = Workspace(name: "sevinda-api", path: "/Users/demo/Code/sevinda-api", kind: .git, sortOrder: 0)
         try model.store.save(repo)
-        let tree = WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/mercury-api-worktrees/fix-login", branch: "fix-login", baseBranch: "main")
+        let tree = WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/sevinda-api-worktrees/fix-login", branch: "fix-login", baseBranch: "main")
         try model.store.save(tree)
         let coordinator = AgentSessionRecord(workspaceID: repo.id, agent: .claude, title: "Claude", cwd: repo.path, state: .running)
         let worker = AgentSessionRecord(workspaceID: repo.id, worktreeID: tree.id, agent: .codex, title: "Codex · fix-login", cwd: tree.path, state: .running)
@@ -63,7 +63,7 @@ struct OrchestrationScreenshotTests {
                                   createdAt: now.addingTimeInterval(1), updatedAt: now),
             OrchestrationDispatch(id: "d-9c0d1e2f", taskID: "t-3", runID: run.id, coordinatorSessionID: coordinator.id.uuidString,
                                   name: "migration-dry-run", agent: .codex, worktree: .new, status: .startFailed,
-                                  lastError: "“mercury-api” has uncommitted changes in the way.", createdAt: now.addingTimeInterval(2), updatedAt: now),
+                                  lastError: "“sevinda-api” has uncommitted changes in the way.", createdAt: now.addingTimeInterval(2), updatedAt: now),
         ]
         let messages = [
             OrchestrationMessage(id: "m-11111111", runID: run.id, dispatchID: "d-1a2b3c4d", kind: .question, fromSessionID: worker.id.uuidString,

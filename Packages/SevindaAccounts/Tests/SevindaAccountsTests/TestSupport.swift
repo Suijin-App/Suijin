@@ -10,7 +10,7 @@ final class Sandbox: Sendable {
 
     init() throws {
         let raw = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mercury-accounts-\(UUID().uuidString.prefix(8))", isDirectory: true)
+            .appendingPathComponent("sevinda-accounts-\(UUID().uuidString.prefix(8))", isDirectory: true)
         try FileManager.default.createDirectory(at: raw, withIntermediateDirectories: true)
         // Resolve /var -> /private/var once so path comparisons are exact.
         base = URL(fileURLWithPath: try FileOps.realpath(raw.path)!, isDirectory: true)

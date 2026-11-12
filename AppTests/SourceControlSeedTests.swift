@@ -5,36 +5,36 @@ import Testing
 @testable import Sevinda
 
 /// Builds a data root for looking at the source control UI in the real app:
-/// `TEST_RUNNER_MERCURY_SC_SEED_ROOT=<dir> xcodebuild test -only-testing:SevindaAppTests/SourceControlSeedTests`, then
-/// launch Mercury with `MERCURY_DATA_ROOT=<dir>/data` (and, for pull request states, `MERCURY_GH_PATH=<fake gh>`).
+/// `TEST_RUNNER_SEVINDA_SC_SEED_ROOT=<dir> xcodebuild test -only-testing:SevindaAppTests/SourceControlSeedTests`, then
+/// launch Sevinda with `SEVINDA_DATA_ROOT=<dir>/data` (and, for pull request states, `SEVINDA_GH_PATH=<fake gh>`).
 ///
-/// - `mercury-api`: a git workspace whose `origin` is a GitHub URL that is never contacted. Its worktree
+/// - `sevinda-api`: a git workspace whose `origin` is a GitHub URL that is never contacted. Its worktree
 ///   `feature/usage-bar` is one commit ahead of a seeded upstream and has staged, unstaged and untracked changes;
 ///   `fix/login-timeout` is unpublished and has a pre-commit hook that always fails, with a staged change.
 /// - `local-only`: a git workspace whose remote is a local bare repository (not GitHub).
 /// - `design-notes`: a folder workspace (no source control UI).
 /// No sessions are started.
 @MainActor
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_SC_SEED_ROOT"] != nil))
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SC_SEED_ROOT"] != nil))
 struct SourceControlSeedTests {
     private let git = GitRunner()
-    private let identity = ["-c", "user.name=Mercury Demo", "-c", "user.email=demo@example.invalid", "-c", "commit.gpgsign=false"]
+    private let identity = ["-c", "user.name=Sevinda Demo", "-c", "user.email=demo@example.invalid", "-c", "commit.gpgsign=false"]
 
     @Test func seed() async throws {
-        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["MERCURY_SC_SEED_ROOT"]), isDirectory: true)
+        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_SC_SEED_ROOT"]), isDirectory: true)
         try? FileManager.default.removeItem(at: base)
-        let repo = base.appendingPathComponent("mercury-api", isDirectory: true)
+        let repo = base.appendingPathComponent("sevinda-api", isDirectory: true)
         let localOnly = base.appendingPathComponent("local-only", isDirectory: true)
         let localRemote = base.appendingPathComponent("local-only-remote.git", isDirectory: true)
         let folder = base.appendingPathComponent("design-notes", isDirectory: true)
         for dir in [repo, localOnly, folder] { try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) }
 
-        // mercury-api with a GitHub origin and a remote-tracking main.
+        // sevinda-api with a GitHub origin and a remote-tracking main.
         try await run(["init", "--quiet", "-b", "main"], in: repo)
         try write("Sources/UsageBar.swift", "import Foundation\n\nstruct UsageBar {\n    var fraction: Double\n}\n", in: repo)
-        try write("README.md", "# mercury-api\n", in: repo)
+        try write("README.md", "# sevinda-api\n", in: repo)
         try await commitAll("chore: initial import", in: repo)
-        try await run(["remote", "add", "origin", "https://github.com/acme/mercury-api.git"], in: repo)
+        try await run(["remote", "add", "origin", "https://github.com/acme/sevinda-api.git"], in: repo)
         try await run(["update-ref", "refs/remotes/origin/main", "HEAD"], in: repo)
         try await run(["config", "core.hooksPath", repo.appendingPathComponent(".git/hooks").path], in: repo)
         // Fails only on fix/login-timeout, so the other worktree commits normally.
@@ -62,7 +62,7 @@ struct SourceControlSeedTests {
         try write("notes.md", "notes\n", in: folder)
 
         let dataRoot = base.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try MercuryStore(url: MercuryPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.addWorkspace(at: repo)
         await model.addWorkspace(at: localOnly)
         await model.addWorkspace(at: folder)
@@ -94,7 +94,7 @@ struct SourceControlSeedTests {
                   in: featureDir)
         try write("Sources/UsageFormatter.swift", "import Foundation\n\nenum UsageFormatter {}\n", in: featureDir)
         try await run(["add", "Sources/UsageBar.swift", "Sources/UsageFormatter.swift"], in: featureDir)
-        try write("README.md", "# mercury-api\n\nUsage bars for every account.\n", in: featureDir)
+        try write("README.md", "# sevinda-api\n\nUsage bars for every account.\n", in: featureDir)
         try write("Sources/UsageView.swift", "import SwiftUI\n\nstruct UsageView: View {\n    var body: some View { Text(\"Usage\") }\n}\n",
                   in: featureDir)
         try write("Tests/UsageBarTests.swift", "import Testing\n", in: featureDir)
@@ -126,7 +126,7 @@ struct SourceControlSeedTests {
 @MainActor
 @Suite struct SourceControlFlowTests {
     @Test func stageCommitHookFailurePushAndRemoteKind() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-sc-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-sc-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let repo = root.appendingPathComponent("repo", isDirectory: true)
         let remote = root.appendingPathComponent("remote.git", isDirectory: true)
@@ -134,14 +134,14 @@ struct SourceControlSeedTests {
         let git = GitRunner()
         _ = try await git.run(["init", "--quiet", "--bare", "-b", "main", remote.path], in: root)
         _ = try await git.run(["init", "--quiet", "-b", "main"], in: repo)
-        for (key, value) in [("user.name", "Mercury Tests"), ("user.email", "tests@mercury.invalid"), ("commit.gpgsign", "false"),
+        for (key, value) in [("user.name", "Sevinda Tests"), ("user.email", "tests@sevinda.invalid"), ("commit.gpgsign", "false"),
                              ("core.hooksPath", repo.appendingPathComponent(".git/hooks").path)] {
             _ = try await git.run(["config", key, value], in: repo)
         }
         _ = try await git.run(["remote", "add", "origin", remote.path], in: repo)
         try "one\n".write(to: repo.appendingPathComponent("a.txt"), atomically: true, encoding: .utf8)
 
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: repo)
         let id = try #require(model.workspaces.first).id
         let state = SourceControlStore.shared(for: model).state(for: .workspace(id))

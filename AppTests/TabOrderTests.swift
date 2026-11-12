@@ -8,11 +8,11 @@ import Testing
 @Suite(.serialized)
 struct TabOrderTests {
     @Test func movingASessionTabReordersTabsSidebarAndSurvivesARelaunch() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-order-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-order-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let model = AppModel(store: store, dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
@@ -47,7 +47,7 @@ struct TabOrderTests {
     }
 
     @Test func movingAFileTabReordersOpenFiles() {
-        let model = AppModel(store: try! MercuryStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
+        let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
         let context = SessionContext.workspace(UUID())
         model.openFiles[context] = ["/a", "/b", "/c"]
         model.moveTab(.file("/a"), onto: .file("/c"), in: context)

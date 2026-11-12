@@ -86,7 +86,7 @@ import Testing
     @Test func projectLabels() {
         #expect(ProjectLabel.from(cwd: "/Users/me/Code/alpha") == "alpha")
         #expect(ProjectLabel.from(cwd: "/Users/me/Code/alpha/.claude/worktrees/fix-bug") == "alpha")
-        #expect(ProjectLabel.from(cwd: "/Users/me/Code/Mercury-worktrees/feat/usage") == "Mercury")
+        #expect(ProjectLabel.from(cwd: "/Users/me/Code/Sevinda-worktrees/feat/usage") == "Sevinda")
         #expect(ProjectLabel.from(cwd: "/Users/me/Self-Works") == "Self-Works")
         #expect(ProjectLabel.from(cwd: nil) == "")
     }

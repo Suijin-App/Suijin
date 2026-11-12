@@ -1,19 +1,19 @@
-// SevindaPTYHost — launchd agent that owns Mercury's pseudo terminals so sessions outlive the app.
+// SevindaPTYHost — launchd agent that owns Sevinda's pseudo terminals so sessions outlive the app.
 //
 // Registered by the app with `SMAppService.agent(plistName:)`; launchd starts it on demand when the app connects to
 // the Mach service. It exits once no session is running and no app is connected (after a short grace period).
 //
 // It also hosts the agent orchestration broker of every data root its sessions belong to (`OrchestrationHub`): the
-// `mercury` CLI in those sessions talks to it over <dataRoot>/orchestration/broker.sock, and the broker types messages
+// `sevinda` CLI in those sessions talks to it over <dataRoot>/orchestration/broker.sock, and the broker types messages
 // into the agents' terminals, so delivery goes on while the app is closed.
 //
 // Environment:
-//   MERCURY_DATA_ROOT                  data root (default ~/Library/Application Support/Mercury); metadata goes to
+//   SEVINDA_DATA_ROOT                  data root (default ~/Library/Application Support/Sevinda); metadata goes to
 //                                      <dataRoot>/pty-host/sessions
-//   MERCURY_PTYHOST_SERVICE            Mach service to listen on instead of com.tekmium.mercury.ptyhost (a test
+//   SEVINDA_PTYHOST_SERVICE            Mach service to listen on instead of com.tekmium.sevinda.ptyhost (a test
 //                                      instance next to the user's own helper)
-//   MERCURY_PTYHOST_RETENTION_HOURS    how long exited, unattached sessions are kept (default 24)
-//   MERCURY_PTYHOST_IDLE_GRACE         seconds idle before exiting (default 10)
+//   SEVINDA_PTYHOST_RETENTION_HOURS    how long exited, unattached sessions are kept (default 24)
+//   SEVINDA_PTYHOST_IDLE_GRACE         seconds idle before exiting (default 10)
 
 import Foundation
 import SevindaPTYHostKit
@@ -21,9 +21,9 @@ import SevindaPTYProtocol
 import os
 import Security
 
-private let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "main")
+private let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "main")
 
-/// Bundle version of the enclosing app (the helper ships in Mercury.app/Contents/MacOS), or "dev".
+/// Bundle version of the enclosing app (the helper ships in Sevinda.app/Contents/MacOS), or "dev".
 private func hostBuild() -> String {
     let executable = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
     let appContents = executable.deletingLastPathComponent().deletingLastPathComponent()
@@ -60,24 +60,24 @@ private func doubleSetting(_ name: String, default fallback: Double) -> Double {
 signal(SIGPIPE, SIG_IGN)
 
 var configuration = SessionManager.Configuration(metadataDirectory: SessionManager.defaultMetadataDirectory())
-configuration.exitedRetention = doubleSetting("MERCURY_PTYHOST_RETENTION_HOURS", default: 24) * 3600
-configuration.idleGrace = doubleSetting("MERCURY_PTYHOST_IDLE_GRACE", default: 10)
+configuration.exitedRetention = doubleSetting("SEVINDA_PTYHOST_RETENTION_HOURS", default: 24) * 3600
+configuration.idleGrace = doubleSetting("SEVINDA_PTYHOST_IDLE_GRACE", default: 10)
 
 let manager = SessionManager(configuration: configuration) {
-    // A broker socket left behind is replaced by the next helper; CLI calls meanwhile report Mercury unreachable.
+    // A broker socket left behind is replaced by the next helper; CLI calls meanwhile report Sevinda unreachable.
     logger.info("no running sessions and no clients; exiting")
     exit(EXIT_SUCCESS)
 }
 let listener = NSXPCListener(machServiceName: PTYHostConstants.machServiceName)
 
-// Only the signed Mercury app may drive the helper. Unsigned/ad-hoc development builds have no Team ID to pin; they
+// Only the signed Sevinda app may drive the helper. Unsigned/ad-hoc development builds have no Team ID to pin; they
 // rely on the per-user launchd domain (only this user's processes can look the service up).
 let requirement = ownTeamIdentifier().map {
-    "identifier \"com.tekmium.mercury\" and anchor apple generic and certificate leaf[subject.OU] = \"\($0)\""
+    "identifier \"com.tekmium.sevinda\" and anchor apple generic and certificate leaf[subject.OU] = \"\($0)\""
 }
 if let requirement {
     listener.setConnectionCodeSigningRequirement(requirement)
-    logger.info("accepting connections from com.tekmium.mercury signed by the helper's team")
+    logger.info("accepting connections from com.tekmium.sevinda signed by the helper's team")
 } else {
     logger.notice("helper is not team-signed; connection code-signing requirement disabled")
 }

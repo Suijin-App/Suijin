@@ -2,7 +2,7 @@ import AppKit
 import SevindaUI
 import SwiftUI
 
-/// Where people reach Tekmium Solutions about Mercury. Fill these in once the real addresses exist; each link stays
+/// Where people reach Tekmium Solutions about Sevinda. Fill these in once the real addresses exist; each link stays
 /// hidden while its value is nil, and the Contact section disappears while both are.
 enum AboutLinks {
     /// The support mailbox, e.g. "support@example.com".
@@ -30,7 +30,7 @@ struct AppIdentity: Equatable {
         func value(_ key: String) -> String? {
             (info[key] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         }
-        name = value("CFBundleDisplayName") ?? value("CFBundleName") ?? "Mercury"
+        name = value("CFBundleDisplayName") ?? value("CFBundleName") ?? "Sevinda"
         version = value("CFBundleShortVersionString") ?? "—"
         build = value("CFBundleVersion") ?? "—"
         copyright = value("NSHumanReadableCopyright")
@@ -43,7 +43,7 @@ private extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
-/// An open-source project Mercury ships, with the license named in its checkout.
+/// An open-source project Sevinda ships, with the license named in its checkout.
 struct OpenSourceComponent: Identifiable {
     var name: String
     var license: String
@@ -67,11 +67,11 @@ struct OpenSourceComponent: Identifiable {
     }
 }
 
-/// Settings → About: what Mercury is, its version, who made it, contact links, the legal documents and the
+/// Settings → About: what Sevinda is, its version, who made it, contact links, the legal documents and the
 /// open-source components it uses.
 struct AboutSettings: View {
-    /// `-MercuryAboutDocument terms|privacy` opens that document at launch, for screenshots.
-    @State private var openDocument = UserDefaults.standard.string(forKey: "MercuryAboutDocument")
+    /// `-SevindaAboutDocument terms|privacy` opens that document at launch, for screenshots.
+    @State private var openDocument = UserDefaults.standard.string(forKey: "SevindaAboutDocument")
         .flatMap(LegalDocument.Kind.init(rawValue:))
     private let identity = AppIdentity.current
 
@@ -109,7 +109,7 @@ struct AboutSettings: View {
             } header: {
                 Text("Acknowledgements")
             } footer: {
-                Text("Mercury is built with these open-source projects, each used under its own license.")
+                Text("Sevinda is built with these open-source projects, each used under its own license.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -150,13 +150,13 @@ private struct AboutHeader: View {
     let identity: AppIdentity
 
     var body: some View {
-        HStack(alignment: .center, spacing: MercurySpacing.l) {
+        HStack(alignment: .center, spacing: SevindaSpacing.l) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: 72, height: 72)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+            VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
                 Text(verbatim: identity.name)
                     .font(.title2.weight(.semibold))
                     .accessibilityAddTraits(.isHeader)
@@ -167,11 +167,11 @@ private struct AboutHeader: View {
                 Text("Run Claude Code and Codex agents side by side on your Mac, each in its own git worktree, with several accounts and a native diff viewer.")
                     .font(.callout)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, MercurySpacing.xs)
+                    .padding(.top, SevindaSpacing.xs)
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, MercurySpacing.xs)
+        .padding(.vertical, SevindaSpacing.xs)
         .accessibilityElement(children: .combine)
     }
 }
@@ -202,8 +202,8 @@ struct LegalDocumentSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: MercurySpacing.l) {
-                    VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+                VStack(alignment: .leading, spacing: SevindaSpacing.l) {
+                    VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
                         Text(verbatim: document.title)
                             .font(.title2.weight(.semibold))
                             .accessibilityAddTraits(.isHeader)
@@ -214,7 +214,7 @@ struct LegalDocumentSheet: View {
                         LegalSectionView(section: section)
                     }
                 }
-                .padding(MercurySpacing.xl)
+                .padding(SevindaSpacing.xl)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
             }
@@ -224,7 +224,7 @@ struct LegalDocumentSheet: View {
                 Button("Done") { dismiss() }
                     .keyboardShortcut(.defaultAction)
             }
-            .padding(MercurySpacing.l)
+            .padding(SevindaSpacing.l)
         }
         .frame(minWidth: 460, idealWidth: 600, maxWidth: 760, minHeight: 360, idealHeight: 540)
         .accessibilityIdentifier("legalDocument.\(document.kind.rawValue)")
@@ -235,7 +235,7 @@ private struct LegalSectionView: View {
     let section: LegalDocument.Section
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             if let heading = section.heading {
                 Text(verbatim: heading)
                     .font(.headline)
@@ -246,9 +246,9 @@ private struct LegalSectionView: View {
                 case .paragraph(let text):
                     Text(text).fixedSize(horizontal: false, vertical: true)
                 case .bullets(let items):
-                    VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+                    VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
                         ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                            HStack(alignment: .firstTextBaseline, spacing: MercurySpacing.s) {
+                            HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.s) {
                                 Text(verbatim: "•").foregroundStyle(.secondary).accessibilityHidden(true)
                                 Text(item).fixedSize(horizontal: false, vertical: true)
                             }

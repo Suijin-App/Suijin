@@ -5,7 +5,7 @@ import Testing
 
 func makeTempDirectory() throws -> URL {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("mercury-agents-tests-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("sevinda-agents-tests-\(UUID().uuidString)", isDirectory: true)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
 }
@@ -106,7 +106,7 @@ func makeExecutable(at url: URL, script: String = "#!/bin/sh\nexit 0\n") throws 
         let root = try makeTempDirectory()
         defer { try? FileManager.default.removeItem(at: root) }
         let shell = try makeFakeShell(in: root, prelude: """
-        printf 'banner\\033[?25l __MERCURY_ half marker\\n'
+        printf 'banner\\033[?25l __SEVINDA_ half marker\\n'
         PATH=/fake/bin:/usr/bin:/bin; export PATH
         """)
         let path = await AgentCatalog.queryShellPATH(shell: shell.path, arguments: ["-l", "-i"], timeout: .seconds(5))
@@ -159,7 +159,7 @@ func makeExecutable(at url: URL, script: String = "#!/bin/sh\nexit 0\n") throws 
         #!/bin/sh
         sleep 30 &
         echo $! > '\(pidFile.path)'
-        printf '__MERCURY_PATH__/early/bin__MERCURY_PATH__'
+        printf '__SEVINDA_PATH__/early/bin__SEVINDA_PATH__'
         wait
         """)
         let start = Date()
@@ -249,8 +249,8 @@ func makeExecutable(at url: URL, script: String = "#!/bin/sh\nexit 0\n") throws 
         #expect(spec.arguments == ["--settings", "/data/hooks/claude-settings.json", "fix the tests"])
         #expect(spec.env.set == [
             "CLAUDE_CONFIG_DIR": "/acct",
-            "MERCURY_HOOK_EVENTS": "/data/hooks/events/11111111-2222-3333-4444-555555555555.jsonl",
-            "MERCURY_SESSION_ID": "11111111-2222-3333-4444-555555555555",
+            "SEVINDA_HOOK_EVENTS": "/data/hooks/events/11111111-2222-3333-4444-555555555555.jsonl",
+            "SEVINDA_SESSION_ID": "11111111-2222-3333-4444-555555555555",
         ])
         #expect(spec.env.unset == ["ANTHROPIC_API_KEY"])
         #expect(spec.initialPrompt == "fix the tests")

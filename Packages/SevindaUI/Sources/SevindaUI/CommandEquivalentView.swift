@@ -13,11 +13,11 @@ public struct CommandEquivalentView: View {
     }
 
     public var body: some View {
-        HStack(spacing: MercurySpacing.s) {
+        HStack(spacing: SevindaSpacing.s) {
             Text("Equivalent command", bundle: .module).font(.caption).foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(command)
-                    .font(MercuryFont.monoSmall)
+                    .font(SevindaFont.monoSmall)
                     .textSelection(.enabled)
                     .lineLimit(1)
             }
@@ -31,12 +31,12 @@ public struct CommandEquivalentView: View {
             .buttonStyle(.borderless)
             .help(Text("Copy Command", bundle: .module))
         }
-        .padding(.horizontal, MercurySpacing.m)
+        .padding(.horizontal, SevindaSpacing.m)
         .padding(.vertical, 7)
-        .background(RoundedRectangle(cornerRadius: MercuryRadius.control).fill(MercuryColor.codeBackground))
+        .background(RoundedRectangle(cornerRadius: SevindaRadius.control).fill(SevindaColor.codeBackground))
         .overlay(
-            RoundedRectangle(cornerRadius: MercuryRadius.control)
-                .strokeBorder(MercuryColor.hairline, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            RoundedRectangle(cornerRadius: SevindaRadius.control)
+                .strokeBorder(SevindaColor.hairline, style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
         )
         .onChange(of: command) { copied = false }
         .accessibilityElement(children: .contain)

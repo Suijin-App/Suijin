@@ -110,7 +110,7 @@ import Testing
             dataRoot: box.dataRoot, realHome: box.realHome, executable: URL(fileURLWithPath: "/nonexistent/codex"),
             environment: [:], shareSessions: false, runner: FakeCommandRunner())
         let home = try codex.createHome(accountID: UUID())
-        // Simulate an older Mercury: unfiltered config and a record without a filter version.
+        // Simulate an older Sevinda: unfiltered config and a record without a filter version.
         try box.write("model = \"gpt-5\"\nforced_login_method = \"api\"\n", to: home.appendingPathComponent("config.toml"))
         let record = home.deletingLastPathComponent().appendingPathComponent("config-mirror.json")
         var old = try readJSON(record)

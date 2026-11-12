@@ -2,7 +2,7 @@ import Foundation
 import GRDB
 
 extension Migrations {
-    /// Mercury's own usage counters (`v5_stats`): named integer counters and the pull requests Mercury created.
+    /// Sevinda's own usage counters (`v5_stats`): named integer counters and the pull requests Sevinda created.
     static func registerStatsMigrations(_ migrator: inout DatabaseMigrator) {
         migrator.registerMigration("v5_stats") { db in
             try db.create(table: "stat_counter") { t in

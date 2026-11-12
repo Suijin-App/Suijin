@@ -6,7 +6,7 @@ import os
 /// 700 directory), written atomically after every change. Only the helper writes it, so the app's database never has
 /// two writers. Not thread-safe: the owning `Broker` confines it to its queue.
 struct DispatchStore {
-    private static let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "orchestration")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "orchestration")
     /// Delivered messages and settled dispatches are kept this long, so the inbox and the inspector show recent work.
     static let retention: TimeInterval = 14 * 24 * 3600
 

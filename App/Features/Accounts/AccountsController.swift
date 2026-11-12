@@ -59,7 +59,7 @@ final class AccountsController {
     }
 
     /// Makes `accountID` (nil = the user's own login) the default for new sessions and for `claude`/`codex` typed in
-    /// Mercury terminals.
+    /// Sevinda terminals.
     func setDefault(_ accountID: UUID?, for kind: AccountProvider) async {
         let key: SettingKey = kind == .claude ? .defaultClaudeAccount : .defaultCodexAccount
         model.setSetting(key, accountID?.uuidString)
@@ -96,8 +96,8 @@ final class AccountsController {
     func startPolling() {
         pollTask?.cancel()
         #if DEBUG
-        // `-MercuryPreviewUsage 1` (or `failed`) shows sample usage for screenshots, without any network request.
-        if let preview = UserDefaults.standard.string(forKey: "MercuryPreviewUsage") {
+        // `-SevindaPreviewUsage 1` (or `failed`) shows sample usage for screenshots, without any network request.
+        if let preview = UserDefaults.standard.string(forKey: "SevindaPreviewUsage") {
             fillPreviewUsage(failedCodex: preview == "failed")
             return
         }

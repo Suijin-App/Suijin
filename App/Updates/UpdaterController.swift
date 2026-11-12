@@ -18,7 +18,8 @@ final class UpdaterController {
         case idle
         /// Checking on schedule and on request.
         case running
-        /// The build has no public EdDSA key (`SUPublicEDKey` is missing or still the placeholder).
+        /// The build has no update feed (`SUFeedURL`) or no public EdDSA key (`SUPublicEDKey` is missing or still the
+        /// placeholder).
         case notConfigured
         /// Sparkle refused to start; the message says why.
         case failed(String)
@@ -43,7 +44,7 @@ final class UpdaterController {
     @ObservationIgnored private let delegate = Delegate()
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
-    private static let logger = Logger(subsystem: "com.tekmium.mercury", category: "updates")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda", category: "updates")
 
     private var updater: SPUUpdater { standardController.updater }
 
@@ -62,9 +63,9 @@ final class UpdaterController {
         case .running, .notConfigured: return
         case .idle, .failed: break
         }
-        guard Self.hasPublicKey(in: .main) else {
+        guard Self.isConfigured(in: .main) else {
             state = .notConfigured
-            Self.logger.notice("updates off: SUPublicEDKey is not set in this build")
+            Self.logger.notice("updates off: this build has no SUFeedURL or no SUPublicEDKey")
             return
         }
         do {
@@ -79,6 +80,17 @@ final class UpdaterController {
     }
 
     /// Whether `bundle` carries a public EdDSA key Sparkle can verify updates with.
+    /// Updates run only with both an HTTPS feed and a real public key. Sevinda has no update host yet, so shipped builds
+    /// carry no `SUFeedURL` and stay here (docs/release-process.md, "Turning updates on").
+    nonisolated static func isConfigured(in bundle: Bundle) -> Bool {
+        hasFeedURL(in: bundle) && hasPublicKey(in: bundle)
+    }
+
+    nonisolated static func hasFeedURL(in bundle: Bundle) -> Bool {
+        guard let feed = bundle.object(forInfoDictionaryKey: "SUFeedURL") as? String else { return false }
+        return URL(string: feed.trimmingCharacters(in: .whitespacesAndNewlines))?.scheme == "https"
+    }
+
     nonisolated static func hasPublicKey(in bundle: Bundle) -> Bool {
         guard let key = bundle.object(forInfoDictionaryKey: "SUPublicEDKey") as? String else { return false }
         return isUsablePublicKey(key)

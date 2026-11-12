@@ -157,7 +157,7 @@ enum ProjectLabel {
         {
             return String(components[index - 1])
         }
-        // Mercury worktrees: `<parent>/<repo>-worktrees/<branch…>`.
+        // Sevinda worktrees: `<parent>/<repo>-worktrees/<branch…>`.
         if let index = components.lastIndex(where: { $0.hasSuffix("-worktrees") && $0.count > "-worktrees".count }),
             index + 1 < components.count
         {

@@ -36,8 +36,8 @@ struct OrchestrationBrokerTests {
         #expect(launch.coordinatorSessionID == "coordinator")
         #expect(launch.prompt.contains("Dispatch ID: \(launch.dispatchID)"))
         #expect(launch.prompt.contains("Task ID: t-"))
-        #expect(launch.prompt.contains("mercury ask --body"))
-        #expect(launch.prompt.contains("mercury done --status success"))
+        #expect(launch.prompt.contains("sevinda ask --body"))
+        #expect(launch.prompt.contains("sevinda done --status success"))
         #expect(launch.prompt.hasSuffix("=== TASK ===\nFix the login bug"))
         let reply = try #require(response)
         #expect(reply.ok)
@@ -83,7 +83,7 @@ struct OrchestrationBrokerTests {
         let harness = BrokerHarness()
         let noSpec = await harness.call("worker.start", ["agent": "codex"])
         #expect(noSpec?.error?.code == "missing_spec")
-        #expect(noSpec?.error?.hint?.contains("mercury worker start") == true)
+        #expect(noSpec?.error?.hint?.contains("sevinda worker start") == true)
         let badAgent = await harness.call("worker.start", ["agent": "gemini", "spec": "x"])
         #expect(badAgent?.error?.code == "invalid_agent")
         let notWorker = await harness.call("ask", ["body": "?"])
@@ -161,14 +161,14 @@ struct OrchestrationBrokerTests {
         let escalations = harness.snapshot.messages.filter { $0.kind == .escalation }
         #expect(escalations.count == 1)
         #expect(escalations.first?.toSessionID == "coordinator")
-        #expect(escalations.first?.body.contains("without reporting `mercury done`") == true)
+        #expect(escalations.first?.body.contains("without reporting `sevinda done`") == true)
         // A stalled worker can still finish.
         let done = await harness.call("done", token: BrokerHarness.workerToken, ["status": "success", "summary": "ok"])
         #expect(done?.ok == true)
     }
 
     @Test func askArrivingJustAfterTheTurnEndDoesNotEscalate() async throws {
-        // Codex can end its turn while its `mercury ask` is still on the way to the broker.
+        // Codex can end its turn while its `sevinda ask` is still on the way to the broker.
         let harness = BrokerHarness()
         _ = await harness.startWorker()
         await harness.codexTurnEnded()
@@ -296,7 +296,7 @@ struct OrchestrationDeliveryTests {
         let pastes = harness.io.pastes("host-coordinator")
         #expect(pastes.count == 1)
         #expect(pastes.first?.contains("asks (question m-") == true)
-        #expect(pastes.first?.contains("mercury reply --id m-") == true)
+        #expect(pastes.first?.contains("sevinda reply --id m-") == true)
         #expect(harness.io.submits("host-coordinator") == 1)
         let writes = harness.io.written("host-coordinator")
         #expect(writes.count == 2, "the paste and Return are two writes")
@@ -380,7 +380,7 @@ struct OrchestrationDeliveryTests {
         let pastes = harness.io.pastes("host-coordinator")
         #expect(pastes.count == 1)
         let paste = try #require(pastes.first)
-        #expect(paste.hasPrefix("[Mercury] 2 messages for you:"))
+        #expect(paste.hasPrefix("[Sevinda] 2 messages for you:"))
         #expect(paste.contains("First?"))
         #expect(paste.contains("failed."))
         #expect(paste.contains("Every worker has reported"))
@@ -494,14 +494,14 @@ struct TurnTrackerTests {
         #expect(PTYHostConstants.negotiatedVersion(clientVersion: 9) == 3)
     }
 
-    @Test func machServiceOverrideIsLimitedToMercuryNames() {
-        #expect(PTYHostConstants.resolveMachServiceName(environment: [:]) == "com.tekmium.mercury.ptyhost")
-        #expect(PTYHostConstants.resolveMachServiceName(environment: ["MERCURY_PTYHOST_SERVICE": "com.tekmium.mercury.ptyhost.e2e"])
-                == "com.tekmium.mercury.ptyhost.e2e")
-        #expect(PTYHostConstants.resolveMachServiceName(environment: ["MERCURY_PTYHOST_SERVICE": "com.apple.something"])
-                == "com.tekmium.mercury.ptyhost")
-        #expect(PTYHostConstants.resolveMachServiceName(environment: ["MERCURY_PTYHOST_SERVICE": "com.tekmium.mercury.ptyhost.a b"])
-                == "com.tekmium.mercury.ptyhost")
+    @Test func machServiceOverrideIsLimitedToSevindaNames() {
+        #expect(PTYHostConstants.resolveMachServiceName(environment: [:]) == "com.tekmium.sevinda.ptyhost")
+        #expect(PTYHostConstants.resolveMachServiceName(environment: ["SEVINDA_PTYHOST_SERVICE": "com.tekmium.sevinda.ptyhost.e2e"])
+                == "com.tekmium.sevinda.ptyhost.e2e")
+        #expect(PTYHostConstants.resolveMachServiceName(environment: ["SEVINDA_PTYHOST_SERVICE": "com.apple.something"])
+                == "com.tekmium.sevinda.ptyhost")
+        #expect(PTYHostConstants.resolveMachServiceName(environment: ["SEVINDA_PTYHOST_SERVICE": "com.tekmium.sevinda.ptyhost.a b"])
+                == "com.tekmium.sevinda.ptyhost")
     }
 
     @Test func socketPathFitsSunPath() {

@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// What the Resource Manager measures: a running session, Mercury itself, or the terminal host helper.
+/// What the Resource Manager measures: a running session, Sevinda itself, or the terminal host helper.
 enum ResourceKey: Hashable, Sendable {
     case session(UUID)
     case app
@@ -19,7 +19,7 @@ struct ResourceFigures: Equatable, Sendable {
 enum ResourceTarget: Sendable {
     /// A process and every descendant (a session: its shell and the agent processes under it).
     case tree(pid_t)
-    /// One process alone (Mercury itself: its in-process terminals are counted with their sessions).
+    /// One process alone (Sevinda itself: its in-process terminals are counted with their sessions).
     case process(pid_t)
     /// The PTY host helper: the parent of the hosted session processes when it carries the helper's name, otherwise
     /// the first process of the current user with that name.

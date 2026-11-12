@@ -44,7 +44,7 @@ enum UsageFailure: Equatable, Sendable {
     func message(provider: String) -> String {
         switch self {
         case .staleToken: String(localized: "Claude usage updates the next time Claude runs.")
-        case .rateLimited: String(localized: "The usage service is limiting requests. Mercury tries again later.")
+        case .rateLimited: String(localized: "The usage service is limiting requests. Sevinda tries again later.")
         case .network: String(localized: "\(provider) usage could not be refreshed because the network request failed.")
         case .keychainUnavailable: String(localized: "\(provider) sign-in credentials could not be read.")
         case .signedOut: String(localized: "The selected \(provider) account needs you to sign in again in Settings.")
@@ -63,7 +63,7 @@ struct ProviderUsageState: Equatable {
     var snapshot: UsageSnapshot?
     var failure: UsageFailure?
     var accountName: String?
-    /// A Mercury-managed default account rather than the user's own login.
+    /// A Sevinda-managed default account rather than the user's own login.
     var isManaged: Bool
 }
 

@@ -70,28 +70,28 @@ struct SourceControlToolbarItems: View {
 
 #if DEBUG
 extension SourceControlToolbarItems {
-    /// Screenshot runs open a surface directly, once per launch: `-MercurySourceControl commit|pullRequest|commitError`.
+    /// Screenshot runs open a surface directly, once per launch: `-SevindaSourceControl commit|pullRequest|commitError`.
     /// `commitError` commits the staged changes with a sample message, so a failing pre-commit hook shows its report.
-    /// `-MercuryShowSidebar YES` toggles the sidebar open; `-MercuryShowInspector YES` shows the inspector by sending its ⌥⌘I shortcut to the main window.
+    /// `-SevindaShowSidebar YES` toggles the sidebar open; `-SevindaShowInspector YES` shows the inspector by sending its ⌥⌘I shortcut to the main window.
     private func openLaunchSurface(_ state: SourceControlState) async {
         guard !Self.openedLaunchSurface else { return }
         Self.openedLaunchSurface = true
         try? await Task.sleep(for: .seconds(1))
         let defaults = UserDefaults.standard
-        guard defaults.bool(forKey: "MercuryShowInspector") || defaults.bool(forKey: "MercuryShowSidebar")
-                || defaults.string(forKey: "MercurySourceControl") != nil else { return }
+        guard defaults.bool(forKey: "SevindaShowInspector") || defaults.bool(forKey: "SevindaShowSidebar")
+                || defaults.string(forKey: "SevindaSourceControl") != nil else { return }
         // A screenshot run is started from a script; bring the window forward so it renders as the active window.
         NSApp.activate()
-        if defaults.bool(forKey: "MercuryShowSidebar") {
+        if defaults.bool(forKey: "SevindaShowSidebar") {
             NSApp.sendAction(#selector(NSSplitViewController.toggleSidebar(_:)), to: nil, from: nil)
         }
-        if defaults.bool(forKey: "MercuryShowInspector"), let window = NSApp.mainWindow ?? NSApp.windows.first,
+        if defaults.bool(forKey: "SevindaShowInspector"), let window = NSApp.mainWindow ?? NSApp.windows.first,
            let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.command, .option], timestamp: 0,
                                         windowNumber: window.windowNumber, context: nil, characters: "i",
                                         charactersIgnoringModifiers: "i", isARepeat: false, keyCode: 34) {
             _ = window.performKeyEquivalent(with: event)
         }
-        guard let surface = UserDefaults.standard.string(forKey: "MercurySourceControl") else { return }
+        guard let surface = UserDefaults.standard.string(forKey: "SevindaSourceControl") else { return }
         switch surface {
         case "commit": isCommitPopoverShown = true
         case "pullRequest": state.createPullRequestSurface = .toolbar

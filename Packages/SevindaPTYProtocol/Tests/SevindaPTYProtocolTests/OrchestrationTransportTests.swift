@@ -119,12 +119,12 @@ struct OrchestrationTransportTests {
         let directoryMode = (try FileManager.default.attributesOfItem(atPath: state.deletingLastPathComponent().path)[.posixPermissions] as? Int) ?? 0
         #expect(directoryMode == 0o700)
 
-        // A forged token from a terminal Mercury did not open is refused by the broker itself.
+        // A forged token from a terminal Sevinda did not open is refused by the broker itself.
         var forged = environment
         forged[OrchestrationEnvironment.sessionToken] = OrchestrationToken.make()
         let refused = SevindaCLI(environment: forged, skillsDirectory: nil, version: "test").run(["inbox"])
         #expect(refused.exitCode == SevindaCLI.Exit.refused)
-        #expect(refused.stderr.contains("not opened by Mercury"))
+        #expect(refused.stderr.contains("not opened by Sevinda"))
 
         // The app side: endpoint, hello, snapshot.
         let endpoint = hub.endpoint(dataRoot: dataRoot)
@@ -155,7 +155,7 @@ private final class SilentClient: NSObject, OrchestrationClientXPC, Sendable {
     func attention(_ event: Data) {}
 }
 
-@Suite("mercury CLI")
+@Suite("sevinda CLI")
 struct CLIParsingTests {
     let parser = CommandParser(readFile: { $0 == "/spec.md" ? "spec from file" : nil }, readStandardInput: { "from stdin" })
 
@@ -193,7 +193,7 @@ struct CLIParsingTests {
         func failure(_ args: [String]) -> CLIUsageError? {
             do { _ = try parser.parse(args); return nil } catch let error as CLIUsageError { return error } catch { return nil }
         }
-        #expect(failure(["wroker", "start"])?.suggestion == "mercury worker start")
+        #expect(failure(["wroker", "start"])?.suggestion == "sevinda worker start")
         #expect(failure(["worker", "start", "--agent", "codex", "--spce", "x"])?.suggestion == "--spec")
         #expect(failure(["worker", "start", "--spec", "x"])?.message == "Missing `--agent`.")
         #expect(failure(["worker", "start", "--agent", "gpt", "--spec", "x"])?.message.contains("claude") == true)
@@ -210,11 +210,11 @@ struct CLIParsingTests {
             return .failure(BrokerFailure(code: "x", message: "x"))
         })
         let plain = cli.run(["worker", "list"])
-        #expect(plain.exitCode == SevindaCLI.Exit.notMercuryTerminal)
-        #expect(plain.stderr.contains("not opened by Mercury"))
+        #expect(plain.exitCode == SevindaCLI.Exit.notSevindaTerminal)
+        #expect(plain.stderr.contains("not opened by Sevinda"))
         let json = cli.run(["worker", "list", "--json"])
-        #expect(json.exitCode == SevindaCLI.Exit.notMercuryTerminal)
-        #expect(json.stdout.contains(#""code" : "not_mercury_terminal""#))
+        #expect(json.exitCode == SevindaCLI.Exit.notSevindaTerminal)
+        #expect(json.stdout.contains(#""code" : "not_sevinda_terminal""#))
         #expect(json.stdout.contains(#""ok" : false"#))
     }
 
@@ -234,7 +234,7 @@ struct CLIParsingTests {
         let refusing = SevindaCLI(environment: [OrchestrationEnvironment.sessionToken: "tok"], skillsDirectory: nil, version: "t",
                                   transport: { _, _ in .failure(BrokerFailure(code: "not_worker", message: "No.", hint: "Do this.")) })
         let refused = refusing.run(["ask", "--body", "?"])
-        #expect(refused == CLIResult(stderr: "mercury: No.\nNext: Do this.\n", exitCode: SevindaCLI.Exit.refused))
+        #expect(refused == CLIResult(stderr: "sevinda: No.\nNext: Do this.\n", exitCode: SevindaCLI.Exit.refused))
         let unreachable = SevindaCLI(environment: [OrchestrationEnvironment.sessionToken: "tok"], skillsDirectory: nil, version: "t",
                                      transport: { _, _ in throw BrokerClientError.unreachable("ENOENT") })
         #expect(unreachable.run(["inbox"]).exitCode == SevindaCLI.Exit.unreachable)
@@ -266,12 +266,12 @@ struct CLIParsingTests {
     @Test func skillGuideComesFromTheBundle() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("skills-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let file = directory.appendingPathComponent("mercury-orchestration/SKILL.md")
+        let file = directory.appendingPathComponent("sevinda-orchestration/SKILL.md")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "# Guide".write(to: file, atomically: true, encoding: .utf8)
         let cli = SevindaCLI(environment: [:], skillsDirectory: directory, version: "t")
         #expect(cli.run(["skills", "get", "orchestration"]) == CLIResult(stdout: "# Guide\n"))
         #expect(cli.run(["skills", "get", "other"]).exitCode == SevindaCLI.Exit.usage)
-        #expect(cli.run(["--version"]).stdout == "mercury t (protocol 3)\n")
+        #expect(cli.run(["--version"]).stdout == "sevinda t (protocol 3)\n")
     }
 }

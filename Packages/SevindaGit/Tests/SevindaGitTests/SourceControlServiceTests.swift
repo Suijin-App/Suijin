@@ -190,8 +190,8 @@ import Testing
 
 /// Runs `body` with a commit identity in the repository config (tests must not depend on the user's global config).
 private func withIdentity<T>(_ repo: TestRepo, _ body: () async throws -> T) async throws -> T {
-    try await repo.git("config", "user.name", "Mercury Tests")
-    try await repo.git("config", "user.email", "tests@mercury.invalid")
+    try await repo.git("config", "user.name", "Sevinda Tests")
+    try await repo.git("config", "user.email", "tests@sevinda.invalid")
     try await repo.git("config", "commit.gpgsign", "false")
     return try await body()
 }

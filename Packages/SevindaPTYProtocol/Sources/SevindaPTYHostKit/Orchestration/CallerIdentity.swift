@@ -2,11 +2,11 @@ import CryptoKit
 import Foundation
 import SevindaPTYProtocol
 
-/// A live terminal Mercury opened, as the broker knows it from the helper's spawn.
+/// A live terminal Sevinda opened, as the broker knows it from the helper's spawn.
 struct SessionBinding: Sendable, Hashable {
     /// The PTY host session id (what the broker writes to).
     var hostSessionID: String
-    /// The app's session UUID (`MERCURY_SESSION_ID`, metadata `mercury.session`).
+    /// The app's session UUID (`SEVINDA_SESSION_ID`, metadata `sevinda.session`).
     var sessionID: String
     /// `claude`, `codex`, or nil for a shell.
     var agent: OrchestrationAgent?

@@ -132,10 +132,10 @@ struct DiffTextViewTests {
 
     // MARK: - Snapshots (visual check)
 
-    /// Renders the SwiftUI wrapper offscreen to PNGs. Opt-in: `MERCURY_DIFF_SNAPSHOTS=<dir> swift test`.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_DIFF_SNAPSHOTS"] != nil))
+    /// Renders the SwiftUI wrapper offscreen to PNGs. Opt-in: `SEVINDA_DIFF_SNAPSHOTS=<dir> swift test`.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_DIFF_SNAPSHOTS"] != nil))
     func snapshots() async throws {
-        let directory = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["MERCURY_DIFF_SNAPSHOTS"]))
+        let directory = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_DIFF_SNAPSHOTS"]))
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let cases: [(String, FileDiff, String?)] = [
             ("swift", Fixtures.screenshotDiff, "swift"),
@@ -168,9 +168,9 @@ struct DiffTextViewTests {
 
     /// Placeholders are pure SwiftUI, which offscreen windows do not draw through `cacheDisplay`;
     /// `ImageRenderer` renders them on the pane background they appear on.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["MERCURY_DIFF_SNAPSHOTS"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_DIFF_SNAPSHOTS"] != nil))
     func placeholderSnapshots() throws {
-        let directory = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["MERCURY_DIFF_SNAPSHOTS"]))
+        let directory = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_DIFF_SNAPSHOTS"]))
         for (name, state) in [("binary", DiffPlaceholder.State.binary), ("nochanges", .noChanges)] {
             for width in [600, 1200] as [CGFloat] {
                 for dark in [false, true] {
@@ -230,7 +230,7 @@ extension NSView {
 }
 
 extension Fixtures {
-    static let screenshotDiff = FileDiff(oldPath: "Sources/Mercury/SessionStore.swift", newPath: "Sources/Mercury/SessionStore.swift", hunks: [
+    static let screenshotDiff = FileDiff(oldPath: "Sources/Sevinda/SessionStore.swift", newPath: "Sources/Sevinda/SessionStore.swift", hunks: [
         DiffHunk(header: "@@ -12,9 +12,11 @@ final class SessionStore {", oldStart: 12, oldCount: 9, newStart: 12, newCount: 11, lines: [
             DiffLine(kind: .context, text: "    /// Sessions keyed by worktree path.", oldLine: 12, newLine: 12),
             DiffLine(kind: .context, text: "    private var sessions: [URL: Session] = [:]", oldLine: 13, newLine: 13),

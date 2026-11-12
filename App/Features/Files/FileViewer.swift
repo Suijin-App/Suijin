@@ -60,17 +60,17 @@ struct FileViewer: View {
                 case .markdown(let text):
                     let document = MarkdownDocument(text)
                     ScrollView {
-                        VStack(alignment: .leading, spacing: MercurySpacing.l) {
+                        VStack(alignment: .leading, spacing: SevindaSpacing.l) {
                             if !document.frontMatter.isEmpty {
                                 FrontMatterView(fields: document.frontMatter)
                             }
                             Markdown(document.body, baseURL: url.deletingLastPathComponent(), imageBaseURL: url.deletingLastPathComponent())
-                                .markdownTheme(.mercury)
+                                .markdownTheme(.sevinda)
                                 .textSelection(.enabled)
                         }
                             .frame(maxWidth: 860, alignment: .leading)
-                            .padding(.horizontal, MercurySpacing.xl)
-                            .padding(.vertical, MercurySpacing.l)
+                            .padding(.horizontal, SevindaSpacing.xl)
+                            .padding(.vertical, SevindaSpacing.l)
                             .frame(maxWidth: .infinity)
                     }
                     .environment(\.openURL, OpenURLAction { link in
@@ -84,19 +84,19 @@ struct FileViewer: View {
                 case .text(let text):
                     ScrollView([.vertical, .horizontal]) {
                         Text(verbatim: text)
-                            .font(MercuryFont.mono)
+                            .font(SevindaFont.mono)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .padding(MercurySpacing.l)
+                            .padding(SevindaSpacing.l)
                     }
-                    .background(MercuryColor.codeBackground)
+                    .background(SevindaColor.codeBackground)
                 case .image(let image):
                     ZoomableImageView(image: image, controller: zoom)
                 case .unsupported:
                     ContentUnavailableView {
                         Label("No Preview", systemImage: "doc")
                     } description: {
-                        Text("Mercury shows Markdown, code, text, images and PDFs. Open this file in its default app instead.")
+                        Text("Sevinda shows Markdown, code, text, images and PDFs. Open this file in its default app instead.")
                     } actions: {
                         Button("Open in Default App") { NSWorkspace.shared.open(url) }.glassButtonStyle()
                     }
@@ -121,7 +121,7 @@ struct FileViewer: View {
     }
 
     private var header: some View {
-        HStack(spacing: MercurySpacing.s) {
+        HStack(spacing: SevindaSpacing.s) {
             Image(nsImage: FileIcons.icon(forPath: path))
                 .resizable()
                 .frame(width: 16, height: 16)
@@ -132,7 +132,7 @@ struct FileViewer: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
-            Spacer(minLength: MercurySpacing.s)
+            Spacer(minLength: SevindaSpacing.s)
             headerControls
             Button { NSWorkspace.shared.activateFileViewerSelecting([url]) } label: {
                 Label("Show in Finder", systemImage: "folder")
@@ -143,7 +143,7 @@ struct FileViewer: View {
         }
         .labelStyle(.iconOnly)
         .buttonStyle(.borderless)
-        .padding(.horizontal, MercurySpacing.l)
+        .padding(.horizontal, SevindaSpacing.l)
         .padding(.vertical, 6)
     }
 
@@ -236,7 +236,7 @@ private struct FrontMatterView: View {
     let fields: [(key: String, value: String)]
 
     var body: some View {
-        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: MercurySpacing.l, verticalSpacing: 6) {
+        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: SevindaSpacing.l, verticalSpacing: 6) {
             ForEach(Array(fields.enumerated()), id: \.offset) { _, field in
                 GridRow {
                     Text(verbatim: field.key).foregroundStyle(.secondary).gridColumnAlignment(.trailing)
@@ -245,9 +245,9 @@ private struct FrontMatterView: View {
             }
         }
         .font(.callout)
-        .padding(MercurySpacing.m)
+        .padding(SevindaSpacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: MercuryRadius.card))
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: SevindaRadius.card))
     }
 }
 
@@ -285,7 +285,7 @@ private struct CodeTextView: NSViewRepresentable {
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
         textView.textContainerInset = NSSize(width: 8, height: 10)
-        textView.backgroundColor = NSColor(MercuryColor.codeBackground)
+        textView.backgroundColor = NSColor(SevindaColor.codeBackground)
         textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
         textView.autoresizingMask = [.width]
@@ -385,7 +385,7 @@ private final class LineNumberRuler: NSRulerView {
     }
 
     override func drawHashMarksAndLabels(in rect: NSRect) {
-        NSColor(MercuryColor.codeBackground).setFill()
+        NSColor(SevindaColor.codeBackground).setFill()
         bounds.fill()
         guard let textView, let layoutManager = textView.layoutManager, let container = textView.textContainer else { return }
         let visible = textView.visibleRect
@@ -575,7 +575,7 @@ private struct PDFDocumentView: NSViewRepresentable {
 extension Theme {
     /// GitHub's theme on the window's own background: its text style paints a fixed white or near-black page behind
     /// every paragraph (and its tables alternate with that color), which showed as a second background in dark mode.
-    @MainActor static let mercury = Theme.gitHub
+    @MainActor static let sevinda = Theme.gitHub
         .text {
             ForegroundColor(.primary)
             BackgroundColor(nil)

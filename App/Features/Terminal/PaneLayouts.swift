@@ -2,7 +2,7 @@ import AppKit
 import SevindaCore
 import os
 
-private let logger = Logger(subsystem: "com.tekmium.mercury", category: "panes")
+private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "panes")
 
 /// Split tabs: a tab showing two to ten sessions as panes, arranged by a `PaneLayout` (SevindaCore). A tab with one
 /// session is a plain `.session` tab and has no layout; adding a pane turns it into a `.panes` tab in the same place,
@@ -310,10 +310,10 @@ extension DetailTab {
 
 #if DEBUG
 extension AppModel {
-    /// Screenshot runs: `-MercuryDemoPanes <n>` opens a shell in the selected context with n panes (two rows when
+    /// Screenshot runs: `-SevindaDemoPanes <n>` opens a shell in the selected context with n panes (two rows when
     /// n > 3), so the pane container can be captured in a real window.
     func openDemoPanesIfRequested() async {
-        let count = min(UserDefaults.standard.integer(forKey: "MercuryDemoPanes"), PaneLayout.maxPanes)
+        let count = min(UserDefaults.standard.integer(forKey: "SevindaDemoPanes"), PaneLayout.maxPanes)
         guard count > 0, let context = selection,
               let first = await runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil) else { return }
         var top = [first]

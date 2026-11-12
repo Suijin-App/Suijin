@@ -51,7 +51,7 @@ import Testing
     }
 
     @Test func toplevelOfPlainFolderIsNil() async throws {
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-plain-\(UUID().uuidString)")
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-plain-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         #expect(await GitRepository.toplevel(of: folder) == nil)

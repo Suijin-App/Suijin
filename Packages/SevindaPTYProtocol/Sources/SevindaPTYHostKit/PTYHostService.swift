@@ -124,7 +124,7 @@ final class XPCClientSink: PTYOutputSink, @unchecked Sendable {
 /// `NSXPCListenerDelegate` that wires each accepted connection to a fresh `PTYHostService`. Works with the helper's
 /// Mach service listener and with `NSXPCListener.anonymous()` in tests.
 public final class PTYHostServer: NSObject, NSXPCListenerDelegate, Sendable {
-    private static let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "xpc")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "xpc")
 
     public let manager: SessionManager
     public let orchestration: OrchestrationHub?

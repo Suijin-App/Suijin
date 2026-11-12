@@ -14,26 +14,26 @@ public struct CLIResult: Equatable, Sendable {
     }
 }
 
-/// The `mercury` command: parses the arguments, identifies the terminal by its session token and talks to the broker
-/// in the PTY host. Exit status: 0 done, 1 refused by the broker, 2 usage error, 3 not a Mercury terminal, 4 Mercury
+/// The `sevinda` command: parses the arguments, identifies the terminal by its session token and talks to the broker
+/// in the PTY host. Exit status: 0 done, 1 refused by the broker, 2 usage error, 3 not a Sevinda terminal, 4 Sevinda
 /// unreachable. Hooks never print and always exit 0, so they can never break an agent's turn.
 public struct SevindaCLI: Sendable {
     public enum Exit {
         public static let ok: Int32 = 0
         public static let refused: Int32 = 1
         public static let usage: Int32 = 2
-        public static let notMercuryTerminal: Int32 = 3
+        public static let notSevindaTerminal: Int32 = 3
         public static let unreachable: Int32 = 4
     }
 
     public var environment: [String: String]
-    /// `Mercury.app/Contents/Resources/Skills`.
+    /// `Sevinda.app/Contents/Resources/Skills`.
     public var skillsDirectory: URL?
     public var version: String
     public var parser: CommandParser
     public var transport: @Sendable (BrokerRequest, TimeInterval) throws -> BrokerResponse
     public var readStandardInput: @Sendable () -> Data
-    /// Runs the user's own notify program, detached (Codex chains through Mercury's).
+    /// Runs the user's own notify program, detached (Codex chains through Sevinda's).
     public var runDetached: @Sendable ([String]) -> Void
 
     public init(
@@ -69,15 +69,15 @@ public struct SevindaCLI: Sendable {
         } catch let error as CLIUsageError {
             // A hook must never fail its agent's turn, even when called wrongly.
             if arguments.first == "hook" { return CLIResult() }
-            return CLIResult(stderr: "mercury: \(error)\n", exitCode: Exit.usage)
+            return CLIResult(stderr: "sevinda: \(error)\n", exitCode: Exit.usage)
         } catch {
-            return CLIResult(stderr: "mercury: \(error.localizedDescription)\n", exitCode: Exit.usage)
+            return CLIResult(stderr: "sevinda: \(error.localizedDescription)\n", exitCode: Exit.usage)
         }
         switch command {
         case .help(let topic):
             return CLIResult(stdout: Self.help(topic: topic))
         case .version:
-            return CLIResult(stdout: "mercury \(version) (protocol \(PTYHostConstants.protocolVersion))\n")
+            return CLIResult(stdout: "sevinda \(version) (protocol \(PTYHostConstants.protocolVersion))\n")
         case .listSkills:
             return CLIResult(stdout: "orchestration    Start worker agents, message them, and get their results back.\n")
         case .skill(let name):
@@ -101,10 +101,10 @@ public struct SevindaCLI: Sendable {
     private func broker(_ wire: String, options: [String: String], json: Bool) -> CLIResult {
         guard let token else {
             let failure = BrokerFailure(
-                code: "not_mercury_terminal",
-                message: "This terminal was not opened by Mercury, so `mercury` cannot act for it.",
-                hint: "Run it from an agent or shell session that Mercury started.")
-            return render(.failure(failure), json: json, exitCode: Exit.notMercuryTerminal)
+                code: "not_sevinda_terminal",
+                message: "This terminal was not opened by Sevinda, so `sevinda` cannot act for it.",
+                hint: "Run it from an agent or shell session that Sevinda started.")
+            return render(.failure(failure), json: json, exitCode: Exit.notSevindaTerminal)
         }
         let request = BrokerRequest(token: token, command: wire, options: options)
         do {
@@ -112,7 +112,7 @@ public struct SevindaCLI: Sendable {
             return render(response, json: json, exitCode: response.ok ? Exit.ok : Exit.refused)
         } catch {
             let failure = BrokerFailure(code: "unreachable", message: "\(error)",
-                                        hint: "Mercury's terminal host runs while Mercury or its sessions do; reopen Mercury.")
+                                        hint: "Sevinda's terminal host runs while Sevinda or its sessions do; reopen Sevinda.")
             return render(.failure(failure), json: json, exitCode: Exit.unreachable)
         }
     }
@@ -125,7 +125,7 @@ public struct SevindaCLI: Sendable {
             return CLIResult(stdout: text + "\n", exitCode: exitCode)
         }
         if let error = response.error {
-            var message = "mercury: \(error.message)\n"
+            var message = "sevinda: \(error.message)\n"
             if let hint = error.hint { message += "Next: \(hint)\n" }
             return CLIResult(stderr: message, exitCode: exitCode)
         }
@@ -134,13 +134,13 @@ public struct SevindaCLI: Sendable {
     }
 
     private func skill(_ name: String) -> CLIResult {
-        let normalized = name.lowercased().replacingOccurrences(of: "mercury-", with: "")
+        let normalized = name.lowercased().replacingOccurrences(of: "sevinda-", with: "")
         guard normalized == "orchestration" else {
-            return CLIResult(stderr: "mercury: no skill `\(name)`.\nNext: mercury skills get orchestration\n", exitCode: Exit.usage)
+            return CLIResult(stderr: "sevinda: no skill `\(name)`.\nNext: sevinda skills get orchestration\n", exitCode: Exit.usage)
         }
-        guard let file = skillsDirectory?.appendingPathComponent("mercury-orchestration/SKILL.md"),
+        guard let file = skillsDirectory?.appendingPathComponent("sevinda-orchestration/SKILL.md"),
               let text = try? String(contentsOf: file, encoding: .utf8) else {
-            return CLIResult(stderr: "mercury: the orchestration guide is missing from the Mercury app bundle.\n", exitCode: Exit.refused)
+            return CLIResult(stderr: "sevinda: the orchestration guide is missing from the Sevinda app bundle.\n", exitCode: Exit.refused)
         }
         return CLIResult(stdout: text.hasSuffix("\n") ? text : text + "\n")
     }
@@ -186,22 +186,22 @@ public struct SevindaCLI: Sendable {
             return "Usage: \(spec.usage)\n"
         }
         return """
-        mercury — orchestrate agents inside Mercury (only in terminals Mercury opened)
+        sevinda — orchestrate agents inside Sevinda (only in terminals Sevinda opened)
 
         Coordinator:
           \(CommandSpec.all[0].usage)
-          mercury worker list [--json]
-          mercury send --to <dispatch-id> --body <message>
-          mercury reply --id <question-id> --body <answer>
+          sevinda worker list [--json]
+          sevinda send --to <dispatch-id> --body <message>
+          sevinda reply --id <question-id> --body <answer>
         Worker:
-          mercury ask --body <question>          then end your turn
-          mercury done --status success|failed --summary <summary>
+          sevinda ask --body <question>          then end your turn
+          sevinda done --status success|failed --summary <summary>
         Both:
-          mercury inbox [--all] [--json]
-          mercury whoami [--json]
-          mercury skills get orchestration       the full guide
+          sevinda inbox [--all] [--json]
+          sevinda whoami [--json]
+          sevinda skills get orchestration       the full guide
 
-        Start workers, then END YOUR TURN: Mercury types replies and results into your terminal when your turn has
+        Start workers, then END YOUR TURN: Sevinda types replies and results into your terminal when your turn has
         ended. Never poll or loop waiting. Every command takes --json for a stable machine-readable result.
 
         """

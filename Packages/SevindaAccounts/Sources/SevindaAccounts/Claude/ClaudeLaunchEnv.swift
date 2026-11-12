@@ -7,12 +7,12 @@ public enum ClaudeLaunchEnv {
     public static let authEnvVars: [String] = [
         "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "AWS_BEARER_TOKEN_BEDROCK",
     ]
-    /// Set beside every `CLAUDE_CONFIG_DIR` Mercury injects, so the shell function can tell it from the user's own.
-    public static let injectedConfigDirEnv = "MERCURY_CLAUDE_INJECTED_CONFIG_DIR"
+    /// Set beside every `CLAUDE_CONFIG_DIR` Sevinda injects, so the shell function can tell it from the user's own.
+    public static let injectedConfigDirEnv = "SEVINDA_CLAUDE_INJECTED_CONFIG_DIR"
 
     /// `home` = profile: set `CLAUDE_CONFIG_DIR`, strip credential variables (and `ANTHROPIC_CUSTOM_HEADERS` when it
     /// carries auth headers). `nil` = default login: keep the user's own `CLAUDE_CONFIG_DIR` and ambient auth, and
-    /// only drop a `CLAUDE_CONFIG_DIR` that Mercury itself injected earlier. Both drop the session stamps a parent
+    /// only drop a `CLAUDE_CONFIG_DIR` that Sevinda itself injected earlier. Both drop the session stamps a parent
     /// Claude leaves in the environment.
     public static func patch(home: URL?, inheritedEnv: [String: String]) -> EnvPatch {
         var patch = EnvPatch(unset: Set(CLIEnvironment.claudeSessionStampKeys))

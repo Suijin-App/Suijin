@@ -196,7 +196,7 @@ public enum SyntaxHighlighter {
         "markdown": Grammar(language: Language(tree_sitter_markdown()), queryResource: "highlights-markdown", firstPatternWins: false),
     ]
 
-    private static let logger = Logger(subsystem: "app.mercury.SevindaDiff", category: "SyntaxHighlighter")
+    private static let logger = Logger(subsystem: "app.sevinda.SevindaDiff", category: "SyntaxHighlighter")
 
     /// Compiled queries per resource; `nil` records a query that failed so it is not recompiled per call.
     private static let queryCache = Mutex<[String: Query?]>([:])

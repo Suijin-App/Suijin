@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// How Mercury starts shells and commands so they behave as in the user's own terminal app.
+/// How Sevinda starts shells and commands so they behave as in the user's own terminal app.
 public enum ShellLaunch {
     /// The fallback when the account's shell is missing or not executable.
     public static let fallbackShell = "/bin/zsh"
@@ -10,7 +10,7 @@ public enum ShellLaunch {
     /// not leak into the user's terminals.
     static let strippedPrefixes = ["DYLD_", "__XPC_", "XPC_", "__CF", "OS_ACTIVITY_", "MallocNano", "NSZombie", "CLAUDE_CODE_"]
     static let strippedKeys: Set<String> = ["CLAUDECODE", "NSUnbufferedIO", "TERM_SESSION_ID", "ITERM_SESSION_ID",
-                                            "TERM_PROGRAM_VERSION", "SHLVL", "OLDPWD", "PWD", "_", "MERCURY_USER_ZDOTDIR"]
+                                            "TERM_PROGRAM_VERSION", "SHLVL", "OLDPWD", "PWD", "_", "SEVINDA_USER_ZDOTDIR"]
 
     /// The account's login shell (`pw_shell`), falling back to `/bin/zsh`.
     public static func userShell() -> String {
@@ -21,10 +21,10 @@ public enum ShellLaunch {
         return fallbackShell
     }
 
-    /// The user's interactive login shell in `cwd`, with Mercury's shell integration (zsh through a `ZDOTDIR` wrapper,
+    /// The user's interactive login shell in `cwd`, with Sevinda's shell integration (zsh through a `ZDOTDIR` wrapper,
     /// bash through `--rcfile`). Other shells, fish included, start as a plain login shell.
     ///
-    /// `environment` is laid over `baseEnvironment()`. Its `MERCURY_DATA_ROOT` decides where the integration files
+    /// `environment` is laid over `baseEnvironment()`. Its `SEVINDA_DATA_ROOT` decides where the integration files
     /// live (`<root>/shell-integration`) and which account pointers the functions read. When the files cannot be
     /// written the shell still starts, without the integration.
     public static func interactiveShell(cwd: URL, environment: [String: String]) -> TerminalLaunch {
@@ -36,11 +36,11 @@ public enum ShellLaunch {
         env["SHELL"] = shell
         var arguments = ["-l"]
 
-        let integration = env["MERCURY_DATA_ROOT"].flatMap { try? ShellIntegration.install(in: URL(fileURLWithPath: $0)) }
+        let integration = env["SEVINDA_DATA_ROOT"].flatMap { try? ShellIntegration.install(in: URL(fileURLWithPath: $0)) }
         if let integration {
             switch shellName(shell) {
             case "zsh":
-                if let userZDOTDIR = env["ZDOTDIR"] { env["MERCURY_USER_ZDOTDIR"] = userZDOTDIR }
+                if let userZDOTDIR = env["ZDOTDIR"] { env["SEVINDA_USER_ZDOTDIR"] = userZDOTDIR }
                 env["ZDOTDIR"] = ShellIntegration.zshDirectory(in: integration).path
             case "bash":
                 arguments = ["--rcfile", ShellIntegration.bashRCFile(in: integration).path, "-i"]
@@ -59,7 +59,7 @@ public enum ShellLaunch {
     /// `executable`/`args` (such as `/usr/bin/env -u KEY NAME=value agent …`) runs after the profile, so an environment
     /// patch given that way wins over it.
     ///
-    /// bash reads the same files as Mercury's interactive bash (`--rcfile`, see `ShellIntegration`), or plain `-l -i`
+    /// bash reads the same files as Sevinda's interactive bash (`--rcfile`, see `ShellIntegration`), or plain `-l -i`
     /// when those cannot be written. fish reads its config in every mode and keeps `-l -c`. Shells that cannot take
     /// this form (csh, tcsh, nu, …) are replaced by `/bin/zsh`.
     ///
@@ -88,7 +88,7 @@ public enum ShellLaunch {
             // fish passes the arguments after -c's command as $argv.
             arguments = ["-l", "-c", "exec $argv", executable] + args
         case "bash":
-            let integration = env["MERCURY_DATA_ROOT"].flatMap { try? ShellIntegration.install(in: URL(fileURLWithPath: $0)) }
+            let integration = env["SEVINDA_DATA_ROOT"].flatMap { try? ShellIntegration.install(in: URL(fileURLWithPath: $0)) }
             if let integration {
                 arguments = ["--rcfile", ShellIntegration.bashRCFile(in: integration).path, "-i", "-c", execScript, executable] + args
             } else {
@@ -107,8 +107,8 @@ public enum ShellLaunch {
     }
 
     /// The app's environment without launch-context variables, plus what a terminal sets: `TERM=xterm-256color`,
-    /// `COLORTERM=truecolor`, `TERM_PROGRAM=Mercury`, a UTF-8 `LANG`, `MERCURY_TERMINAL=1` and `MERCURY_DATA_ROOT`
-    /// (inherited when set, else `~/Library/Application Support/Mercury`).
+    /// `COLORTERM=truecolor`, `TERM_PROGRAM=Sevinda`, a UTF-8 `LANG`, `SEVINDA_TERMINAL=1` and `SEVINDA_DATA_ROOT`
+    /// (inherited when set, else `~/Library/Application Support/Sevinda`).
     public static func baseEnvironment() -> [String: String] {
         baseEnvironment(from: ProcessInfo.processInfo.environment)
     }
@@ -119,8 +119,8 @@ public enum ShellLaunch {
         }
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
-        env["TERM_PROGRAM"] = "Mercury"
-        env["MERCURY_TERMINAL"] = "1"
+        env["TERM_PROGRAM"] = "Sevinda"
+        env["SEVINDA_TERMINAL"] = "1"
         if env["HOME"] == nil { env["HOME"] = NSHomeDirectory() }
         if env["USER"] == nil { env["USER"] = NSUserName() }
         if env["LOGNAME"] == nil { env["LOGNAME"] = env["USER"] }
@@ -128,9 +128,9 @@ public enum ShellLaunch {
             env["LANG"] = utf8Locale()
             if let ctype = env["LC_CTYPE"], !isUTF8(ctype) { env.removeValue(forKey: "LC_CTYPE") }
         }
-        if env["MERCURY_DATA_ROOT"] == nil {
-            env["MERCURY_DATA_ROOT"] = FileManager.default.homeDirectoryForCurrentUser
-                .appending(path: "Library/Application Support/Mercury", directoryHint: .isDirectory).path
+        if env["SEVINDA_DATA_ROOT"] == nil {
+            env["SEVINDA_DATA_ROOT"] = FileManager.default.homeDirectoryForCurrentUser
+                .appending(path: "Library/Application Support/Sevinda", directoryHint: .isDirectory).path
         }
         return env
     }

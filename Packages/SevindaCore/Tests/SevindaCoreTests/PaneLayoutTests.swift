@@ -179,7 +179,7 @@ struct PaneLayoutTests {
 /// Stored layouts: saved, replaced, deleted with their workspace, and the migration that adds them backs up first.
 struct PaneLayoutStoreTests {
     @Test func layoutsRoundTripAndGoWithTheirWorkspace() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = Workspace(name: "w", path: "/tmp/w", kind: .folder)
         try store.save(workspace)
         let a = UUID(), b = UUID()
@@ -201,9 +201,9 @@ struct PaneLayoutStoreTests {
     }
 
     @Test func anUnreadableRowIsSkipped() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-panes-\(UUID().uuidString).sqlite")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-panes-\(UUID().uuidString).sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
-        let store = try MercuryStore(url: url)
+        let store = try SevindaStore(url: url)
         let workspace = Workspace(name: "w", path: "/tmp/w", kind: .folder)
         try store.save(workspace)
         try store.save(PaneLayoutRecord(workspaceID: workspace.id, worktreeID: nil, layout: PaneLayout(pane: UUID())))
@@ -215,7 +215,7 @@ struct PaneLayoutStoreTests {
     }
 
     @Test func migratingToPaneLayoutsBacksUpFirst() throws {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-v5-\(UUID().uuidString).sqlite")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-v5-\(UUID().uuidString).sqlite")
         defer {
             for suffix in ["", ".backup-v5_stats"] { try? FileManager.default.removeItem(atPath: url.path + suffix) }
         }
@@ -224,7 +224,7 @@ struct PaneLayoutStoreTests {
         try Migrations.migrator.migrate(queue, upTo: "v5_stats")
         try queue.close()
 
-        let store = try MercuryStore(url: url)
+        let store = try SevindaStore(url: url)
         #expect(try store.paneLayouts().isEmpty)
         let backup = url.appendingPathExtension("backup-v5_stats")
         #expect(FileManager.default.fileExists(atPath: backup.path))

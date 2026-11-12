@@ -6,7 +6,7 @@ import os
 /// Answers one decoded request; `reply` may run later and on any queue.
 typealias BrokerRequestHandler = @Sendable (BrokerRequest, @escaping @Sendable (BrokerResponse) -> Void) -> Void
 
-private let transportLogger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "orchestration")
+private let transportLogger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "orchestration")
 
 /// Largest request accepted (a spec may be long, but not unbounded).
 private let maximumRequestBytes = 1 << 20
@@ -16,7 +16,7 @@ private let maximumRequestBytes = 1 << 20
 final class BrokerSocketServer: @unchecked Sendable {
     let path: String
     private let handler: BrokerRequestHandler
-    private let queue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.orchestration.socket")
+    private let queue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.orchestration.socket")
     // Confined to `queue` after `start`.
     private var listenFD: Int32 = -1
     private var source: DispatchSourceRead?
@@ -151,7 +151,7 @@ final class BrokerSocketServer: @unchecked Sendable {
 final class BrokerSpool: @unchecked Sendable {
     let root: URL
     private let handler: BrokerRequestHandler
-    private let queue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.orchestration.spool")
+    private let queue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.orchestration.spool")
     // Confined to `queue`.
     private var watcher: DispatchSourceFileSystemObject?
     private var timer: DispatchSourceTimer?

@@ -20,7 +20,7 @@ public protocol SessionLifecycleObserver: AnyObject, Sendable {
 /// `idleGrace`, or the data root directory no longer exists. The grace covers the app's hand-off (it fetches the
 /// endpoint over a short-lived connection, then connects to it) and keeps a quickly reopened data root warm.
 public final class OrchestrationHub: SessionLifecycleObserver, OrchestrationSessionIO, @unchecked Sendable {
-    private static let logger = Logger(subsystem: "com.tekmium.mercury.ptyhost", category: "orchestration")
+    private static let logger = Logger(subsystem: "com.tekmium.sevinda.ptyhost", category: "orchestration")
 
     public struct Configuration: Sendable {
         /// Code-signing requirement for app connections to a broker endpoint (the helper's own requirement).
@@ -88,7 +88,7 @@ public final class OrchestrationHub: SessionLifecycleObserver, OrchestrationSess
     private let configuration: Configuration
     private weak var manager: SessionManager?
     private let lock = NSLock()
-    private let sweepQueue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.orchestration.sweep")
+    private let sweepQueue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.orchestration.sweep")
     // Guarded by `lock`.
     private var entries: [String: Entry] = [:]
     private var sessionRoots: [String: String] = [:] // running host session id -> data root key
@@ -123,7 +123,7 @@ public final class OrchestrationHub: SessionLifecycleObserver, OrchestrationSess
         if configuration.servesCLI {
             let handler: BrokerRequestHandler = { [weak broker] request, reply in
                 guard let broker else {
-                    reply(.failure(BrokerFailure(code: "unavailable", message: "Mercury's broker is shutting down.")))
+                    reply(.failure(BrokerFailure(code: "unavailable", message: "Sevinda's broker is shutting down.")))
                     return
                 }
                 broker.handle(request, reply: reply)

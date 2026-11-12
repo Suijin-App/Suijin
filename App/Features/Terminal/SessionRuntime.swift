@@ -10,7 +10,7 @@ import os
 import SwiftUI
 import UserNotifications
 
-private let logger = Logger(subsystem: "com.tekmium.mercury", category: "sessions")
+private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "sessions")
 
 /// One live session: its terminal (engine + view) and, for agents, the status tracker fed by output, input,
 /// Claude hook events and the exit.
@@ -22,7 +22,7 @@ final class SessionRuntime {
     let tracker = AgentStatusTracker()
     var watcher: HookEventWatcher?
     var title: String?
-    /// Mercury itself is ending this session (tab closed, quit): its exit is expected and is not reported.
+    /// Sevinda itself is ending this session (tab closed, quit): its exit is expected and is not reported.
     var isEnding = false
     /// When the agent last started working (activity `running`); nil while it is not working. Feeds the work-time stat.
     var workingSince: Date?
@@ -146,7 +146,7 @@ final class SessionRuntimeRegistry {
         // Only sessions this data root started are ours to clean up: another data root (a second install, the tests)
         // shares the same host, and its sessions must keep running.
         for orphan in hostSessions where !claimed.contains(orphan.id) && orphan.isRunning
-            && orphan.metadata["mercury.dataRoot"] == model.dataRoot.path {
+            && orphan.metadata["sevinda.dataRoot"] == model.dataRoot.path {
             PTYHostClient.shared.terminate(orphan.id)
         }
     }
@@ -229,16 +229,16 @@ final class SessionRuntimeRegistry {
     }
 
     func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?) async throws -> TerminalLaunch {
-        var base = ["MERCURY_DATA_ROOT": model.dataRoot.path, "MERCURY_SESSION_ID": record.id.uuidString]
+        var base = ["SEVINDA_DATA_ROOT": model.dataRoot.path, "SEVINDA_SESSION_ID": record.id.uuidString]
         // Orchestration: the session token (only ever in this environment, never in arguments) and the broker's
         // addresses. Only hosted sessions get them: the broker lives in the PTY host.
         if usesHost { base.merge(OrchestrationLaunch.environment(dataRoot: model.dataRoot)) { _, new in new } }
         guard record.agent != .shell else {
-            // `mercury` on the shell's PATH; the profile may reorder PATH but keeps entries it did not set.
+            // `sevinda` on the shell's PATH; the profile may reorder PATH but keeps entries it did not set.
             base["PATH"] = OrchestrationLaunch.path(prepending: ProcessInfo.processInfo.environment["PATH"])
             var launch = ShellLaunch.interactiveShell(cwd: cwd, environment: base)
-            launch.metadata["mercury.session"] = record.id.uuidString
-            launch.metadata["mercury.dataRoot"] = model.dataRoot.path
+            launch.metadata["sevinda.session"] = record.id.uuidString
+            launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
             return launch
         }
         let path = await AgentCatalog.loginShellPATH()
@@ -257,7 +257,7 @@ final class SessionRuntimeRegistry {
         // session on its own.
         if record.agent == .codex, model.setting(.codexNoDaemon) == "true" { spec.arguments.insert("--no-daemon", at: 0) }
         if usesHost, record.agent == .codex {
-            // Codex reports each finished turn through `notify` (`mercury hook codex-notify`), set for this launch only.
+            // Codex reports each finished turn through `notify` (`sevinda hook codex-notify`), set for this launch only.
             let home = spec.env.set["CODEX_HOME"].map { URL(fileURLWithPath: $0, isDirectory: true) }
             if let home { OrchestrationLaunch.installCodexSkill(home: home) }
             spec.arguments.insert(contentsOf: OrchestrationLaunch.codexNotifyArguments(home: home), at: 0)
@@ -279,9 +279,9 @@ final class SessionRuntimeRegistry {
         for (key, value) in spec.env.set.sorted(by: { $0.key < $1.key }) { envArguments.append("\(key)=\(value)") }
         var launch = ShellLaunch.command("/usr/bin/env", envArguments + [spec.binary.path] + spec.arguments,
                                          cwd: spec.cwd, environment: base, interactive: false)
-        launch.metadata["mercury.session"] = record.id.uuidString
+        launch.metadata["sevinda.session"] = record.id.uuidString
         launch.metadata["agent"] = record.agent.rawValue
-        launch.metadata["mercury.dataRoot"] = model.dataRoot.path
+        launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
         return launch
     }
 
@@ -375,7 +375,7 @@ final class SessionRuntimeRegistry {
         }
     }
 
-    /// Records and reports an exit Mercury did not cause, once: a session already marked ended (a finished session
+    /// Records and reports an exit Sevinda did not cause, once: a session already marked ended (a finished session
     /// re-attached after a relaunch) stays as it is and notifies nobody.
     private func sessionExited(_ id: UUID, code: Int32?) async {
         guard var record = model.sessions.first(where: { $0.id == id }),
@@ -409,7 +409,7 @@ final class SessionRuntimeRegistry {
     func prepareForQuit() async {
         let keep = usesHost && model.setting(.keepSessionsOnQuit) != "false"
         if keep {
-            // The agents keep working in the host, but only time Mercury saw is counted; a relaunch that finds them
+            // The agents keep working in the host, but only time Sevinda saw is counted; a relaunch that finds them
             // running opens a new interval.
             for runtime in runtimes.values {
                 await finishWork(runtime)?.value
@@ -539,12 +539,12 @@ enum SessionActivityDisplay: Equatable {
 
     var color: Color {
         switch self {
-        case .starting: MercuryColor.idle
-        case .running: MercuryColor.ok
-        case .waitingForInput: MercuryColor.warning
-        case .idle: MercuryColor.agent
-        case .exited: MercuryColor.idle
-        case .failed: MercuryColor.error
+        case .starting: SevindaColor.idle
+        case .running: SevindaColor.ok
+        case .waitingForInput: SevindaColor.warning
+        case .idle: SevindaColor.agent
+        case .exited: SevindaColor.idle
+        case .failed: SevindaColor.error
         }
     }
 

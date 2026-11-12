@@ -104,14 +104,14 @@ public struct ProgressSheetView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.m) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
             Text(model.title).font(.headline)
             ProgressView(value: model.fractionComplete)
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(model.stepTitles.enumerated()), id: \.offset) { index, title in
-                    HStack(spacing: MercurySpacing.s) {
+                    HStack(spacing: SevindaSpacing.s) {
                         stepIcon(model.steps[index]).frame(width: 16)
-                        Text(title).foregroundStyle(model.steps[index] == .failed ? MercuryColor.errorText : .primary)
+                        Text(title).foregroundStyle(model.steps[index] == .failed ? SevindaColor.errorText : .primary)
                     }
                     .font(.callout)
                 }
@@ -119,21 +119,21 @@ public struct ProgressSheetView: View {
             if !model.log.isEmpty {
                 ScrollView {
                     Text(model.log)
-                        .font(MercuryFont.monoSmall)
-                        .foregroundStyle(MercuryColor.terminalText)
+                        .font(SevindaFont.monoSmall)
+                        .foregroundStyle(SevindaColor.terminalText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
-                        .padding(MercurySpacing.s)
+                        .padding(SevindaSpacing.s)
                 }
                 .defaultScrollAnchor(.bottom)
                 .frame(maxHeight: 200)
-                .background(RoundedRectangle(cornerRadius: MercuryRadius.control).fill(MercuryColor.terminalBackground))
+                .background(RoundedRectangle(cornerRadius: SevindaRadius.control).fill(SevindaColor.terminalBackground))
             }
             HStack {
                 switch model.outcome {
                 case .running: Text("Running…", bundle: .module).foregroundStyle(.secondary)
-                case .succeeded: (doneTitle ?? Text("Done", bundle: .module)).foregroundStyle(MercuryColor.okText)
-                case .failed(let reason): Text(reason).foregroundStyle(MercuryColor.errorText)
+                case .succeeded: (doneTitle ?? Text("Done", bundle: .module)).foregroundStyle(SevindaColor.okText)
+                case .failed(let reason): Text(reason).foregroundStyle(SevindaColor.errorText)
                 }
                 Spacer()
                 if model.stopHandler != nil, model.outcome == .running {
@@ -153,7 +153,7 @@ public struct ProgressSheetView: View {
             }
             .font(.callout)
         }
-        .padding(MercurySpacing.xl)
+        .padding(SevindaSpacing.xl)
         .frame(width: 560)
     }
 
@@ -161,8 +161,8 @@ public struct ProgressSheetView: View {
         switch state {
         case .pending: Image(systemName: "circle").foregroundStyle(.tertiary)
         case .running: ProgressView().controlSize(.small)
-        case .done: Image(systemName: "checkmark").foregroundStyle(MercuryColor.ok)
-        case .failed: Image(systemName: "xmark").foregroundStyle(MercuryColor.error)
+        case .done: Image(systemName: "checkmark").foregroundStyle(SevindaColor.ok)
+        case .failed: Image(systemName: "xmark").foregroundStyle(SevindaColor.error)
         }
     }
 }

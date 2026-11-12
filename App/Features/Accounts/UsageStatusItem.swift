@@ -39,7 +39,7 @@ private struct UsageStatusLabel: View {
     let now: Date
 
     var body: some View {
-        HStack(spacing: MercurySpacing.xs + 2) {
+        HStack(spacing: SevindaSpacing.xs + 2) {
             AgentLogo(agent: provider.agentKind, size: 13)
             if let tightest = ProviderUsagePolicy.tightest(sections) {
                 UsageCapacityBar(fraction: tightest.window.usedFraction, provider: provider)
@@ -93,8 +93,8 @@ struct UsageDetailsPopover: View {
     let now: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.m) {
-            HStack(spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
+            HStack(spacing: SevindaSpacing.s) {
                 AgentLogo(agent: provider.agentKind, size: 18)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: provider.displayName).font(.headline)
@@ -110,7 +110,7 @@ struct UsageDetailsPopover: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(verbatim: ProviderUsagePolicy.title(section)).font(.callout)
-                        Spacer(minLength: MercurySpacing.s)
+                        Spacer(minLength: SevindaSpacing.s)
                         Text("\(section.percent)% used").font(.callout).monospacedDigit()
                     }
                     UsageCapacityBar(fraction: section.window.usedFraction, provider: provider, width: 248)
@@ -147,7 +147,7 @@ struct UsageDetailsPopover: View {
             }
             .controlSize(.small)
         }
-        .padding(MercurySpacing.l)
+        .padding(SevindaSpacing.l)
         .frame(width: 280)
     }
 }
@@ -155,7 +155,7 @@ struct UsageDetailsPopover: View {
 /// Text for the tooltip, the popover and VoiceOver; tokens never appear here, only names and percentages.
 enum UsageDescription {
     static func accountLine(_ state: ProviderUsageState) -> String {
-        let source = state.isManaged ? String(localized: "Mercury account") : String(localized: "Your own login")
+        let source = state.isManaged ? String(localized: "Sevinda account") : String(localized: "Your own login")
         guard let name = state.accountName, !name.isEmpty else { return source }
         return "\(name) · \(source)"
     }

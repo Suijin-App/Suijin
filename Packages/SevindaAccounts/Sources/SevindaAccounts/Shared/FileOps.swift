@@ -11,7 +11,7 @@ enum EntryKind: Equatable, Sendable {
 enum JSONObjectRead {
     case present([String: Any])
     case absent
-    /// The file exists but is not valid JSON (a copy Mercury may replace).
+    /// The file exists but is not valid JSON (a copy Sevinda may replace).
     case invalidJSON
     /// The file is valid JSON but not an object, or could not be read for another reason.
     case unreadable(String)

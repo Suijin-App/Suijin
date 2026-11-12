@@ -10,7 +10,7 @@ struct TestRepo {
 
     init(initialCommit: Bool = true) async throws {
         let base = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mercury-git-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sevinda-git-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         // `resolvingSymlinksInPath()` maps `/private/var` back to `/var`; realpath gives git's form.
         guard let real = realpath(base.path, nil) else { throw CocoaError(.fileNoSuchFile) }
@@ -36,7 +36,7 @@ struct TestRepo {
 
     @discardableResult
     func git(_ args: [String], in dir: URL) async throws -> String {
-        let identity = ["-c", "user.name=Mercury Tests", "-c", "user.email=tests@mercury.invalid", "-c", "commit.gpgsign=false"]
+        let identity = ["-c", "user.name=Sevinda Tests", "-c", "user.email=tests@sevinda.invalid", "-c", "commit.gpgsign=false"]
         return try await runner.text(identity + args, in: dir)
     }
 

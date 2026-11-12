@@ -2,9 +2,9 @@ import Darwin
 import Foundation
 
 /// Locations and ownership of Codex account homes: `<dataRoot>/codex-homes/<uuid>/home` is the account's
-/// `CODEX_HOME`, marked by `home/.mercury-managed-home` (the account id) once created.
+/// `CODEX_HOME`, marked by `home/.sevinda-managed-home` (the account id) once created.
 public struct CodexHomeStore: Sendable {
-    public static let markerName = ".mercury-managed-home"
+    public static let markerName = ".sevinda-managed-home"
 
     public let root: URL
     public let realHome: URL
@@ -72,7 +72,7 @@ public struct CodexHomeStore: Sendable {
     @discardableResult
     func verify(home: URL) throws -> URL {
         guard let id = accountID(forHome: home) else {
-            throw AccountsError.unsafePath("Codex home is outside Mercury account storage")
+            throw AccountsError.unsafePath("Codex home is outside Sevinda account storage")
         }
         guard let canonicalHome = try FileOps.realpath(home.path) else {
             throw AccountsError.notOwned("Codex home directory does not exist")
@@ -86,7 +86,7 @@ public struct CodexHomeStore: Sendable {
         }
         try assertOutsideSystemHome(canonicalHome)
         guard canonicalHome != canonicalRoot, FileOps.isInsideOrEqual(canonicalHome, root: canonicalRoot) else {
-            throw AccountsError.unsafePath("Codex home is outside Mercury account storage")
+            throw AccountsError.unsafePath("Codex home is outside Sevinda account storage")
         }
         let markerPath = FileOps.join(canonicalHome, Self.markerName)
         guard try FileOps.lstatKind(markerPath) == .file else {

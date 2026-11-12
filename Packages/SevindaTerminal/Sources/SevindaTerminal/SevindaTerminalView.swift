@@ -13,7 +13,7 @@ import SwiftTerm
 ///   responder; tab and split routes go to `onKeyRoute`.
 /// - The visible screen is exposed to accessibility (and UI tests) as the view's value; the app sets the label.
 @MainActor
-open class MercuryTerminalView: TerminalView {
+open class SevindaTerminalView: TerminalView {
     /// Bytes for the program: typed keys, composed text, approved pastes and terminal replies (cursor reports, …).
     public var onInput: ((ArraySlice<UInt8>) -> Void)?
     /// The grid changed size (the view was resized, or the font changed).
@@ -243,7 +243,7 @@ open class MercuryTerminalView: TerminalView {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             let handled = MainActor.assumeIsolated { () -> Bool in
                 guard event.window?.isKeyWindow == true,
-                      let view = event.window?.firstResponder as? MercuryTerminalView else { return false }
+                      let view = event.window?.firstResponder as? SevindaTerminalView else { return false }
                 return view.perform(TerminalKeyRouter.route(event))
             }
             return handled ? nil : event
@@ -289,9 +289,9 @@ open class MercuryTerminalView: TerminalView {
 /// Swift concurrency; it calls on the main thread, which the `@preconcurrency` conformance checks at run time.
 @MainActor
 private final class DelegateBridge: @preconcurrency TerminalViewDelegate {
-    weak var view: MercuryTerminalView?
+    weak var view: SevindaTerminalView?
 
-    init(view: MercuryTerminalView) {
+    init(view: SevindaTerminalView) {
         self.view = view
     }
 

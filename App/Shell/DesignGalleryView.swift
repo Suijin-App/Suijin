@@ -6,17 +6,17 @@ import SwiftUI
 struct DesignGalleryView: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: MercurySpacing.xl) {
+            VStack(alignment: .leading, spacing: SevindaSpacing.xl) {
                 section("Brand and status colors") {
-                    HStack(spacing: MercurySpacing.l) {
-                        swatch(MercuryColor.brand, "brand")
-                        swatch(MercuryColor.ok, "ok")
-                        swatch(MercuryColor.warning, "warning")
-                        swatch(MercuryColor.error, "error")
-                        swatch(MercuryColor.idle, "idle")
-                        swatch(MercuryColor.agent, "agent")
+                    HStack(spacing: SevindaSpacing.l) {
+                        swatch(SevindaColor.brand, "brand")
+                        swatch(SevindaColor.ok, "ok")
+                        swatch(SevindaColor.warning, "warning")
+                        swatch(SevindaColor.error, "error")
+                        swatch(SevindaColor.idle, "idle")
+                        swatch(SevindaColor.agent, "agent")
                     }
-                    HStack(spacing: MercurySpacing.l) {
+                    HStack(spacing: SevindaSpacing.l) {
                         ForEach(StatusTone.allCases, id: \.self) { tone in
                             HStack(spacing: 6) { StatusDot(tone); Tag(Text(verbatim: tone.rawValue), tone: tone) }
                         }
@@ -24,7 +24,7 @@ struct DesignGalleryView: View {
                     }
                 }
                 section("Session activity") {
-                    HStack(spacing: MercurySpacing.l) {
+                    HStack(spacing: SevindaSpacing.l) {
                         ForEach([SessionActivityDisplay.starting, .running, .waitingForInput, .idle, .exited, .failed], id: \.self) { activity in
                             Label { activity.label } icon: { Image(systemName: activity.systemImage).foregroundStyle(activity.color) }
                         }
@@ -40,31 +40,31 @@ struct DesignGalleryView: View {
                 }
                 section("Floating glass") {
                     GlassGroup {
-                        HStack(spacing: MercurySpacing.m) {
+                        HStack(spacing: SevindaSpacing.m) {
                             Label("Waiting for input", systemImage: "exclamationmark.bubble.fill")
-                                .padding(.horizontal, MercurySpacing.m).padding(.vertical, MercurySpacing.s)
+                                .padding(.horizontal, SevindaSpacing.m).padding(.vertical, SevindaSpacing.s)
                                 .floatingGlass(in: Capsule())
                             Label("3 running", systemImage: "terminal")
-                                .padding(.horizontal, MercurySpacing.m).padding(.vertical, MercurySpacing.s)
+                                .padding(.horizontal, SevindaSpacing.m).padding(.vertical, SevindaSpacing.s)
                                 .floatingGlass(in: Capsule())
                         }
                     }
-                    .padding(MercurySpacing.l)
-                    .background(MercuryColor.brand.gradient.opacity(0.35), in: RoundedRectangle(cornerRadius: MercuryRadius.card))
+                    .padding(SevindaSpacing.l)
+                    .background(SevindaColor.brand.gradient.opacity(0.35), in: RoundedRectangle(cornerRadius: SevindaRadius.card))
                 }
                 section("Empty state") {
                     EmptyState(systemImage: "terminal", title: Text("No Sessions"))
                         .frame(height: 140)
                 }
             }
-            .padding(MercurySpacing.xl)
+            .padding(SevindaSpacing.xl)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(minWidth: 560, minHeight: 480)
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             Text(title).font(.headline)
             content()
         }
@@ -72,7 +72,7 @@ struct DesignGalleryView: View {
 
     private func swatch(_ color: Color, _ name: String) -> some View {
         VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: MercuryRadius.control).fill(color).frame(width: 44, height: 28)
+            RoundedRectangle(cornerRadius: SevindaRadius.control).fill(color).frame(width: 44, height: 28)
             Text(verbatim: name).font(.caption2).foregroundStyle(.secondary)
         }
     }

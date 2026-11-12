@@ -85,7 +85,7 @@ import Testing
         #expect(ClaudeKeychainReader.defaultLoginConfigDir(environment: [:], realHome: home) == nil)
         #expect(ClaudeKeychainReader.defaultLoginConfigDir(environment: ["CLAUDE_CONFIG_DIR": "  "], realHome: home) == nil)
         #expect(ClaudeKeychainReader.defaultLoginConfigDir(environment: ["CLAUDE_CONFIG_DIR": "~/alt"], realHome: home)?.path == "/Users/x/alt")
-        // A folder Mercury injected for a profile is not the user's own.
+        // A folder Sevinda injected for a profile is not the user's own.
         let injected = ["CLAUDE_CONFIG_DIR": "/p/home", ClaudeLaunchEnv.injectedConfigDirEnv: "/p/home"]
         #expect(ClaudeKeychainReader.defaultLoginConfigDir(environment: injected, realHome: home) == nil)
 

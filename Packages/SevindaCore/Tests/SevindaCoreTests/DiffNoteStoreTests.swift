@@ -3,7 +3,7 @@ import Testing
 @testable import SevindaCore
 
 @Suite struct DiffNoteStoreTests {
-    private func seed(_ store: MercuryStore) throws -> (Workspace, WorktreeRecord) {
+    private func seed(_ store: SevindaStore) throws -> (Workspace, WorktreeRecord) {
         let workspace = Workspace(name: "repo", path: "/tmp/repo", kind: .git)
         try store.save(workspace)
         let worktree = WorktreeRecord(workspaceID: workspace.id, path: "/tmp/repo-worktrees/feat", branch: "feat")
@@ -12,7 +12,7 @@ import Testing
     }
 
     @Test func roundTripsEveryField() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let (workspace, worktree) = try seed(store)
         let created = Date(timeIntervalSinceReferenceDate: 800_000_000.25)
         let note = DiffNote(workspaceID: workspace.id, worktreeID: worktree.id, filePath: "Sources/App.swift",
@@ -29,7 +29,7 @@ import Testing
     }
 
     @Test func mainCheckoutNotesAreSeparateFromWorktreeNotes() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let (workspace, worktree) = try seed(store)
         let main = DiffNote(workspaceID: workspace.id, filePath: "a.swift", lineNumber: 1, body: "main", scope: .uncommitted)
         let tree = DiffNote(workspaceID: workspace.id, worktreeID: worktree.id, filePath: "a.swift", lineNumber: 1,
@@ -41,7 +41,7 @@ import Testing
     }
 
     @Test func editingClearsSentAtAndUpdateIsPersisted() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let (workspace, worktree) = try seed(store)
         var note = DiffNote(workspaceID: workspace.id, worktreeID: worktree.id, filePath: "a.swift", lineNumber: 4,
                             body: "first", scope: .branch)
@@ -57,7 +57,7 @@ import Testing
     }
 
     @Test func rejectsInvalidNotes() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let (workspace, _) = try seed(store)
         func note(start: Int?, line: Int, body: String = "x") -> DiffNote {
             DiffNote(workspaceID: workspace.id, filePath: "a", startLine: start, lineNumber: line, body: body, scope: .branch)
@@ -71,7 +71,7 @@ import Testing
     }
 
     @Test func deletingTheWorktreeOrWorkspaceDeletesItsNotes() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let (workspace, worktree) = try seed(store)
         try store.save(DiffNote(workspaceID: workspace.id, worktreeID: worktree.id, filePath: "a", lineNumber: 1,
                                 body: "x", scope: .branch))
@@ -84,17 +84,17 @@ import Testing
     }
 
     @Test func migratesAFileDatabaseAndKeepsNotesAcrossReopen() throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-notes-\(UUID().uuidString)")
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-notes-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appendingPathComponent("mercury.sqlite")
+        let url = directory.appendingPathComponent("sevinda.sqlite")
         let workspace = Workspace(name: "repo", path: "/tmp/repo", kind: .git)
         let note = DiffNote(workspaceID: workspace.id, filePath: "a", lineNumber: 2, body: "keep", scope: .uncommitted)
         do {
-            let store = try MercuryStore(url: url)
+            let store = try SevindaStore(url: url)
             try store.save(workspace)
             try store.save(note)
         }
-        let reopened = try MercuryStore(url: url)
+        let reopened = try SevindaStore(url: url)
         #expect(try reopened.diffNotes(mainCheckoutOf: workspace.id) == [note])
     }
 }

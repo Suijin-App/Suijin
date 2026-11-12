@@ -15,7 +15,7 @@ extension AppModel {
         if selectedTab[context] == .file(path) { selectedTab[context] = nil }
     }
 
-    /// Handles a link ⌘-clicked in a terminal of `context`: files open in a viewer tab (Finder only for files Mercury
+    /// Handles a link ⌘-clicked in a terminal of `context`: files open in a viewer tab (Finder only for files Sevinda
     /// cannot show), folders in the inspector's file tree; web and mail
     /// links return `false` so the terminal opens them in their default app. Relative paths are resolved against
     /// `directory`, the session's working directory; a `:line` or `:line:column` suffix is ignored.
@@ -45,7 +45,7 @@ extension AppModel {
         return true
     }
 
-    /// Opens a file in a viewer tab, or shows it in Finder when Mercury cannot display it (binary, unknown format).
+    /// Opens a file in a viewer tab, or shows it in Finder when Sevinda cannot display it (binary, unknown format).
     /// Returns whether it opened in the app.
     @discardableResult
     func open(fileAt url: URL, in context: SessionContext) -> Bool {

@@ -2,13 +2,13 @@ import Foundation
 import Testing
 @testable import SevindaCore
 
-@Suite struct MercuryStoreTests {
+@Suite struct SevindaStoreTests {
     private func makeWorkspace(_ name: String = "repo", sortOrder: Int = 0) -> Workspace {
         Workspace(name: name, path: "/tmp/\(name)", kind: .git, sortOrder: sortOrder)
     }
 
     @Test func workspaceRoundTripAndUpdate() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         var first = makeWorkspace("b", sortOrder: 1)
         let second = Workspace(name: "a", path: "/tmp/a", kind: .folder, sortOrder: 0)
         try store.save(first)
@@ -22,7 +22,7 @@ import Testing
     }
 
     @Test func worktreeRoundTrip() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = makeWorkspace()
         try store.save(workspace)
         let worktree = WorktreeRecord(workspaceID: workspace.id, path: "/tmp/repo-worktrees/feat", branch: "feat", baseBranch: "main")
@@ -38,7 +38,7 @@ import Testing
     }
 
     @Test func sessionRoundTripWithAllFields() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = makeWorkspace()
         try store.save(workspace)
         let worktree = WorktreeRecord(workspaceID: workspace.id, path: "/tmp/wt", branch: "wt")
@@ -63,7 +63,7 @@ import Testing
     }
 
     @Test func accountRoundTrip() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let account = ManagedAccountRecord(provider: .codex, label: "Personal", email: "a@example.com",
                                            organization: "Org", homePath: "/tmp/codex")
         try store.save(account)
@@ -73,7 +73,7 @@ import Testing
     }
 
     @Test func deletingWorkspaceCascades() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = makeWorkspace()
         let other = makeWorkspace("other")
         try store.save(workspace)
@@ -92,7 +92,7 @@ import Testing
     }
 
     @Test func deletingWorktreeOrAccountUpdatesSessions() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         let workspace = makeWorkspace()
         try store.save(workspace)
         let worktree = WorktreeRecord(workspaceID: workspace.id, path: "/tmp/wt", branch: "wt")
@@ -111,14 +111,14 @@ import Testing
     }
 
     @Test func sessionForUnknownWorkspaceIsRejected() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         #expect(throws: (any Error).self) {
             try store.save(AgentSessionRecord(workspaceID: UUID(), agent: .shell, title: "orphan", cwd: "/"))
         }
     }
 
     @Test func settings() throws {
-        let store = try MercuryStore.inMemory()
+        let store = try SevindaStore.inMemory()
         #expect(try store.setting("theme") == nil)
         try store.setSetting("theme", "dark")
         #expect(try store.setting("theme") == "dark")
@@ -131,21 +131,21 @@ import Testing
 
     @Test func fileDatabasePersistsAcrossReopen() throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mercury-core-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("sevinda-core-tests-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let url = MercuryPaths.database(in: root.appendingPathComponent("nested", isDirectory: true))
+        let url = SevindaPaths.database(in: root.appendingPathComponent("nested", isDirectory: true))
 
         let workspace = makeWorkspace()
         let account = ManagedAccountRecord(provider: .claude, label: "Work", homePath: "/tmp/home")
         do {
-            let store = try MercuryStore(url: url)
+            let store = try SevindaStore(url: url)
             try store.save(workspace)
             try store.save(account)
             try store.setSetting("k", "v")
         }
         #expect(FileManager.default.fileExists(atPath: url.path))
 
-        let reopened = try MercuryStore(url: url)
+        let reopened = try SevindaStore(url: url)
         #expect(try reopened.workspaces() == [workspace])
         #expect(try reopened.accounts() == [account])
         #expect(try reopened.setting("k") == "v")

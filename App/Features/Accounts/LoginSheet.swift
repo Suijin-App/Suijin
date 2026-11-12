@@ -17,7 +17,7 @@ struct LoginSheet: View {
     enum LoginState: Equatable { case waiting, succeeded, failed(String) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.m) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
             Text(pending.provider == .claude ? "Sign In to Claude" : "Sign In to Codex").font(.title3.bold())
             Text("Finish signing in in your browser. To use a different account than the one your browser is signed in to, copy the link and open it in a private window.")
                 .foregroundStyle(.secondary)
@@ -38,13 +38,13 @@ struct LoginSheet: View {
             }
             ScrollView {
                 Text(verbatim: lines.joined(separator: "\n"))
-                    .font(MercuryFont.monoSmall)
+                    .font(SevindaFont.monoSmall)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(MercurySpacing.s)
+                    .padding(SevindaSpacing.s)
             }
             .frame(height: 140)
-            .background(MercuryColor.codeBackground, in: RoundedRectangle(cornerRadius: MercuryRadius.control))
+            .background(SevindaColor.codeBackground, in: RoundedRectangle(cornerRadius: SevindaRadius.control))
             if let interactive = pending.session as? any InteractiveLoginSession, state == .waiting {
                 HStack {
                     SecureField("Paste code", text: $code)
@@ -57,9 +57,9 @@ struct LoginSheet: View {
             }
             switch state {
             case .waiting: EmptyView()
-            case .succeeded: Label("Signed in", systemImage: "checkmark.circle.fill").foregroundStyle(MercuryColor.okText)
+            case .succeeded: Label("Signed in", systemImage: "checkmark.circle.fill").foregroundStyle(SevindaColor.okText)
             case .failed(let message): Label { Text(verbatim: message) } icon: { Image(systemName: "xmark.octagon.fill") }
-                .foregroundStyle(MercuryColor.errorText)
+                .foregroundStyle(SevindaColor.errorText)
             }
             HStack {
                 Spacer()
@@ -75,7 +75,7 @@ struct LoginSheet: View {
                 }
             }
         }
-        .padding(MercurySpacing.xl)
+        .padding(SevindaSpacing.xl)
         .frame(width: 520)
         .interactiveDismissDisabled(state == .waiting)
         .task { await follow() }

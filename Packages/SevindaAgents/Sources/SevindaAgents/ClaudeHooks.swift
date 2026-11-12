@@ -16,20 +16,20 @@ public struct ClaudeHookEvent: Sendable, Hashable {
     }
 }
 
-/// Claude Code hooks that report session activity to Mercury without touching `~/.claude`.
+/// Claude Code hooks that report session activity to Sevinda without touching `~/.claude`.
 ///
-/// `install(dataRoot:)` writes `<dataRoot>/hooks/claude-settings.json`, which Mercury passes to
+/// `install(dataRoot:)` writes `<dataRoot>/hooks/claude-settings.json`, which Sevinda passes to
 /// `claude --settings <file>`; Claude merges it with the user's own settings. Each hook appends its
-/// stdin JSON as one line to `$MERCURY_HOOK_EVENTS` (one file per session under `hooks/events`) and,
-/// in a terminal with a session token, hands it to `"$MERCURY_CLI" hook claude` so the orchestration
-/// broker learns when the turn ends. Outside Mercury the variables are unset and the hook only drains stdin.
+/// stdin JSON as one line to `$SEVINDA_HOOK_EVENTS` (one file per session under `hooks/events`) and,
+/// in a terminal with a session token, hands it to `"$SEVINDA_CLI" hook claude` so the orchestration
+/// broker learns when the turn ends. Outside Sevinda the variables are unset and the hook only drains stdin.
 ///
-/// The settings also allow the `mercury` command without a permission prompt: a worker reports through it in a
+/// The settings also allow the `sevinda` command without a permission prompt: a worker reports through it in a
 /// terminal nobody watches, where a prompt would stall the whole orchestration.
 public enum ClaudeHooks {
     public static let events = ["SessionStart", "UserPromptSubmit", "Notification", "Stop"]
-    public static let eventsFileEnvKey = "MERCURY_HOOK_EVENTS"
-    public static let sessionIDEnvKey = "MERCURY_SESSION_ID"
+    public static let eventsFileEnvKey = "SEVINDA_HOOK_EVENTS"
+    public static let sessionIDEnvKey = "SEVINDA_SESSION_ID"
     static let hookTimeoutSeconds = 10
 
     public struct Installation: Sendable, Hashable {
@@ -74,22 +74,22 @@ public enum ClaudeHooks {
     /// never block or fail a turn. Newlines are stripped so each event is exactly one line, and the
     /// line is appended with a single `printf` so concurrent hooks do not interleave. `umask 077`
     /// keeps an events file the hook creates private (0600): it contains prompt text. The broker
-    /// call (`mercury hook claude`) gives up after a few seconds and never fails either.
+    /// call (`sevinda hook claude`) gives up after a few seconds and never fails either.
     public static let hookCommand: String = {
         let script = [
             "umask 077",
             "exec >/dev/null 2>&1",
             "line=$(tr -d \"\\r\\n\")",
             "[ -n \"$line\" ] || exit 0",
-            "[ -n \"${MERCURY_HOOK_EVENTS:-}\" ] && printf \"%s\\n\" \"$line\" >> \"$MERCURY_HOOK_EVENTS\"",
-            "[ -n \"${MERCURY_SESSION_TOKEN:-}\" ] && [ -x \"${MERCURY_CLI:-}\" ] && printf \"%s\" \"$line\" | \"$MERCURY_CLI\" hook claude",
+            "[ -n \"${SEVINDA_HOOK_EVENTS:-}\" ] && printf \"%s\\n\" \"$line\" >> \"$SEVINDA_HOOK_EVENTS\"",
+            "[ -n \"${SEVINDA_SESSION_TOKEN:-}\" ] && [ -x \"${SEVINDA_CLI:-}\" ] && printf \"%s\" \"$line\" | \"$SEVINDA_CLI\" hook claude",
             "exit 0",
         ].joined(separator: "; ")
         return "/bin/sh -c '\(script)'"
     }()
 
-    /// Permission rules merged into the session's settings: the `mercury` orchestration command runs without a prompt.
-    public static let allowedCommands = ["Bash(mercury:*)"]
+    /// Permission rules merged into the session's settings: the `sevinda` orchestration command runs without a prompt.
+    public static let allowedCommands = ["Bash(sevinda:*)"]
 
     /// The settings document: `{"hooks": {Event: [{"hooks": [{"type": "command", ...}]}]}, "permissions": {"allow": [...]}}`.
     static func settingsJSON() throws -> Data {

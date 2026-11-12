@@ -30,15 +30,15 @@ static void child_fail(int status_fd, int stage) {
     child_failure failure = { stage, errno };
     ssize_t ignored = write(status_fd, &failure, sizeof(failure));
     (void)ignored;
-    _exit(stage == MERCURY_TERMINAL_STAGE_EXEC ? 127 : 126);
+    _exit(stage == SEVINDA_TERMINAL_STAGE_EXEC ? 127 : 126);
 }
 
 static void child_run(const char *path, char *const argv[], char *const envp[], const char *cwd,
                       int slave_fd, int status_fd, int max_fd) {
-    if (setsid() < 0) child_fail(status_fd, MERCURY_TERMINAL_STAGE_SESSION);
-    if (ioctl(slave_fd, TIOCSCTTY, 0) < 0) child_fail(status_fd, MERCURY_TERMINAL_STAGE_SESSION);
+    if (setsid() < 0) child_fail(status_fd, SEVINDA_TERMINAL_STAGE_SESSION);
+    if (ioctl(slave_fd, TIOCSCTTY, 0) < 0) child_fail(status_fd, SEVINDA_TERMINAL_STAGE_SESSION);
     if (dup2(slave_fd, STDIN_FILENO) < 0 || dup2(slave_fd, STDOUT_FILENO) < 0 || dup2(slave_fd, STDERR_FILENO) < 0) {
-        child_fail(status_fd, MERCURY_TERMINAL_STAGE_SESSION);
+        child_fail(status_fd, SEVINDA_TERMINAL_STAGE_SESSION);
     }
     // Other terminals' masters must not leak into this child: an inherited master keeps that PTY alive after its
     // tab closed.
@@ -58,15 +58,15 @@ static void child_run(const char *path, char *const argv[], char *const envp[], 
         if (sig != SIGKILL && sig != SIGSTOP) sigaction(sig, &dfl, NULL);
     }
 
-    if (cwd != NULL && cwd[0] != '\0' && chdir(cwd) < 0) child_fail(status_fd, MERCURY_TERMINAL_STAGE_CHDIR);
+    if (cwd != NULL && cwd[0] != '\0' && chdir(cwd) < 0) child_fail(status_fd, SEVINDA_TERMINAL_STAGE_CHDIR);
     execve(path, argv, envp);
-    child_fail(status_fd, MERCURY_TERMINAL_STAGE_EXEC);
+    child_fail(status_fd, SEVINDA_TERMINAL_STAGE_EXEC);
 }
 
-int mercury_terminal_spawn(const char *path, char *const argv[], char *const envp[], const char *cwd,
+int sevinda_terminal_spawn(const char *path, char *const argv[], char *const envp[], const char *cwd,
                            unsigned short rows, unsigned short cols,
                            pid_t *pid_out, int *master_out, int *slave_out, int *stage_out) {
-    *stage_out = MERCURY_TERMINAL_STAGE_NONE;
+    *stage_out = SEVINDA_TERMINAL_STAGE_NONE;
     struct winsize window;
     memset(&window, 0, sizeof(window));
     window.ws_row = rows > 0 ? rows : 1;
@@ -79,7 +79,7 @@ int mercury_terminal_spawn(const char *path, char *const argv[], char *const env
     if (openpty(&master, &slave, NULL, NULL, &window) < 0) {
         int error = errno;
         pthread_mutex_unlock(&spawn_lock);
-        *stage_out = MERCURY_TERMINAL_STAGE_PTY;
+        *stage_out = SEVINDA_TERMINAL_STAGE_PTY;
         return error;
     }
     set_cloexec(master);
@@ -91,7 +91,7 @@ int mercury_terminal_spawn(const char *path, char *const argv[], char *const env
         close(master);
         close(slave);
         pthread_mutex_unlock(&spawn_lock);
-        *stage_out = MERCURY_TERMINAL_STAGE_FORK;
+        *stage_out = SEVINDA_TERMINAL_STAGE_FORK;
         return error;
     }
     set_cloexec(status_pipe[0]);
@@ -109,7 +109,7 @@ int mercury_terminal_spawn(const char *path, char *const argv[], char *const env
         close(master);
         close(slave);
         close(status_pipe[0]);
-        *stage_out = MERCURY_TERMINAL_STAGE_FORK;
+        *stage_out = SEVINDA_TERMINAL_STAGE_FORK;
         return fork_error;
     }
 

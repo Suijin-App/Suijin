@@ -5,7 +5,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import os
 
-private let logger = Logger(subsystem: "com.tekmium.mercury", category: "panes")
+private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "panes")
 
 /// Rearranging the panes of a split tab by dragging a pane's header.
 ///
@@ -17,11 +17,11 @@ private let logger = Logger(subsystem: "com.tekmium.mercury", category: "panes")
 /// title-bar tab group moves it into a tab of its own.
 extension UTType {
     /// A pane being dragged; the payload is its session id.
-    static let mercuryPane = UTType(exportedAs: "com.tekmium.mercury.pane")
+    static let sevindaPane = UTType(exportedAs: "com.tekmium.sevinda.pane")
 }
 
 extension NSPasteboard.PasteboardType {
-    static let mercuryPane = NSPasteboard.PasteboardType(UTType.mercuryPane.identifier)
+    static let sevindaPane = NSPasteboard.PasteboardType(UTType.sevindaPane.identifier)
 }
 
 /// The pane drag in progress, if any: which pane is dragged and where it would land.
@@ -195,7 +195,7 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
     /// Starts the system drag session with a picture of the pane's logo and title under the pointer.
     func beginDrag(session: UUID, from event: NSEvent) {
         let item = NSPasteboardItem()
-        item.setString(session.uuidString, forType: .mercuryPane)
+        item.setString(session.uuidString, forType: .sevindaPane)
         let dragging = NSDraggingItem(pasteboardWriter: item)
         let scale = window?.backingScaleFactor ?? 2
         let start = convert(event.locationInWindow, from: nil)
@@ -280,7 +280,7 @@ struct PaneDropTarget: ViewModifier {
             .animation(.easeOut(duration: 0.15), value: isSource)
             .overlay { PaneDropPreview(placement: drag.target?.pane == session ? drag.target?.placement : nil) }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-            .onDrop(of: [.mercuryPane], delegate: PaneDropDelegate(model: model, pane: session, size: size))
+            .onDrop(of: [.sevindaPane], delegate: PaneDropDelegate(model: model, pane: session, size: size))
     }
 }
 
@@ -290,7 +290,7 @@ private struct PaneDropDelegate: DropDelegate {
     let size: CGSize
 
     func validateDrop(info: DropInfo) -> Bool {
-        info.hasItemsConforming(to: [.mercuryPane]) && model.canDropDraggedPane(onto: pane)
+        info.hasItemsConforming(to: [.sevindaPane]) && model.canDropDraggedPane(onto: pane)
     }
 
     func dropEntered(info: DropInfo) {
@@ -393,7 +393,7 @@ struct PaneTabBarDropTarget: ViewModifier {
                 }
             }
             .animation(.easeOut(duration: 0.12), value: isTargeted)
-            .onDrop(of: [.mercuryPane], delegate: TabBarDropDelegate(model: model, context: context, isTargeted: $isTargeted))
+            .onDrop(of: [.sevindaPane], delegate: TabBarDropDelegate(model: model, context: context, isTargeted: $isTargeted))
     }
 }
 
@@ -403,7 +403,7 @@ private struct TabBarDropDelegate: DropDelegate {
     @Binding var isTargeted: Bool
 
     func validateDrop(info: DropInfo) -> Bool {
-        info.hasItemsConforming(to: [.mercuryPane]) && model.canDropDraggedPaneOnTabBar(in: context)
+        info.hasItemsConforming(to: [.sevindaPane]) && model.canDropDraggedPaneOnTabBar(in: context)
     }
 
     func dropEntered(info: DropInfo) { isTargeted = true }

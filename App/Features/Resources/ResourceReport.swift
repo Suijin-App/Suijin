@@ -4,11 +4,11 @@ import SevindaCore
 import SevindaTerminal
 import Observation
 
-/// What the Resource Manager shows: one group per workspace with running sessions, then Mercury's own processes.
+/// What the Resource Manager shows: one group per workspace with running sessions, then Sevinda's own processes.
 struct ResourceReport: Equatable {
     enum GroupID: Hashable {
         case workspace(UUID)
-        case mercury
+        case sevinda
     }
 
     enum Icon: Equatable {
@@ -22,7 +22,7 @@ struct ResourceReport: Equatable {
         /// The worktree branch for sessions outside the main checkout.
         var subtitle: String?
         var icon: Icon
-        /// The session's status; nil for Mercury's own processes.
+        /// The session's status; nil for Sevinda's own processes.
         var activity: SessionActivityDisplay?
         /// Nil while the process could not be measured (not found, or not sampled yet).
         var figures: ResourceFigures?
@@ -40,10 +40,10 @@ struct ResourceReport: Equatable {
     }
 
     var sessionGroups: [Group]
-    var mercury: Group
+    var sevinda: Group
 
-    var memory: UInt64 { sessionGroups.reduce(mercury.memory) { $0 + $1.memory } }
-    var cpu: Double? { Self.sumCPU(sessionGroups.flatMap(\.rows) + mercury.rows) }
+    var memory: UInt64 { sessionGroups.reduce(sevinda.memory) { $0 + $1.memory } }
+    var cpu: Double? { Self.sumCPU(sessionGroups.flatMap(\.rows) + sevinda.rows) }
 
     /// The sum of the known CPU figures; nil when none is known yet.
     private static func sumCPU(_ rows: [Row]) -> Double? {
@@ -51,7 +51,7 @@ struct ResourceReport: Equatable {
         return known.isEmpty ? nil : known.reduce(0, +)
     }
 
-    /// Groups the live sessions by workspace, largest memory first (rows within a group too). Mercury comes last.
+    /// Groups the live sessions by workspace, largest memory first (rows within a group too). Sevinda comes last.
     @MainActor
     static func build(model: AppModel, figures: [ResourceKey: ResourceFigures]) -> ResourceReport {
         var groups: [UUID: Group] = [:]
@@ -71,11 +71,11 @@ struct ResourceReport: Equatable {
         let sessionGroups = groups.values
             .map { group in var sorted = group; sorted.rows.sort(by: byMemory); return sorted }
             .sorted { ($0.memory, $1.title) > ($1.memory, $0.title) }
-        let mercury = Group(id: .mercury, title: String(localized: "Mercury"), rows: [
-            Row(id: .app, title: String(localized: "Mercury"), icon: .symbol("macwindow"), figures: figures[.app]),
+        let sevinda = Group(id: .sevinda, title: String(localized: "Sevinda"), rows: [
+            Row(id: .app, title: String(localized: "Sevinda"), icon: .symbol("macwindow"), figures: figures[.app]),
             Row(id: .terminalHost, title: String(localized: "Terminal host"), icon: .symbol("server.rack"), figures: figures[.terminalHost]),
         ].sorted(by: byMemory))
-        return ResourceReport(sessionGroups: sessionGroups, mercury: mercury)
+        return ResourceReport(sessionGroups: sessionGroups, sevinda: sevinda)
     }
 
     private static func byMemory(_ lhs: Row, _ rhs: Row) -> Bool {
@@ -88,7 +88,7 @@ struct ResourceReport: Equatable {
     }
 }
 
-/// Samples the processes behind the live sessions and Mercury while the Resource Manager is open, and keeps the last
+/// Samples the processes behind the live sessions and Sevinda while the Resource Manager is open, and keeps the last
 /// memory totals of each group for its sparkline.
 @Observable
 @MainActor
@@ -118,14 +118,14 @@ final class ResourceMonitor {
 
     private func record(_ report: ResourceReport) {
         var next: [ResourceReport.GroupID: [UInt64]] = [:]
-        for group in report.sessionGroups + [report.mercury] {
+        for group in report.sessionGroups + [report.sevinda] {
             next[group.id] = Array(((history[group.id] ?? []) + [group.memory]).suffix(Self.historyLength))
         }
         history = next
     }
 
     /// The process of every live session (its PTY child: in the app for in-process terminals, otherwise as the PTY
-    /// host reports it), Mercury itself and the PTY host.
+    /// host reports it), Sevinda itself and the PTY host.
     private static func targets(model: AppModel) async -> ([ResourceKey: ResourceTarget], String?) {
         var targets: [ResourceKey: ResourceTarget] = [.app: .process(getpid())]
         var hosted: [UUID: String] = [:]

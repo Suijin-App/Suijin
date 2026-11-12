@@ -1,10 +1,10 @@
 import Foundation
 import GRDB
 
-/// Mercury's persistent state in SQLite. Methods are synchronous and thread-safe (serialized by the
+/// Sevinda's persistent state in SQLite. Methods are synchronous and thread-safe (serialized by the
 /// underlying `DatabaseQueue`); callers run them off the main thread.
-public final class MercuryStore: Sendable {
-    /// Internal so feature stores in this module (diff notes) extend `MercuryStore` from their own files.
+public final class SevindaStore: Sendable {
+    /// Internal so feature stores in this module (diff notes) extend `SevindaStore` from their own files.
     let dbQueue: DatabaseQueue
 
     /// Opens (or creates) the database file at `url`, creating its parent directory, and migrates it.
@@ -26,8 +26,8 @@ public final class MercuryStore: Sendable {
     }
 
     /// A private database that lives as long as the store; for tests and previews.
-    public static func inMemory() throws -> MercuryStore {
-        try MercuryStore(queue: DatabaseQueue(configuration: configuration()))
+    public static func inMemory() throws -> SevindaStore {
+        try SevindaStore(queue: DatabaseQueue(configuration: configuration()))
     }
 
     private init(queue: DatabaseQueue) throws {
@@ -38,7 +38,7 @@ public final class MercuryStore: Sendable {
     private static func configuration() -> Configuration {
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
-        configuration.label = "MercuryStore"
+        configuration.label = "SevindaStore"
         return configuration
     }
 

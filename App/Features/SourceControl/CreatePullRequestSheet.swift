@@ -23,7 +23,7 @@ struct CreatePullRequestSheet: View {
         VStack(spacing: 0) {
             content
             Divider()
-            footer.padding(MercurySpacing.l)
+            footer.padding(SevindaSpacing.l)
         }
         .frame(width: 560)
         .frame(minHeight: 300)
@@ -136,7 +136,7 @@ struct CreatePullRequestSheet: View {
                     ScrollView {
                         Text(verbatim: message)
                             .font(.callout)
-                            .foregroundStyle(MercuryColor.errorText)
+                            .foregroundStyle(SevindaColor.errorText)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

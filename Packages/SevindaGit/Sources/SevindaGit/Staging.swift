@@ -29,7 +29,7 @@ extension SourceControlService {
     /// Paths go through a NUL-separated file, so any number of paths with any characters (a leading `-`, newlines,
     /// glob characters under `--literal-pathspecs`) is passed safely.
     private func withPathspecFile(_ paths: [String], _ body: (URL) async throws -> Void) async throws {
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-pathspec-\(UUID().uuidString)")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-pathspec-\(UUID().uuidString)")
         var data = Data()
         for path in paths {
             data.append(contentsOf: Array(path.utf8))

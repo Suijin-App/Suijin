@@ -93,7 +93,7 @@ public enum AccountsError: Error, LocalizedError, Equatable, Sendable {
     case unsafePath(String)
     /// The home exists but its owner marker is missing or names another account.
     case notOwned(String)
-    /// A file Mercury needs could not be read or parsed; the detail never quotes file contents.
+    /// A file Sevinda needs could not be read or parsed; the detail never quotes file contents.
     case unreadable(String)
     case executableNotFound(String)
     /// A precondition from the user's own configuration prevents the operation.
@@ -102,7 +102,7 @@ public enum AccountsError: Error, LocalizedError, Equatable, Sendable {
     public var errorDescription: String? {
         switch self {
         case .unsafePath(let detail): "Unsafe account folder: \(detail)"
-        case .notOwned(let detail): "Account folder is not owned by Mercury: \(detail)"
+        case .notOwned(let detail): "Account folder is not owned by Sevinda: \(detail)"
         case .unreadable(let detail): "Could not read \(detail)"
         case .executableNotFound(let name): "Could not find the \(name) command line tool"
         case .refused(let detail): detail

@@ -124,7 +124,7 @@ import Testing
         try await session.wait()
         #expect(try readText(home.appendingPathComponent("auth.json")) == "{\"new\":true}\n")
         #expect(try posixMode(home.appendingPathComponent("auth.json")) == 0o600)
-        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(".mercury-login-staging").path))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(".sevinda-login-staging").path))
     }
 
     @Test func failedReauthenticationKeepsTheOldCredentials() async throws {
@@ -135,7 +135,7 @@ import Testing
         let session = try CodexLoginRunner(executable: cli, baseEnvironment: ["PATH": "/usr/bin:/bin"]).start(home: home)
         await #expect(throws: LoginError.self) { try await session.wait() }
         #expect(try readText(home.appendingPathComponent("auth.json")) == "{\"old\":true}")
-        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(".mercury-login-staging").path))
+        #expect(!FileManager.default.fileExists(atPath: home.appendingPathComponent(".sevinda-login-staging").path))
     }
 
     @Test func deviceAuthArguments() async throws {

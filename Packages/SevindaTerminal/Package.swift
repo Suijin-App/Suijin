@@ -7,7 +7,7 @@ import PackageDescription
 // SwiftTerm is pinned exactly: 1.20.0 is the newest 1.x release (Metal renderer). It compiles a Metal shader, so
 // Xcode needs the Metal Toolchain component, and it ships the build-tool plugin `SwiftTermBuildInfoPlugin`, so
 // `xcodebuild` needs `-skipPackagePluginValidation` (or a trusted plugin). 1.99.x are pre-2.0 builds with moving
-// APIs. An upgrade must re-check the paste and key paths MercuryTerminalView overrides.
+// APIs. An upgrade must re-check the paste and key paths SevindaTerminalView overrides.
 let package = Package(
     name: "SevindaTerminal",
     platforms: [.macOS(.v15)],

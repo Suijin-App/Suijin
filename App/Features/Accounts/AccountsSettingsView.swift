@@ -31,7 +31,7 @@ struct AccountsSettingsView: View {
                         }
                     }
                 } header: {
-                    HStack(spacing: MercurySpacing.s) {
+                    HStack(spacing: SevindaSpacing.s) {
                         AgentLogo(agent: provider == .claude ? .claude : .codex, size: 16)
                         Text(provider == .claude ? "Claude Code" : "Codex")
                     }
@@ -87,7 +87,7 @@ private struct DefaultAccountPicker: View {
                 Text(verbatim: account.displayName).tag(Optional(account.id))
             }
         }
-        .help(Text("Used by new sessions and by `\(provider.rawValue)` typed in Mercury terminals"))
+        .help(Text("Used by new sessions and by `\(provider.rawValue)` typed in Sevinda terminals"))
     }
 }
 
@@ -99,7 +99,7 @@ struct AccountRow: View {
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: MercurySpacing.m) {
+        HStack(spacing: SevindaSpacing.m) {
             Image(systemName: "person.crop.circle.fill")
                 .font(.title)
                 .foregroundStyle(.secondary)
@@ -110,7 +110,7 @@ struct AccountRow: View {
                     Text(verbatim: organization).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            Spacer(minLength: MercurySpacing.s)
+            Spacer(minLength: SevindaSpacing.s)
             if let usage = model.accountsController.usage[account.id] {
                 UsageSummary(usage: usage).font(.caption)
             }
@@ -135,7 +135,7 @@ struct UsageSummary: View {
     let usage: UsageSnapshot
 
     var body: some View {
-        HStack(spacing: MercurySpacing.s) {
+        HStack(spacing: SevindaSpacing.s) {
             if let window = usage.fiveHour { UsageGauge(window: window, label: Text("5h")) }
             if let window = usage.sevenDay { UsageGauge(window: window, label: Text("7d")) }
         }
@@ -152,7 +152,7 @@ struct UsageGauge: View {
             Gauge(value: min(max(window.usedFraction, 0), 1)) { label }
                 .gaugeStyle(.accessoryLinearCapacity)
                 .labelsHidden()
-                .tint(window.usedFraction > 0.9 ? MercuryColor.error : window.usedFraction > 0.7 ? MercuryColor.warning : MercuryColor.ok)
+                .tint(window.usedFraction > 0.9 ? SevindaColor.error : window.usedFraction > 0.7 ? SevindaColor.warning : SevindaColor.ok)
                 .frame(width: 44)
             Text("\(label) \(percent)%").monospacedDigit()
             if let reset = window.resetsAt, reset > .now {

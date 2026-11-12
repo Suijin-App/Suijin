@@ -68,7 +68,7 @@ public enum CodexIdentity {
         return trimmed?.isEmpty == false ? trimmed : nil
     }
 
-    /// The user's own Codex home: `CODEX_HOME` when set and not one Mercury injected for an account, else
+    /// The user's own Codex home: `CODEX_HOME` when set and not one Sevinda injected for an account, else
     /// `~/.codex`. A leading `~` is expanded against `realHome`.
     public static func defaultLoginHome(environment: [String: String], realHome: URL) -> URL {
         let fallback = realHome.appendingPathComponent(".codex", isDirectory: true)

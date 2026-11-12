@@ -9,8 +9,8 @@ import Testing
         #expect(ClaudeKeychainReader.serviceName(configDir: nil) == "Claude Code-credentials")
         #expect(ClaudeKeychainReader.serviceName(configDir: "/Users/test/.claude-profile") == "Claude Code-credentials-66d7367b")
         #expect(ClaudeKeychainReader.serviceName(
-            configDir: "/Users/test/Library/Application Support/Mercury/claude-profiles/0f8fad5b-d9cb-469f-a165-70867728950e/home")
-            == "Claude Code-credentials-45b65bd9")
+            configDir: "/Users/test/Library/Application Support/Sevinda/claude-profiles/0f8fad5b-d9cb-469f-a165-70867728950e/home")
+            == "Claude Code-credentials-62a4fe24")
         // NFC normalization: composed and decomposed spellings name the same item.
         #expect(ClaudeKeychainReader.serviceName(configDir: "/Users/caf\u{E9}/.claude") == "Claude Code-credentials-da474c2a")
         #expect(ClaudeKeychainReader.serviceName(configDir: "/Users/cafe\u{301}/.claude") == "Claude Code-credentials-da474c2a")
@@ -107,7 +107,7 @@ import Testing
     @Test func claudeProfileSetsConfigDirAndStripsCredentials() {
         let home = URL(fileURLWithPath: "/data/claude-profiles/abc/home")
         let patch = ClaudeLaunchEnv.patch(home: home, inheritedEnv: inherited)
-        #expect(patch.set == ["CLAUDE_CONFIG_DIR": home.path, "MERCURY_CLAUDE_INJECTED_CONFIG_DIR": home.path])
+        #expect(patch.set == ["CLAUDE_CONFIG_DIR": home.path, "SEVINDA_CLAUDE_INJECTED_CONFIG_DIR": home.path])
         for key in ClaudeLaunchEnv.authEnvVars + ["ANTHROPIC_CUSTOM_HEADERS", "CLAUDECODE"] {
             #expect(patch.unset.contains(key), "\(key)")
         }
@@ -131,18 +131,18 @@ import Testing
         #expect(own.unset.contains("CLAUDECODE"))
 
         let injected = ClaudeLaunchEnv.patch(
-            home: nil, inheritedEnv: ["CLAUDE_CONFIG_DIR": "/p/home", "MERCURY_CLAUDE_INJECTED_CONFIG_DIR": "/p/home"])
-        #expect(injected.unset.isSuperset(of: ["CLAUDE_CONFIG_DIR", "MERCURY_CLAUDE_INJECTED_CONFIG_DIR"]))
+            home: nil, inheritedEnv: ["CLAUDE_CONFIG_DIR": "/p/home", "SEVINDA_CLAUDE_INJECTED_CONFIG_DIR": "/p/home"])
+        #expect(injected.unset.isSuperset(of: ["CLAUDE_CONFIG_DIR", "SEVINDA_CLAUDE_INJECTED_CONFIG_DIR"]))
     }
 
     @Test func codexHomeAndDefault() {
         let home = URL(fileURLWithPath: "/data/codex-homes/abc/home")
         #expect(CodexLaunchEnv.patch(home: home, inheritedEnv: [:])
-            == EnvPatch(set: ["CODEX_HOME": home.path, "MERCURY_CODEX_INJECTED_HOME": home.path]))
+            == EnvPatch(set: ["CODEX_HOME": home.path, "SEVINDA_CODEX_INJECTED_HOME": home.path]))
         #expect(CodexLaunchEnv.patch(home: nil, inheritedEnv: ["CODEX_HOME": "/mine"]) == .empty)
         #expect(CodexLaunchEnv.patch(
-            home: nil, inheritedEnv: ["CODEX_HOME": home.path, "MERCURY_CODEX_INJECTED_HOME": home.path])
-            == EnvPatch(unset: ["CODEX_HOME", "MERCURY_CODEX_INJECTED_HOME"]))
+            home: nil, inheritedEnv: ["CODEX_HOME": home.path, "SEVINDA_CODEX_INJECTED_HOME": home.path])
+            == EnvPatch(unset: ["CODEX_HOME", "SEVINDA_CODEX_INJECTED_HOME"]))
     }
 
     @Test func pointerFilesAreWrittenAndCleared() async throws {

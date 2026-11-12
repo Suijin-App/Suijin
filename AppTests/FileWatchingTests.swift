@@ -6,7 +6,7 @@ import SwiftUI
 import Testing
 @testable import Sevinda
 
-/// Changes made outside Mercury (Finder, editors, agents' shells) reach the file tree and open viewer tabs.
+/// Changes made outside Sevinda (Finder, editors, agents' shells) reach the file tree and open viewer tabs.
 @MainActor
 @Suite(.serialized)
 struct FileWatchingTests {
@@ -262,7 +262,7 @@ struct FileWatchingTests {
 
     @Test func viewerKeepsScrollPositionAndZoomAcrossReloads() async throws {
         let root = try TemporaryFolder()
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.url("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.url("data"))
         let context = SessionContext.workspace(UUID())
         let lines = (1...300).map { "Line \($0) of a long file." }
         // Paragraphs in Markdown, lines in code: both much taller than the pane.
@@ -383,7 +383,7 @@ private final class TemporaryFolder {
     let url: URL
 
     init() throws {
-        url = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-watch-\(UUID().uuidString)", isDirectory: true)
+        url = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-watch-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     }
 

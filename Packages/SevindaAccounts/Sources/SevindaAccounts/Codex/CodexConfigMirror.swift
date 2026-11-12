@@ -18,7 +18,7 @@ struct CodexConfigMirror: Sendable {
         "skills.config.path", "sqlite_home",
     ]
 
-    static let daemonMarker = "# mercury: CODEX_HOME too long for the daemon socket"
+    static let daemonMarker = "# sevinda: CODEX_HOME too long for the daemon socket"
     /// macOS `sun_path` is 104 bytes including the terminating NUL.
     static let socketPathByteLimit = 103
 
@@ -46,7 +46,7 @@ struct CodexConfigMirror: Sendable {
         else { return }
         throw AccountsError.refused(
             "~/.codex/config.toml pins the custom model provider \"\(provider)\". Remove model_provider (or set it to "
-                + "\"openai\") before adding a Codex account. Mercury left your config unchanged.")
+                + "\"openai\") before adding a Codex account. Sevinda left your config unchanged.")
     }
 
     @discardableResult

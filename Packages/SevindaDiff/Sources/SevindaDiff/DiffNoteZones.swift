@@ -63,12 +63,12 @@ final class DiffNotesController {
     }
 
     #if DEBUG
-    /// Screenshot runs open the composer directly: `-MercuryDiffNoteDraft <line>` (or `<start>-<end>`), once per launch.
+    /// Screenshot runs open the composer directly: `-SevindaDiffNoteDraft <line>` (or `<start>-<end>`), once per launch.
     private static var didOpenScreenshotDraft = false
 
     private func openScreenshotDraftIfRequested() {
         guard isEnabled, !Self.didOpenScreenshotDraft, let primary,
-              let value = UserDefaults.standard.string(forKey: "MercuryDiffNoteDraft") else { return }
+              let value = UserDefaults.standard.string(forKey: "SevindaDiffNoteDraft") else { return }
         let bounds = value.split(separator: "-").compactMap { Int($0) }
         guard let last = bounds.last, primary.commentableLines.contains(last) else { return }
         Self.didOpenScreenshotDraft = true
@@ -169,7 +169,7 @@ struct DiffNoteZoneView: View {
     let controller: DiffNotesController
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             ForEach(model.notes(endingAt: line)) { note in
                 DiffNoteCard(note: note,
                              onSave: { body in model.actions?.update(note.id, body) },
@@ -186,7 +186,7 @@ struct DiffNoteZoneView: View {
         }
         .frame(maxWidth: 760, alignment: .leading)
         .padding(.leading, 12)
-        .padding(.trailing, MercurySpacing.l)
+        .padding(.trailing, SevindaSpacing.l)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
         // Ideal height whatever the hosting frame proposes: the zone reports it and the gap follows.

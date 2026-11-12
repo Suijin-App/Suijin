@@ -31,7 +31,7 @@ final class ProcessLoginSession: InteractiveLoginSession {
     private let continuation: AsyncStream<String>.Continuation
     private let configuration: LoginProcessConfiguration
     private let state = Mutex(State())
-    private let queue = DispatchQueue(label: "mercury.accounts.login")
+    private let queue = DispatchQueue(label: "sevinda.accounts.login")
 
     private struct State {
         var process: Process?

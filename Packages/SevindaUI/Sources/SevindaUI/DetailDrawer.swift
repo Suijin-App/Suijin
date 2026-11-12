@@ -20,9 +20,9 @@ struct DetailDrawerModifier<Drawer: View>: ViewModifier {
                     .keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("drawer.close")
                 }
-                .padding(MercurySpacing.m)
+                .padding(SevindaSpacing.m)
                 Divider()
-                ScrollView { drawer.padding(MercurySpacing.m).frame(maxWidth: .infinity, alignment: .leading) }
+                ScrollView { drawer.padding(SevindaSpacing.m).frame(maxWidth: .infinity, alignment: .leading) }
             }
             .inspectorColumnWidth(min: 320, ideal: 440, max: 600)
             .accessibilityElement(children: .contain)

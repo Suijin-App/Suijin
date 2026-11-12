@@ -4,7 +4,7 @@ import SevindaUI
 import SevindaUsage
 import SwiftUI
 
-/// Settings → Stats & Usage: Mercury's own counters, then the Claude Code and Codex token usage read from their local
+/// Settings → Stats & Usage: Sevinda's own counters, then the Claude Code and Codex token usage read from their local
 /// logs (totals, a six-week heatmap, the token mix and one card per provider).
 struct StatsUsageSettings: View {
     @Environment(AppModel.self) private var model
@@ -20,20 +20,20 @@ private struct StatsUsagePage: View {
     var body: some View {
         Form {
             Section {
-                MercuryStatsRow(stats: usage.stats)
+                SevindaStatsRow(stats: usage.stats)
             } header: {
-                VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+                VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
                     Text("Stats & Usage")
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text("Mercury activity plus Claude and Codex token usage read from their local logs.")
+                    Text("Sevinda activity plus Claude and Codex token usage read from their local logs.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                    Text("Mercury")
-                        .padding(.top, MercurySpacing.m)
+                    Text("Sevinda")
+                        .padding(.top, SevindaSpacing.m)
                 }
             } footer: {
-                mercuryFooter
+                sevindaFooter
             }
             Section {
                 UsageControlsRow(usage: usage)
@@ -57,10 +57,10 @@ private struct StatsUsagePage: View {
         .onDisappear { usage.pageDisappeared() }
     }
 
-    @ViewBuilder private var mercuryFooter: some View {
+    @ViewBuilder private var sevindaFooter: some View {
         if let error = usage.statsError {
             Label(error, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption).foregroundStyle(MercuryColor.warningText)
+                .font(.caption).foregroundStyle(SevindaColor.warningText)
         } else if let since = usage.stats?.trackingSince {
             Text("Tracking since \(since.formatted(date: .abbreviated, time: .omitted))")
                 .font(.caption).foregroundStyle(.secondary)
@@ -112,12 +112,12 @@ private struct StatsUsagePage: View {
                 hasData: snapshot.hasData(provider: provider))
         }
         return ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: MercurySpacing.xl) {
+            HStack(alignment: .top, spacing: SevindaSpacing.xl) {
                 cards.frame(minWidth: 260)
             }
-            VStack(alignment: .leading, spacing: MercurySpacing.l) { cards }
+            VStack(alignment: .leading, spacing: SevindaSpacing.l) { cards }
         }
-        .padding(.vertical, MercurySpacing.xs)
+        .padding(.vertical, SevindaSpacing.xs)
     }
 
     private func hasAnyData(_ snapshot: UsageSnapshot) -> Bool {
@@ -128,11 +128,11 @@ private struct StatsUsagePage: View {
 // MARK: Rows
 
 /// Agents spawned, time agents worked and PRs created; placeholders while the counters load.
-private struct MercuryStatsRow: View {
-    let stats: MercuryStats?
+private struct SevindaStatsRow: View {
+    let stats: SevindaStats?
 
     var body: some View {
-        let shown = stats ?? MercuryStats()
+        let shown = stats ?? SevindaStats()
         TileRow {
             StatTile(symbol: "sparkle", value: UsageFormat.count(Int(clamping: shown.agentsSpawned)),
                      caption: "Agents spawned")
@@ -152,7 +152,7 @@ private struct UsageControlsRow: View {
     @Bindable var usage: UsageController
 
     var body: some View {
-        HStack(spacing: MercurySpacing.m) {
+        HStack(spacing: SevindaSpacing.m) {
             Picker("Providers", selection: $usage.scope) {
                 Text("Overview").tag(UsageScope.overview)
                 Text("Claude").tag(UsageScope.claude)
@@ -169,7 +169,7 @@ private struct UsageControlsRow: View {
             .pickerStyle(.menu)
             .labelsHidden()
             .fixedSize()
-            Spacer(minLength: MercurySpacing.s)
+            Spacer(minLength: SevindaSpacing.s)
             status
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -197,7 +197,7 @@ private struct UsageControlsRow: View {
             Text("Updating…")
         } else if let error = usage.refreshError, usage.snapshot != nil {
             Label(error, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(MercuryColor.warningText)
+                .foregroundStyle(SevindaColor.warningText)
                 .help(Text(verbatim: error))
         } else if let updatedAt = usage.snapshot?.updatedAt {
             Text("Updated \(UsageFormat.updated(updatedAt))")
@@ -215,7 +215,7 @@ private struct ScanProgressRow: View {
         } currentValueLabel: {
             Text(verbatim: UsageFormat.percent(progress)).monospacedDigit()
         }
-        .padding(.vertical, MercurySpacing.xs)
+        .padding(.vertical, SevindaSpacing.xs)
     }
 }
 
@@ -255,18 +255,18 @@ private struct UsageChartsRow: View {
     var body: some View {
         let grid = UsageHeatmap(model: UsageHeatmapModel(daily: heatmap.daily), bestDay: heatmap.bestDay)
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: MercurySpacing.xl) {
+            HStack(alignment: .top, spacing: SevindaSpacing.xl) {
                 grid.fixedSize()
                 Divider()
                 TokenMixView(tokens: tokens).frame(minWidth: 280)
             }
-            VStack(alignment: .leading, spacing: MercurySpacing.l) {
+            VStack(alignment: .leading, spacing: SevindaSpacing.l) {
                 grid
                 Divider()
                 TokenMixView(tokens: tokens)
             }
         }
-        .padding(.vertical, MercurySpacing.xs)
+        .padding(.vertical, SevindaSpacing.xs)
     }
 }
 
@@ -289,7 +289,7 @@ private struct UsageWarningRow: View {
                 Image(systemName: "exclamationmark.triangle.fill")
             }
             .font(.caption)
-            .foregroundStyle(MercuryColor.warningText)
+            .foregroundStyle(SevindaColor.warningText)
         }
     }
 }
@@ -319,7 +319,7 @@ private struct TokenMixView: View {
     var body: some View {
         let segments = segments
         let total = max(1, tokens.total)
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
             Text("Token mix").font(.headline)
             Text("New input, output and cache tokens in the selected range.")
                 .font(.caption)
@@ -340,7 +340,7 @@ private struct TokenMixView: View {
             .accessibilityLabel(Text("Token mix"))
             .accessibilityValue(Text(verbatim: segments.map { "\($0.name) \(UsageFormat.tokens($0.value))" }
                 .joined(separator: ", ")))
-            Grid(alignment: .leading, horizontalSpacing: MercurySpacing.s, verticalSpacing: MercurySpacing.xs) {
+            Grid(alignment: .leading, horizontalSpacing: SevindaSpacing.s, verticalSpacing: SevindaSpacing.xs) {
                 ForEach(segments) { segment in
                     GridRow {
                         Circle().fill(segment.color).frame(width: 8, height: 8)
@@ -369,9 +369,9 @@ private struct TileRow<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        HStack(alignment: .top, spacing: MercurySpacing.m) { content }
+        HStack(alignment: .top, spacing: SevindaSpacing.m) { content }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.vertical, MercurySpacing.xs)
+            .padding(.vertical, SevindaSpacing.xs)
     }
 }
 
@@ -383,7 +383,7 @@ private struct StatTile: View {
     var badge: LocalizedStringKey?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
             Image(systemName: symbol)
                 .font(.title3)
                 .foregroundStyle(.tint)
@@ -394,7 +394,7 @@ private struct StatTile: View {
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-            HStack(spacing: MercurySpacing.xs) {
+            HStack(spacing: SevindaSpacing.xs) {
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -402,9 +402,9 @@ private struct StatTile: View {
                 if let badge {
                     Text(badge)
                         .font(.caption2)
-                        .foregroundStyle(MercuryColor.warningText)
+                        .foregroundStyle(SevindaColor.warningText)
                         .padding(.horizontal, 5)
-                        .background(MercuryColor.warning.opacity(0.15), in: Capsule())
+                        .background(SevindaColor.warning.opacity(0.15), in: Capsule())
                         .lineLimit(1)
                 }
             }

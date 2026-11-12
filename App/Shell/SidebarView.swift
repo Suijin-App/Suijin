@@ -104,9 +104,9 @@ private struct AddWorkspaceButton: View {
             .controlSize(.large)
             .help(Text("Add a git repository or a folder (⇧⌘O)"))
         }
-        .padding(.horizontal, MercurySpacing.m)
-        .padding(.top, MercurySpacing.s)
-        .padding(.bottom, MercurySpacing.m)
+        .padding(.horizontal, SevindaSpacing.m)
+        .padding(.top, SevindaSpacing.s)
+        .padding(.bottom, SevindaSpacing.m)
     }
 }
 
@@ -119,7 +119,7 @@ private struct WorkspaceHeader: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: MercurySpacing.s) {
+        HStack(spacing: SevindaSpacing.s) {
             Button { isEditingIcon = true } label: {
                 WorkspaceBadge(workspace: workspace, imageDirectory: model.workspaceIconDirectory, size: 22)
             }
@@ -138,7 +138,7 @@ private struct WorkspaceHeader: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            Spacer(minLength: MercurySpacing.xs)
+            Spacer(minLength: SevindaSpacing.xs)
             HStack(spacing: 2) {
                 if workspace.kind == .git {
                     Button { model.newWorktreeWorkspaceID = workspace.id } label: {
@@ -166,7 +166,7 @@ private struct WorkspaceHeader: View {
         .onHover { isHovered = $0 }
         .contextMenu { menuItems }
         .help(Text(verbatim: workspace.path))
-        .confirmationDialog(Text("Remove “\(workspace.name)” from Mercury?"), isPresented: $isConfirmingRemoval) {
+        .confirmationDialog(Text("Remove “\(workspace.name)” from Sevinda?"), isPresented: $isConfirmingRemoval) {
             Button("Remove", role: .destructive) { Task { await model.removeWorkspace(workspace.id) } }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -231,7 +231,7 @@ struct WorkspaceContextRow: View {
             Label {
                 HStack {
                     title.lineLimit(1).truncationMode(.middle)
-                    Spacer(minLength: MercurySpacing.xs)
+                    Spacer(minLength: SevindaSpacing.xs)
                     accessory
                     ContextActivityBadge(sessions: sessions)
                 }
@@ -309,7 +309,7 @@ private struct SidebarPaneTabRow: View {
                 .foregroundStyle(.secondary)
             Text("Split tab")
                 .lineLimit(1)
-            Spacer(minLength: MercurySpacing.xs)
+            Spacer(minLength: SevindaSpacing.xs)
             ContextActivityBadge(sessions: sessions)
         }
         .padding(.leading, 34)
@@ -335,7 +335,7 @@ private struct SidebarSessionRow: View {
             Text(verbatim: model.runtimes.displayTitle(of: session))
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Spacer(minLength: MercurySpacing.xs)
+            Spacer(minLength: SevindaSpacing.xs)
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 Text(verbatim: Self.elapsed(from: session.createdAt, to: session.endedAt ?? context.date))
                     .font(.caption)

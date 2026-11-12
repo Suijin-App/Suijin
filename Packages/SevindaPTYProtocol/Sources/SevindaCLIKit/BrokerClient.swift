@@ -11,9 +11,9 @@ public enum BrokerClientError: Error, Equatable, Sendable, CustomStringConvertib
 
     public var description: String {
         switch self {
-        case .unreachable(let reason): "Cannot reach Mercury's terminal host (\(reason))."
-        case .timedOut: "Mercury's terminal host did not answer in time."
-        case .invalidResponse: "Mercury's terminal host sent an invalid answer."
+        case .unreachable(let reason): "Cannot reach Sevinda's terminal host (\(reason))."
+        case .timedOut: "Sevinda's terminal host did not answer in time."
+        case .invalidResponse: "Sevinda's terminal host sent an invalid answer."
         }
     }
 }
@@ -29,7 +29,7 @@ public struct BrokerClient: Sendable {
         self.spoolDirectory = spoolDirectory
     }
 
-    /// From `MERCURY_ORCH_SOCKET` / `MERCURY_ORCH_SPOOL`, else derived from `MERCURY_DATA_ROOT`.
+    /// From `SEVINDA_ORCH_SOCKET` / `SEVINDA_ORCH_SPOOL`, else derived from `SEVINDA_DATA_ROOT`.
     public init(environment: [String: String]) {
         let root = environment[OrchestrationEnvironment.dataRoot].flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0, isDirectory: true) }
         socketPath = environment[OrchestrationEnvironment.socket].flatMap { $0.isEmpty ? nil : $0 }

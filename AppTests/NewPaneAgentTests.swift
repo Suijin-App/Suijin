@@ -12,7 +12,7 @@ struct NewPaneAgentTests {
     let folder: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-newpane-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-newpane-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
@@ -28,7 +28,7 @@ struct NewPaneAgentTests {
 
     /// A model with one folder workspace and a selected Claude session record that has no process.
     private func makeModel() async throws -> (AppModel, SessionContext, AgentSessionRecord) {
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
         let context = SessionContext.workspace(workspaceID)
@@ -59,7 +59,7 @@ struct NewPaneAgentTests {
     }
 
     @Test func settingRoundTripsThroughTheStoreAndTheDefaultIsStoredAsNoValue() async throws {
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(model.newPaneAgent == .sameAsFocused)
         model.setNewPaneAgent(.shell)

@@ -27,9 +27,9 @@ struct PTYSessionTests {
     @Test func catEchoesWrittenInput() async throws {
         let session = try PTYSession.spawn(request: PTYSpawnRequest(executable: "/bin/cat", cwd: "/"))
         let collector = attachCollector(session)
-        session.write(Data("hello mercury\n".utf8))
+        session.write(Data("hello sevinda\n".utf8))
         // Once from the terminal's own echo, once from cat.
-        #expect(await collector.wait(forText: "hello mercury", occurrences: 2))
+        #expect(await collector.wait(forText: "hello sevinda", occurrences: 2))
         session.terminate()
         #expect(await collector.waitForExit() == 128 + SIGHUP)
     }

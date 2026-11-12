@@ -59,11 +59,11 @@ struct SwiftTermEngineTests {
         let engine = SwiftTermEngine()
         let recorder = EngineRecorder()
         recorder.attach(to: engine)
-        try await engine.start(launch("/bin/echo", ["hello mercury"]), size: size)
+        try await engine.start(launch("/bin/echo", ["hello sevinda"]), size: size)
         #expect(engine.processID != nil)
         #expect(engine.sessionID == nil)
         #expect(await waitUntil { !recorder.exits.isEmpty })
-        #expect(recorder.text.contains("hello mercury"))
+        #expect(recorder.text.contains("hello sevinda"))
         #expect(recorder.exits == [0])
         #expect(engine.exitCode == 0)
     }
@@ -101,7 +101,7 @@ struct SwiftTermEngineTests {
             try await engine.start(bad, size: size)
         }
         // Not a valid executable format: exec fails in the child and the failure comes back as an error.
-        let script = FileManager.default.temporaryDirectory.appending(path: "mercury-noexec-\(UUID())")
+        let script = FileManager.default.temporaryDirectory.appending(path: "sevinda-noexec-\(UUID())")
         try Data("no shebang\0\u{1}".utf8).write(to: script)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
         defer { try? FileManager.default.removeItem(at: script) }
@@ -116,15 +116,15 @@ struct SwiftTermEngineTests {
 
     @Test("write reaches the program; the child runs in the requested directory with the given environment")
     func writeAndEnvironment() async throws {
-        let directory = FileManager.default.temporaryDirectory.appending(path: "mercury engine")
+        let directory = FileManager.default.temporaryDirectory.appending(path: "sevinda engine")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         // The shell reports the physical path (/private/var/…); Foundation's symlink resolution keeps /var.
         let physical = try #require(realpath(directory.path, nil))
         defer { free(physical) }
         let physicalPath = String(cString: physical)
-        var spec = launch("/bin/sh", ["-c", #"printf 'pwd=%s\nvar=%s\n' "$PWD" "$MERCURY_TEST"; read line; printf 'got=%s\n' "$line""#])
+        var spec = launch("/bin/sh", ["-c", #"printf 'pwd=%s\nvar=%s\n' "$PWD" "$SEVINDA_TEST"; read line; printf 'got=%s\n' "$line""#])
         spec.cwd = directory.path
-        spec.environment["MERCURY_TEST"] = "xin chào"
+        spec.environment["SEVINDA_TEST"] = "xin chào"
         let engine = SwiftTermEngine()
         let recorder = EngineRecorder()
         recorder.attach(to: engine)

@@ -7,24 +7,24 @@ public enum StatusTone: String, Sendable, CaseIterable {
 
     public var color: Color {
         switch self {
-        case .ok: MercuryColor.ok
-        case .warning: MercuryColor.warning
-        case .error: MercuryColor.error
-        case .idle: MercuryColor.idle
-        case .agent: MercuryColor.agent
-        case .info: MercuryColor.accent
+        case .ok: SevindaColor.ok
+        case .warning: SevindaColor.warning
+        case .error: SevindaColor.error
+        case .idle: SevindaColor.idle
+        case .agent: SevindaColor.agent
+        case .info: SevindaColor.accent
         }
     }
 
     /// Text color readable on a light background of the same tone.
     public var textColor: Color {
         switch self {
-        case .ok: MercuryColor.okText
-        case .warning: MercuryColor.warningText
-        case .error: MercuryColor.errorText
+        case .ok: SevindaColor.okText
+        case .warning: SevindaColor.warningText
+        case .error: SevindaColor.errorText
         case .idle: .secondary
-        case .agent: MercuryColor.agent
-        case .info: MercuryColor.accent
+        case .agent: SevindaColor.agent
+        case .info: SevindaColor.accent
         }
     }
 }
@@ -146,7 +146,7 @@ public struct Tag: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 1)
             .foregroundStyle(tone?.textColor ?? .secondary)
-            .background(Capsule().fill((tone?.color ?? MercuryColor.idle).opacity(tone == nil ? 0.15 : 0.16)))
+            .background(Capsule().fill((tone?.color ?? SevindaColor.idle).opacity(tone == nil ? 0.15 : 0.16)))
     }
 }
 
@@ -201,14 +201,14 @@ public struct StatCard<Footer: View>: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                Text(value).font(MercuryFont.statValue).lineLimit(1).minimumScaleFactor(0.6)
+                Text(value).font(SevindaFont.statValue).lineLimit(1).minimumScaleFactor(0.6)
                 if let fraction { MiniBar(fraction: fraction) }
                 footer
                 // Cards in one row share the tallest card's height; the content stays at the top.
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(MercurySpacing.xs)
+            .padding(SevindaSpacing.xs)
         }
         .accessibilityElement(children: .combine)
     }

@@ -1,7 +1,7 @@
 import Foundation
 @testable import SevindaTerminal
 
-/// A throwaway HOME and Mercury data root with fake `claude` and `codex` binaries that print the environment they see.
+/// A throwaway HOME and Sevinda data root with fake `claude` and `codex` binaries that print the environment they see.
 struct ShellFixture {
     let base: URL
     let home: URL
@@ -11,11 +11,11 @@ struct ShellFixture {
 
     init() throws {
         base = FileManager.default.temporaryDirectory
-            .appending(path: "mercury-shell-\(UUID().uuidString.prefix(8))", directoryHint: .isDirectory)
+            .appending(path: "sevinda-shell-\(UUID().uuidString.prefix(8))", directoryHint: .isDirectory)
             .resolvingSymlinksInPath()
         home = base.appending(path: "home dir", directoryHint: .isDirectory)
         // A space, as in "Application Support".
-        dataRoot = base.appending(path: "Application Support/Mercury", directoryHint: .isDirectory)
+        dataRoot = base.appending(path: "Application Support/Sevinda", directoryHint: .isDirectory)
         fakeBin = base.appending(path: "bin", directoryHint: .isDirectory)
         for directory in [home, dataRoot, fakeBin] {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -52,17 +52,17 @@ struct ShellFixture {
     /// A startup-file line that puts the fake binaries first, after macOS's path_helper reordered PATH.
     var pathLine: String { "export PATH=\"\(fakeBin.path):$PATH\"\n" }
 
-    /// The environment a Mercury terminal gets, with this fixture's HOME and data root.
+    /// The environment a Sevinda terminal gets, with this fixture's HOME and data root.
     func environment(_ extra: [String: String] = [:]) -> [String: String] {
         var env = ShellLaunch.baseEnvironment(from: [
             "HOME": home.path, "USER": NSUserName(), "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "TMPDIR": NSTemporaryDirectory(),
         ])
-        env["MERCURY_DATA_ROOT"] = dataRoot.path
+        env["SEVINDA_DATA_ROOT"] = dataRoot.path
         env["BASH_SILENCE_DEPRECATION_WARNING"] = "1"
         return env.merging(extra) { _, new in new }
     }
 
-    /// Runs Mercury's interactive `shell` launch with `-c script` appended and returns its standard output.
+    /// Runs Sevinda's interactive `shell` launch with `-c script` appended and returns its standard output.
     func run(shell: String, script: String, environment extra: [String: String] = [:]) throws -> String {
         let launch = ShellLaunch.interactiveShell(shell, cwd: home, environment: environment(extra))
         let process = Process()

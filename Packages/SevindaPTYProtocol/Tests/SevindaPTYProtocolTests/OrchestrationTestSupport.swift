@@ -100,7 +100,7 @@ struct BrokerHarness {
         tuning.startReplyTimeout = 2
         tuning.escalationGrace = 0.05
         let clock = self.clock
-        broker = Broker(dataRoot: URL(fileURLWithPath: "/tmp/mercury-test-root"), stateFile: stateFile, io: io, tuning: tuning,
+        broker = Broker(dataRoot: URL(fileURLWithPath: "/tmp/sevinda-test-root"), stateFile: stateFile, io: io, tuning: tuning,
                         now: { clock.now })
         broker.open(tick: false)
         broker.sessionSpawned(hostSessionID: "host-coordinator", sessionID: "coordinator", agent: .claude, token: Self.coordinatorToken)

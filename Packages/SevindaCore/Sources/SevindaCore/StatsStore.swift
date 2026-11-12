@@ -7,12 +7,12 @@ public enum StatKey: String, Sendable, CaseIterable {
     /// Total seconds agent sessions spent working (their activity was `running`).
     case agentWorkSeconds
     case prsCreated
-    /// When Mercury started counting, in Unix seconds.
+    /// When Sevinda started counting, in Unix seconds.
     case trackingSince
 }
 
-/// Mercury's own usage totals, for the Stats page.
-public struct MercuryStats: Sendable, Equatable {
+/// Sevinda's own usage totals, for the Stats page.
+public struct SevindaStats: Sendable, Equatable {
     public var agentsSpawned: Int64
     public var agentWorkSeconds: Int64
     public var prsCreated: Int64
@@ -27,7 +27,7 @@ public struct MercuryStats: Sendable, Equatable {
     }
 }
 
-extension MercuryStore {
+extension SevindaStore {
     /// Adds `amount` to a counter and starts tracking (now) if it has not started yet. `trackingSince` itself is set
     /// only once and never added to, and a non-positive amount changes nothing.
     public func incrementStat(_ key: StatKey, by amount: Int64 = 1, at date: Date = Date()) throws {
@@ -38,7 +38,7 @@ extension MercuryStore {
         }
     }
 
-    /// Records a pull request Mercury created. The same URL counts once; returns whether it was new.
+    /// Records a pull request Sevinda created. The same URL counts once; returns whether it was new.
     @discardableResult
     public func recordPullRequest(url: String, at date: Date = Date()) throws -> Bool {
         let url = url.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -52,12 +52,12 @@ extension MercuryStore {
         }
     }
 
-    public func mercuryStats() throws -> MercuryStats {
+    public func sevindaStats() throws -> SevindaStats {
         try dbQueue.read { db in
             let rows = try Row.fetchAll(db, sql: "SELECT key, value FROM stat_counter")
             var values: [String: Int64] = [:]
             for row in rows { values[row["key"]] = row["value"] }
-            return MercuryStats(
+            return SevindaStats(
                 agentsSpawned: values[StatKey.agentsSpawned.rawValue] ?? 0,
                 agentWorkSeconds: values[StatKey.agentWorkSeconds.rawValue] ?? 0,
                 prsCreated: values[StatKey.prsCreated.rawValue] ?? 0,

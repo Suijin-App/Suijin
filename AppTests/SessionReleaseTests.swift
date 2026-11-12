@@ -11,11 +11,11 @@ import Testing
 @Suite(.serialized)
 struct SessionReleaseTests {
     @Test func closingASessionShownInAPaneReleasesItsTerminal() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-release-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-release-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         await model.runtimes.bootstrap()
@@ -42,7 +42,7 @@ struct SessionReleaseTests {
         }
         #expect(runtime == nil, "the closed session's runtime is still referenced")
         // The view itself goes once AppKit runs the blocks it keeps for a removed view, which a test cannot wait for
-        // reliably; what Mercury controls is that nothing it installed on the view still holds anything.
+        // reliably; what Sevinda controls is that nothing it installed on the view still holds anything.
         #expect(view?.onPasteReview == nil && view?.onInput == nil && view?.onKeyRoute == nil)
     }
 }

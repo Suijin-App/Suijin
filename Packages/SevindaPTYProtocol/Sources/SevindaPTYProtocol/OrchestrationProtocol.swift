@@ -1,24 +1,24 @@
 import Darwin
 import Foundation
 
-// Agent orchestration: a coordinator agent starts worker agents with the `mercury` CLI, they exchange messages, and
+// Agent orchestration: a coordinator agent starts worker agents with the `sevinda` CLI, they exchange messages, and
 // the broker in the PTY host delivers each message when the receiving agent ends its turn. This file holds what the
 // broker (helper), the CLI and the app share: environment names, paths, the stored records, the CLI wire format and
 // the XPC interfaces between the broker and the app.
 
-/// Environment variables Mercury sets in every terminal it opens.
+/// Environment variables Sevinda sets in every terminal it opens.
 public enum OrchestrationEnvironment {
     /// The app's session UUID (`AgentSessionRecord.id`).
-    public static let sessionID = "MERCURY_SESSION_ID"
+    public static let sessionID = "SEVINDA_SESSION_ID"
     /// A random secret per session. The broker identifies a caller by it, never by what the caller claims. Never logged.
-    public static let sessionToken = "MERCURY_SESSION_TOKEN"
+    public static let sessionToken = "SEVINDA_SESSION_TOKEN"
     /// The broker's Unix socket.
-    public static let socket = "MERCURY_ORCH_SOCKET"
+    public static let socket = "SEVINDA_ORCH_SOCKET"
     /// The broker's file drop box, for callers a sandbox keeps off the socket (Codex's `workspace-write`).
-    public static let spool = "MERCURY_ORCH_SPOOL"
-    /// Absolute path of the bundled `mercury` executable (hooks call it even when `PATH` was rewritten).
-    public static let cli = "MERCURY_CLI"
-    public static let dataRoot = "MERCURY_DATA_ROOT"
+    public static let spool = "SEVINDA_ORCH_SPOOL"
+    /// Absolute path of the bundled `sevinda` executable (hooks call it even when `PATH` was rewritten).
+    public static let cli = "SEVINDA_CLI"
+    public static let dataRoot = "SEVINDA_DATA_ROOT"
 }
 
 /// Session tokens: the app issues one per terminal and passes it only in that terminal's environment.
@@ -32,8 +32,8 @@ public enum OrchestrationToken {
 
 /// Session metadata keys the app attaches to every launch (`PTYSpawnRequest.metadata`).
 public enum OrchestrationMetadata {
-    public static let session = "mercury.session"
-    public static let dataRoot = "mercury.dataRoot"
+    public static let session = "sevinda.session"
+    public static let dataRoot = "sevinda.dataRoot"
     public static let agent = "agent"
 }
 
@@ -66,10 +66,10 @@ public enum OrchestrationPaths {
         runtimeDirectory(dataRoot: dataRoot).appendingPathComponent("spool", isDirectory: true)
     }
 
-    /// `<user temporary directory>/mercury-orch-<hash of the data root>`. The per-user temporary directory is 700 and
+    /// `<user temporary directory>/sevinda-orch-<hash of the data root>`. The per-user temporary directory is 700 and
     /// the same for every process of the user (the app, the helper and the agents).
     public static func runtimeDirectory(dataRoot: URL) -> URL {
-        userTemporaryDirectory().appendingPathComponent("mercury-orch-\(dataRootHash(dataRoot))", isDirectory: true)
+        userTemporaryDirectory().appendingPathComponent("sevinda-orch-\(dataRootHash(dataRoot))", isDirectory: true)
     }
 
     /// The standardized data root path the broker is keyed by.
@@ -144,7 +144,7 @@ public struct OrchestrationTask: Codable, Sendable, Hashable, Identifiable {
 
 /// Where a dispatch stands.
 public enum DispatchStatus: String, Codable, Sendable, CaseIterable, Hashable {
-    /// Waiting for Mercury (the app) to start the worker; no app is connected.
+    /// Waiting for Sevinda (the app) to start the worker; no app is connected.
     case queued
     /// The app is starting the worker.
     case starting
@@ -301,7 +301,7 @@ public struct BrokerRequest: Codable, Sendable, Hashable {
     public var version: Int
     /// Correlates a spool response with its request; random per call.
     public var id: String
-    /// The caller's `MERCURY_SESSION_TOKEN`.
+    /// The caller's `SEVINDA_SESSION_TOKEN`.
     public var token: String?
     /// `worker.start`, `worker.list`, `send`, `ask`, `reply`, `done`, `inbox`, `hook.claude`, `hook.codex`, `whoami`.
     public var command: String

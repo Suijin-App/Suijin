@@ -26,9 +26,9 @@ struct NewWorktreeSheet: View {
                     TextField("Branch", text: $branch, prompt: Text("feature/my-change"))
                         .onSubmit(create)
                     if !isBranchNameValid {
-                        Text("Not a valid branch name.").font(.caption).foregroundStyle(MercuryColor.errorText)
+                        Text("Not a valid branch name.").font(.caption).foregroundStyle(SevindaColor.errorText)
                     } else if branches.contains(trimmedBranch) {
-                        Text("A branch with this name already exists.").font(.caption).foregroundStyle(MercuryColor.errorText)
+                        Text("A branch with this name already exists.").font(.caption).foregroundStyle(SevindaColor.errorText)
                     }
                     Picker("Base", selection: $base) {
                         ForEach(branches, id: \.self) { Text(verbatim: $0).tag($0) }
@@ -46,7 +46,7 @@ struct NewWorktreeSheet: View {
                 if let error {
                     Section {
                         Label { Text(verbatim: error) } icon: { Image(systemName: "exclamationmark.triangle.fill") }
-                            .foregroundStyle(MercuryColor.errorText)
+                            .foregroundStyle(SevindaColor.errorText)
                     }
                 }
             }
@@ -62,7 +62,7 @@ struct NewWorktreeSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid || isWorking)
             }
-            .padding(MercurySpacing.l)
+            .padding(SevindaSpacing.l)
         }
         .frame(width: 520)
         .navigationTitle(Text("New Worktree in \(workspace.name)"))

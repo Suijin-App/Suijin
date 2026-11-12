@@ -1,6 +1,6 @@
 import Foundation
 
-/// Binds one `TerminalEngine` to one `MercuryTerminalView`: view input goes to `engine.write`, engine output to the
+/// Binds one `TerminalEngine` to one `SevindaTerminalView`: view input goes to `engine.write`, engine output to the
 /// view (through a `TerminalFeedScheduler`, so a flood cannot stall the main thread), grid size changes to
 /// `engine.resize`, and the process exit to `onExit` once all output before it was fed.
 ///
@@ -8,7 +8,7 @@ import Foundation
 @MainActor
 public final class TerminalSession {
     public let engine: any TerminalEngine
-    public let view: MercuryTerminalView
+    public let view: SevindaTerminalView
     public let scheduler: TerminalFeedScheduler
 
     /// Called once when the process exits, after its last output was fed (see `TerminalEngine.onExit` for the code).
@@ -36,10 +36,10 @@ public final class TerminalSession {
     /// `theme` is installed before any output is fed: programs ask for the terminal's colors as they start (OSC 10/11,
     /// as Codex does to pick a light or dark palette), often before the session is on screen, and SwiftTerm answers
     /// with the view's current colors.
-    public init(engine: any TerminalEngine, view: MercuryTerminalView? = nil, scheduler: TerminalFeedScheduler? = nil,
+    public init(engine: any TerminalEngine, view: SevindaTerminalView? = nil, scheduler: TerminalFeedScheduler? = nil,
                 theme: TerminalTheme? = nil) {
         self.engine = engine
-        self.view = view ?? MercuryTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        self.view = view ?? SevindaTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
         self.scheduler = scheduler ?? .shared
         if let theme { self.view.apply(theme) }
         (engine as? SwiftTermEngine)?.enableConsumptionFlowControl()

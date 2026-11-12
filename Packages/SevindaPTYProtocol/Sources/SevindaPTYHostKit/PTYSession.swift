@@ -123,10 +123,10 @@ public final class PTYSession: @unchecked Sendable {
             argv.forEach { free($0) }
             envp.forEach { free($0) }
         }
-        var result = mercury_pty_spawn_result()
+        var result = sevinda_pty_spawn_result()
         let status: Int32 = (argv + [nil]).withUnsafeBufferPointer { argvBuffer in
             (envp + [nil]).withUnsafeBufferPointer { envpBuffer in
-                mercury_pty_spawn(path, argvBuffer.baseAddress, envpBuffer.baseAddress, request.cwd, cols, rows, &result)
+                sevinda_pty_spawn(path, argvBuffer.baseAddress, envpBuffer.baseAddress, request.cwd, cols, rows, &result)
             }
         }
         guard status == 0 else {
@@ -157,7 +157,7 @@ public final class PTYSession: @unchecked Sendable {
         var slaveStat = stat()
         self.ttyDevice = fstat(slaveFD, &slaveStat) == 0 ? slaveStat.st_rdev : -1
         self.scrollback = ScrollbackBuffer(capacity: scrollbackCapacity)
-        self.queue = DispatchQueue(label: "com.tekmium.mercury.ptyhost.session.\(id)", qos: .userInteractive)
+        self.queue = DispatchQueue(label: "com.tekmium.sevinda.ptyhost.session.\(id)", qos: .userInteractive)
         self.readBuffer = UnsafeMutableRawPointer.allocate(byteCount: Self.readBufferSize, alignment: 16)
 
         let read = DispatchSource.makeReadSource(fileDescriptor: masterFD, queue: queue)
@@ -268,7 +268,7 @@ public final class PTYSession: @unchecked Sendable {
         let rows = UInt16(clamping: max(rows, 1))
         queue.async {
             guard self.running else { return }
-            _ = mercury_pty_set_window_size(self.masterFD, cols, rows)
+            _ = sevinda_pty_set_window_size(self.masterFD, cols, rows)
         }
     }
 
@@ -514,7 +514,7 @@ public final class PTYSession: @unchecked Sendable {
         } while result < 0 && errno == EINTR
         if result == 0 { return } // still running
         // result < 0 (ECHILD) means someone else reaped it; the status is unknown.
-        finish(exitCode: result == pid ? mercury_pty_exit_code(status) : -1)
+        finish(exitCode: result == pid ? sevinda_pty_exit_code(status) : -1)
     }
 
     /// After the leader's exit the stream is over for attachments; bytes written during the terminate sweep are read
@@ -562,10 +562,10 @@ public final class PTYSession: @unchecked Sendable {
     private static func describeSpawnFailure(stage: Int32, errorNumber: Int32, request: PTYSpawnRequest) -> String {
         let reason = String(cString: strerror(errorNumber))
         switch Int(stage) {
-        case Int(MERCURY_PTY_STAGE_CHDIR): return "Cannot enter directory \(request.cwd): \(reason)"
-        case Int(MERCURY_PTY_STAGE_EXEC): return "Cannot execute \(request.executable): \(reason)"
-        case Int(MERCURY_PTY_STAGE_FORK): return "Cannot fork: \(reason)"
-        case Int(MERCURY_PTY_STAGE_SETSID): return "Cannot set up the controlling terminal: \(reason)"
+        case Int(SEVINDA_PTY_STAGE_CHDIR): return "Cannot enter directory \(request.cwd): \(reason)"
+        case Int(SEVINDA_PTY_STAGE_EXEC): return "Cannot execute \(request.executable): \(reason)"
+        case Int(SEVINDA_PTY_STAGE_FORK): return "Cannot fork: \(reason)"
+        case Int(SEVINDA_PTY_STAGE_SETSID): return "Cannot set up the controlling terminal: \(reason)"
         default: return "Cannot open a pseudo terminal: \(reason)"
         }
     }

@@ -7,10 +7,10 @@ import Testing
 @Suite("SessionManager")
 struct SessionManagerTests {
     @Test func defaultMetadataDirectoryHonoursDataRootOverride() {
-        let custom = SessionManager.defaultMetadataDirectory(environment: ["MERCURY_DATA_ROOT": "/tmp/mercury-root"])
-        #expect(custom.path == "/tmp/mercury-root/pty-host/sessions")
+        let custom = SessionManager.defaultMetadataDirectory(environment: ["SEVINDA_DATA_ROOT": "/tmp/sevinda-root"])
+        #expect(custom.path == "/tmp/sevinda-root/pty-host/sessions")
         let standard = SessionManager.defaultMetadataDirectory(environment: [:])
-        #expect(standard.path.hasSuffix("Library/Application Support/Mercury/pty-host/sessions"))
+        #expect(standard.path.hasSuffix("Library/Application Support/Sevinda/pty-host/sessions"))
     }
 
     @Test func persistsMetadataAndFlagsLeftoversAsNotRunning() async throws {

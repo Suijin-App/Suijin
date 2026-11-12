@@ -42,8 +42,8 @@ extension PaneLayoutRecord: FetchableRecord, PersistableRecord {
     }
 }
 
-extension MercuryStore {
-    /// Every stored layout. A row whose layout cannot be read (written by a newer Mercury, damaged) is left out.
+extension SevindaStore {
+    /// Every stored layout. A row whose layout cannot be read (written by a newer Sevinda, damaged) is left out.
     public func paneLayouts() throws -> [PaneLayoutRecord] {
         try dbQueue.read { db in
             let rows = try Row.fetchAll(db, sql: "SELECT * FROM pane_layout ORDER BY updatedAt")

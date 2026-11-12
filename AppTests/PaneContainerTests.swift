@@ -31,10 +31,10 @@ struct PaneContainerTests {
     }
 
     private func makeSplitTab() async throws -> (AppModel, SessionContext, PaneLayout, NSWindow, URL) {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-container-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-container-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
         let context = SessionContext.workspace(workspaceID)

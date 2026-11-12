@@ -90,7 +90,7 @@ public struct RiskConfirmationView: View {
     }
 
     public var body: some View {
-        VStack(spacing: MercurySpacing.m) {
+        VStack(spacing: SevindaSpacing.m) {
             Image(systemName: request.level == .danger ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(request.level.tone.color)
@@ -103,18 +103,18 @@ public struct RiskConfirmationView: View {
             }
             if request.level == .danger, let expected = request.typeToConfirm {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Type \(Text(expected).font(MercuryFont.monoSmall).bold()) to confirm:", bundle: .module)
+                    Text("Type \(Text(expected).font(SevindaFont.monoSmall).bold()) to confirm:", bundle: .module)
                         .font(.caption).foregroundStyle(.secondary)
                     TextField("", text: $typed)
                         .textFieldStyle(.roundedBorder)
-                        .font(MercuryFont.mono)
+                        .font(SevindaFont.mono)
                         .focused($fieldFocused)
                         .accessibilityIdentifier("risk.typeToConfirm")
                         .accessibilityLabel(Text("Type again to confirm", bundle: .module))
                 }
             }
             if authFailed {
-                Text("Authentication failed.", bundle: .module).font(.caption).foregroundStyle(MercuryColor.errorText)
+                Text("Authentication failed.", bundle: .module).font(.caption).foregroundStyle(SevindaColor.errorText)
             }
             VStack(spacing: 6) {
                 Button(role: request.level == .danger ? .destructive : nil) {
@@ -123,7 +123,7 @@ public struct RiskConfirmationView: View {
                     Text(request.confirmTitle).frame(maxWidth: .infinity)
                 }
                 .keyboardShortcut(request.level == .danger ? nil : .defaultAction)
-                .tint(request.level == .danger ? MercuryColor.error : nil)
+                .tint(request.level == .danger ? SevindaColor.error : nil)
                 .glassProminentButtonStyle()
                 .disabled(!request.canConfirm(typed: typed))
                 .accessibilityIdentifier("risk.confirm")
@@ -134,7 +134,7 @@ public struct RiskConfirmationView: View {
             }
             .controlSize(.large)
         }
-        .padding(MercurySpacing.xl)
+        .padding(SevindaSpacing.xl)
         .frame(width: 400)
         .onAppear { fieldFocused = request.typeToConfirm != nil }
     }

@@ -9,7 +9,7 @@ import Foundation
 ///
 /// Auth-bearing settings never reach a profile: Claude ranks an API key helper, AWS credential hooks, a forced login
 /// method or org, and credential variables in `env` above the profile's claude.ai login, so sharing them would run
-/// every managed account on the user's personal credentials. (Orca shares them; Mercury deliberately does not.)
+/// every managed account on the user's personal credentials. (Orca shares them; Sevinda deliberately does not.)
 enum ClaudeSettingsSync {
     static let authKeys: Set<String> = [
         "apiKeyHelper", "awsAuthRefresh", "awsCredentialExport", "forceLoginMethod", "forceLoginOrgUUID",

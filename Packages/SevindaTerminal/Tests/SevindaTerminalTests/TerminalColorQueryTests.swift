@@ -22,14 +22,14 @@ struct TerminalColorQueryTests {
 
     @Test("a light theme answers the background query with its light background")
     func lightThemeAnswersLight() async throws {
-        let channels = try await backgroundReply(theme: TerminalThemes.mercuryLight)
+        let channels = try await backgroundReply(theme: TerminalThemes.sevindaLight)
         #expect(channels.count == 3)
         #expect(channels.allSatisfy { $0 > 0xC000 })
     }
 
     @Test("a dark theme answers with its dark background")
     func darkThemeAnswersDark() async throws {
-        let channels = try await backgroundReply(theme: TerminalThemes.mercuryDark)
+        let channels = try await backgroundReply(theme: TerminalThemes.sevindaDark)
         #expect(channels.count == 3)
         #expect(channels.allSatisfy { $0 < 0x4000 })
     }

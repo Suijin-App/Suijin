@@ -21,10 +21,10 @@ extension DispatchStatus {
 
     var color: Color {
         switch self {
-        case .queued, .starting, .exited: MercuryColor.idle
-        case .running, .succeeded: MercuryColor.ok
-        case .asking, .stalled: MercuryColor.warning
-        case .failed, .startFailed: MercuryColor.error
+        case .queued, .starting, .exited: SevindaColor.idle
+        case .running, .succeeded: SevindaColor.ok
+        case .asking, .stalled: SevindaColor.warning
+        case .failed, .startFailed: SevindaColor.error
         }
     }
 
@@ -86,13 +86,13 @@ private struct WorkerRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundStyle(.secondary)
-                Spacer(minLength: MercurySpacing.xs)
+                Spacer(minLength: SevindaSpacing.xs)
                 dispatch.status.label
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
-            .padding(.leading, MercurySpacing.s)
+            .padding(.leading, SevindaSpacing.s)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

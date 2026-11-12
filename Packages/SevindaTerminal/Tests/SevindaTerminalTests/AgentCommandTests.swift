@@ -67,7 +67,7 @@ struct AgentCommandTests {
 
     @Test("argument shape per shell")
     func arguments() {
-        let env = ["MERCURY_DATA_ROOT": FileManager.default.temporaryDirectory.appending(path: "mercury-args-\(UUID())").path]
+        let env = ["SEVINDA_DATA_ROOT": FileManager.default.temporaryDirectory.appending(path: "sevinda-args-\(UUID())").path]
         let cwd = URL(fileURLWithPath: "/tmp")
         let zsh = ShellLaunch.command("/bin/echo", ["x"], shell: "/bin/zsh", cwd: cwd, environment: env)
         #expect(zsh.arguments == ["-l", "-i", "-c", #"exec "$0" "$@""#, "/bin/echo", "x"])

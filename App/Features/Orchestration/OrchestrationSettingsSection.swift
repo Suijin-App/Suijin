@@ -14,7 +14,7 @@ struct OrchestrationSettingsSection: View {
                 if orchestration.isConnected {
                     Text("Connected").foregroundStyle(.secondary)
                 } else if let problem = orchestration.problem {
-                    Text(verbatim: problem).foregroundStyle(MercuryColor.warningText).lineLimit(3)
+                    Text(verbatim: problem).foregroundStyle(SevindaColor.warningText).lineLimit(3)
                 } else {
                     Text("Not connected").foregroundStyle(.secondary)
                 }
@@ -32,12 +32,12 @@ struct OrchestrationSettingsSection: View {
                 }
             ))
             if let error {
-                Text(verbatim: error).font(.caption).foregroundStyle(MercuryColor.warningText)
+                Text(verbatim: error).font(.caption).foregroundStyle(SevindaColor.warningText)
             }
         } header: {
             Text("Orchestration")
         } footer: {
-            Text("Agents in Mercury's terminals can start worker agents with the `mercury` command and get their results back. Mercury's Claude sessions already load the guide; the toggle adds it to Claude Code outside Mercury too, where `mercury` itself does not work.")
+            Text("Agents in Sevinda's terminals can start worker agents with the `sevinda` command and get their results back. Sevinda's Claude sessions already load the guide; the toggle adds it to Claude Code outside Sevinda too, where `sevinda` itself does not work.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

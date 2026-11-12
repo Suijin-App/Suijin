@@ -32,7 +32,7 @@ struct SourceControlPanel: View {
                 }
             } else if let error = state.statusError {
                 Label { Text(verbatim: error).textSelection(.enabled) } icon: {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(MercuryColor.warningText)
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SevindaColor.warningText)
                 }
                 .font(.callout)
             } else {
@@ -40,7 +40,7 @@ struct SourceControlPanel: View {
             }
             if let success = state.lastSuccess {
                 Label { Text(verbatim: success).lineLimit(2) } icon: {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(MercuryColor.ok)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SevindaColor.ok)
                 }
                 .font(.callout)
             }
@@ -136,7 +136,7 @@ private struct FileStatusRow: View {
 
     var body: some View {
         let code = FileStatusCode(entry: entry, staged: staged)
-        HStack(spacing: MercurySpacing.xs) {
+        HStack(spacing: SevindaSpacing.xs) {
             Toggle(isOn: Binding(get: { staged }, set: { onToggle($0) })) { EmptyView() }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
@@ -151,7 +151,7 @@ private struct FileStatusRow: View {
                     Text(verbatim: folder).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
                 }
             }
-            Spacer(minLength: MercurySpacing.xs)
+            Spacer(minLength: SevindaSpacing.xs)
             Text(verbatim: code.letter)
                 .font(.caption.monospaced().weight(.semibold))
                 .foregroundStyle(code.color)
@@ -170,20 +170,20 @@ struct FileStatusCode {
 
     init(entry: StatusEntry, staged: Bool) {
         if entry.isConflicted {
-            (letter, color, description) = ("!", MercuryColor.error, Text("Conflict"))
+            (letter, color, description) = ("!", SevindaColor.error, Text("Conflict"))
             return
         }
         if entry.isUntracked {
-            (letter, color, description) = ("U", MercuryColor.ok, Text("Untracked"))
+            (letter, color, description) = ("U", SevindaColor.ok, Text("Untracked"))
             return
         }
         switch staged ? entry.index : entry.worktree {
-        case .added: (letter, color, description) = ("A", MercuryColor.ok, Text("Added"))
-        case .deleted: (letter, color, description) = ("D", MercuryColor.error, Text("Deleted"))
+        case .added: (letter, color, description) = ("A", SevindaColor.ok, Text("Added"))
+        case .deleted: (letter, color, description) = ("D", SevindaColor.error, Text("Deleted"))
         case .renamed: (letter, color, description) = ("R", Color.accentColor, Text("Renamed"))
         case .copied: (letter, color, description) = ("C", Color.accentColor, Text("Copied"))
-        case .typeChanged: (letter, color, description) = ("T", MercuryColor.warning, Text("Type changed"))
-        default: (letter, color, description) = ("M", MercuryColor.warning, Text("Modified"))
+        case .typeChanged: (letter, color, description) = ("T", SevindaColor.warning, Text("Type changed"))
+        default: (letter, color, description) = ("M", SevindaColor.warning, Text("Modified"))
         }
     }
 }
@@ -198,13 +198,13 @@ struct AheadBehindLabel: View {
         } else if status.ahead == 0 && status.behind == 0 {
             Label("Up to date", systemImage: "checkmark").font(.callout).foregroundStyle(.secondary)
         } else {
-            HStack(spacing: MercurySpacing.s) {
+            HStack(spacing: SevindaSpacing.s) {
                 if status.ahead > 0 {
                     Label { Text("\(status.ahead) to push") } icon: { Image(systemName: "arrow.up") }
                 }
                 if status.behind > 0 {
                     Label { Text("\(status.behind) behind") } icon: { Image(systemName: "arrow.down") }
-                        .foregroundStyle(MercuryColor.warningText)
+                        .foregroundStyle(SevindaColor.warningText)
                 }
             }
             .font(.callout)

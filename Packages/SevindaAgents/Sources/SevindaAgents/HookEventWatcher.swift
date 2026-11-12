@@ -14,7 +14,7 @@ public final class HookEventWatcher: @unchecked Sendable {
 
     public let fileURL: URL
     private let handler: Handler
-    private let queue = DispatchQueue(label: "com.tekmium.mercury.hook-event-watcher")
+    private let queue = DispatchQueue(label: "com.tekmium.sevinda.hook-event-watcher")
     private var offset: UInt64 = 0
     private var fileSource: DispatchSourceFileSystemObject?
     private var directorySource: DispatchSourceFileSystemObject?

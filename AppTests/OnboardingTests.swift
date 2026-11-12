@@ -7,8 +7,8 @@ import Testing
 @MainActor
 struct OnboardingTests {
     private func model() throws -> AppModel {
-        AppModel(store: try MercuryStore.inMemory(),
-                 dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("mercury-onboarding-\(UUID().uuidString)"))
+        AppModel(store: try SevindaStore.inMemory(),
+                 dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-onboarding-\(UUID().uuidString)"))
     }
 
     // MARK: Launch
@@ -41,26 +41,26 @@ struct OnboardingTests {
                                                        launchArguments: []))
         #expect(!OnboardingLaunchPolicy.shouldAutoShow(completed: false, environment: ["XCTestBundlePath": "/x"],
                                                        launchArguments: []))
-        for argument in ["MercuryAppearance", "MercuryInitialSettings", "MercuryDemoPanes", "MercuryInitialTab"] {
+        for argument in ["SevindaAppearance", "SevindaInitialSettings", "SevindaDemoPanes", "SevindaInitialTab"] {
             #expect(!OnboardingLaunchPolicy.shouldAutoShow(completed: false, environment: [:], launchArguments: [argument]))
         }
         // Unrelated arguments (AppKit's own) do not count as a scripted run.
         #expect(OnboardingLaunchPolicy.shouldAutoShow(completed: false, environment: [:],
                                                       launchArguments: ["NSDocumentRevisionsDebugMode", "ApplePersistenceIgnoreState"]))
         // The process these tests run in is itself an XCTest host.
-        let model = AppModel(store: try! MercuryStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
+        let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
         model.showOnboardingIfNeeded()
         #expect(model.onboarding == nil)
     }
 
     @Test func theLaunchArgumentForcesTheTourAtAStep() throws {
-        #expect(OnboardingLaunchPolicy.shouldAutoShow(completed: true, environment: [:], launchArguments: ["MercuryOnboarding"]))
+        #expect(OnboardingLaunchPolicy.shouldAutoShow(completed: true, environment: [:], launchArguments: ["SevindaOnboarding"]))
         #expect(OnboardingLaunchPolicy.forcedStep("changes") == .changes)
         #expect(OnboardingLaunchPolicy.forcedStep("1") == .welcome)
         #expect(OnboardingLaunchPolicy.forcedStep(nil) == .welcome)
 
         let model = try model()
-        model.showOnboardingIfNeeded(environment: [:], launchArguments: ["MercuryOnboarding": "sessions"])
+        model.showOnboardingIfNeeded(environment: [:], launchArguments: ["SevindaOnboarding": "sessions"])
         #expect(model.onboarding?.step == .sessions)
     }
 

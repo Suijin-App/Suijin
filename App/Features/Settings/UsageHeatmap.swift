@@ -84,16 +84,16 @@ struct UsageHeatmap: View {
     private static let cellSize: CGFloat = 22
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MercurySpacing.s) {
-            HStack(alignment: .firstTextBaseline, spacing: MercurySpacing.s) {
+        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
+            HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.s) {
                 Text("Daily intensity").font(.headline)
-                Spacer(minLength: MercurySpacing.s)
+                Spacer(minLength: SevindaSpacing.s)
                 if let bestDay, bestDay.tokens.total > 0 {
                     Text("Best: \(UsageFormat.day(bestDay.date))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                        .padding(.horizontal, MercurySpacing.s)
+                        .padding(.horizontal, SevindaSpacing.s)
                         .padding(.vertical, 2)
                         .background(.quaternary, in: Capsule())
                         .help(Text("\(UsageFormat.tokens(bestDay.tokens.total)) tokens"))
@@ -103,13 +103,13 @@ struct UsageHeatmap: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-            HStack(alignment: .top, spacing: MercurySpacing.s) {
+            HStack(alignment: .top, spacing: SevindaSpacing.s) {
                 weekdayLabels
-                VStack(alignment: .leading, spacing: MercurySpacing.xs) {
+                VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
                     chart
                     HStack {
                         Text(verbatim: UsageFormat.day(model.start))
-                        Spacer(minLength: MercurySpacing.xs)
+                        Spacer(minLength: SevindaSpacing.xs)
                         Text(verbatim: UsageFormat.day(model.today))
                     }
                     .font(.caption)
@@ -119,7 +119,7 @@ struct UsageHeatmap: View {
                     .accessibilityHidden(true)
                 }
             }
-            HStack(spacing: MercurySpacing.xs) {
+            HStack(spacing: SevindaSpacing.xs) {
                 Text("Less")
                 ForEach(0...4, id: \.self) { level in
                     RoundedRectangle(cornerRadius: 2)

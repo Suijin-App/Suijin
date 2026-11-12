@@ -3,11 +3,11 @@ import SevindaAgents
 
 /// Environment changes for launching `codex` under an account home or the default login.
 public enum CodexLaunchEnv {
-    /// Set beside every `CODEX_HOME` Mercury injects, so the shell function can tell it from the user's own.
-    public static let injectedHomeEnv = "MERCURY_CODEX_INJECTED_HOME"
+    /// Set beside every `CODEX_HOME` Sevinda injects, so the shell function can tell it from the user's own.
+    public static let injectedHomeEnv = "SEVINDA_CODEX_INJECTED_HOME"
 
     /// `home` = account: `CODEX_HOME` points at it. `nil` = default login: the user's own `CODEX_HOME` stays, and only
-    /// a value Mercury injected earlier is dropped. Like Orca, API key variables are left alone: Codex reads its
+    /// a value Sevinda injected earlier is dropped. Like Orca, API key variables are left alone: Codex reads its
     /// login from `CODEX_HOME/auth.json`.
     public static func patch(home: URL?, inheritedEnv: [String: String]) -> EnvPatch {
         guard let home else {

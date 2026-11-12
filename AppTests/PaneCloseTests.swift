@@ -20,8 +20,8 @@ struct PaneCloseTests {
         let root: URL
         let primary: UUID
         let secondary: UUID
-        let primaryView: MercuryTerminalView
-        let secondaryView: MercuryTerminalView
+        let primaryView: SevindaTerminalView
+        let secondaryView: SevindaTerminalView
 
         func tearDown() async {
             window.orderOut(nil)
@@ -40,10 +40,10 @@ struct PaneCloseTests {
     }
 
     private func makeSplitTab() async throws -> Fixture {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("mercury-pane-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-pane-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try MercuryStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

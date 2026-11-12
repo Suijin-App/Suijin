@@ -10,7 +10,7 @@ struct ChecksList: View {
     var body: some View {
         if let error {
             Label { Text(verbatim: error).lineLimit(3).textSelection(.enabled) } icon: {
-                Image(systemName: "exclamationmark.triangle").foregroundStyle(MercuryColor.warningText)
+                Image(systemName: "exclamationmark.triangle").foregroundStyle(SevindaColor.warningText)
             }
             .font(.callout)
         } else if checks.isEmpty {
@@ -48,7 +48,7 @@ private struct CheckRow: View {
 
     var body: some View {
         let glyph = CheckGlyph(bucket: check.bucket)
-        HStack(spacing: MercurySpacing.xs) {
+        HStack(spacing: SevindaSpacing.xs) {
             Image(systemName: glyph.systemImage)
                 .foregroundStyle(glyph.color)
                 .accessibilityLabel(glyph.label)
@@ -58,7 +58,7 @@ private struct CheckRow: View {
                     Text(verbatim: workflow).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            Spacer(minLength: MercurySpacing.xs)
+            Spacer(minLength: SevindaSpacing.xs)
             if let link = check.link {
                 Button { NSWorkspace.shared.open(link) } label: {
                     Label("Open Check", systemImage: "arrow.up.right.square")
@@ -80,11 +80,11 @@ struct CheckGlyph {
 
     init(bucket: PullRequestCheck.Bucket) {
         switch bucket {
-        case .pass: (systemImage, color, label) = ("checkmark.circle.fill", MercuryColor.ok, Text("Passed"))
-        case .fail: (systemImage, color, label) = ("xmark.circle.fill", MercuryColor.error, Text("Failed"))
-        case .pending: (systemImage, color, label) = ("clock.fill", MercuryColor.warning, Text("Pending"))
-        case .skipping: (systemImage, color, label) = ("minus.circle", MercuryColor.idle, Text("Skipped"))
-        case .cancel: (systemImage, color, label) = ("slash.circle", MercuryColor.idle, Text("Cancelled"))
+        case .pass: (systemImage, color, label) = ("checkmark.circle.fill", SevindaColor.ok, Text("Passed"))
+        case .fail: (systemImage, color, label) = ("xmark.circle.fill", SevindaColor.error, Text("Failed"))
+        case .pending: (systemImage, color, label) = ("clock.fill", SevindaColor.warning, Text("Pending"))
+        case .skipping: (systemImage, color, label) = ("minus.circle", SevindaColor.idle, Text("Skipped"))
+        case .cancel: (systemImage, color, label) = ("slash.circle", SevindaColor.idle, Text("Cancelled"))
         }
     }
 }

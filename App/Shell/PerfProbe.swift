@@ -1,11 +1,11 @@
-#if DEBUG || MERCURY_PERF
+#if DEBUG || SEVINDA_PERF
 import AppKit
 import Foundation
 import os
 import QuartzCore
 
-/// Scripted UI responsiveness measurement, for development builds only (`DEBUG`, or a build with the `MERCURY_PERF`
-/// compilation condition). Launch the app on a seeded data root (`PerfSeedTests`) with `MERCURY_PERF_OUT=<file>`: after
+/// Scripted UI responsiveness measurement, for development builds only (`DEBUG`, or a build with the `SEVINDA_PERF`
+/// compilation condition). Launch the app on a seeded data root (`PerfSeedTests`) with `SEVINDA_PERF_OUT=<file>`: after
 /// launch it switches tabs, opens and closes file and shell tabs, shows and hides the inspector and switches contexts,
 /// measures the main thread after each action, writes one JSON object per sample to the file and quits.
 ///
@@ -16,7 +16,7 @@ import QuartzCore
 @MainActor
 enum PerfProbe {
     static func startIfRequested(model: AppModel) {
-        guard let out = ProcessInfo.processInfo.environment["MERCURY_PERF_OUT"] else { return }
+        guard let out = ProcessInfo.processInfo.environment["SEVINDA_PERF_OUT"] else { return }
         Task { @MainActor in
             let run = Run(model: model, output: URL(fileURLWithPath: out))
             await run.execute()
@@ -31,9 +31,9 @@ enum PerfProbe {
         let model: AppModel
         let output: URL
         let monitor = RunLoopMonitor()
-        let signposter = OSSignposter(subsystem: "com.tekmium.mercury", category: .pointsOfInterest)
+        let signposter = OSSignposter(subsystem: "com.tekmium.sevinda", category: .pointsOfInterest)
         var phase = "quiet"
-        let rounds = Int(ProcessInfo.processInfo.environment["MERCURY_PERF_ROUNDS"] ?? "") ?? 8
+        let rounds = Int(ProcessInfo.processInfo.environment["SEVINDA_PERF_ROUNDS"] ?? "") ?? 8
         let settle: Duration = .milliseconds(700)
 
         init(model: AppModel, output: URL) {

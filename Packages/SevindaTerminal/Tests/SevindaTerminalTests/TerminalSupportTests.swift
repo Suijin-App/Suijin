@@ -59,8 +59,8 @@ struct TerminalThemeTests {
         #expect(Set(TerminalThemes.all.map(\.id)).count == TerminalThemes.all.count)
         #expect(TerminalThemes.all.allSatisfy { $0.ansi.count == 16 })
         #expect(TerminalThemes.resolve(id: "nord", isDark: false).id == "nord")
-        #expect(TerminalThemes.resolve(id: "missing", isDark: true).id == "mercury-dark")
-        #expect(TerminalThemes.resolve(id: nil, isDark: false).id == "mercury-light")
+        #expect(TerminalThemes.resolve(id: "missing", isDark: true).id == "sevinda-dark")
+        #expect(TerminalThemes.resolve(id: nil, isDark: false).id == "sevinda-light")
         #expect(TerminalThemes.all.allSatisfy { TerminalRGB.contrast($0.foreground, $0.background) >= 4.5 })
     }
 }
@@ -72,19 +72,19 @@ struct ShellLaunchTests {
         let env = ShellLaunch.baseEnvironment(from: [
             "HOME": "/Users/me", "PATH": "/usr/bin:/bin", "XPC_SERVICE_NAME": "x", "__CFBundleIdentifier": "y",
             "DYLD_INSERT_LIBRARIES": "z", "CLAUDECODE": "1", "CLAUDE_CODE_ENTRYPOINT": "cli", "LANG": "C",
-            "TERM": "dumb", "MERCURY_USER_ZDOTDIR": "/stale", "CLAUDE_CONFIG_DIR": "/kept",
+            "TERM": "dumb", "SEVINDA_USER_ZDOTDIR": "/stale", "CLAUDE_CONFIG_DIR": "/kept",
         ])
         #expect(env["XPC_SERVICE_NAME"] == nil && env["__CFBundleIdentifier"] == nil && env["DYLD_INSERT_LIBRARIES"] == nil)
-        #expect(env["CLAUDECODE"] == nil && env["CLAUDE_CODE_ENTRYPOINT"] == nil && env["MERCURY_USER_ZDOTDIR"] == nil)
+        #expect(env["CLAUDECODE"] == nil && env["CLAUDE_CODE_ENTRYPOINT"] == nil && env["SEVINDA_USER_ZDOTDIR"] == nil)
         #expect(env["CLAUDE_CONFIG_DIR"] == "/kept")
         #expect(env["TERM"] == "xterm-256color")
         #expect(env["COLORTERM"] == "truecolor")
-        #expect(env["TERM_PROGRAM"] == "Mercury")
-        #expect(env["MERCURY_TERMINAL"] == "1")
+        #expect(env["TERM_PROGRAM"] == "Sevinda")
+        #expect(env["SEVINDA_TERMINAL"] == "1")
         #expect(env["LANG"]?.hasSuffix(".UTF-8") == true)
-        #expect(env["MERCURY_DATA_ROOT"]?.hasSuffix("/Library/Application Support/Mercury") == true)
+        #expect(env["SEVINDA_DATA_ROOT"]?.hasSuffix("/Library/Application Support/Sevinda") == true)
         #expect(ShellLaunch.baseEnvironment(from: ["LANG": "vi_VN.UTF-8"])["LANG"] == "vi_VN.UTF-8")
-        #expect(ShellLaunch.baseEnvironment(from: ["MERCURY_DATA_ROOT": "/tmp/m"])["MERCURY_DATA_ROOT"] == "/tmp/m")
+        #expect(ShellLaunch.baseEnvironment(from: ["SEVINDA_DATA_ROOT": "/tmp/m"])["SEVINDA_DATA_ROOT"] == "/tmp/m")
         // macOS ships no vi_VN locale on every release; UTF-8 LC_CTYPE is what Vietnamese text needs either way.
         let vietnamese = FileManager.default.fileExists(atPath: "/usr/share/locale/vi_VN.UTF-8") ? "vi_VN.UTF-8" : "en_US.UTF-8"
         #expect(ShellLaunch.utf8Locale(Locale(identifier: "vi_VN")) == vietnamese)
@@ -157,7 +157,7 @@ struct TerminalViewResizeTests {
     func animatedResizeIsCoalesced() async throws {
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1400, height: 800), styleMask: [.titled],
                               backing: .buffered, defer: true)
-        let view = MercuryTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let view = SevindaTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
         window.contentView?.addSubview(view)
         var gridChanges: [TerminalSize] = []
         view.onSizeChange = { gridChanges.append($0) }
@@ -174,7 +174,7 @@ struct TerminalViewResizeTests {
 
     @Test("a single change, and any change outside a window, applies at once")
     func singleChangeIsImmediate() {
-        let view = MercuryTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let view = SevindaTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
         view.setFrameSize(NSSize(width: 1000, height: 700))
         view.setFrameSize(NSSize(width: 900, height: 700))
         #expect(view.frame.size == NSSize(width: 900, height: 700))
@@ -191,7 +191,7 @@ struct TerminalViewResizeTests {
 struct ClickTargetTests {
     @Test("a click on the Metal surface lands on the terminal, which takes the keyboard")
     func metalSurfaceClicksReachTerminal() {
-        let terminal = MercuryTerminalView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let terminal = SevindaTerminalView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
         let surface = MTKView(frame: terminal.bounds)
         terminal.addSubview(surface)
         let hit = terminal.hitTest(NSPoint(x: 200, y: 150))

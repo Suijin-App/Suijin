@@ -1,7 +1,7 @@
 ---
 title: Split panes — tối đa 10 pane mỗi tab, lưu lại, kéo-thả đổi vị trí
 created: 2026-11-12
-status: in-progress
+status: done
 base-commit: f16f167
 ---
 

@@ -296,7 +296,11 @@ final class SessionRuntimeRegistry {
     }
 
     private func makeRuntime(id: UUID, agent: AgentKind, engine: any TerminalEngine) -> SessionRuntime {
-        let terminal = TerminalSession(engine: engine)
+        // The theme goes on before the process starts, so its first color query (OSC 11) gets the real background;
+        // the pane applies it again (and on every change) once it shows.
+        let isDark = NSApp?.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let terminal = TerminalSession(engine: engine,
+                                       theme: TerminalThemes.resolve(id: model.setting(.terminalTheme), isDark: isDark))
         // An agent's multi-line paste is a prompt, not shell commands; agents turn bracketed paste on, so only a
         // shell (or a program without bracketed paste) gets the confirmation.
         terminal.view.pasteGuardPolicy = agent == .shell ? .always : .unlessBracketedPaste

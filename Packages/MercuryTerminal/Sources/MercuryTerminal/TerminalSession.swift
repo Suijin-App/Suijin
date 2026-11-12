@@ -33,10 +33,15 @@ public final class TerminalSession {
     /// The exit the engine reported, waiting for the pending output to be fed.
     private var pendingExit: Int32??
 
-    public init(engine: any TerminalEngine, view: MercuryTerminalView? = nil, scheduler: TerminalFeedScheduler? = nil) {
+    /// `theme` is installed before any output is fed: programs ask for the terminal's colors as they start (OSC 10/11,
+    /// as Codex does to pick a light or dark palette), often before the session is on screen, and SwiftTerm answers
+    /// with the view's current colors.
+    public init(engine: any TerminalEngine, view: MercuryTerminalView? = nil, scheduler: TerminalFeedScheduler? = nil,
+                theme: TerminalTheme? = nil) {
         self.engine = engine
         self.view = view ?? MercuryTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
         self.scheduler = scheduler ?? .shared
+        if let theme { self.view.apply(theme) }
         (engine as? SwiftTermEngine)?.enableConsumptionFlowControl()
         bind()
     }

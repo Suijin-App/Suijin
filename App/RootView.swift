@@ -100,15 +100,21 @@ struct RootView: View {
 
     @ViewBuilder
     private var detailContent: some View {
-        if let context = model.selection, model.directory(of: context) != nil {
+        switch model.detailState {
+        case .loading:
+            // A blank column for the moment the stored state takes to load, instead of an empty state that would only
+            // flash by before the restored context replaces it.
+            Color.clear
+                .accessibilityHidden(true)
+        case .context(let context):
             SessionTabsView(context: context)
                 .id(context)
                 .inspector(isPresented: $isInspectorShown) {
                     InspectorView(context: context)
                 }
-        } else if model.workspaces.isEmpty {
+        case .firstWorkspace:
             FirstWorkspaceView()
-        } else {
+        case .noSelection:
             ContentUnavailableView {
                 Label("No Workspace Selected", systemImage: "square.stack.3d.up")
             } description: {
@@ -125,6 +131,24 @@ struct RootView: View {
         }
     }
 
+}
+
+/// What the main window's detail column shows.
+enum DetailState: Hashable {
+    /// The stored state is still loading at launch.
+    case loading
+    case context(SessionContext)
+    /// No workspace exists yet.
+    case firstWorkspace
+    case noSelection
+}
+
+extension AppModel {
+    var detailState: DetailState {
+        guard isLoaded else { return .loading }
+        if let context = selection, directory(of: context) != nil { return .context(context) }
+        return workspaces.isEmpty ? .firstWorkspace : .noSelection
+    }
 }
 
 /// The detail area before any workspace exists: the app icon, what a workspace is, and the two ways to start.

@@ -122,6 +122,7 @@ final class SessionRuntimeRegistry {
         }
         let hostSessions = (try? await PTYHostClient.shared.listSessions()) ?? []
         var restorable: [(AgentSessionRecord, PTYSessionInfo)] = []
+        var exitedWhileAway: [(AgentSessionRecord, PTYSessionInfo)] = []
         for session in model.sessions {
             guard let hostID = session.hostSessionID, let info = hostSessions.first(where: { $0.id == hostID }) else {
                 if session.state != .exited && session.state != .failed {
@@ -130,6 +131,13 @@ final class SessionRuntimeRegistry {
                     ended.endedAt = ended.endedAt ?? Date()
                     await model.upsert(ended)
                 }
+                continue
+            }
+            // A process that is gone is never attached: the host keeps an exited session and its scrollback for a
+            // day, and attaching it showed a dead terminal (behind the reconnecting view) before the ended view on
+            // every launch. A session already recorded as ended needs nothing more.
+            guard info.isRunning else {
+                if session.state != .exited && session.state != .failed { exitedWhileAway.append((session, info)) }
                 continue
             }
             restorable.append((session, info))
@@ -142,6 +150,12 @@ final class SessionRuntimeRegistry {
         await withTaskGroup(of: String?.self) { group in
             for (session, info) in restorable {
                 group.addTask { await self.restore(session, info: info) }
+            }
+            for (session, info) in exitedWhileAway {
+                group.addTask {
+                    await self.recordExitWhileAway(session, info: info)
+                    return nil
+                }
             }
             for await hostID in group {
                 if let hostID { claimed.insert(hostID) }
@@ -189,6 +203,30 @@ final class SessionRuntimeRegistry {
             await model.upsert(ended)
         }
         return runtimes[session.id] == nil ? nil : hostID
+    }
+
+    /// Records the end of a session whose process exited while Sevinda was closed, without showing its terminal. Its
+    /// scrollback is fed to a terminal that never goes on screen, for what the ended view needs: the last lines of a
+    /// failure and the conversation to resume (Codex prints it as it exits). Until then the session's place shows the
+    /// reconnecting view, as for any session that is not back yet, and then the ended view, once.
+    private func recordExitWhileAway(_ session: AgentSessionRecord, info: PTYSessionInfo) async {
+        let engine = HostedTerminalEngine(client: .shared)
+        let terminal = TerminalSession(engine: engine)
+        let runtime = SessionRuntime(id: session.id, agent: session.agent, terminal: terminal)
+        runtime.agentSessionID = session.agentSessionID
+        var code = info.exitStatus
+        var output: String?
+        var conversation = session.agentSessionID
+        if let scrollback = try? await engine.attach(sessionID: info.id) {
+            terminal.onExit = { code = $0 }
+            terminal.attached(scrollback: scrollback)
+            // Returns once the scrollback was fed and the exit delivered after it.
+            await terminal.terminate(exitTimeout: .seconds(3))
+            if (code ?? 0) != 0 { output = terminal.view.recentText(lineCount: Self.endedOutputLines) }
+            conversation = Self.conversationID(of: runtime)
+        }
+        terminal.view.removeHandlers()
+        await sessionExited(session.id, code: code, output: output, agentSessionID: conversation)
     }
 
     // MARK: Start

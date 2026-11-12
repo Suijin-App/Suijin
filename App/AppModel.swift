@@ -3,6 +3,9 @@ import Foundation
 import SevindaCore
 import SevindaGit
 import Observation
+import os
+
+private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "model")
 
 /// A place where sessions run: a folder workspace, the main checkout of a git workspace, or one of its worktrees.
 enum SessionContext: Hashable {
@@ -53,6 +56,9 @@ final class AppModel {
         didSet { if sessions.count < oldValue.count { reconcilePaneLayouts() } }
     }
     private(set) var accounts: [ManagedAccountRecord] = []
+    /// False until `load()` has put the stored workspaces, sessions and the last selection in place. Until then the
+    /// window shows neither the empty states nor a selection, which would only flash by at launch.
+    private(set) var isLoaded = false
 
     var selection: SessionContext? {
         didSet { if selection != oldValue { setSetting(.lastSelection, selection?.storageValue) } }
@@ -160,30 +166,55 @@ final class AppModel {
 
     // MARK: Loading
 
+    /// Everything the window needs from the database at launch, read in one go off the main thread.
+    private struct StoredState: Sendable {
+        var workspaces: [Workspace]
+        var worktrees: [UUID: [WorktreeRecord]]
+        var sessions: [AgentSessionRecord]
+        var accounts: [ManagedAccountRecord]
+        var paneLayouts: [PaneLayoutRecord]
+    }
+
     func load() async {
-        await perform(String(localized: "Could not load workspaces")) {
-            let store = self.store
-            let (workspaces, sessions, accounts) = try await Task.detached {
-                (try store.workspaces(), try store.sessions(), try store.accounts())
+        defer { isLoaded = true }
+        let store = store
+        let stored: StoredState
+        do {
+            stored = try await Task.detached {
+                let workspaces = try store.workspaces()
+                var worktrees: [UUID: [WorktreeRecord]] = [:]
+                for workspace in workspaces { worktrees[workspace.id] = try store.worktrees(workspaceID: workspace.id) }
+                let layouts: [PaneLayoutRecord]
+                do { layouts = try store.paneLayouts() } catch {
+                    logger.error("Could not load pane layouts: \(error.localizedDescription, privacy: .public)")
+                    layouts = []
+                }
+                return StoredState(workspaces: workspaces, worktrees: worktrees, sessions: try store.sessions(),
+                                   accounts: try store.accounts(), paneLayouts: layouts)
             }.value
-            self.workspaces = workspaces.sorted { ($0.sortOrder, $0.createdAt) < ($1.sortOrder, $1.createdAt) }
-            self.sessions = sessions
-            self.accounts = accounts
-            for workspace in workspaces {
-                self.worktrees[workspace.id] = try await Task.detached { try store.worktrees(workspaceID: workspace.id) }.value
-            }
+        } catch {
+            presentedError = PresentedError(title: String(localized: "Could not load workspaces"),
+                                            message: error.localizedDescription)
+            return
         }
-        // Split tabs only need the session records (a pane whose process ended shows the ended view in its cell), so
-        // they come back before the sessions attach and the window shows the tabs as they were left.
-        await restorePaneLayouts()
-        // Git checks run beside the session restore instead of ahead of it: the stored worktrees are enough to show
-        // the window and attach the sessions.
-        Task {
-            for workspace in workspaces { await refreshKind(of: workspace) }
-            for workspace in self.workspaces where workspace.kind == .git { await refreshWorktrees(workspaceID: workspace.id) }
-        }
+        // Applied in one main-actor turn, with no suspension in between, so the first frame after loading already
+        // shows the restored context and tab: workspaces without a selection, or sessions without their split tabs,
+        // would each be drawn for a frame. Split tabs only need the session records (a pane whose process ended
+        // shows the ended view in its cell), so they come back before the sessions attach.
+        workspaces = stored.workspaces.sorted { ($0.sortOrder, $0.createdAt) < ($1.sortOrder, $1.createdAt) }
+        worktrees = stored.worktrees
+        sessions = stored.sessions
+        accounts = stored.accounts
+        restorePaneLayouts(stored.paneLayouts)
         if selection == nil {
             selection = restoredSelection() ?? workspaces.first.map { .workspace($0.id) }
+        }
+        // Git checks run beside the session restore instead of ahead of it: the stored worktrees are enough to show
+        // the window and attach the sessions.
+        let loaded = workspaces
+        Task {
+            for workspace in loaded { await refreshKind(of: workspace) }
+            for workspace in self.workspaces where workspace.kind == .git { await refreshWorktrees(workspaceID: workspace.id) }
         }
         #if DEBUG
         // Screenshot runs open a tab directly: `-SevindaInitialTab changes`.

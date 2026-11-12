@@ -30,8 +30,9 @@ the app.
 - **SevindaPTYHost** (`Contents/MacOS/SevindaPTYHost`, registered with `SMAppService.agent` from
   `Contents/Library/LaunchAgents/com.tekmium.sevinda.ptyhost.plist`) owns every PTY and its process tree, keeps a
   scrollback ring buffer per session, and serves the Mach service `com.tekmium.sevinda.ptyhost` over XPC. Sessions
-  survive the app quitting or crashing; on launch the app lists the host's sessions and attaches again, replaying the
-  scrollback. The helper exits once no session remains.
+  survive the app quitting or crashing; on launch the app lists the host's sessions and attaches again to those still
+  running, replaying the scrollback. A session whose process ended meanwhile is recorded as ended without being shown
+  (the host keeps an exited session's scrollback for a day). The helper exits once no session remains.
 
 ## Agent orchestration
 

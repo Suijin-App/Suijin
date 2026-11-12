@@ -33,6 +33,32 @@ struct SessionTabsView: View {
     }
 }
 
+/// What a session's place in a tab or pane shows.
+enum SessionPaneState: Hashable {
+    /// The live terminal.
+    case terminal
+    /// Not ready yet: a session that kept running is being attached again or replays its scrollback, or launch has
+    /// not found out yet whether its process still runs.
+    case reconnecting
+    /// The process is gone.
+    case ended
+    /// No such session.
+    case missing
+}
+
+extension AppModel {
+    func paneState(of session: UUID) -> SessionPaneState {
+        if runtimes.runtime(for: session) != nil {
+            return runtimes.reconnecting.contains(session) ? .reconnecting : .terminal
+        }
+        guard let record = sessions.first(where: { $0.id == session }) else { return .missing }
+        // Until launch has attached the sessions that kept running, a live record is not ended, only not back yet. A
+        // record already ended shows the ended view at once: its process is never attached again.
+        if runtimes.isRestoring, record.state != .exited, record.state != .failed { return .reconnecting }
+        return .ended
+    }
+}
+
 /// A session's place in a tab or pane: its live terminal, the reconnecting view until a session that kept running is
 /// attached again, or the ended view once its process is gone.
 struct SessionPaneContent: View {
@@ -44,16 +70,16 @@ struct SessionPaneContent: View {
     let closeTitle: LocalizedStringKey
 
     var body: some View {
+        let state = model.paneState(of: session)
         if let runtime = model.runtimes.runtime(for: session) {
             TerminalPane(runtime: runtime, context: context, isFocused: isFocused)
                 .id(session)
                 .overlay {
-                    if model.runtimes.reconnecting.contains(session) { ReconnectingView() }
+                    if state == .reconnecting { SessionProgressView(title: "Reconnecting to session…") }
                 }
         } else if let record = model.sessions.first(where: { $0.id == session }) {
-            // Until launch has attached the sessions that kept running, a live record is not ended, only not back yet.
-            if model.runtimes.isRestoring, record.state != .exited, record.state != .failed {
-                ReconnectingView()
+            if state == .reconnecting {
+                SessionProgressView(title: "Reconnecting to session…")
             } else {
                 EndedSessionView(record: record, closeTitle: closeTitle)
             }
@@ -527,12 +553,14 @@ private struct NoSessionView: View {
     }
 }
 
-/// Shown while a session that kept running in the background comes back after launch.
-private struct ReconnectingView: View {
+/// Shown while a session's screen is not ready: one that kept running in the background comes back after launch.
+private struct SessionProgressView: View {
+    let title: LocalizedStringKey
+
     var body: some View {
         VStack(spacing: SevindaSpacing.m) {
             ProgressView().controlSize(.regular)
-            Text("Reconnecting to session…").font(.callout).foregroundStyle(.secondary)
+            Text(title).font(.callout).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .transition(.opacity)

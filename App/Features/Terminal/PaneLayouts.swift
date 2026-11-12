@@ -174,15 +174,9 @@ extension AppModel {
     // MARK: Persistence
 
     /// Brings back the stored split tabs at launch: panes whose session is gone (or now runs elsewhere) are dropped,
-    /// and a layout left with one pane is deleted.
-    func restorePaneLayouts() async {
-        let records: [PaneLayoutRecord]
-        do {
-            records = try await io { try $0.paneLayouts() }
-        } catch {
-            logger.error("Could not load pane layouts: \(error.localizedDescription, privacy: .public)")
-            return
-        }
+    /// and a layout left with one pane is deleted. Synchronous, so `load()` shows them in the same frame as the
+    /// sessions; the corrections are written in the background.
+    func restorePaneLayouts(_ records: [PaneLayoutRecord]) {
         var restored: [UUID: PaneLayout] = [:]
         var claimed = Set<UUID>()
         for record in records {
@@ -193,7 +187,8 @@ extension AppModel {
                 claimed.formUnion(layout.panes)
                 if layout != record.layout { persist(layout) }
             } else {
-                try? await io { try $0.deletePaneLayout(id: record.id) }
+                let store = store
+                Task.detached { try? store.deletePaneLayout(id: record.id) }
             }
         }
         paneLayouts = restored

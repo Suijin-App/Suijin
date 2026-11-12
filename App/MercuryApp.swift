@@ -44,6 +44,9 @@ struct MercuryApp: App {
                     model.applyAppearance()
                     await model.load()
                     await model.runtimes.bootstrap()
+                    #if DEBUG
+                    await model.openDemoPanesIfRequested()
+                    #endif
                     #if DEBUG || MERCURY_PERF
                     PerfProbe.startIfRequested(model: model)
                     #endif
@@ -110,7 +113,8 @@ final class MercuryAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificat
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 }
 
-/// Menu commands: ⌘N new worktree, ⌘T new session, ⌘W close tab, ⇧⌘O add workspace. ⌘, shows or hides Settings over the main window.
+/// Menu commands: ⌘N new worktree, ⌘T new session, ⌘W close tab (or pane), ⇧⌘O add workspace, pane commands in the
+/// Session menu. ⌘, shows or hides Settings over the main window.
 struct MercuryCommands: Commands {
     let model: AppModel
 
@@ -142,7 +146,8 @@ struct MercuryCommands: Commands {
         CommandGroup(replacing: .saveItem) {
             // ⌘W acts on sessions only in the main window (closing Settings first when they show); anywhere else
             // (the gallery) it closes that window.
-            Button("Close Tab") {
+            // In a split tab ⌘W closes the focused pane only, and says so.
+            Button(isSplitTab ? "Close Pane" : "Close Tab") {
                 if model.settingsPage != nil {
                     withAnimation(.easeOut(duration: 0.18)) { model.settingsPage = nil }
                     return
@@ -157,6 +162,20 @@ struct MercuryCommands: Commands {
             Button("Split Down") { if let context = mainContext { model.split(in: context, axis: .stacked) } }
                 .keyboardShortcut("d", modifiers: [.command, .shift])
             Divider()
+            Button(isZoomed ? "Show All Panes" : "Zoom Pane") { if let pane = focusedPane { model.toggleZoom(pane) } }
+                .keyboardShortcut(.return, modifiers: [.command, .shift])
+                .disabled(!isSplitTab)
+            Button("Equalize Panes") { if let pane = focusedPane, let layout = model.layout(containing: pane) { model.equalizePanes(layout.id) } }
+                .keyboardShortcut("=", modifiers: [.command, .control])
+                .disabled(!isSplitTab)
+            Menu("Focus Pane") {
+                focusItem("Left", edge: .left, key: .leftArrow)
+                focusItem("Right", edge: .right, key: .rightArrow)
+                focusItem("Above", edge: .top, key: .upArrow)
+                focusItem("Below", edge: .bottom, key: .downArrow)
+            }
+            .disabled(!isSplitTab)
+            Divider()
             Button("Previous Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: -1) } }
                 .keyboardShortcut("[", modifiers: [.command, .shift])
             Button("Next Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: 1) } }
@@ -167,5 +186,23 @@ struct MercuryCommands: Commands {
     /// The selected context, only while the main window is the key window.
     private var mainContext: SessionContext? {
         model.isMainWindowKey ? model.selection : nil
+    }
+
+    /// The focused pane of the selected tab, when that tab is a split tab.
+    private var focusedPane: UUID? {
+        guard let context = mainContext, case .panes? = model.currentTab(in: context) else { return nil }
+        return model.activeSession(in: context)
+    }
+
+    private var isSplitTab: Bool { focusedPane != nil }
+
+    private var isZoomed: Bool {
+        guard let pane = focusedPane else { return false }
+        return model.layout(containing: pane)?.zoomed != nil
+    }
+
+    private func focusItem(_ title: LocalizedStringKey, edge: PaneEdge, key: KeyEquivalent) -> some View {
+        Button(title) { if let context = mainContext { model.focusNeighborPane(in: context, toward: edge) } }
+            .keyboardShortcut(key, modifiers: [.command, .option])
     }
 }

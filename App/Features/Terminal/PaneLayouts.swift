@@ -96,7 +96,7 @@ extension AppModel {
             replaceTab(.session(target), with: .panes(layout.id), in: context)
         }
         removeFromOrder(pane, in: context)
-        selectedTab[context] = .panes(paneIndex[pane]!)
+        if let layoutID = paneIndex[pane] { selectedTab[context] = .panes(layoutID) }
     }
 
     // MARK: Rearranging
@@ -307,3 +307,24 @@ extension DetailTab {
         }
     }
 }
+
+#if DEBUG
+extension AppModel {
+    /// Screenshot runs: `-MercuryDemoPanes <n>` opens a shell in the selected context with n panes (two rows when
+    /// n > 3), so the pane container can be captured in a real window.
+    func openDemoPanesIfRequested() async {
+        let count = min(UserDefaults.standard.integer(forKey: "MercuryDemoPanes"), PaneLayout.maxPanes)
+        guard count > 0, let context = selection,
+              let first = await runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil) else { return }
+        var top = [first]
+        let columns = count > 3 ? (count + 1) / 2 : count
+        while top.count < columns, let next = await newPane(in: context, beside: top.last, edge: .right) { top.append(next) }
+        var added = top.count
+        for pane in top where added < count {
+            if await newPane(in: context, beside: pane, edge: .bottom) != nil { added += 1 }
+        }
+        if let layout = layout(containing: first) { equalizePanes(layout.id) }
+        focusPane(first)
+    }
+}
+#endif

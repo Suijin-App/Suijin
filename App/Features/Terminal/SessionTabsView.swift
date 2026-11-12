@@ -15,14 +15,10 @@ struct SessionTabsView: View {
             Group {
                 switch selected {
                 case .session(let id):
-                    pane(id)
+                    SessionPaneContent(session: id, context: context, isFocused: true, closeTitle: "Close Tab")
                 case .panes(let id):
                     if let layout = model.paneLayouts[id] {
-                        if let zoomed = layout.zoomed {
-                            pane(zoomed)
-                        } else {
-                            node(layout.root)
-                        }
+                        PaneTreeView(layout: layout, context: context)
                     }
                 case .changes:
                     DiffScreen(context: context)
@@ -35,40 +31,35 @@ struct SessionTabsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
+}
 
-    /// A split tab's tree in the system split views.
-    private func node(_ node: PaneNode) -> AnyView {
-        switch node {
-        case .pane(let id):
-            AnyView(pane(id).frame(minWidth: 160, maxWidth: .infinity, minHeight: 90, maxHeight: .infinity))
-        case .split(let axis, let children, _):
-            if axis == .sideBySide {
-                AnyView(HSplitView { ForEach(children, id: \.self) { self.node($0) } })
-            } else {
-                AnyView(VSplitView { ForEach(children, id: \.self) { self.node($0) } })
-            }
-        }
-    }
+/// A session's place in a tab or pane: its live terminal, the reconnecting view until a session that kept running is
+/// attached again, or the ended view once its process is gone.
+struct SessionPaneContent: View {
+    @Environment(AppModel.self) private var model
+    let session: UUID
+    let context: SessionContext
+    let isFocused: Bool
+    /// The ended view's close button: "Close Tab" in a plain tab, "Close Pane" in a split tab.
+    let closeTitle: LocalizedStringKey
 
-    @ViewBuilder
-    private func pane(_ id: UUID) -> some View {
-        if let runtime = model.runtimes.runtime(for: id) {
-            TerminalPane(runtime: runtime, context: context, isFocused: model.activeSession(in: context) == id)
-                .id(id)
+    var body: some View {
+        if let runtime = model.runtimes.runtime(for: session) {
+            TerminalPane(runtime: runtime, context: context, isFocused: isFocused)
+                .id(session)
                 .overlay {
-                    if model.runtimes.reconnecting.contains(id) { ReconnectingView() }
+                    if model.runtimes.reconnecting.contains(session) { ReconnectingView() }
                 }
-        } else if let record = model.sessions.first(where: { $0.id == id }) {
+        } else if let record = model.sessions.first(where: { $0.id == session }) {
             // Until launch has attached the sessions that kept running, a live record is not ended, only not back yet.
             if model.runtimes.isRestoring, record.state != .exited, record.state != .failed {
                 ReconnectingView()
             } else {
-                EndedSessionView(record: record)
+                EndedSessionView(record: record, closeTitle: closeTitle)
             }
         }
     }
 }
-
 
 /// The tabs of a context in the window's title bar, like Safari's compact tabs: one rounded group centered in the
 /// toolbar that grows with the tabs (a single tab is a compact pill, each tab adds room) up to the toolbar's width.
@@ -553,6 +544,7 @@ private struct ReconnectingView: View {
 private struct EndedSessionView: View {
     @Environment(AppModel.self) private var model
     let record: AgentSessionRecord
+    let closeTitle: LocalizedStringKey
 
     private static let cornerRadius: CGFloat = 28
     private var failed: Bool { record.state == .failed || (record.exitCode ?? 0) != 0 }
@@ -579,7 +571,7 @@ private struct EndedSessionView: View {
                         Task { await model.startAgain(record) }
                     }
                     .keyboardShortcut(.defaultAction)
-                    action("Close Tab", systemImage: "xmark", tint: nil) {
+                    action(closeTitle, systemImage: "xmark", tint: nil) {
                         Task { await model.closeSession(record.id) }
                     }
                 }

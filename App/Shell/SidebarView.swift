@@ -6,6 +6,8 @@ import SwiftUI
 enum SidebarItem: Hashable {
     case context(SessionContext)
     case session(UUID)
+    /// The row of a split tab, above its panes.
+    case paneTab(UUID)
 }
 
 /// Workspaces in the sidebar: each has a header with its badge and name; a git workspace lists its main checkout and
@@ -65,7 +67,14 @@ struct SidebarView: View {
                     guard let record = model.sessions.first(where: { $0.id == id }) else { return }
                     let context = model.context(of: record)
                     model.selection = context
+                    // A pane's session selects its split tab and focuses the pane.
                     model.selectedTab[context] = .session(id)
+                case .paneTab(let id)?:
+                    guard let pane = model.paneLayouts[id]?.focused,
+                          let record = model.sessions.first(where: { $0.id == pane }) else { return }
+                    let context = model.context(of: record)
+                    model.selection = context
+                    model.selectedTab[context] = .panes(id)
                 case nil:
                     break
                 }
@@ -250,19 +259,62 @@ struct SidebarSessionRows: View {
 
     var body: some View {
         if !model.collapsedContexts.contains(context) {
-            ForEach(model.sidebarSessions(in: context)) { session in
-                SidebarSessionRow(session: session, context: context)
-                    .tag(SidebarItem.session(session.id))
-                WorkerTreeView(coordinator: session)
+            ForEach(model.sidebarTabs(in: context), id: \.tab) { entry in
+                if case .panes(let id) = entry.tab {
+                    SidebarPaneTabRow(layoutID: id, sessions: entry.sessions)
+                        .tag(SidebarItem.paneTab(id))
+                }
+                ForEach(entry.sessions) { session in
+                    SidebarSessionRow(session: session, context: context, isPane: entry.sessions.count > 1 || entry.tab != .session(session.id))
+                        .tag(SidebarItem.session(session.id))
+                    WorkerTreeView(coordinator: session)
+                }
             }
         }
     }
 }
 
+/// A tab as the sidebar lists it: a plain tab's session, or a split tab's panes under the tab's own row.
+struct SidebarTabEntry {
+    let tab: DetailTab
+    let sessions: [AgentSessionRecord]
+}
+
 extension AppModel {
-    /// Sessions listed under a context in the sidebar: its tabs, minus workers shown under their coordinator.
+    /// Sessions listed under a context in the sidebar: every pane of its tabs, minus workers shown under their
+    /// coordinator.
     func sidebarSessions(in context: SessionContext) -> [AgentSessionRecord] {
-        tabSessions(in: context).filter { !runtimes.orchestration.isNestedWorker($0, in: context) }
+        sidebarTabs(in: context).flatMap(\.sessions)
+    }
+
+    /// The context's tabs as the sidebar groups them: a split tab's panes together under it.
+    func sidebarTabs(in context: SessionContext) -> [SidebarTabEntry] {
+        let records = Dictionary(sessions(in: context).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return sessionTabs(in: context).compactMap { tab in
+            let sessions = panes(of: tab).compactMap { records[$0] }.filter { !runtimes.orchestration.isNestedWorker($0, in: context) }
+            return sessions.isEmpty ? nil : SidebarTabEntry(tab: tab, sessions: sessions)
+        }
+    }
+}
+
+/// The row of a split tab in the sidebar: the split symbol and how many panes it shows, with their most urgent
+/// status. Its panes are the indented rows below it.
+private struct SidebarPaneTabRow: View {
+    let layoutID: UUID
+    let sessions: [AgentSessionRecord]
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "rectangle.split.2x1")
+                .foregroundStyle(.secondary)
+            Text("Split tab")
+                .lineLimit(1)
+            Spacer(minLength: MercurySpacing.xs)
+            ContextActivityBadge(sessions: sessions)
+        }
+        .padding(.leading, 34)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Split tab, \(sessions.count) panes"))
     }
 }
 
@@ -271,6 +323,8 @@ private struct SidebarSessionRow: View {
     @Environment(AppModel.self) private var model
     let session: AgentSessionRecord
     let context: SessionContext
+    /// A pane of a split tab: indented under the tab's row.
+    var isPane = false
 
     var body: some View {
         let activity = model.runtimes.activity(of: session)
@@ -289,8 +343,8 @@ private struct SidebarSessionRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        // Under the context's title: past its chevron and icon.
-        .padding(.leading, 34)
+        // Under the context's title: past its chevron and icon; a pane one step further, under its tab's row.
+        .padding(.leading, isPane ? 52 : 34)
         .help(Text(verbatim: session.title))
         .contextMenu { SessionMenuItems(session: session) }
     }

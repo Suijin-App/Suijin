@@ -18,6 +18,23 @@ struct TerminalKeyRoutingTests {
         }
     }
 
+    @Test("pane shortcuts never reach the program")
+    func paneShortcuts() {
+        func key(_ code: Int) -> String { String(UnicodeScalar(UInt16(code))!) }
+        // Arrow keys arrive with the numeric-pad and function flags, which do not count.
+        let arrows: NSEvent.ModifierFlags = [.command, .option, .numericPad, .function]
+        #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: arrows) == .focusPane(.left))
+        #expect(TerminalKeyRouter.route(key: key(NSRightArrowFunctionKey), modifiers: arrows) == .focusPane(.right))
+        #expect(TerminalKeyRouter.route(key: key(NSUpArrowFunctionKey), modifiers: arrows) == .focusPane(.up))
+        #expect(TerminalKeyRouter.route(key: key(NSDownArrowFunctionKey), modifiers: arrows) == .focusPane(.down))
+        #expect(TerminalKeyRouter.route(key: "\r", modifiers: [.command, .shift]) == .zoomPane)
+        #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command, .control]) == .equalizePanes)
+        // ⌘↩ and ⌘= stay with the app's menus; ⌥ arrows without ⌘ stay with the terminal (word moves).
+        #expect(TerminalKeyRouter.route(key: "\r", modifiers: [.command]) == .app)
+        #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command]) == .app)
+        #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: [.option, .numericPad, .function]) == .terminal)
+    }
+
     @Test("keys without ⌘ stay with the terminal (input methods included)")
     func plainKeys() {
         #expect(TerminalKeyRouter.route(key: "c", modifiers: [.control]) == .terminal)

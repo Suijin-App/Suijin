@@ -107,6 +107,11 @@ extension AppModel {
         case .splitDown: split(in: context, axis: .stacked)
         case .previousTab: selectAdjacentTab(in: context, offset: -1)
         case .nextTab: selectAdjacentTab(in: context, offset: 1)
+        case .focusPane(let direction):
+            focusPane(pane)
+            focusNeighborPane(in: context, toward: PaneEdge(direction))
+        case .zoomPane: if layout(containing: pane) != nil { toggleZoom(pane) }
+        case .equalizePanes: if let layout = layout(containing: pane) { equalizePanes(layout.id) }
         default: return false
         }
         return true
@@ -127,6 +132,18 @@ extension AppModel {
             selectAdjacentTab(in: context, offset: -1)
         } else if selectedTab[context] != .changes {
             NSApp.keyWindow?.performClose(nil)
+        }
+    }
+}
+
+extension PaneEdge {
+    /// The side a pane-focus shortcut points to.
+    init(_ direction: TerminalKeyRoute.Direction) {
+        switch direction {
+        case .left: self = .left
+        case .right: self = .right
+        case .up: self = .top
+        case .down: self = .bottom
         }
     }
 }

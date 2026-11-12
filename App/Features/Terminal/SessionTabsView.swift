@@ -103,6 +103,7 @@ struct ToolbarTabBar: View {
             .frame(width: groupWidth, height: proxy.size.height)
             .background(Color.primary.opacity(0.06), in: Capsule())
             .clipShape(Capsule())
+            .modifier(PaneTabBarDropTarget(context: context))
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
         // Never wider than the tabs ask for, so the toolbar keeps room for its buttons instead of moving them into

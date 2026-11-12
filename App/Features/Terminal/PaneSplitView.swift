@@ -13,6 +13,8 @@ struct PaneSplitView: NSViewRepresentable {
         let key: UUID
         /// Smallest size the child's panes need along the split's axis.
         let minimumLength: CGFloat
+        /// The session when the child is a single pane, nil for a nested split.
+        let pane: UUID?
         let content: AnyView
     }
 
@@ -44,13 +46,15 @@ struct PaneSplitView: NSViewRepresentable {
         split.onResize = onResize
         split.fractions = fractions
         // Reuse each child's hosting view by key; only a child that is new gets a new one.
-        var hosts: [NSHostingView<AnyView>] = []
+        var hosts: [PaneHostingView] = []
         for child in children {
             if let host = coordinator.hosts[child.key] {
+                host.pane = child.pane
                 host.rootView = child.content
                 hosts.append(host)
             } else {
-                let host = NSHostingView(rootView: child.content)
+                let host = PaneHostingView(rootView: child.content)
+                host.pane = child.pane
                 // Its size comes from the split view, never from what the content would like.
                 host.sizingOptions = []
                 coordinator.hosts[child.key] = host
@@ -73,7 +77,7 @@ struct PaneSplitView: NSViewRepresentable {
 
     @MainActor
     final class Coordinator: NSObject, NSSplitViewDelegate {
-        var hosts: [UUID: NSHostingView<AnyView>] = [:]
+        var hosts: [UUID: PaneHostingView] = [:]
         var minimumLengths: [CGFloat] = []
 
         /// Keeps the panes on both sides of a divider at least their minimum size.
@@ -104,6 +108,12 @@ struct PaneSplitView: NSViewRepresentable {
             split.isVertical ? (view.frame.minX, view.frame.maxX) : (view.frame.minY, view.frame.maxY)
         }
     }
+}
+
+/// The hosting view of one child of a split. It names its pane when the child is a single pane, so rearranging can
+/// find where each pane is on screen before and after a change (`PaneRearrangeAnimation`).
+final class PaneHostingView: NSHostingView<AnyView> {
+    var pane: UUID?
 }
 
 /// The split view itself: lays its children out by fractions and tells a divider drag from any other resize.

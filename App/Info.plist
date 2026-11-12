@@ -38,6 +38,20 @@
 	<true/>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
+	<!-- The payload of a pane dragged to a new place in its split tab; it never leaves the app. -->
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.tekmium.mercury.pane</string>
+			<key>UTTypeDescription</key>
+			<string>Mercury Pane</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Tekmium Solutions</string>
 </dict>

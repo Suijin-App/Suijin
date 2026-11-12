@@ -90,6 +90,14 @@ are dropped, and a layout left with one pane becomes a plain tab again. The tab 
 A new pane (⌘D, ⇧⌘D, the title-bar split button, context menus) runs the agent of the `panes.defaultAgent` setting, by
 default the focused pane's agent and account; the split button's menu can pick another for one pane.
 
+Panes are rearranged by dragging a pane's header (`PaneDragAndDrop.swift`): a system drag session with a payload type
+of its own (`com.tekmium.mercury.pane`, declared in `Info.plist`), so tab drags and pane drags never land on each
+other. Over another pane, `PanePlacement(dropAt:in:)` (MercuryCore) picks one of five zones (an edge places the pane
+beside it, the middle swaps the two), and dropping on the title-bar tab group moves the pane to a tab of its own.
+⌃⌥⌘ arrows and Session ▸ Move Pane swap the focused pane with its neighbor. After any rearrangement,
+`PaneRearrangeAnimation` slides each pane's layer from its old frame to its new one. The terminal views move into
+their new containers and are never recreated.
+
 ## Terminal output flow
 
 Output travels PTY → helper → XPC → `HostedTerminalEngine` → `TerminalSession` → SwiftTerm. The app feeds SwiftTerm

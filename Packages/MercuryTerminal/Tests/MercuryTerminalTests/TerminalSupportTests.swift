@@ -27,6 +27,14 @@ struct TerminalKeyRoutingTests {
         #expect(TerminalKeyRouter.route(key: key(NSRightArrowFunctionKey), modifiers: arrows) == .focusPane(.right))
         #expect(TerminalKeyRouter.route(key: key(NSUpArrowFunctionKey), modifiers: arrows) == .focusPane(.up))
         #expect(TerminalKeyRouter.route(key: key(NSDownArrowFunctionKey), modifiers: arrows) == .focusPane(.down))
+        let moves: NSEvent.ModifierFlags = [.command, .option, .control, .numericPad, .function]
+        #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: moves) == .movePane(.left))
+        #expect(TerminalKeyRouter.route(key: key(NSRightArrowFunctionKey), modifiers: moves) == .movePane(.right))
+        #expect(TerminalKeyRouter.route(key: key(NSUpArrowFunctionKey), modifiers: moves) == .movePane(.up))
+        #expect(TerminalKeyRouter.route(key: key(NSDownArrowFunctionKey), modifiers: moves) == .movePane(.down))
+        // ⌃⌘ and ⌃⇧⌥⌘ arrows are not pane moves.
+        #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: [.command, .control]) == .app)
+        #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: [.command, .control, .option, .shift]) == .app)
         #expect(TerminalKeyRouter.route(key: "\r", modifiers: [.command, .shift]) == .zoomPane)
         #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command, .control]) == .equalizePanes)
         // ⌘↩ and ⌘= stay with the app's menus; ⌥ arrows without ⌘ stay with the terminal (word moves).

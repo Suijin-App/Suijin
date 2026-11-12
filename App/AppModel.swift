@@ -73,6 +73,8 @@ final class AppModel {
     @ObservationIgnored private(set) var paneIndex: [UUID: UUID] = [:]
     /// Pending debounced writes of layouts (divider drags, focus changes).
     @ObservationIgnored var layoutSaves: [UUID: Task<Void, Never>] = [:]
+    /// The pane being dragged to a new place, if any (`PaneDragAndDrop.swift`).
+    let paneDrag = PaneDragState()
     var presentedError: PresentedError?
     /// Files opened from terminal links, per context, in tab order. Kept for the app's lifetime.
     var openFiles: [SessionContext: [String]] = [:]

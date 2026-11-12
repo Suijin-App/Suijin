@@ -8,7 +8,7 @@ import Testing
 
 /// The Resource Manager: process tree discovery and figures from libproc, the report grouping, and offscreen renders
 /// of the popover (when `MERCURY_SCREENSHOTS` names an output folder).
-@Suite(.serialized)
+@Suite(.serialized, .timeLimit(.minutes(1)))
 struct ResourceManagerTests {
     /// Starts `/bin/sh -c "<script>"` as a child of the test process; the caller ends it with `stop`.
     private func spawnShell(_ script: String) throws -> Process {
@@ -19,11 +19,15 @@ struct ResourceManagerTests {
         return process
     }
 
-    /// Kills the processes this test started (the shell and what it started) and reaps the shell.
+    /// Kills the processes this test started (the shell and what it started) and waits a few seconds at most for the
+    /// shell to go. Never `waitUntilExit`: it waits for a run-loop notice on the test's thread, and when that notice
+    /// never came the whole test run hung long after the shell was gone.
     private func stop(_ process: Process, descendants: Set<pid_t>) {
         for pid in descendants where pid != process.processIdentifier { kill(pid, SIGKILL) }
         process.terminate()
-        process.waitUntilExit()
+        let deadline = Date().addingTimeInterval(5)
+        while process.isRunning, Date() < deadline { usleep(20_000) }
+        if process.isRunning { kill(process.processIdentifier, SIGKILL) }
     }
 
     /// Waits until `pid` has at least `count` descendants (the shell needs a moment to fork).

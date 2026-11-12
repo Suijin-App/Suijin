@@ -3,7 +3,7 @@ import AppKit
 /// Who handles a ⌘ key press while a terminal has keyboard focus.
 ///
 /// Copy, paste (through the paste guard), select all and find belong to the terminal view. Tab, split and pane
-/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘D, ⇧⌘D, ⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
+/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
 /// `MercuryTerminalView.onKeyRoute`, so the program never receives them as escape sequences. Every other ⌘
 /// shortcut goes on to the app's menus. Keys without ⌘ take the normal event path, where SwiftTerm turns them into
 /// terminal input (and input methods such as Vietnamese Telex compose text), so nothing here touches them.
@@ -16,6 +16,8 @@ public enum TerminalKeyRoute: Equatable, Sendable {
     case splitDown
     /// ⌥⌘ arrow: focus the pane next to this one.
     case focusPane(Direction)
+    /// ⌃⌥⌘ arrow: swap this pane with the one next to it.
+    case movePane(Direction)
     /// ⇧⌘↩: show this pane alone, or all panes again.
     case zoomPane
     /// ⌃⌘=: every split of the tab shares its room equally.
@@ -66,6 +68,7 @@ public enum TerminalKeyRouter {
         if extra == [.shift], key == "\r" { return .zoomPane }
         if extra == [.control], key == "=" { return .equalizePanes }
         if extra == [.option], let direction = arrow(key) { return .focusPane(direction) }
+        if extra == [.control, .option], let direction = arrow(key) { return .movePane(direction) }
         return .app
     }
 

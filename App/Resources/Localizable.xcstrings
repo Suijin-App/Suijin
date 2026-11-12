@@ -2544,6 +2544,51 @@
     },
     "Zoom pane (⇧⌘↩)" : {
 
+    },
+    "Down" : {
+
+    },
+    "Drag to move the pane" : {
+
+    },
+    "Focuses the pane. Use the actions to move it." : {
+
+    },
+    "Move Pane" : {
+
+    },
+    "Move Pane Down" : {
+
+    },
+    "Move Pane Left" : {
+
+    },
+    "Move Pane Right" : {
+
+    },
+    "Move Pane Up" : {
+
+    },
+    "Move to New Tab" : {
+
+    },
+    "Place Above" : {
+
+    },
+    "Place Below" : {
+
+    },
+    "Place Left" : {
+
+    },
+    "Place Right" : {
+
+    },
+    "Swap" : {
+
+    },
+    "Up" : {
+
     }
   },
   "version" : "1.1"

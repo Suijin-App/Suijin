@@ -111,6 +111,9 @@ extension AppModel {
         case .focusPane(let direction):
             focusPane(pane)
             focusNeighborPane(in: context, toward: PaneEdge(direction))
+        case .movePane(let direction):
+            focusPane(pane)
+            moveFocusedPane(in: context, toward: PaneEdge(direction))
         case .zoomPane: if layout(containing: pane) != nil { toggleZoom(pane) }
         case .equalizePanes: if let layout = layout(containing: pane) { equalizePanes(layout.id) }
         default: return false
@@ -138,7 +141,7 @@ extension AppModel {
 }
 
 extension PaneEdge {
-    /// The side a pane-focus shortcut points to.
+    /// The side a pane-focus or pane-move shortcut points to.
     init(_ direction: TerminalKeyRoute.Direction) {
         switch direction {
         case .left: self = .left

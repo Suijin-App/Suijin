@@ -175,6 +175,14 @@ struct MercuryCommands: Commands {
                 focusItem("Below", edge: .bottom, key: .downArrow)
             }
             .disabled(!isSplitTab)
+            // Swaps the focused pane with its neighbor; the same as ⌃⌥⌘ arrows typed in a terminal.
+            Menu("Move Pane") {
+                moveItem("Left", edge: .left, key: .leftArrow)
+                moveItem("Right", edge: .right, key: .rightArrow)
+                moveItem("Up", edge: .top, key: .upArrow)
+                moveItem("Down", edge: .bottom, key: .downArrow)
+            }
+            .disabled(!isSplitTab || isZoomed)
             Divider()
             Button("Previous Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: -1) } }
                 .keyboardShortcut("[", modifiers: [.command, .shift])
@@ -204,5 +212,10 @@ struct MercuryCommands: Commands {
     private func focusItem(_ title: LocalizedStringKey, edge: PaneEdge, key: KeyEquivalent) -> some View {
         Button(title) { if let context = mainContext { model.focusNeighborPane(in: context, toward: edge) } }
             .keyboardShortcut(key, modifiers: [.command, .option])
+    }
+
+    private func moveItem(_ title: LocalizedStringKey, edge: PaneEdge, key: KeyEquivalent) -> some View {
+        Button(title) { if let context = mainContext { model.moveFocusedPane(in: context, toward: edge) } }
+            .keyboardShortcut(key, modifiers: [.command, .option, .control])
     }
 }

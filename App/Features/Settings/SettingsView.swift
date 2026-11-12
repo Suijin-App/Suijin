@@ -6,7 +6,7 @@ import SwiftUI
 
 /// The pages of Settings, in sidebar order.
 enum SettingsPage: String, CaseIterable, Identifiable {
-    case general, agents, accounts, terminal, stats
+    case general, agents, accounts, terminal, stats, about
 
     var id: Self { self }
 
@@ -17,6 +17,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .accounts: "Accounts"
         case .terminal: "Terminal"
         case .stats: "Stats & Usage"
+        case .about: "About"
         }
     }
 
@@ -27,6 +28,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .accounts: "person.2"
         case .terminal: "terminal"
         case .stats: "chart.bar"
+        case .about: "info.circle"
         }
     }
 
@@ -38,6 +40,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
         case .accounts: AccountsSettingsView()
         case .terminal: TerminalSettings()
         case .stats: StatsUsageSettings()
+        case .about: AboutSettings()
         }
     }
 }

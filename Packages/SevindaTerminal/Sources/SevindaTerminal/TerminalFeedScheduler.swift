@@ -71,7 +71,8 @@ public final class TerminalFeedScheduler {
         let start = clock.now
         while !queue.isEmpty, clock.now - start < budget {
             // A restored session's scrollback on screen goes first: it is what the user waits to see after launch.
-            // Only replays jump the line (they are finite); live output keeps the round-robin.
+            // So does a resumed agent's history while its screen waits for it (`TerminalSession.catchUp`). Only those
+            // jump the line (a replay is finite, a catch-up ends within its limit); live output keeps the round-robin.
             let index = queue.firstIndex { $0.session.map(Self.isVisibleReplay) == true } ?? 0
             let entry = queue.remove(at: index)
             guard let session = entry.session else { continue }
@@ -96,7 +97,7 @@ public final class TerminalFeedScheduler {
     }
 
     private static func isVisibleReplay(_ session: TerminalSession) -> Bool {
-        session.isReplayingScrollback && session.view.window != nil
+        (session.isReplayingScrollback || session.view.isCatchingUp) && session.view.window != nil
     }
 
     private struct WeakSession {

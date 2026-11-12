@@ -87,6 +87,54 @@ public final class TerminalSession {
         if isRunning { engine.resize(view.gridSize) }
     }
 
+    /// Keeps the screen hidden while the program prints a burst it starts with (a resumed agent re-printing its
+    /// conversation), so it appears once, already at the end, instead of scrolling through every line. Input typed
+    /// meanwhile still reaches the program.
+    ///
+    /// The screen shows again once the program printed something and then stayed silent, with everything fed: for
+    /// `quiet` once its output filled the screen, for `quietBeforeScreenful` while it has printed less (an agent may set
+    /// up the terminal first and print its history a moment later). It also shows when the program exits, and after
+    /// `limit` whatever happens, so it never stays hidden. Silence is counted in checks `tick` apart, each its own turn
+    /// of the main actor: a main thread that was busy for a while counts as one check, not as a quiet period, since the
+    /// output and the flow-control credits it held back were waiting behind it.
+    public func catchUp(quiet: Duration = .milliseconds(200), quietBeforeScreenful: Duration = .milliseconds(750),
+                        limit: Duration = .seconds(3), tick: Duration = .milliseconds(25)) {
+        catchUpWatch?.cancel()
+        catchUpLines = 0
+        view.isCatchingUp = true
+        let deadline = ContinuousClock.now + limit
+        let startFed = fedByteCount
+        catchUpWatch = Task { @MainActor [weak self] in
+            var silentChecks = 0
+            var seenFed = startFed
+            while true {
+                guard (try? await Task.sleep(for: tick)) != nil else { return }
+                guard let self, view.isCatchingUp else { return }
+                if ContinuousClock.now >= deadline { break }
+                if fedByteCount != seenFed || pendingByteCount > 0 {
+                    seenFed = fedByteCount
+                    silentChecks = 0
+                    continue
+                }
+                guard fedByteCount > startFed else { continue } // still starting: nothing printed yet
+                silentChecks += 1
+                let needed = catchUpLines >= view.gridSize.rows ? quiet : quietBeforeScreenful
+                if tick * silentChecks >= needed { break }
+            }
+            self?.endCatchUp()
+        }
+    }
+
+    private func endCatchUp() {
+        catchUpWatch?.cancel()
+        catchUpWatch = nil
+        if view.isCatchingUp { view.isCatchingUp = false }
+    }
+
+    private var catchUpWatch: Task<Void, Never>?
+    /// Lines the program printed during the catch-up.
+    private var catchUpLines = 0
+
     /// Sends bytes to the program as if typed.
     public func send(_ bytes: [UInt8]) {
         guard isRunning else { return }
@@ -139,7 +187,12 @@ public final class TerminalSession {
             let scrollback = min(count, pendingScrollback)
             pendingScrollback -= scrollback
             if pendingScrollback == 0, view.isReplayingScrollback { view.isReplayingScrollback = false }
-            if count > scrollback { engine.outputConsumed(count - scrollback) }
+            if count > scrollback {
+                engine.outputConsumed(count - scrollback)
+                if view.isCatchingUp {
+                    catchUpLines += pending[(end - count + scrollback)..<end].reduce(0) { $1 == 0x0A ? $0 + 1 : $0 }
+                }
+            }
             compactPending()
         }
         if pendingByteCount > 0 { return true }
@@ -165,6 +218,8 @@ public final class TerminalSession {
         isRunning = false
         hasExited = true
         exitCode = code
+        // Nothing more is coming: show what the program left.
+        endCatchUp()
         releaseExitWaiters()
         onExit?(code)
     }

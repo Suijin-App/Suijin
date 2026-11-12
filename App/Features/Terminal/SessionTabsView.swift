@@ -40,6 +40,9 @@ enum SessionPaneState: Hashable {
     /// Not ready yet: a session that kept running is being attached again or replays its scrollback, or launch has
     /// not found out yet whether its process still runs.
     case reconnecting
+    /// An ended agent is being resumed: from the click until it runs, then while it re-prints its conversation behind
+    /// the progress view (`TerminalSession.catchUp`).
+    case resuming
     /// The process is gone.
     case ended
     /// No such session.
@@ -49,9 +52,11 @@ enum SessionPaneState: Hashable {
 extension AppModel {
     func paneState(of session: UUID) -> SessionPaneState {
         if runtimes.runtime(for: session) != nil {
-            return runtimes.reconnecting.contains(session) ? .reconnecting : .terminal
+            if runtimes.reconnecting.contains(session) { return .reconnecting }
+            return runtimes.catchingUp.contains(session) ? .resuming : .terminal
         }
         guard let record = sessions.first(where: { $0.id == session }) else { return .missing }
+        if runtimes.resuming.contains(session) { return .resuming }
         // Until launch has attached the sessions that kept running, a live record is not ended, only not back yet. A
         // record already ended shows the ended view at once: its process is never attached again.
         if runtimes.isRestoring, record.state != .exited, record.state != .failed { return .reconnecting }
@@ -60,7 +65,8 @@ extension AppModel {
 }
 
 /// A session's place in a tab or pane: its live terminal, the reconnecting view until a session that kept running is
-/// attached again, or the ended view once its process is gone.
+/// attached again (or the resuming view while a resumed agent re-prints its conversation), or the ended view once its
+/// process is gone.
 struct SessionPaneContent: View {
     @Environment(AppModel.self) private var model
     let session: UUID
@@ -72,16 +78,21 @@ struct SessionPaneContent: View {
     var body: some View {
         let state = model.paneState(of: session)
         if let runtime = model.runtimes.runtime(for: session) {
+            // The terminal stays in place under the progress views (hidden meanwhile), so it keeps its size and focus.
             TerminalPane(runtime: runtime, context: context, isFocused: isFocused)
                 .id(session)
                 .overlay {
-                    if state == .reconnecting { SessionProgressView(title: "Reconnecting to session…") }
+                    switch state {
+                    case .reconnecting: SessionProgressView(title: "Reconnecting to session…")
+                    case .resuming: SessionProgressView(title: "Resuming session…")
+                    case .terminal, .ended, .missing: EmptyView()
+                    }
                 }
         } else if let record = model.sessions.first(where: { $0.id == session }) {
-            if state == .reconnecting {
-                SessionProgressView(title: "Reconnecting to session…")
-            } else {
-                EndedSessionView(record: record, closeTitle: closeTitle)
+            switch state {
+            case .reconnecting: SessionProgressView(title: "Reconnecting to session…")
+            case .resuming: SessionProgressView(title: "Resuming session…")
+            case .terminal, .ended, .missing: EndedSessionView(record: record, closeTitle: closeTitle)
             }
         }
     }
@@ -553,7 +564,8 @@ private struct NoSessionView: View {
     }
 }
 
-/// Shown while a session's screen is not ready: one that kept running in the background comes back after launch.
+/// Shown while a session's screen is not ready: one that kept running in the background comes back after launch, or a
+/// resumed agent re-prints its conversation.
 private struct SessionProgressView: View {
     let title: LocalizedStringKey
 

@@ -191,9 +191,9 @@ final class TerminalLinkController {
 
     // MARK: Scanning
 
-    /// Whether the screen can be scanned now: on screen, shown, not replaying scrollback.
+    /// Whether the screen can be scanned now: on screen, shown, not concealed (replaying scrollback or catching up).
     var canScan: Bool {
-        isEnabled && view.window != nil && !view.isHiddenOrHasHiddenAncestor && !view.isReplayingScrollback
+        isEnabled && view.window != nil && !view.isHiddenOrHasHiddenAncestor && !view.isConcealed
     }
 
     /// Reads the screen on the main thread (the only part that must run there), finds candidates off it and has the

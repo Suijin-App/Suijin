@@ -123,13 +123,44 @@ open class SevindaTerminalView: TerminalView {
     /// the app shows the session once, at its end, instead of every line of its history scrolling past.
     public var isReplayingScrollback = false {
         didSet {
-            alphaValue = isReplayingScrollback ? 0 : 1
+            concealmentChanged()
             if isReplayingScrollback != oldValue { onReplayChange?(isReplayingScrollback) }
-            if !isReplayingScrollback, oldValue { linkController?.noteChange() }
         }
     }
     /// Called when a scrollback replay starts or finishes, so the host can show progress meanwhile.
     public var onReplayChange: ((Bool) -> Void)?
+
+    /// True while a resumed program re-prints its history (`TerminalSession.catchUp`): hidden like a replay, so the
+    /// screen appears once, at its end, instead of scrolling through the whole conversation. Input still goes through.
+    public var isCatchingUp = false {
+        didSet {
+            concealmentChanged()
+            if isCatchingUp != oldValue { onCatchUpChange?(isCatchingUp) }
+        }
+    }
+    /// Called when a catch-up starts or finishes, so the host can show progress meanwhile.
+    public var onCatchUpChange: ((Bool) -> Void)?
+
+    /// The screen is hidden: a replay or a catch-up is being fed.
+    public var isConcealed: Bool { isReplayingScrollback || isCatchingUp }
+    private var wasConcealed = false
+
+    /// Hides the view with alpha (hiding it would take keyboard focus away, and typed input must reach the program),
+    /// and hides the Metal surface too, so the output fed meanwhile costs no GPU frames. Shown again, it draws once.
+    private func concealmentChanged() {
+        let concealed = isConcealed
+        alphaValue = concealed ? 0 : 1
+        guard concealed != wasConcealed else { return }
+        wasConcealed = concealed
+        for surface in subviews where surface is MTKView {
+            surface.isHidden = concealed
+            if !concealed { surface.needsDisplay = true }
+        }
+        if !concealed {
+            needsDisplay = true
+            linkController?.noteChange()
+        }
+    }
 
     /// Drops every handler the app installed, so nothing a closure captured outlives the session. Called when the
     /// session ends.
@@ -138,6 +169,7 @@ open class SevindaTerminalView: TerminalView {
         onKeyRoute = nil
         onOpenLink = nil
         onReplayChange = nil
+        onCatchUpChange = nil
         onInput = nil
         onSizeChange = nil
         onOpenFileLink = nil
@@ -208,6 +240,8 @@ open class SevindaTerminalView: TerminalView {
     open override func didAddSubview(_ subview: NSView) {
         super.didAddSubview(subview)
         guard subview is MTKView else { return }
+        // A surface made while the screen is concealed (the view moved to a window) stays hidden with it.
+        subview.isHidden = isConcealed
         DispatchQueue.main.async { [weak self] in
             MainActor.assumeIsolated { self?.placeLinkOverlay() }
         }

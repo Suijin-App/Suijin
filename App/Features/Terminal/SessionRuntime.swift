@@ -52,6 +52,8 @@ final class SessionRuntimeRegistry {
     private(set) var isRestoring = true
     /// Sessions whose screen is not ready yet: attaching to the host or replaying their scrollback.
     private(set) var reconnecting: Set<UUID> = []
+    /// Resumed agents whose screen stays hidden while they re-print their conversation (`TerminalSession.catchUp`).
+    private(set) var catchingUp: Set<UUID> = []
     /// Why sessions do not survive quitting, when the PTY host is unavailable.
     private(set) var hostProblem: String?
     /// The last lines a session printed before it failed, for its ended view (memory only: it can hold anything).
@@ -258,8 +260,9 @@ final class SessionRuntimeRegistry {
         }
     }
 
-    /// Ended agent sessions being resumed, so a second click does not start the agent twice.
-    @ObservationIgnored private var resuming: Set<UUID> = []
+    /// Ended agent sessions being resumed, from the click until the agent runs again: a second click does not start
+    /// it twice, and the session's place shows the resuming view at once instead of the ended view changing under it.
+    private(set) var resuming: Set<UUID> = []
 
     /// Starts an ended Claude or Codex session again with its conversation (`claude --resume <id>`,
     /// `codex resume <id>`) under the same record, so it comes back in its own tab or pane with the same account and
@@ -274,7 +277,7 @@ final class SessionRuntimeRegistry {
             let cwd = URL(fileURLWithPath: ended.cwd, isDirectory: true)
             let launch = try await makeLaunch(record: ended, cwd: cwd, accountID: ended.accountID, prompt: nil,
                                               resume: conversation)
-            try await relaunch(ended, launch: launch)
+            try await relaunch(ended, launch: launch, catchUp: true)
         } catch {
             model.presentedError = PresentedError(title: String(localized: "Could not resume \(ended.title)"),
                                                   message: error.localizedDescription)
@@ -282,9 +285,13 @@ final class SessionRuntimeRegistry {
     }
 
     /// Runs `launch` as the ended session `ended` again: same record, so its tab or pane, title, account and folder
-    /// stay; the exit of the previous run is cleared.
-    func relaunch(_ ended: AgentSessionRecord, launch: TerminalLaunch) async throws {
+    /// stay; the exit of the previous run is cleared. With `catchUp` (a resumed conversation, which the agent prints
+    /// again as it starts) the screen waits for that output to settle and shows at its end.
+    func relaunch(_ ended: AgentSessionRecord, launch: TerminalLaunch, catchUp: Bool = false) async throws {
         guard runtimes[ended.id] == nil else { return }
+        // Covers the record stored as starting below, before the runtime exists.
+        let marked = catchUp && resuming.insert(ended.id).inserted
+        defer { if marked { resuming.remove(ended.id) } }
         var record = ended
         record.state = .starting
         record.exitCode = nil
@@ -293,7 +300,7 @@ final class SessionRuntimeRegistry {
         // Stored as starting first: an exit right after the launch must not find the previous run's ended record.
         await model.upsert(record)
         do {
-            try await run(record, launch: launch)
+            try await run(record, launch: launch, catchUp: catchUp)
         } catch {
             await model.upsert(ended)
             throw error
@@ -301,13 +308,16 @@ final class SessionRuntimeRegistry {
     }
 
     /// Runs `launch` for `record` in a new runtime and stores the record with its host session, as running (or ended,
-    /// when the process is already gone). On failure nothing is left behind and the record is not stored.
-    func run(_ record: AgentSessionRecord, launch: TerminalLaunch) async throws {
+    /// when the process is already gone). On failure nothing is left behind and the record is not stored. With
+    /// `catchUp` the screen stays hidden until the burst of output the program starts with settles.
+    func run(_ record: AgentSessionRecord, launch: TerminalLaunch, catchUp: Bool = false) async throws {
         var record = record
         let id = record.id
         let engine: any TerminalEngine = usesHost ? HostedTerminalEngine(client: .shared) : SwiftTermEngine()
         let runtime = makeRuntime(id: id, agent: record.agent, engine: engine)
         runtime.agentSessionID = record.agentSessionID
+        // Before the process starts, so none of its output is fed while the screen shows.
+        if catchUp { runtime.terminal.catchUp() }
         if record.agent == .claude, let hooks {
             startWatching(runtime, file: hooks.eventsFile(sessionID: id), readExisting: true)
         }
@@ -317,6 +327,7 @@ final class SessionRuntimeRegistry {
             runtime.watcher?.stop()
             runtimes[id] = nil
             activities[id] = nil
+            catchingUp.remove(id)
             if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
             throw error
         }
@@ -416,6 +427,9 @@ final class SessionRuntimeRegistry {
         let view = terminal.view
         view.onReplayChange = { [weak self] replaying in
             if replaying { self?.reconnecting.insert(id) } else { self?.reconnecting.remove(id) }
+        }
+        view.onCatchUpChange = { [weak self] catching in
+            if catching { self?.catchingUp.insert(id) } else { self?.catchingUp.remove(id) }
         }
         let forwardInput = view.onInput
         view.onInput = { [weak runtime] bytes in
@@ -559,6 +573,7 @@ final class SessionRuntimeRegistry {
         runtimes[id] = nil
         activities[id] = nil
         reconnecting.remove(id)
+        catchingUp.remove(id)
         if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
     }
 

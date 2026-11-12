@@ -140,7 +140,10 @@ open class SevindaTerminalView: TerminalView {
         onReplayChange = nil
         onInput = nil
         onSizeChange = nil
+        onOpenFileLink = nil
         linkResolver = nil
+        pendingLinkOpen?.cancel()
+        pendingLinkOpen = nil
     }
 
     // MARK: Paths and links
@@ -161,6 +164,10 @@ open class SevindaTerminalView: TerminalView {
 
     /// The links underlined now, top to bottom (rows count from the top of the scrollback).
     public var shownLinks: [TerminalLink] { linkController.links }
+
+    /// An underlined path was clicked (see `TerminalLinkClick`). Web links open in the default browser after
+    /// `onOpenLink` declines them.
+    public var onOpenFileLink: ((TerminalFileTarget) -> Void)?
 
     /// Scans the screen at once instead of waiting for the output to pause (tests).
     public func scanLinksNow() { linkController.scanNow() }
@@ -249,9 +256,103 @@ open class SevindaTerminalView: TerminalView {
 
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        let reference = WeakViewReference(self)
+        firstResponderObservation = window?.observe(\.firstResponder, options: [.new]) { window, _ in
+            MainActor.assumeIsolated {
+                guard let view = reference.view, window.firstResponder === view else { return }
+                view.focusedAt = ProcessInfo.processInfo.systemUptime
+            }
+        }
         applyRenderer()
         // Back on screen: positions depend on the window's scale, and output may have arrived meanwhile.
         if window != nil { linkController?.gridChanged() }
+    }
+
+    // MARK: Opening links with the mouse
+
+    /// What the press of the current click found, for its release.
+    private struct LinkPress {
+        var point: CGPoint
+        var link: TerminalLink?
+        var selectionWasActive: Bool
+        var paneWasFocused: Bool
+        var dragged = false
+    }
+
+    private var linkPress: LinkPress?
+    private var pendingLinkOpen: DispatchWorkItem?
+    /// When the view last became the window's first responder (system uptime).
+    private var focusedAt: TimeInterval = 0
+    private var firstResponderObservation: NSKeyValueObservation?
+
+    /// Every press still reaches SwiftTerm (selection starts, the program gets its click); only the release may open a
+    /// link, see `TerminalLinkClick`.
+    open override func mouseDown(with event: NSEvent) {
+        pendingLinkOpen?.cancel()
+        pendingLinkOpen = nil
+        if linkController.isEnabled {
+            let point = convert(event.locationInWindow, from: nil)
+            // The window makes the clicked view first responder just before this press arrives: focus gained after the
+            // event was posted came with this click.
+            linkPress = LinkPress(point: point, link: linkController.link(at: point), selectionWasActive: selectionActive,
+                                  paneWasFocused: focusedAt < event.timestamp)
+        } else {
+            linkPress = nil
+        }
+        super.mouseDown(with: event)
+    }
+
+    open override func mouseDragged(with event: NSEvent) {
+        if let press = linkPress, !press.dragged {
+            let point = convert(event.locationInWindow, from: nil)
+            if hypot(point.x - press.point.x, point.y - press.point.y) > TerminalLinkClick.dragThreshold { linkPress?.dragged = true }
+        }
+        super.mouseDragged(with: event)
+    }
+
+    open override func mouseUp(with event: NSEvent) {
+        guard let press = linkPress, linkController.isEnabled else {
+            linkPress = nil
+            return super.mouseUp(with: event)
+        }
+        linkPress = nil
+        let point = convert(event.locationInWindow, from: nil)
+        let click = TerminalLinkClick(trigger: linkTrigger, clickCount: event.clickCount, modifiers: event.modifierFlags,
+                                      dragged: press.dragged || hypot(point.x - press.point.x, point.y - press.point.y) > TerminalLinkClick.dragThreshold,
+                                      selectionWasActive: press.selectionWasActive, selectionIsActive: selectionActive,
+                                      reportsMouse: isReportingMouse, paneWasFocused: press.paneWasFocused,
+                                      pressLink: press.link, releaseLink: linkController.link(at: point))
+        switch click.decision {
+        case .none:
+            super.mouseUp(with: event)
+        case .openNow(let link):
+            // As SwiftTerm does for the links it opens itself: the release ends here.
+            open(link)
+        case .openAfterDoubleClickInterval(let link):
+            super.mouseUp(with: event)
+            let item = DispatchWorkItem { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.pendingLinkOpen = nil
+                    // Nothing selected meanwhile, and the text under the link unchanged.
+                    guard !self.selectionActive, self.textMatches(link.match) else { return }
+                    self.open(link)
+                }
+            }
+            pendingLinkOpen = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + NSEvent.doubleClickInterval, execute: item)
+        }
+    }
+
+    /// Opens a link: a path through `onOpenFileLink`, a web link through `onOpenLink` or else the default browser.
+    func open(_ link: TerminalLink) {
+        switch link.target {
+        case .file(let file):
+            onOpenFileLink?(file)
+        case .web(let url):
+            if onOpenLink?(url.absoluteString) == true { return }
+            NSWorkspace.shared.open(url)
+        }
     }
 
     /// With the Metal renderer on, the terminal's surface is a Metal subview that does not take the keyboard, and a
@@ -374,6 +475,16 @@ open class SevindaTerminalView: TerminalView {
         guard let text = String(data: content, encoding: .utf8) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+    }
+}
+
+/// A weak reference to a terminal view for a key-value observation handler, which must be `Sendable`. Unchecked
+/// because the handler reads it only on the main actor (`MainActor.assumeIsolated`), where the view lives.
+private final class WeakViewReference: @unchecked Sendable {
+    weak var view: SevindaTerminalView?
+
+    init(_ view: SevindaTerminalView) {
+        self.view = view
     }
 }
 

@@ -139,12 +139,31 @@ struct FileViewer: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onChange(of: model.fileLineReveal?.request, initial: true) { revealPendingLine() }
+        .onChange(of: isCode) { revealPendingLine() }
         .task(id: path) {
             await file.start()
             // Follow the file until the tab closes or another tab is shown.
             while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }
             file.stop()
         }
+    }
+
+    private var isCode: Bool {
+        if case .code = content { return true }
+        return false
+    }
+
+    /// Scrolls to the line a terminal path asked for, once the code is shown; other kinds of file have no lines to go
+    /// to, so the request is dropped.
+    private func revealPendingLine() {
+        guard let reveal = model.fileLineReveal, reveal.path == path else { return }
+        if case .loading = content { return }
+        model.fileLineReveal = nil
+        guard isCode else { return }
+        let code = code
+        // After this update, so the text view exists and holds the text.
+        DispatchQueue.main.async { code.scroll(toLine: reveal.line) }
     }
 
     private var header: some View {

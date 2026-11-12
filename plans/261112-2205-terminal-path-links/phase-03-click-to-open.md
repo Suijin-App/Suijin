@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: Click để mở
-status: pending
+status: done
 depends_on: [2]
 ---
 

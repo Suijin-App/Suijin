@@ -95,4 +95,80 @@ struct TerminalPathLinkTests {
         #expect(fixture.view.reportedDirectory.map { URL(fileURLWithPath: $0).resolvingSymlinksInPath().path } == Self.real(fixture.folder, "sub"))
         await fixture.close()
     }
+
+    @Test func codeViewerScrollsToTheRequestedLine() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-line-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("long.swift")
+        try (1...200).map { "let value\($0) = \($0)" }.joined(separator: "\n").write(to: file, atomically: true, encoding: .utf8)
+        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        await model.addWorkspace(at: root)
+        let context = SessionContext.workspace(try #require(model.workspaces.first).id)
+        model.fileLineReveal = (file.path, 150, UUID())
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: FileViewer(path: file.path, context: context).environment(model))
+        window.setFrameOrigin(CGPoint(x: -10_000, y: -10_000))
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+
+        func textView(in view: NSView) -> NSTextView? {
+            if let text = view as? NSTextView { return text }
+            return view.subviews.lazy.compactMap(textView).first
+        }
+        var selected: String?
+        let start = ContinuousClock.now
+        while ContinuousClock.now - start < .seconds(5) {
+            if let text = window.contentView.flatMap(textView), text.selectedRange().length > 0 {
+                selected = (text.string as NSString).substring(with: text.selectedRange())
+                break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(selected == "let value150 = 150\n")
+        #expect(model.fileLineReveal == nil, "the request is used once")
+    }
+
+    /// The inspector's own preferences, which opening a folder writes; the test host shares the app's defaults.
+    static let inspectorKeys = ["inspector.shown", "inspector.tab"]
+
+    @Test func commandClickOpensFilesAtTheirLineAndFoldersInTheTree() async throws {
+        let saved = Self.inspectorKeys.map { UserDefaults.standard.object(forKey: $0) }
+        defer { for (key, value) in zip(Self.inspectorKeys, saved) { UserDefaults.standard.set(value, forKey: key) } }
+        let fixture = try await Self.makeFixture()
+        fixture.run(#"s=src; printf '%s\n' "$s/a.ts:12:4 in ./$s""#)
+        let source = try #require(await fixture.waitForLink("src/a.ts:12:4"))
+        let folder = try #require(await fixture.waitForLink("./src"))
+        let window = fixture.window
+
+        func commandClick(_ link: TerminalLink) throws {
+            let view = fixture.view
+            let segment = try #require(link.match.segments.first)
+            let cell = view.getTerminal().buffer.yDisp
+            let size = try #require(view.cellSizeInPixels(source: view.getTerminal()))
+            let scale = window.backingScaleFactor
+            let point = view.convert(CGPoint(x: (CGFloat(segment.columns.lowerBound) + 0.5) * CGFloat(size.width) / scale,
+                                             y: view.bounds.height - (CGFloat(segment.row - cell) + 0.5) * CGFloat(size.height) / scale),
+                                     to: nil)
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                view.perform(type == .leftMouseDown ? #selector(NSView.mouseDown(with:)) : #selector(NSView.mouseUp(with:)),
+                             with: NSEvent.mouseEvent(with: type, location: point, modifierFlags: .command,
+                                                      timestamp: ProcessInfo.processInfo.systemUptime,
+                                                      windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                                                      clickCount: 1, pressure: 1))
+            }
+        }
+
+        try commandClick(source)
+        let opened = try #require(fixture.model.currentTab(in: fixture.context))
+        guard case .file(let path) = opened else { Issue.record("no file tab: \(opened)"); return }
+        #expect(URL(fileURLWithPath: path).resolvingSymlinksInPath().path == Self.real(fixture.folder, "src/a.ts"))
+        #expect(fixture.model.fileLineReveal?.line == 12)
+
+        try commandClick(folder)
+        #expect(fixture.model.fileTreeReveal.map { URL(fileURLWithPath: $0.path).resolvingSymlinksInPath().path } == Self.real(fixture.folder, "src"))
+        await fixture.close()
+    }
 }

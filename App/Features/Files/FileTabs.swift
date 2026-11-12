@@ -37,7 +37,8 @@ extension AppModel {
     }
 
     /// Opens a path from a terminal in the app: a folder in the inspector's file tree (the inspector opens on its Files
-    /// tab), a file in a viewer tab, or in Finder when Sevinda cannot show it.
+    /// tab), a file in a viewer tab (at its line, when the path named one and the viewer shows code), or in Finder when
+    /// Sevinda cannot show it.
     func openTerminalPath(_ resolved: ResolvedTerminalPath, in context: SessionContext) {
         let standardized = resolved.url.standardizedFileURL
         if resolved.isDirectory {
@@ -46,7 +47,9 @@ extension AppModel {
         } else {
             // The tree follows only while the inspector is open; closed, nothing moves there.
             let wasOpen = isInspectorOpen
-            if open(fileAt: standardized, in: context), wasOpen { revealInFileTree(standardized.path) }
+            guard open(fileAt: standardized, in: context) else { return }
+            if wasOpen { revealInFileTree(standardized.path) }
+            if let line = resolved.line, line > 0 { fileLineReveal = (standardized.path, line, UUID()) }
         }
     }
 

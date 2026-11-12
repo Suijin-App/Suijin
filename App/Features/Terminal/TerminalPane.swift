@@ -59,6 +59,11 @@ struct TerminalPane: View {
             [view?.reportedDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) }, sessionDirectory, root]
         }
         view.onOpenLink = { link in model.openTerminalLink(link, in: context, relativeTo: bases()) }
+        view.onOpenFileLink = { target in
+            model.openTerminalPath(ResolvedTerminalPath(url: URL(fileURLWithPath: target.path, isDirectory: target.isDirectory),
+                                                        isDirectory: target.isDirectory, line: target.line, column: target.column),
+                                   in: context)
+        }
         let resolver = TerminalPathResolver.shared
         view.linkResolver = { matches in
             let directories = bases()

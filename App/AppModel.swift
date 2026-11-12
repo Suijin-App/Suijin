@@ -87,6 +87,9 @@ final class AppModel {
     /// A path the inspector's file tree should show (expand its folders, select, scroll to it); a new request id
     /// each time, so asking twice for the same path works.
     var fileTreeReveal: (path: String, request: UUID)?
+    /// A line the code viewer of `path` should scroll to and select once it shows the file (a path with `:line` opened
+    /// from a terminal); a new request id each time.
+    var fileLineReveal: (path: String, line: Int, request: UUID)?
     /// Folders the user expanded in each context's file tree, loaded from and saved to user defaults (see
     /// `expandedFolders(in:)`), so the tree reopens as it was left.
     var expandedFoldersCache: [SessionContext: Set<String>] = [:]

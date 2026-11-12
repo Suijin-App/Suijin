@@ -62,7 +62,7 @@ struct MainToolbar: ToolbarContent {
                     Label("Inspector", systemImage: "sidebar.trailing")
                 }
                 .help(Text("Show or hide the inspector (⌥⌘I)"))
-                .keyboardShortcut("i", modifiers: [.command, .option])
+                .keyboardShortcut(ShortcutCatalog.toggleInspector.shortcut)
             }
         }
     }

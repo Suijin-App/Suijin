@@ -307,26 +307,6 @@ private struct OnboardingPointRow: View {
     }
 }
 
-/// A keyboard shortcut drawn as a key cap. Custom because SwiftUI has no view for showing a shortcut outside a menu.
-struct KeyCap: View {
-    let shortcut: String
-
-    var body: some View {
-        Text(verbatim: shortcut)
-            .font(.system(.callout, design: .rounded).weight(.medium))
-            .monospacedDigit()
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .frame(minWidth: 26)
-            .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5)
-            }
-            .accessibilityLabel(Text(verbatim: ShortcutSpeech.label(for: shortcut)))
-    }
-}
-
 /// The last step: add a workspace or open Settings.
 private struct OnboardingGetStartedStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

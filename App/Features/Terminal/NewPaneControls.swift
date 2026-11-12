@@ -90,9 +90,9 @@ struct SplitPaneButton: View {
         let reason = model.addPaneUnavailableReason(in: context)
         Menu {
             Button("Split Right") { add(.sideBySide) }
-                .keyboardShortcut("d")
+                .keyboardShortcut(ShortcutCatalog.splitRight.shortcut)
             Button("Split Down") { add(.stacked) }
-                .keyboardShortcut("d", modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.splitDown.shortcut)
             Divider()
             Menu("Split Right With") { agentChoices(.sideBySide) }
             Menu("Split Down With") { agentChoices(.stacked) }

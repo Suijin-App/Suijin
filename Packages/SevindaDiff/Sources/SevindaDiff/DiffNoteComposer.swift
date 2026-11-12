@@ -4,6 +4,9 @@ import SwiftUI
 /// The editor for a new note (or an edited one): a growing text field with Cancel and Save.
 /// Return inserts a line break; ⌘Return saves and Escape cancels.
 public struct DiffNoteComposer: View {
+    /// Saves the note; the app's shortcut list shows this same value.
+    public static let saveShortcut = KeyboardShortcut(.return, modifiers: .command)
+
     private let title: String
     @Binding private var text: String
     private let saveTitle: String
@@ -46,7 +49,7 @@ public struct DiffNoteComposer: View {
                        action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 Button(saveTitle) { onSave(trimmed) }
-                    .keyboardShortcut(.return, modifiers: .command)
+                    .keyboardShortcut(Self.saveShortcut)
                     .glassProminentButtonStyle()
                     .disabled(trimmed.isEmpty)
             }

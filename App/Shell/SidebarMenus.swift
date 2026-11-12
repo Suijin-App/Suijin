@@ -96,21 +96,21 @@ struct PaneMenuItems: View {
     var body: some View {
         let canAdd = model.canAddPane(beside: session)
         Button("Split Right") { model.split(beside: session, edge: .right) }
-            .keyboardShortcut("d")
+            .keyboardShortcut(ShortcutCatalog.splitRight.shortcut)
             .disabled(!canAdd)
         Button("Split Down") { model.split(beside: session, edge: .bottom) }
-            .keyboardShortcut("d", modifiers: [.command, .shift])
+            .keyboardShortcut(ShortcutCatalog.splitDown.shortcut)
             .disabled(!canAdd)
         if let layout {
             Divider()
             Button(layout.zoomed == session ? "Show All Panes" : "Zoom Pane") { model.toggleZoom(session) }
-                .keyboardShortcut(.return, modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.zoomPane.shortcut)
             Button("Equalize Panes") { model.equalizePanes(layout.id) }
-                .keyboardShortcut("=", modifiers: [.command, .control])
+                .keyboardShortcut(ShortcutCatalog.equalizePanes.shortcut)
             Button("Move Pane to New Tab") { model.movePaneToNewTab(session) }
             Divider()
             Button("Close Pane", role: .destructive) { model.requestClose(session) }
-                .keyboardShortcut("w")
+                .keyboardShortcut(ShortcutCatalog.closeTab.shortcut)
         }
     }
 }

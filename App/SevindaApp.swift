@@ -67,7 +67,7 @@ struct SevindaApp: App {
         Window("Design Gallery", id: "design-gallery") {
             DesignGalleryView()
         }
-        .keyboardShortcut("g", modifiers: [.command, .option, .shift])
+        .keyboardShortcut(ShortcutCatalog.designGallery.shortcut)
         .defaultSize(width: 860, height: 640)
     }
 }
@@ -115,23 +115,16 @@ final class SevindaAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificat
 }
 
 /// Menu commands: ⌘N new worktree, ⌘T new session, ⌘W close tab (or pane), ⇧⌘O add workspace, pane commands in the
-/// Session menu. ⌘, shows or hides Settings over the main window; Help › Welcome to Sevinda opens the welcome tour.
+/// Session menu. ⌘, shows or hides Settings over the main window; Help › Welcome to Sevinda opens the welcome tour and
+/// Help › Keyboard Shortcuts the Shortcuts settings. Every shortcut comes from `ShortcutCatalog`.
 struct SevindaCommands: Commands {
     let model: AppModel
 
     var body: some Commands {
         // Settings open over the main window rather than in a window of their own.
         CommandGroup(replacing: .appSettings) {
-            Button("Settings…") {
-                withAnimation(.easeOut(duration: 0.18)) {
-                    // Settings replace the welcome tour rather than opening under it.
-                    if model.onboarding != nil { model.finishOnboarding() }
-                    model.settingsPage = model.settingsPage == nil ? .general : nil
-                }
-                NSApp.activate()
-                model.mainWindow?.makeKeyAndOrderFront(nil)
-            }
-            .keyboardShortcut(",", modifiers: .command)
+            Button("Settings…") { showSettings(model.settingsPage == nil ? .general : nil) }
+                .keyboardShortcut(ShortcutCatalog.settings.shortcut)
         }
         CommandGroup(replacing: .newItem) {
             Button("New Worktree…") {
@@ -139,14 +132,14 @@ struct SevindaCommands: Commands {
                     model.newWorktreeWorkspaceID = id
                 }
             }
-            .keyboardShortcut("n")
+            .keyboardShortcut(ShortcutCatalog.newWorktree.shortcut)
             Button("New Session") { if let context = mainContext { model.newTab(in: context) } }
-                .keyboardShortcut("t")
+                .keyboardShortcut(ShortcutCatalog.newSession.shortcut)
             Button("New Shell") { if let context = mainContext { model.newTab(in: context, agent: .shell) } }
-                .keyboardShortcut("t", modifiers: [.command, .option])
+                .keyboardShortcut(ShortcutCatalog.newShell.shortcut)
             Divider()
             Button("Add Workspace…") { AddWorkspaceFlow.run(model: model) }
-                .keyboardShortcut("o", modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.addWorkspace.shortcut)
         }
         CommandGroup(replacing: .saveItem) {
             // ⌘W acts on sessions only in the main window (closing the welcome tour or Settings first when they
@@ -163,7 +156,7 @@ struct SevindaCommands: Commands {
                 }
                 model.performCloseCommand()
             }
-            .keyboardShortcut("w")
+            .keyboardShortcut(ShortcutCatalog.closeTab.shortcut)
         }
         CommandGroup(replacing: .help) {
             Button("Welcome to Sevinda") {
@@ -171,39 +164,41 @@ struct SevindaCommands: Commands {
                 NSApp.activate()
                 model.mainWindow?.makeKeyAndOrderFront(nil)
             }
+            Button("Keyboard Shortcuts") { showSettings(.shortcuts) }
+                .keyboardShortcut(ShortcutCatalog.keyboardShortcuts.shortcut)
         }
         CommandMenu("Session") {
             Button("Split Right") { if let context = mainContext { model.split(in: context, axis: .sideBySide) } }
-                .keyboardShortcut("d")
+                .keyboardShortcut(ShortcutCatalog.splitRight.shortcut)
             Button("Split Down") { if let context = mainContext { model.split(in: context, axis: .stacked) } }
-                .keyboardShortcut("d", modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.splitDown.shortcut)
             Divider()
             Button(isZoomed ? "Show All Panes" : "Zoom Pane") { if let pane = focusedPane { model.toggleZoom(pane) } }
-                .keyboardShortcut(.return, modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.zoomPane.shortcut)
                 .disabled(!isSplitTab)
             Button("Equalize Panes") { if let pane = focusedPane, let layout = model.layout(containing: pane) { model.equalizePanes(layout.id) } }
-                .keyboardShortcut("=", modifiers: [.command, .control])
+                .keyboardShortcut(ShortcutCatalog.equalizePanes.shortcut)
                 .disabled(!isSplitTab)
             Menu("Focus Pane") {
-                focusItem("Left", edge: .left, key: .leftArrow)
-                focusItem("Right", edge: .right, key: .rightArrow)
-                focusItem("Above", edge: .top, key: .upArrow)
-                focusItem("Below", edge: .bottom, key: .downArrow)
+                focusItem("Left", edge: .left)
+                focusItem("Right", edge: .right)
+                focusItem("Above", edge: .top)
+                focusItem("Below", edge: .bottom)
             }
             .disabled(!isSplitTab)
             // Swaps the focused pane with its neighbor; the same as ⌃⌥⌘ arrows typed in a terminal.
             Menu("Move Pane") {
-                moveItem("Left", edge: .left, key: .leftArrow)
-                moveItem("Right", edge: .right, key: .rightArrow)
-                moveItem("Up", edge: .top, key: .upArrow)
-                moveItem("Down", edge: .bottom, key: .downArrow)
+                moveItem("Left", edge: .left)
+                moveItem("Right", edge: .right)
+                moveItem("Up", edge: .top)
+                moveItem("Down", edge: .bottom)
             }
             .disabled(!isSplitTab || isZoomed)
             Divider()
             Button("Previous Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: -1) } }
-                .keyboardShortcut("[", modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.previousTab.shortcut)
             Button("Next Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: 1) } }
-                .keyboardShortcut("]", modifiers: [.command, .shift])
+                .keyboardShortcut(ShortcutCatalog.nextTab.shortcut)
         }
     }
 
@@ -225,13 +220,24 @@ struct SevindaCommands: Commands {
         return model.layout(containing: pane)?.zoomed != nil
     }
 
-    private func focusItem(_ title: LocalizedStringKey, edge: PaneEdge, key: KeyEquivalent) -> some View {
+    private func focusItem(_ title: LocalizedStringKey, edge: PaneEdge) -> some View {
         Button(title) { if let context = mainContext { model.focusNeighborPane(in: context, toward: edge) } }
-            .keyboardShortcut(key, modifiers: [.command, .option])
+            .keyboardShortcut(ShortcutCatalog.focusPane(edge).shortcut)
     }
 
-    private func moveItem(_ title: LocalizedStringKey, edge: PaneEdge, key: KeyEquivalent) -> some View {
+    private func moveItem(_ title: LocalizedStringKey, edge: PaneEdge) -> some View {
         Button(title) { if let context = mainContext { model.moveFocusedPane(in: context, toward: edge) } }
-            .keyboardShortcut(key, modifiers: [.command, .option, .control])
+            .keyboardShortcut(ShortcutCatalog.movePane(edge).shortcut)
+    }
+
+    /// Shows Settings on `page` over the main window (`nil` hides them). Settings replace the welcome tour rather
+    /// than opening under it.
+    private func showSettings(_ page: SettingsPage?) {
+        withAnimation(.easeOut(duration: 0.18)) {
+            if model.onboarding != nil { model.finishOnboarding() }
+            model.settingsPage = page
+        }
+        NSApp.activate()
+        model.mainWindow?.makeKeyAndOrderFront(nil)
     }
 }

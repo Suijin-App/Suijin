@@ -18,7 +18,7 @@ struct SettingsOverlay: View {
                     }
                     .glassButtonStyle()
                     .controlSize(.large)
-                    .keyboardShortcut(.cancelAction)
+                    .keyboardShortcut(ShortcutCatalog.closeSettings.shortcut)
                     .help(Text("Back to Sevinda (Esc)"))
                     .accessibilityIdentifier("settings.back")
                     Spacer()

@@ -176,12 +176,12 @@ struct FileViewer: View {
         case .image:
             HStack(spacing: 2) {
                 Button { zoom.zoom(by: 1 / 1.25) } label: { Label("Zoom Out", systemImage: "minus.magnifyingglass") }
-                    .keyboardShortcut("-", modifiers: .command)
+                    .keyboardShortcut(ShortcutCatalog.viewerZoomOut.shortcut)
                 Button { zoom.fit() } label: { Label("Fit", systemImage: "arrow.down.right.and.arrow.up.left") }
-                    .keyboardShortcut("0", modifiers: .command)
+                    .keyboardShortcut(ShortcutCatalog.viewerFit.shortcut)
                 Button { zoom.actualSize() } label: { Label("Actual Size", systemImage: "1.magnifyingglass") }
                 Button { zoom.zoom(by: 1.25) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
-                    .keyboardShortcut("=", modifiers: .command)
+                    .keyboardShortcut(ShortcutCatalog.viewerZoomIn.shortcut)
             }
         default:
             EmptyView()

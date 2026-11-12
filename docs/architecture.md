@@ -98,6 +98,15 @@ beside it, the middle swaps the two), and dropping on the title-bar tab group mo
 `PaneRearrangeAnimation` slides each pane's layer from its old frame to its new one. The terminal views move into
 their new containers and are never recreated.
 
+## Keyboard shortcuts
+
+`ShortcutCatalog` (`App/Features/Settings/ShortcutCatalog.swift`) defines every keyboard shortcut once; menu commands
+and buttons bind `ShortcutCatalog.<entry>.shortcut`, and Settings › Shortcuts (Help › Keyboard Shortcuts, ⌘/) lists
+the same entries with the mouse gestures. While a terminal has focus, `TerminalKeyRouter` (SevindaTerminal) handles
+the tab, pane and edit shortcuts itself. `ShortcutCatalogTests` fails when a `.keyboardShortcut(…)` in the app does not
+come from the catalog (sheets' standard Return and Esc buttons aside), when a terminal route has no catalog entry with
+the same keys, or when a catalog shortcut would reach another route.
+
 ## Terminal output flow
 
 Output travels PTY → helper → XPC → `HostedTerminalEngine` → `TerminalSession` → SwiftTerm. The app feeds SwiftTerm

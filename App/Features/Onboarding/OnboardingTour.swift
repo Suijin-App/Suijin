@@ -201,19 +201,6 @@ enum OnboardingLaunchPolicy {
     }
 }
 
-/// Spoken names of the symbols in a shortcut, so VoiceOver reads "Shift Command O" instead of the glyphs.
-enum ShortcutSpeech {
-    static func label(for shortcut: String) -> String {
-        let names: [Character: String] = [
-            "⌘": String(localized: "Command"), "⇧": String(localized: "Shift"), "⌥": String(localized: "Option"),
-            "⌃": String(localized: "Control"), "↩": String(localized: "Return"), "←": String(localized: "Left Arrow"),
-            "→": String(localized: "Right Arrow"), "↑": String(localized: "Up Arrow"), "↓": String(localized: "Down Arrow"),
-            ",": String(localized: "Comma"),
-        ]
-        return shortcut.map { names[$0] ?? String($0) }.joined(separator: " ")
-    }
-}
-
 extension AppModel {
     var isOnboardingCompleted: Bool { setting(.onboardingCompleted) == "true" }
 

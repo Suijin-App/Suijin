@@ -56,7 +56,7 @@ struct CommitComposer: View {
                     if state.isCommitting { ProgressView().controlSize(.small) } else { Text("Commit") }
                 }
                 .glassProminentButtonStyle()
-                .keyboardShortcut(.return, modifiers: .command)
+                .keyboardShortcut(ShortcutCatalog.commit.shortcut)
                 .disabled(!state.canCommit)
                 .help(commitHelp)
             }

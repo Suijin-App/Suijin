@@ -93,4 +93,26 @@ struct ScreenshotTests {
             try render("design-gallery", size: CGSize(width: 860, height: 640), dark: dark) { DesignGalleryView() }
         }
     }
+
+    @Test func shortcutsSettings() async throws {
+        let model = try await sampleModel(empty: true)
+        let sizes = [("narrow", CGSize(width: 1000, height: 640)), ("wide", CGSize(width: 1400, height: 880))]
+        for (label, size) in sizes {
+            for dark in [false, true] {
+                try render("settings-shortcuts-\(label)", size: size, dark: dark) {
+                    SettingsOverlay(page: .shortcuts).environment(model)
+                }
+                for (state, query) in [("search", "split"), ("empty", "qqqq")] {
+                    try render("settings-shortcuts-\(state)-\(label)", size: size, dark: dark) {
+                        ShortcutsSettings(initialQuery: query)
+                            .scrollContentBackground(.hidden)
+                            .frame(maxWidth: 760)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.top, 70)
+                            .background { OverlayBackdrop() }
+                    }
+                }
+            }
+        }
+    }
 }

@@ -118,6 +118,24 @@ Agent launches go through a plain login shell (`-l -c`), with the `PATH` that `A
 from an interactive login shell, passed through `/usr/bin/env` after the profile ran together with the account's
 environment changes. Interactive shells get the full integration (`ZDOTDIR` wrapper, bash rcfile).
 
+## Moving an install from the old name
+
+The app was called Mercury before it became Sevinda. `App/Migration/LegacyMercuryMigration.swift` moves such an
+install once, at launch, and only on the default data root (`SEVINDA_DATA_ROOT` turns it off):
+
+1. Before the database opens: if the old folder has a database and the new one has none, the old app is asked to
+   quit, the old helper's running sessions of that data root are ended (SIGHUP, then SIGKILL), the old folder is
+   copied to a timestamped backup next to it (an existing backup is never overwritten), and the folder is moved. When
+   both folders have a database nothing is touched.
+2. After the store opens (the database files were renamed just before): files the old app generated are dropped,
+   defaults are copied from the old domain (which is kept; its values win), Codex home markers and rule copies, the
+   user-level Claude skill (only if the user had turned it on), stored account paths and the terminal theme follow
+   the new names, and open session records are marked ended. A marker file that travels with the move makes this half run
+   again after an interruption. A one-time alert then explains what happened.
+
+Managed Claude accounts must sign in again: Claude keys its Keychain login by the account's folder path, which moved.
+The old helper's Login Items entry can only be removed by the user (System Settings → General → Login Items).
+
 ## Tests
 
 - `swift test --package-path Packages/<name>` for each package.

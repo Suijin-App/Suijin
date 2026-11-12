@@ -30,7 +30,8 @@ extension SessionContext {
     }
 }
 
-/// An error shown to the user in an alert. The message is already localized.
+/// An alert shown to the user: an error, or a one-time notice such as the move of an install from the old app name.
+/// The message is already localized.
 struct PresentedError: Identifiable {
     let id = UUID()
     let title: String
@@ -120,9 +121,27 @@ final class AppModel {
     /// The live app model on the user's data root.
     static func live() -> AppModel {
         let root = SevindaPaths.dataRoot
+        // An install from before the rename moves to the new folder first (never with SEVINDA_DATA_ROOT).
+        let migration = LegacyMercuryMigration.live().flatMap { $0.root.standardizedFileURL == root.standardizedFileURL ? $0 : nil }
+        if let migration {
+            if case .blocked(let message) = migration.moveDataIfNeeded() {
+                // No Sevinda database may be created this launch, so the next launch can still move the old one.
+                let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: root)
+                model.presentedError = LegacyMercuryMigration.blockedAlert(message)
+                return model
+            }
+            migration.renameDatabaseIfPending()
+        }
         do {
             let store = try SevindaStore(url: SevindaPaths.database(in: root))
-            return AppModel(store: store, dataRoot: root)
+            let model = AppModel(store: store, dataRoot: root)
+            if let migration, let report = migration.finishPending(
+                store: store, defaults: .standard,
+                legacyDefaults: UserDefaults.standard.persistentDomain(forName: LegacyMercuryMigration.legacyDefaultsDomain)
+            ) {
+                model.presentedError = LegacyMercuryMigration.notice(for: report)
+            }
+            return model
         } catch {
             // The database could not be opened (disk full, permissions). Run on an in-memory store and tell the user.
             let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: root)

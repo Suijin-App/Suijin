@@ -92,18 +92,3 @@ struct PaneDragHandle<Content: View>: View {
             .accessibilityHint(Text("Focuses the pane"))
     }
 }
-
-/// Context-menu items of a pane: zoom, equalize, take it out to a tab of its own, close it.
-struct PaneMenuItems: View {
-    @Environment(AppModel.self) private var model
-    let session: UUID
-    let layout: PaneLayout
-
-    var body: some View {
-        Button(layout.zoomed == session ? "Show All Panes" : "Zoom Pane") { model.toggleZoom(session) }
-        Button("Equalize Panes") { model.equalizePanes(layout.id) }
-        Button("Move Pane to New Tab") { model.movePaneToNewTab(session) }
-        Divider()
-        Button("Close Pane", role: .destructive) { model.requestClose(session) }
-    }
-}

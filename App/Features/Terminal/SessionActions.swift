@@ -85,9 +85,10 @@ extension AppModel {
     }
 
     /// Adds a pane beside the selected tab's focused pane: on its right (`.sideBySide`, ⌘D) or below it (`.stacked`,
-    /// ⇧⌘D), running the same agent as that pane. Nothing when no session tab is selected or the tab is full.
+    /// ⇧⌘D), running what Settings → Agents → New pane runs says. Nothing when no session tab is selected or the tab
+    /// is full.
     func split(in context: SessionContext, axis: PaneAxis) {
-        Task { await newPane(in: context, edge: axis == .sideBySide ? .right : .bottom) }
+        Task { await addPane(in: context, axis: axis) }
     }
 
     func selectAdjacentTab(in context: SessionContext, offset: Int) {

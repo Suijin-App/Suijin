@@ -72,11 +72,46 @@ struct SessionMenuItems: View {
         }
         Button("Copy Working Directory") { copy(session.cwd) }
         Divider()
+        let layout = model.layout(containing: session.id)
+        PaneMenuItems(session: session.id, layout: layout)
+        if layout == nil { Divider() }
         let others = model.tabSessions(in: context).filter { $0.id != session.id }
         if !others.isEmpty {
             Button("Close Other Sessions (\(others.count))") { Task { await model.closeSessions(others.map(\.id)) } }
         }
-        Button("Close Tab", role: .destructive) { model.requestClose(session.id) }
+        // A split tab closes with all its panes, as its close button does; Close Pane above closes this one.
+        Button("Close Tab", role: .destructive) { model.requestCloseTab(model.tab(of: session.id)) }
+    }
+}
+
+/// Context-menu items of a pane (its header) or of a session that can become one (its tab, its sidebar row): split
+/// beside it, then, in a split tab, zoom, equalize, take it out to a tab of its own and close it. The shortcuts shown
+/// are those of the Session menu commands, which act on the focused pane.
+struct PaneMenuItems: View {
+    @Environment(AppModel.self) private var model
+    let session: UUID
+    /// The split tab the session is a pane of; nil for a plain tab.
+    let layout: PaneLayout?
+
+    var body: some View {
+        let canAdd = model.canAddPane(beside: session)
+        Button("Split Right") { model.split(beside: session, edge: .right) }
+            .keyboardShortcut("d")
+            .disabled(!canAdd)
+        Button("Split Down") { model.split(beside: session, edge: .bottom) }
+            .keyboardShortcut("d", modifiers: [.command, .shift])
+            .disabled(!canAdd)
+        if let layout {
+            Divider()
+            Button(layout.zoomed == session ? "Show All Panes" : "Zoom Pane") { model.toggleZoom(session) }
+                .keyboardShortcut(.return, modifiers: [.command, .shift])
+            Button("Equalize Panes") { model.equalizePanes(layout.id) }
+                .keyboardShortcut("=", modifiers: [.command, .control])
+            Button("Move Pane to New Tab") { model.movePaneToNewTab(session) }
+            Divider()
+            Button("Close Pane", role: .destructive) { model.requestClose(session) }
+                .keyboardShortcut("w")
+        }
     }
 }
 

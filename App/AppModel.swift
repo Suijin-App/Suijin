@@ -457,6 +457,8 @@ enum SettingKey: String, CaseIterable {
     case defaultCodexAccount = "accounts.codex.default"
     case worktreeRoot = "worktrees.root"
     case defaultAgent = "agents.default"
+    /// `NewPaneAgent` raw value; missing means the same agent as the focused pane.
+    case newPaneAgent = "panes.defaultAgent"
     case keepSessionsOnQuit = "terminal.keepSessionsOnQuit"
     case terminalTheme = "terminal.theme"
     case terminalFontFamily = "terminal.fontFamily"

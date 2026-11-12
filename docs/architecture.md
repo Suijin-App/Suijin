@@ -87,6 +87,8 @@ normalized. The app keeps one layout per split tab (`App/Features/Terminal/PaneL
 changes them) and stores it as JSON in `pane_layout` (migration `v6_pane_layout`). Layouts come back at launch from the
 session records alone, so a pane whose process ended shows its ended view in its cell; panes whose session is gone
 are dropped, and a layout left with one pane becomes a plain tab again. The tab order stores split tabs by layout id.
+A new pane (⌘D, ⇧⌘D, the title-bar split button, context menus) runs the agent of the `panes.defaultAgent` setting, by
+default the focused pane's agent and account; the split button's menu can pick another for one pane.
 
 ## Terminal output flow
 

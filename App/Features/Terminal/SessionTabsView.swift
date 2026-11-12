@@ -119,11 +119,11 @@ struct ToolbarTabBar: View {
         return max(240, min(wanted, model.detailWidth - reservedToolbarWidth))
     }
 
-    /// Room the buttons beside the tabs take: the agent menu, new session and the inspector toggle, each in its own
-    /// glass, plus commit, push, pull request and new worktree in a git context.
+    /// Room the buttons beside the tabs take: the agent menu, new session, split pane and the inspector toggle, each
+    /// in its own glass, plus commit, push, pull request and new worktree in a git context.
     private var reservedToolbarWidth: CGFloat {
         let isGit = model.workspaceID(of: context).flatMap(model.workspace)?.kind == .git
-        return isGit ? 420 : 240
+        return isGit ? 500 : 320
     }
 
     @ViewBuilder

@@ -108,6 +108,16 @@ struct AgentSettings: View {
                     Text("Codex").tag(AgentKind.codex)
                     Text("Shell").tag(AgentKind.shell)
                 }
+                Picker("New pane runs", selection: Binding(
+                    get: { model.newPaneAgent },
+                    set: { model.setNewPaneAgent($0) }
+                )) {
+                    Text("Same as focused pane").tag(NewPaneAgent.sameAsFocused)
+                    Divider()
+                    Text("Shell").tag(NewPaneAgent.shell)
+                    Text("Claude Code").tag(NewPaneAgent.claude)
+                    Text("Codex").tag(NewPaneAgent.codex)
+                }
                 LabeledContent("Folder for new worktrees") {
                     HStack(spacing: MercurySpacing.s) {
                         Text(verbatim: model.setting(.worktreeRoot).map { ($0 as NSString).abbreviatingWithTildeInPath }
@@ -123,7 +133,7 @@ struct AgentSettings: View {
             } header: {
                 Text("New Sessions")
             } footer: {
-                Text("New tabs start the default agent. New worktrees are created in the chosen folder, or next to their repository.")
+                Text("New tabs start the default agent. New panes (⌘D, ⇧⌘D, the split button) run the chosen agent; the split button's menu can pick another each time. New worktrees are created in the chosen folder, or next to their repository.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {

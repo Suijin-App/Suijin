@@ -1,8 +1,8 @@
 import MercuryCore
 import SwiftUI
 
-/// Window toolbar: the context's session tabs in the middle (Safari-style compact tabs), then new session, new
-/// worktree (git workspaces) and the inspector toggle.
+/// Window toolbar: the context's session tabs in the middle (Safari-style compact tabs), then new session, split
+/// pane, new worktree (git workspaces) and the inspector toggle.
 struct MainToolbar: ToolbarContent {
     @Environment(AppModel.self) private var model
     @Binding var isInspectorShown: Bool
@@ -31,6 +31,12 @@ struct MainToolbar: ToolbarContent {
             }
             ToolbarItem(placement: .primaryAction) {
                 NewSessionButton(context: context)
+            }
+            if #available(macOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                SplitPaneButton(context: context)
             }
             if #available(macOS 26.0, *) {
                 ToolbarSpacer(.fixed, placement: .primaryAction)

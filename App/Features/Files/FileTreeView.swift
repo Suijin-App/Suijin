@@ -2,49 +2,6 @@ import AppKit
 import MercuryUI
 import SwiftUI
 
-/// A file or folder of a context's directory. Folders list their contents the first time they are asked, so a large
-/// repository costs one directory read per folder the user opens.
-/// Used only by the views on the main thread.
-final class FileNode: Identifiable {
-    let url: URL
-    let isDirectory: Bool
-    var id: URL { url }
-    var name: String { url.lastPathComponent }
-    private var loaded: [FileNode]?
-
-    init(url: URL, isDirectory: Bool) {
-        self.url = url
-        self.isDirectory = isDirectory
-    }
-
-    /// Folder contents, folders first then by name; nil for a file (no disclosure triangle).
-    var children: [FileNode]? {
-        guard isDirectory else { return nil }
-        if let loaded { return loaded }
-        let entries = (try? FileManager.default.contentsOfDirectory(
-            at: url, includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey], options: []
-        )) ?? []
-        let nodes = entries
-            .filter { !Self.hiddenNames.contains($0.lastPathComponent) }
-            .map { entry in
-                let values = try? entry.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
-                // Packages (an `.app`, an `.xcodeproj`) open as files, as in Finder. The child's path is built on this
-                // folder's own path: the listing may spell it differently (`/private/tmp` for `/tmp`), and revealing a
-                // path compares strings.
-                return FileNode(url: url.appendingPathComponent(entry.lastPathComponent),
-                                isDirectory: values?.isDirectory == true && values?.isPackage != true)
-            }
-            .sorted { lhs, rhs in
-                lhs.isDirectory != rhs.isDirectory ? lhs.isDirectory : lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-            }
-        loaded = nodes
-        return nodes
-    }
-
-    /// Never useful to browse.
-    static let hiddenNames: Set<String> = [".git", ".DS_Store"]
-}
-
 /// One visible row of the file tree: a node and how deep it sits.
 private struct FileRow: Identifiable {
     let node: FileNode
@@ -54,24 +11,25 @@ private struct FileRow: Identifiable {
 
 /// The inspector's file browser: the context's folder as a tree of rows with their own fold chevrons (a flat list,
 /// so folders can be opened from code to reveal a path, which `List(children:)` cannot do). Choosing a file opens it
-/// in a viewer tab; choosing a folder folds or unfolds it.
+/// in a viewer tab; choosing a folder folds or unfolds it. The tree follows changes on disk while it is shown.
 struct FileTreeView: View {
     @Environment(AppModel.self) private var model
     let context: SessionContext
-    @State private var roots: [FileNode] = []
+    @State private var tree: FileTree?
     @State private var filter = ""
     @State private var selection: URL?
     /// Set when a reveal selects a row, so that selection does not also fold or open what was revealed.
     @State private var selectionFromReveal: URL?
 
     private var expanded: Set<String> { model.expandedFolders(in: context) }
+    private var roots: [FileNode] { tree?.roots ?? [] }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: MercurySpacing.s) {
                 TextField("Filter", text: $filter, prompt: Text("Filter files"))
                     .textFieldStyle(.roundedBorder)
-                Button { reload() } label: { Image(systemName: "arrow.clockwise") }
+                Button { tree?.reloadAll() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.borderless)
                     .help(Text("Reload the folder"))
                     .accessibilityLabel(Text("Reload"))
@@ -96,7 +54,10 @@ struct FileTreeView: View {
                     reveal(path, reader: reader)
                 }
                 .task(id: context) {
-                    reload()
+                    guard let directory = model.directory(of: context) else { tree = nil; return }
+                    let tree = FileTree(directory: directory) { [model, context] in model.expandedFolders(in: context) }
+                    self.tree = tree
+                    tree.startWatching()
                     // A folder link opens the inspector and is revealed once the tree exists; otherwise opening the
                     // inspector while a file is open shows that file.
                     if let pending = model.fileTreeReveal?.path {
@@ -105,15 +66,25 @@ struct FileTreeView: View {
                     } else if case .file(let path)? = model.currentTab(in: context) {
                         reveal(path, reader: reader)
                     }
+                    // Watch until the tree goes away or shows another context.
+                    while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }
+                    tree.stopWatching()
                 }
             }
             .overlay {
-                if roots.isEmpty {
+                if let tree, !tree.rootExists {
+                    ContentUnavailableView("Folder Not Found", systemImage: "questionmark.folder",
+                                           description: Text(verbatim: tree.root.url.path))
+                } else if roots.isEmpty {
                     ContentUnavailableView("Empty Folder", systemImage: "folder")
                 } else if !filter.isEmpty, matches.isEmpty {
                     ContentUnavailableView.search(text: filter)
                 }
             }
+        }
+        .onChange(of: tree?.revision) {
+            // A selected file deleted on disk just disappears.
+            if let selection, node(at: selection.path) == nil { self.selection = nil }
         }
         .onChange(of: selection) { _, url in
             if let url, url == selectionFromReveal { selectionFromReveal = nil; return }
@@ -220,11 +191,6 @@ struct FileTreeView: View {
         DispatchQueue.main.async {
             withAnimation(.snappy) { reader.scrollTo(target, anchor: .center) }
         }
-    }
-
-    private func reload() {
-        guard let directory = model.directory(of: context) else { roots = []; return }
-        roots = FileNode(url: directory.standardizedFileURL, isDirectory: true).children ?? []
     }
 
     /// The node at `path`, found by walking down from the roots (folders keep their loaded children).

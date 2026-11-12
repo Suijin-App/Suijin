@@ -51,7 +51,7 @@ private struct ChangesView: View {
     @State private var diffError: String?
     @State private var isLoading = true
     @State private var error: String?
-    @State private var watcher: DirectoryWatcher?
+    @State private var watcher: FileSystemWatcher?
     @State private var book: DiffNotesBook?
     @State private var showsUnsentOnly = false
     @State private var diffWidth: CGFloat = 0
@@ -156,9 +156,9 @@ private struct ChangesView: View {
             if let selection, !listedSelections.contains(selection) { self.selection = listedSelections.first }
         }
         .onAppear {
-            // The stream holds an unretained pointer to its watcher: stop an earlier one before replacing it.
             watcher?.stop()
-            watcher = DirectoryWatcher(directory: directory) {
+            // Any change matters here, including commits and branch moves under `.git`.
+            watcher = FileSystemWatcher(root: directory) { _ in
                 Task { await reloadFiles(); await reloadDiff() }
             }
         }

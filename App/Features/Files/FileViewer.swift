@@ -7,11 +7,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// A file opened from a terminal link: Markdown rendered natively, images shown, other text in a monospaced read-only
-/// view; anything else offers to open in its default app. Reloads when the file changes (agents edit plans as you read).
+/// view; anything else offers to open in its default app. Follows the file on disk (agents edit plans as you read):
+/// it reloads in place when written, and says so when the file is deleted or moved away.
 struct FileViewer: View {
+    @Environment(AppModel.self) private var model
     let path: String
-    @State private var content: Content = .loading
-    @State private var watcher: DirectoryWatcher?
+    let context: SessionContext
+    @State private var file: FileViewerModel
     @State private var code = CodeViewController()
     @State private var zoom = ImageZoomController()
 
@@ -30,7 +32,22 @@ struct FileViewer: View {
     /// Larger files are not loaded whole; they open in their default app instead.
     nonisolated static let maximumTextSize = 2 * 1024 * 1024
 
+    init(path: String, context: SessionContext) {
+        self.path = path
+        self.context = context
+        _file = State(initialValue: FileViewerModel(path: path))
+    }
+
     private var url: URL { URL(fileURLWithPath: path) }
+    private var content: Content { file.content }
+
+    /// The path relative to the context's folder when it lies inside it, else with `~` for the home folder.
+    private var displayPath: String {
+        if let root = model.directory(of: context)?.standardizedFileURL.path, path.hasPrefix(root + "/") {
+            return String(path.dropFirst(root.count + 1))
+        }
+        return (path as NSString).abbreviatingWithTildeInPath
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,7 +80,7 @@ struct FileViewer: View {
                 case .code(let text, let language):
                     CodeTextView(text: text, language: language, controller: code)
                 case .pdf:
-                    PDFDocumentView(url: url)
+                    PDFDocumentView(url: url, revision: file.revision)
                 case .text(let text):
                     ScrollView([.vertical, .horizontal]) {
                         Text(verbatim: text)
@@ -84,22 +101,22 @@ struct FileViewer: View {
                         Button("Open in Default App") { NSWorkspace.shared.open(url) }.glassButtonStyle()
                     }
                 case .missing:
-                    ContentUnavailableView("File Not Found", systemImage: "questionmark.folder",
-                                           description: Text(verbatim: path))
+                    ContentUnavailableView {
+                        Label("File Deleted", systemImage: "doc.questionmark")
+                    } description: {
+                        Text("“\(url.lastPathComponent)” no longer exists at \(displayPath).")
+                    } actions: {
+                        Button("Close Tab") { model.closeFile(path, in: context) }.glassButtonStyle()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .task(id: path) { await load() }
-        .onAppear {
-            watcher?.stop()
-            watcher = DirectoryWatcher(directory: url.deletingLastPathComponent()) {
-                Task { await load() }
-            }
-        }
-        .onDisappear {
-            watcher?.stop()
-            watcher = nil
+        .task(id: path) {
+            await file.start()
+            // Follow the file until the tab closes or another tab is shown.
+            while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }
+            file.stop()
         }
     }
 
@@ -169,11 +186,6 @@ struct FileViewer: View {
         default:
             EmptyView()
         }
-    }
-
-    private func load() async {
-        let url = url
-        content = await Task.detached { Self.read(url) }.value
     }
 
     nonisolated static func read(_ url: URL) -> Content {
@@ -310,6 +322,8 @@ private struct CodeTextView: NSViewRepresentable {
         var task: Task<Void, Never>?
     }
 
+    /// Replacing the text keeps the clip view's origin, so a reload (the file changed on disk) leaves the reader where
+    /// they were.
     private func apply(to textView: NSTextView, coordinator: Coordinator) {
         coordinator.shown = text
         textView.textStorage?.setAttributedString(NSAttributedString(string: text, attributes: [
@@ -439,10 +453,8 @@ final class ImageZoomController {
 
     /// Whole image visible, never enlarged past its own size.
     func fit() {
-        guard let scrollView, let image = (scrollView.documentView as? NSImageView)?.image, image.size.width > 0, image.size.height > 0 else { return }
-        let available = scrollView.contentSize
-        let scale = min(available.width / image.size.width, available.height / image.size.height, 1)
-        scrollView.magnification = max(scale, scrollView.minMagnification)
+        guard let scrollView = scrollView as? CenteringScrollView, let image = (scrollView.documentView as? NSImageView)?.image else { return }
+        scrollView.magnification = scrollView.fitMagnification(for: image.size)
     }
 }
 
@@ -472,11 +484,24 @@ private struct ZoomableImageView: NSViewRepresentable {
         if (scrollView.documentView as? NSImageView)?.image !== image { show(image, in: scrollView) }
     }
 
+    /// Shows `image`, fitted to the pane. A new version of the same file keeps the zoom and position the user chose;
+    /// a fitted image is fitted again (its size may have changed).
     private func show(_ image: NSImage, in scrollView: NSScrollView) {
         guard let imageView = scrollView.documentView as? NSImageView else { return }
+        let keepsZoom = imageView.image.map { old in
+            guard let centering = scrollView as? CenteringScrollView else { return false }
+            return abs(scrollView.magnification - centering.fitMagnification(for: old.size)) > 0.001
+        } ?? false
+        let origin = scrollView.contentView.bounds.origin
         imageView.image = image
         imageView.frame = NSRect(origin: .zero, size: image.size)
-        (scrollView as? CenteringScrollView)?.needsFit = true
+        if keepsZoom {
+            scrollView.contentView.scroll(to: origin)
+            scrollView.reflectScrolledClipView(scrollView.contentView)
+            scrollView.tile()
+        } else {
+            (scrollView as? CenteringScrollView)?.needsFit = true
+        }
         scrollView.needsLayout = true
     }
 }
@@ -486,12 +511,18 @@ private struct ZoomableImageView: NSViewRepresentable {
 private final class CenteringScrollView: OverlayScrollView {
     var needsFit = false
 
+    /// The magnification that shows a whole image of `size`, never enlarged past its own size.
+    func fitMagnification(for size: NSSize) -> CGFloat {
+        guard size.width > 0, size.height > 0 else { return 1 }
+        return max(min(contentSize.width / size.width, contentSize.height / size.height, 1), minMagnification)
+    }
+
     override func layout() {
         super.layout()
         if needsFit, contentSize.width > 1, contentSize.height > 1,
            let image = (documentView as? NSImageView)?.image, image.size.width > 0, image.size.height > 0 {
             needsFit = false
-            magnification = max(min(contentSize.width / image.size.width, contentSize.height / image.size.height, 1), minMagnification)
+            magnification = fitMagnification(for: image.size)
             tile()
         }
     }
@@ -509,19 +540,35 @@ private final class CenteringScrollView: OverlayScrollView {
 }
 
 /// A PDF with the system viewer (scroll, zoom, select, search with ⌘F through the responder chain).
+/// `revision` changes when the file changed on disk; the new document opens on the page that was shown.
 private struct PDFDocumentView: NSViewRepresentable {
     let url: URL
+    let revision: Int
 
     func makeNSView(context: Context) -> PDFView {
         let view = PDFView()
         view.autoScales = true
         view.displayMode = .singlePageContinuous
         view.document = PDFDocument(url: url)
+        context.coordinator.revision = revision
         return view
     }
 
     func updateNSView(_ view: PDFView, context: Context) {
-        if view.document?.documentURL != url { view.document = PDFDocument(url: url) }
+        guard view.document?.documentURL != url || context.coordinator.revision != revision else { return }
+        context.coordinator.revision = revision
+        let pageIndex = view.currentPage.flatMap { view.document?.index(for: $0) }
+        let document = PDFDocument(url: url)
+        view.document = document
+        if let pageIndex, let page = document?.page(at: min(pageIndex, max(0, (document?.pageCount ?? 1) - 1))) {
+            view.go(to: page)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        var revision = 0
     }
 }
 

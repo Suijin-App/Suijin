@@ -23,7 +23,7 @@ struct SessionTabsView: View {
                 case .changes:
                     DiffScreen(context: context)
                 case .file(let path):
-                    FileViewer(path: path).id(path)
+                    FileViewer(path: path, context: context).id(path)
                 case nil:
                     NoSessionView(context: context)
                 }

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.tekmium.mercury.ptyhost</string>
+	<string>com.tekmium.sevinda.ptyhost</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/MercuryPTYHost</string>
+	<string>Contents/MacOS/SevindaPTYHost</string>
 	<key>MachServices</key>
 	<dict>
-		<key>com.tekmium.mercury.ptyhost</key>
+		<key>com.tekmium.sevinda.ptyhost</key>
 		<true/>
 	</dict>
 	<key>AssociatedBundleIdentifiers</key>
 	<array>
-		<string>com.tekmium.mercury</string>
+		<string>com.tekmium.sevinda</string>
 	</array>
 	<key>ProcessType</key>
 	<string>Interactive</string>

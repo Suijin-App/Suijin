@@ -15,9 +15,9 @@ step() { printf "\n\033[1m==> %s\033[0m\n" "$1"; }
 ok()   { printf "    \033[32m✓\033[0m %s\n" "$1"; }
 bad()  { printf "    \033[31m✗\033[0m %s\n" "$1"; FAILED=1; }
 WHAT="${1:-all}"
-LOG_DIR="$(mktemp -d -t mercury-ci)"
+LOG_DIR="$(mktemp -d -t sevinda-ci)"
 
-[ -d Mercury.xcodeproj ] || scripts/bootstrap.sh >/dev/null
+[ -d Sevinda.xcodeproj ] || scripts/bootstrap.sh >/dev/null
 
 if [ "$WHAT" = all ] || [ "$WHAT" = checks ]; then
   step "Code comments (English)"
@@ -43,7 +43,7 @@ fi
 if [ "$WHAT" = all ] || [ "$WHAT" = app ]; then
   step "App build + tests"
   # SwiftTerm ships a build-tool plugin; command-line builds must skip the interactive trust prompt.
-  if xcodebuild -project Mercury.xcodeproj -scheme Mercury -destination 'platform=macOS,arch=arm64' \
+  if xcodebuild -project Sevinda.xcodeproj -scheme Sevinda -destination 'platform=macOS,arch=arm64' \
       -skipPackagePluginValidation -packageAuthorizationProvider netrc -allowProvisioningUpdates test >"$LOG_DIR/app.log" 2>&1; then
     ok "$(grep -aEo 'Test run with [0-9]+ tests? in [0-9]+ suites? passed' "$LOG_DIR/app.log" | tail -1)"
     if grep -E "warning: .*\.swift" "$LOG_DIR/app.log" | grep -qv '/SourcePackages/checkouts/'; then

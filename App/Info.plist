@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mercury</string>
+	<string>Sevinda</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,16 +24,12 @@
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
-	<!-- Sparkle 2 (docs/release-process.md). The feed URL is a placeholder until the Tekmium host is confirmed;
-	     changing it after a release strands every installed copy, so confirm it before the first public build. -->
-	<key>SUFeedURL</key>
-	<string>https://mercury.tekmium.com/appcast.xml</string>
-	<!-- Public EdDSA key printed by `generate_keys --account mercury -p`. Only the public half lives here; the private
-	     key stays in the release Mac's login Keychain. While this is the placeholder the updater stays off and
-	     scripts/release-notarize.sh refuses to ship. -->
+	<!-- Sparkle 2 (docs/release-process.md). There is no update host yet, so the build carries no SUFeedURL and the
+	     updater reports "not configured". Turning updates on means adding SUFeedURL here and the real public EdDSA key
+	     printed by `generate_keys --account sevinda -p`; only the public half lives here, the private key stays in the
+	     release Mac's login Keychain. -->
 	<key>SUPublicEDKey</key>
 	<string>REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY</string>
-	<!-- Checks once a day by default; the user turns it off in Settings → General. -->
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUScheduledCheckInterval</key>
@@ -43,9 +39,9 @@
 	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>com.tekmium.mercury.pane</string>
+			<string>com.tekmium.sevinda.pane</string>
 			<key>UTTypeDescription</key>
-			<string>Mercury Pane</string>
+			<string>Sevinda Pane</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>

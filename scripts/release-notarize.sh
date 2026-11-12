@@ -1,32 +1,29 @@
 #!/bin/bash
-# Produce a release of Mercury outside the Mac App Store (docs/release-process.md):
+# Produce a release of Sevinda outside the Mac App Store (docs/release-process.md):
 #   archive (Release, hardened runtime) → export with Developer ID → check the nested PTY host helper is signed with
 #   Developer ID, hardened runtime and a timestamp (re-sign inside out if not) → verify the app → notarize and staple
-#   the app → DMG (scripts/make-dmg.sh) → notarize and staple the DMG → Gatekeeper checks → Sparkle EdDSA signature
-#   → appcast entry.
+#   the app → DMG (scripts/make-dmg.sh) → notarize and staple the DMG → Gatekeeper checks.
+#
+#   There is no update host yet, so nothing is uploaded, signed for Sparkle or written to an appcast; the app ships
+#   without SUFeedURL and its updater reports "not configured" (docs/release-process.md, "Turning updates on").
 #
 # Usage:
 #   scripts/release-notarize.sh [--dry-run]
 #
 #   --dry-run  build, sign, verify and make the DMG for real, but skip everything that leaves this Mac or reads a
-#              release secret: notarization, stapling, the Sparkle signature. Problems that would stop a real run
-#              (placeholder Sparkle key, missing notary profile) are listed at the end instead of stopping the run.
+#              release secret: notarization and stapling. Problems that would stop a real run (missing tools or
+#              certificate) are listed at the end instead of stopping the run.
 #              Without a Developer ID certificate it signs with Apple Development and says so.
 #
 # Environment (all optional; none of them holds a secret):
-#   MERCURY_NOTARY_PROFILE     notarytool keychain profile name (default: mercury-notary). The owner creates it once
+#   SEVINDA_NOTARY_PROFILE     notarytool keychain profile name (default: sevinda-notary). The owner creates it once
 #                              with `xcrun notarytool store-credentials`; the password stays in the Keychain.
-#   MERCURY_TEAM_ID            Apple team (default: YWSHDN5Y3H, Tekmium Solutions).
-#   MERCURY_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
+#   SEVINDA_TEAM_ID            Apple team (default: YWSHDN5Y3H, Tekmium Solutions).
+#   SEVINDA_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
 #                              the team found in the Keychain).
-#   MERCURY_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).
-#   MERCURY_DOWNLOAD_BASE_URL  where the DMG is published (default: https://mercury.tekmium.com/downloads).
-#   MERCURY_SPARKLE_ACCOUNT    Keychain account of the Sparkle EdDSA key (default: mercury).
-#   SPARKLE_BIN                folder with Sparkle's sign_update (default: the copy resolved by Swift Package
-#                              Manager for this archive).
+#   SEVINDA_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).
 #
-# Nothing here writes or prints a private key or password: notarytool reads its profile and sign_update its key from
-# the login Keychain.
+# Nothing here writes or prints a private key or password: notarytool reads its profile from the login Keychain.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -36,20 +33,15 @@ DRY_RUN=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1; shift ;;
-    -h|--help) sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) printf 'release-notarize: unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
 
-PLACEHOLDER_KEY="REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY"
-NOTARY_PROFILE="${MERCURY_NOTARY_PROFILE:-mercury-notary}"
-TEAM_ID="${MERCURY_TEAM_ID:-YWSHDN5Y3H}"
-DOWNLOAD_BASE="${MERCURY_DOWNLOAD_BASE_URL:-https://mercury.tekmium.com/downloads}"
-SPARKLE_ACCOUNT="${MERCURY_SPARKLE_ACCOUNT:-mercury}"
-# Placeholder host until Tekmium confirms it (docs/release-process.md); must equal SUFeedURL in App/Info.plist.
-FEED_URL="https://mercury.tekmium.com/appcast.xml"
-APP_ID="com.tekmium.mercury"
-HELPER_ID="com.tekmium.mercury.ptyhost"
+NOTARY_PROFILE="${SEVINDA_NOTARY_PROFILE:-sevinda-notary}"
+TEAM_ID="${SEVINDA_TEAM_ID:-YWSHDN5Y3H}"
+APP_ID="com.tekmium.sevinda"
+HELPER_ID="com.tekmium.sevinda.ptyhost"
 
 STEP=0
 BLOCKERS=()
@@ -82,29 +74,20 @@ project_setting() {
 }
 plist_value() { /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null || true; }
 
-# Accepts a Sparkle public EdDSA key: base64 of exactly 32 bytes.
-is_public_key() {
-  [ -n "$1" ] && [ "$1" != "$PLACEHOLDER_KEY" ] || return 1
-  local bytes
-  bytes="$(printf '%s' "$1" | base64 -D 2>/dev/null | wc -c | tr -d ' ')" || return 1
-  [ "$bytes" = 32 ]
-}
-
 VERSION="$(project_setting MARKETING_VERSION)"
 BUILD_NUMBER="$(project_setting CURRENT_PROJECT_VERSION)"
 [ -n "$VERSION" ] && [ -n "$BUILD_NUMBER" ] || die "cannot read MARKETING_VERSION / CURRENT_PROJECT_VERSION from project.yml"
-OUT="${MERCURY_RELEASE_DIR:-$ROOT/build/release/$VERSION}"
-ARCHIVE="$OUT/Mercury.xcarchive"
+OUT="${SEVINDA_RELEASE_DIR:-$ROOT/build/release/$VERSION}"
+ARCHIVE="$OUT/Sevinda.xcarchive"
 EXPORT="$OUT/export"
-APP="$EXPORT/Mercury.app"
-HELPER="$APP/Contents/MacOS/MercuryPTYHost"
+APP="$EXPORT/Sevinda.app"
+HELPER="$APP/Contents/MacOS/SevindaPTYHost"
 DERIVED="$OUT/DerivedData"
-DMG="$OUT/Mercury-$VERSION.dmg"
-APP_ZIP="$OUT/Mercury-$VERSION-notarize.zip"
-APPCAST_ITEM="$OUT/appcast-item.xml"
+DMG="$OUT/Sevinda-$VERSION.dmg"
+APP_ZIP="$OUT/Sevinda-$VERSION-notarize.zip"
 EXPORT_OPTIONS="$OUT/ExportOptions.plist"
 
-printf 'Mercury release %s (%s)%s\n' "$VERSION" "$BUILD_NUMBER" \
+printf 'Sevinda release %s (%s)%s\n' "$VERSION" "$BUILD_NUMBER" \
   "$([ "$DRY_RUN" = 1 ] && echo ' — DRY RUN: builds and signs locally, nothing is notarized or published')"
 note "output:          $OUT"
 note "notary profile:  $NOTARY_PROFILE"
@@ -118,20 +101,15 @@ for tool in notarytool stapler; do
   xcrun --find "$tool" >/dev/null 2>&1 || block "missing tool: xcrun $tool"
 done
 note "tools found"
-SOURCE_KEY="$(plist_value App/Info.plist SUPublicEDKey)"
-if is_public_key "$SOURCE_KEY"; then
-  note "App/Info.plist carries a Sparkle public key"
-else
-  block "SUPublicEDKey in App/Info.plist is unset or still the placeholder; paste the key printed by \`generate_keys --account $SPARKLE_ACCOUNT -p\`"
-fi
-[ "$(plist_value App/Info.plist SUFeedURL)" = "$FEED_URL" ] || block "SUFeedURL in App/Info.plist is not $FEED_URL"
+# Updates stay off until there is an update host: the app must not point Sparkle anywhere yet.
+[ -z "$(plist_value App/Info.plist SUFeedURL)" ] || block "App/Info.plist has a SUFeedURL; updates are not set up for Sevinda yet (docs/release-process.md)"
 
 # Lists certificate names only; private keys never leave the Keychain.
 IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 DEVELOPER_ID="$(sed -n "s/.*\"\(Developer ID Application: .*($TEAM_ID)\)\"/\1/p" <<<"$IDENTITIES" | head -1)"
 EXPORT_METHOD="developer-id"
-if [ -n "${MERCURY_SIGNING_IDENTITY:-}" ]; then
-  IDENTITY="$MERCURY_SIGNING_IDENTITY"
+if [ -n "${SEVINDA_SIGNING_IDENTITY:-}" ]; then
+  IDENTITY="$SEVINDA_SIGNING_IDENTITY"
 elif [ -n "$DEVELOPER_ID" ]; then
   IDENTITY="$DEVELOPER_ID"
 elif [ "$DRY_RUN" = 1 ]; then
@@ -151,18 +129,18 @@ run rm -rf "$ARCHIVE" "$EXPORT"
 run mkdir -p "$OUT"
 run xcodegen generate --quiet
 LOG="$OUT/archive.log"
-show xcodebuild archive -project Mercury.xcodeproj -scheme Mercury -configuration Release \
+show xcodebuild archive -project Sevinda.xcodeproj -scheme Sevinda -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath "$DERIVED" \
   -skipPackagePluginValidation -allowProvisioningUpdates -packageAuthorizationProvider netrc \
   ENABLE_HARDENED_RUNTIME=YES DEVELOPMENT_TEAM="$TEAM_ID"
 note "(log: $LOG)"
-xcodebuild archive -project Mercury.xcodeproj -scheme Mercury -configuration Release \
+xcodebuild archive -project Sevinda.xcodeproj -scheme Sevinda -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath "$DERIVED" \
   -skipPackagePluginValidation -allowProvisioningUpdates -packageAuthorizationProvider netrc \
   ENABLE_HARDENED_RUNTIME=YES DEVELOPMENT_TEAM="$TEAM_ID" >"$LOG" 2>&1 \
   || { grep -E "error:" "$LOG" | sort -u | head -20 >&2; die "archive failed; see $LOG"; }
-[ -x "$ARCHIVE/Products/Applications/Mercury.app/Contents/MacOS/MercuryPTYHost" ] \
-  || die "the archived app does not contain Contents/MacOS/MercuryPTYHost"
+[ -x "$ARCHIVE/Products/Applications/Sevinda.app/Contents/MacOS/SevindaPTYHost" ] \
+  || die "the archived app does not contain Contents/MacOS/SevindaPTYHost"
 note "archived $ARCHIVE"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -192,9 +170,9 @@ if ! xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" -ex
   # same development identity, so a dry run can go on with it and re-sign below.
   warn "development export failed (see $LOG); using the archived app"
   run mkdir -p "$EXPORT"
-  run ditto "$ARCHIVE/Products/Applications/Mercury.app" "$APP"
+  run ditto "$ARCHIVE/Products/Applications/Sevinda.app" "$APP"
 fi
-[ -d "$APP" ] || die "export produced no Mercury.app in $EXPORT"
+[ -d "$APP" ] || die "export produced no Sevinda.app in $EXPORT"
 note "exported $APP"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -226,7 +204,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-step "verify the app signature, hardened runtime and Sparkle key"
+step "verify the app signature and hardened runtime"
 run codesign --verify --deep --strict --verbose=2 "$APP"
 details="$(codesign -dvvv "$APP" 2>&1)"
 grep -q "^Identifier=$APP_ID$" <<<"$details" || die "the app identifier is not $APP_ID"
@@ -253,16 +231,10 @@ fi
   || die "the exported app's version is not $VERSION"
 [ "$(plist_value "$APP/Contents/Info.plist" CFBundleVersion)" = "$BUILD_NUMBER" ] \
   || die "the exported app's build is not $BUILD_NUMBER"
-APP_KEY="$(plist_value "$APP/Contents/Info.plist" SUPublicEDKey)"
-if is_public_key "$APP_KEY"; then
-  note "the exported app carries a Sparkle public key"
-else
-  block "the exported app has no real SUPublicEDKey; refusing to ship an app that cannot verify updates"
-fi
 
 # ---------------------------------------------------------------------------------------------------------------------
-# One submission for the app (so its ticket can be stapled before it goes into the DMG and Sparkle's updates carry
-# it), one for the DMG (so the download opens offline without a warning).
+# One submission for the app (so its ticket can be stapled before it goes into the DMG), one for the DMG (so the
+# download opens offline without a warning).
 notarize() {
   local file="$1" result status id
   show xcrun notarytool submit "$file" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json
@@ -318,43 +290,6 @@ printf '%s\n' "$dmg_assessment" | sed 's/^/      /'
 [ "$DRY_RUN" = 1 ] || grep -q "accepted" <<<"$dmg_assessment" || die "Gatekeeper rejects the DMG"
 
 # ---------------------------------------------------------------------------------------------------------------------
-step "sign the DMG for Sparkle (EdDSA key \"$SPARKLE_ACCOUNT\" from the Keychain)"
-# Sparkle's command line tools come with the Swift package the archive resolved.
-SPARKLE_TOOLS="${SPARKLE_BIN:-$DERIVED/SourcePackages/artifacts/sparkle/Sparkle/bin}"
-if [ -x "$SPARKLE_TOOLS/sign_update" ]; then
-  note "found $SPARKLE_TOOLS/sign_update"
-else
-  block "Sparkle's sign_update not found in $SPARKLE_TOOLS (set SPARKLE_BIN)"
-fi
-if [ "$DRY_RUN" = 1 ]; then
-  show "$SPARKLE_TOOLS/sign_update" --account "$SPARKLE_ACCOUNT" "$DMG"
-  note "(skipped in a dry run: it reads the private key from the Keychain)"
-  SIGNATURE_ATTRIBUTES="sparkle:edSignature=\"&lt;signature&gt;\" length=\"$(stat -f %z "$DMG")\""
-else
-  SIGNATURE_ATTRIBUTES="$("$SPARKLE_TOOLS/sign_update" --account "$SPARKLE_ACCOUNT" "$DMG")" \
-    || die "sign_update could not sign $DMG (no key for account $SPARKLE_ACCOUNT? see docs/release-process.md)"
-  grep -q 'sparkle:edSignature=' <<<"$SIGNATURE_ATTRIBUTES" || die "sign_update printed no signature"
-  note "signed"
-fi
-
-step "write the appcast entry"
-MIN_SYSTEM="$(project_setting macOS)"
-PUB_DATE="$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')"
-cat >"$APPCAST_ITEM" <<ITEM
-    <item>
-      <title>Mercury $VERSION</title>
-      <pubDate>$PUB_DATE</pubDate>
-      <sparkle:version>$BUILD_NUMBER</sparkle:version>
-      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>${MIN_SYSTEM:-15.0}</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>$DOWNLOAD_BASE/release-notes/$VERSION.html</sparkle:releaseNotesLink>
-      <enclosure url="$DOWNLOAD_BASE/Mercury-$VERSION.dmg" type="application/octet-stream" $SIGNATURE_ATTRIBUTES />
-    </item>
-ITEM
-sed 's/^/  /' "$APPCAST_ITEM"
-note "wrote $APPCAST_ITEM$([ "$DRY_RUN" = 1 ] && echo ' (placeholder signature: do not publish)')"
-
-# ---------------------------------------------------------------------------------------------------------------------
 printf '\n'
 if [ "$DRY_RUN" = 1 ]; then
   printf 'Dry run finished: %d steps. Built and signed:\n  %s\n  %s\n' "$STEP" "$APP" "$DMG"
@@ -369,6 +304,5 @@ if [ "$DRY_RUN" = 1 ]; then
     for blocker in "${BLOCKERS[@]}"; do printf '  - %s\n' "$blocker"; done
   fi
 else
-  printf 'Release %s ready:\n  %s\n  %s\nNothing was published; upload the DMG, then the appcast entry (docs/release-process.md).\n' \
-    "$VERSION" "$DMG" "$APPCAST_ITEM"
+  printf 'Release %s ready:\n  %s\n  %s\nNothing was published.\n' "$VERSION" "$APP" "$DMG"
 fi

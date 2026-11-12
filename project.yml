@@ -1,4 +1,4 @@
-name: Mercury
+name: Sevinda
 options:
   bundleIdPrefix: com.tekmium
   deploymentTarget:
@@ -7,19 +7,19 @@ options:
   createIntermediateGroups: true
   groupSortPosition: top
 
-# Package boundaries are documented in docs/architecture.md. SwiftTerm (pinned in Packages/MercuryTerminal) ships a
+# Package boundaries are documented in docs/architecture.md. SwiftTerm (pinned in Packages/SevindaTerminal) ships a
 # build-tool plugin, so command-line builds pass `-skipPackagePluginValidation`, and its Metal renderer needs the
 # Metal Toolchain (`xcodebuild -downloadComponent metalToolchain`).
 packages:
-  MercuryUI:          { path: Packages/MercuryUI }
-  MercuryCore:        { path: Packages/MercuryCore }
-  MercuryGit:         { path: Packages/MercuryGit }
-  MercuryPTYProtocol: { path: Packages/MercuryPTYProtocol }
-  MercuryTerminal:    { path: Packages/MercuryTerminal }
-  MercuryAgents:      { path: Packages/MercuryAgents }
-  MercuryAccounts:    { path: Packages/MercuryAccounts }
-  MercuryDiff:        { path: Packages/MercuryDiff }
-  MercuryUsage:       { path: Packages/MercuryUsage }
+  SevindaUI:          { path: Packages/SevindaUI }
+  SevindaCore:        { path: Packages/SevindaCore }
+  SevindaGit:         { path: Packages/SevindaGit }
+  SevindaPTYProtocol: { path: Packages/SevindaPTYProtocol }
+  SevindaTerminal:    { path: Packages/SevindaTerminal }
+  SevindaAgents:      { path: Packages/SevindaAgents }
+  SevindaAccounts:    { path: Packages/SevindaAccounts }
+  SevindaDiff:        { path: Packages/SevindaDiff }
+  SevindaUsage:       { path: Packages/SevindaUsage }
   # Native SwiftUI Markdown rendering (tables, code blocks) for the file viewer tab. Pinned exactly.
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui
@@ -42,49 +42,49 @@ settings:
     CODE_SIGN_STYLE: Automatic
 
 targets:
-  Mercury:
+  Sevinda:
     type: application
     platform: macOS
     sources:
       - path: App
         excludes:
-          - "Mercury.entitlements"
+          - "Sevinda.entitlements"
           - "Info.plist"
           - "Resources/LaunchAgents/**"
           - "Resources/Skills/**"
-      # Agent skills keep their folder layout (Contents/Resources/Skills/<skill>/SKILL.md): `mercury skills get` reads
-      # them there, and Mercury copies them into agent homes.
+      # Agent skills keep their folder layout (Contents/Resources/Skills/<skill>/SKILL.md): `sevinda skills get` reads
+      # them there, and Sevinda copies them into agent homes.
       - path: App/Resources/Skills
         type: folder
         buildPhase: resources
       # launchd reads the helper's plist from Contents/Library/LaunchAgents (SMAppService.agent(plistName:)).
-      - path: App/Resources/LaunchAgents/com.tekmium.mercury.ptyhost.plist
+      - path: App/Resources/LaunchAgents/com.tekmium.sevinda.ptyhost.plist
         buildPhase:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchAgents
     dependencies:
-      - package: MercuryUI
-      - package: MercuryCore
-      - package: MercuryGit
-      - package: MercuryPTYProtocol
-        product: MercuryPTYProtocol
-      - package: MercuryTerminal
-      - package: MercuryAgents
-      - package: MercuryAccounts
-      - package: MercuryDiff
-      - package: MercuryUsage
+      - package: SevindaUI
+      - package: SevindaCore
+      - package: SevindaGit
+      - package: SevindaPTYProtocol
+        product: SevindaPTYProtocol
+      - package: SevindaTerminal
+      - package: SevindaAgents
+      - package: SevindaAccounts
+      - package: SevindaDiff
+      - package: SevindaUsage
       - package: MarkdownUI
       - package: Sparkle
-      # The PTY host ships next to the app executable (Contents/MacOS/MercuryPTYHost).
-      - target: MercuryPTYHost
+      # The PTY host ships next to the app executable (Contents/MacOS/SevindaPTYHost).
+      - target: SevindaPTYHost
         embed: true
         codeSign: false
         copy:
           destination: executables
-      # `mercury` goes in its own folder (Contents/Helpers) so only it lands on the PATH of Mercury's terminals; it
-      # cannot sit in Contents/MacOS next to `Mercury` on a case-insensitive volume.
-      - target: MercuryCLI
+      # `sevinda` goes in its own folder (Contents/Helpers) so only it lands on the PATH of Sevinda's terminals; it
+      # cannot sit in Contents/MacOS next to `Sevinda` on a case-insensitive volume.
+      - target: SevindaCLI
         embed: true
         codeSign: false
         copy:
@@ -92,55 +92,55 @@ targets:
           subpath: Contents/Helpers
     settings:
       base:
-        PRODUCT_NAME: Mercury
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury
+        PRODUCT_NAME: Sevinda
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: App/Info.plist
-        CODE_SIGN_ENTITLEMENTS: App/Mercury.entitlements
+        CODE_SIGN_ENTITLEMENTS: App/Sevinda.entitlements
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   # launchd agent that owns every terminal so sessions survive the app quitting (docs/architecture.md).
-  MercuryPTYHost:
+  SevindaPTYHost:
     type: tool
     platform: macOS
     sources:
-      - path: Helpers/MercuryPTYHost
+      - path: Helpers/SevindaPTYHost
     dependencies:
-      - package: MercuryPTYProtocol
-        product: MercuryPTYProtocol
-      - package: MercuryPTYProtocol
-        product: MercuryPTYHostKit
+      - package: SevindaPTYProtocol
+        product: SevindaPTYProtocol
+      - package: SevindaPTYProtocol
+        product: SevindaPTYHostKit
     settings:
       base:
-        PRODUCT_NAME: MercuryPTYHost
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.ptyhost
+        PRODUCT_NAME: SevindaPTYHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.ptyhost
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         SKIP_INSTALL: YES
 
-  # `mercury`, the orchestration command agents run in Mercury's terminals (docs/architecture.md). Its logic is
-  # MercuryCLIKit in Packages/MercuryPTYProtocol.
-  MercuryCLI:
+  # `sevinda`, the orchestration command agents run in Sevinda's terminals (docs/architecture.md). Its logic is
+  # SevindaCLIKit in Packages/SevindaPTYProtocol.
+  SevindaCLI:
     type: tool
     platform: macOS
     sources:
-      - path: Tools/MercuryCLI
+      - path: Tools/SevindaCLI
     dependencies:
-      - package: MercuryPTYProtocol
-        product: MercuryCLIKit
+      - package: SevindaPTYProtocol
+        product: SevindaCLIKit
     settings:
       base:
-        PRODUCT_NAME: mercury
-        # The binary is `mercury`, but its Swift module must not be: on a case-insensitive disk `mercury.swiftmodule`
-        # and the app's `Mercury.swiftmodule` are the same file in the build folder, and the app tests fail to load.
-        PRODUCT_MODULE_NAME: MercuryCLI
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.cli
+        PRODUCT_NAME: sevinda
+        # The binary is `sevinda`, but its Swift module must not be: on a case-insensitive disk `sevinda.swiftmodule`
+        # and the app's `Sevinda.swiftmodule` are the same file in the build folder, and the app tests fail to load.
+        PRODUCT_MODULE_NAME: SevindaCLI
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.cli
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
@@ -149,27 +149,27 @@ targets:
 
   # Tests hosted in the signed app, for what `swift test` cannot reach: the PTY host registered with launchd,
   # the app model driving git, terminals and accounts together, and offscreen screenshots of the windows.
-  MercuryAppTests:
+  SevindaAppTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: AppTests
     dependencies:
-      - target: Mercury
+      - target: Sevinda
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.apptests
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mercury.app/Contents/MacOS/Mercury"
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.apptests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Sevinda.app/Contents/MacOS/Sevinda"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  Mercury:
+  Sevinda:
     build:
       targets:
-        Mercury: all
-        MercuryAppTests: [test]
+        Sevinda: all
+        SevindaAppTests: [test]
     test:
       targets:
-        - MercuryAppTests
+        - SevindaAppTests

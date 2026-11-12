@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Bộ nhận diện path và resolver
-status: pending
+status: done
 ---
 
 # Phase 1: Bộ nhận diện và resolver

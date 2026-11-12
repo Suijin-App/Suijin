@@ -17,25 +17,24 @@ extension AppModel {
     }
 
     /// Handles a link ⌘-clicked in a terminal of `context`: files open in a viewer tab (Finder only for files Sevinda
-    /// cannot show), folders in the inspector's file tree; web and mail
-    /// links return `false` so the terminal opens them in their default app. Relative paths are resolved against
-    /// `directory`, the session's working directory; a `:line` or `:line:column` suffix is ignored.
+    /// cannot show), folders in the inspector's file tree; web and mail links return `false` so the terminal opens
+    /// them in their default app. Relative paths are resolved against `directory`, the session's working directory; a
+    /// `:line` or `:line:column` suffix is split off (`TerminalPathResolver.locations(for:bases:)`).
     func openTerminalLink(_ link: String, in context: SessionContext, relativeTo directory: URL?) -> Bool {
-        if let url = URL(string: link), let scheme = url.scheme?.lowercased(), scheme != "file" {
-            return false
-        }
-        var path = link.hasPrefix("file://") ? (URL(string: link)?.path ?? link) : link
-        path = (path as NSString).expandingTildeInPath
-        if !path.hasPrefix("/"), let directory { path = directory.appendingPathComponent(path).path }
-        var isDirectory: ObjCBool = false
-        if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
-           let suffix = path.range(of: #":[0-9]+(?::[0-9]+)?$"#, options: .regularExpression) {
-            path = String(path[..<suffix.lowerBound])
-        }
-        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) else { return true }
-        let standardized = URL(fileURLWithPath: path).standardizedFileURL
-        if isDirectory.boolValue {
-            // A folder opens in the app's file tree: the inspector opens on its Files tab for it.
+        guard TerminalPathResolver.namesPath(link) else { return false }
+        let bases = [directory?.standardizedFileURL.path].compactMap { $0 }
+        guard let probe = TerminalPathResolver.probe(link, bases: bases).result else { return true }
+        openTerminalPath(ResolvedTerminalPath(url: URL(fileURLWithPath: probe.path, isDirectory: probe.isDirectory),
+                                              isDirectory: probe.isDirectory, line: probe.line, column: probe.column),
+                         in: context)
+        return true
+    }
+
+    /// Opens a path from a terminal in the app: a folder in the inspector's file tree (the inspector opens on its Files
+    /// tab), a file in a viewer tab, or in Finder when Sevinda cannot show it.
+    func openTerminalPath(_ resolved: ResolvedTerminalPath, in context: SessionContext) {
+        let standardized = resolved.url.standardizedFileURL
+        if resolved.isDirectory {
             UserDefaults.standard.set(true, forKey: "inspector.shown")
             revealInFileTree(standardized.path)
         } else {
@@ -43,7 +42,6 @@ extension AppModel {
             let wasOpen = isInspectorOpen
             if open(fileAt: standardized, in: context), wasOpen { revealInFileTree(standardized.path) }
         }
-        return true
     }
 
     /// Opens a file in a viewer tab, or shows it in Finder when Sevinda cannot display it (binary, unknown format).

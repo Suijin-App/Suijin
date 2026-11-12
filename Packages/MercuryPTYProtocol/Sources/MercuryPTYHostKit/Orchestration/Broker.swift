@@ -62,6 +62,7 @@ public final class Broker: @unchecked Sendable {
     private var deliveredQuestions: [String: Set<String>] = [:]
     private var timer: DispatchSourceTimer?
     private var opened = false
+    private var closed = false
 
     public init(
         dataRoot: URL, stateFile: URL?, io: (any OrchestrationSessionIO)?, tuning: Tuning = Tuning(),
@@ -107,6 +108,26 @@ public final class Broker: @unchecked Sendable {
             self.timer = timer
         }
     }
+
+    /// Stops the broker for good: work already queued finishes (each change is saved as it happens), then the timer
+    /// stops, waiting replies are failed and the state file is never written again, so a data root deleted after this
+    /// is not recreated. A later session of the same data root gets a new broker that loads the saved state.
+    public func close() {
+        queue.sync {
+            guard !closed else { return }
+            closed = true
+            timer?.cancel()
+            timer = nil
+            app = nil
+            appID = nil
+            let pending = startReplies.values
+            startReplies.removeAll()
+            for reply in pending { reply(.failure(Self.closedFailure)) }
+            store.stopSaving()
+        }
+    }
+
+    private static let closedFailure = BrokerFailure(code: "unavailable", message: "Mercury's broker for this data root has closed.")
 
     public func snapshot() -> OrchestrationSnapshot {
         queue.sync { store.state }
@@ -178,6 +199,10 @@ public final class Broker: @unchecked Sendable {
     }
 
     private func handleLocked(_ request: BrokerRequest, reply: @escaping @Sendable (BrokerResponse) -> Void) {
+        guard !closed else {
+            reply(.failure(Self.closedFailure))
+            return
+        }
         guard request.version == BrokerRequest.currentVersion else {
             reply(.failure(BrokerFailure(code: "version_mismatch",
                                          message: "This `mercury` speaks request version \(request.version); Mercury's terminal host speaks \(BrokerRequest.currentVersion).",

@@ -15,8 +15,8 @@ struct DispatchStore {
         var snapshot = OrchestrationSnapshot()
     }
 
-    /// nil keeps everything in memory (tests).
-    let fileURL: URL?
+    /// nil keeps everything in memory (tests, and a closed broker).
+    private(set) var fileURL: URL?
     private(set) var state = OrchestrationSnapshot()
 
     init(fileURL: URL?) {
@@ -38,6 +38,11 @@ struct DispatchStore {
     mutating func update(_ change: (inout OrchestrationSnapshot) -> Void) {
         change(&state)
         save()
+    }
+
+    /// Keeps later changes in memory only (the owning broker closed).
+    mutating func stopSaving() {
+        fileURL = nil
     }
 
     /// Drops settled work older than `retention`.

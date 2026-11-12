@@ -20,6 +20,8 @@ final class BrokerSocketServer: @unchecked Sendable {
     // Confined to `queue` after `start`.
     private var listenFD: Int32 = -1
     private var source: DispatchSourceRead?
+    /// The socket file this server bound, so `stop` never unlinks a newer server's socket at the same path.
+    private var boundFile: (device: dev_t, inode: ino_t)?
 
     init(path: String, handler: @escaping BrokerRequestHandler) {
         self.path = path
@@ -56,23 +58,33 @@ final class BrokerSocketServer: @unchecked Sendable {
         }
         _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
         _ = fcntl(fd, F_SETFD, FD_CLOEXEC)
+        var boundInfo = stat()
+        let file = lstat(path, &boundInfo) == 0 ? (device: boundInfo.st_dev, inode: boundInfo.st_ino) : nil
         let source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: queue)
         source.setEventHandler { [weak self] in self?.acceptPending() }
+        // The only place the listening descriptor is closed: after the source can no longer read it.
         source.setCancelHandler { close(fd) }
         queue.sync {
             listenFD = fd
             self.source = source
+            boundFile = file
         }
         source.resume()
     }
 
+    /// Closes the listening socket and removes its file, unless another server has since bound the same path.
     func stop() {
-        queue.sync {
+        let file = queue.sync { () -> (device: dev_t, inode: ino_t)? in
             source?.cancel()
             source = nil
             listenFD = -1
+            defer { boundFile = nil }
+            return boundFile
         }
-        unlink(path)
+        var info = stat()
+        if let file, lstat(path, &info) == 0, info.st_dev == file.device, info.st_ino == file.inode {
+            unlink(path)
+        }
     }
 
     private func acceptPending() {
@@ -170,6 +182,7 @@ final class BrokerSpool: @unchecked Sendable {
         guard fd >= 0 else { throw posixError("open", requests.path, errno) }
         let watcher = DispatchSource.makeFileSystemObjectSource(fileDescriptor: fd, eventMask: [.write, .extend, .rename], queue: queue)
         watcher.setEventHandler { [weak self] in self?.scan() }
+        // The only place the watched directory's descriptor is closed: after the source can no longer use it.
         watcher.setCancelHandler { close(fd) }
         // The watcher can coalesce or miss events; a slow sweep picks up anything it missed.
         let timer = DispatchSource.makeTimerSource(queue: queue)

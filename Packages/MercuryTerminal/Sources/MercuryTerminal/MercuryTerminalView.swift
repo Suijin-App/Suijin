@@ -1,4 +1,5 @@
 import AppKit
+import MetalKit
 import SwiftTerm
 
 /// SwiftTerm's macOS view, used for display and input only: it runs no process. `TerminalSession` connects it to a
@@ -160,6 +161,15 @@ open class MercuryTerminalView: TerminalView {
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         applyRenderer()
+    }
+
+    /// With the Metal renderer on, the terminal's surface is a Metal subview that does not take the keyboard, and a
+    /// click lands on it: the window then left the keyboard where it was, so clicking the body of another pane did
+    /// not focus that pane. Clicks on the surface go to the terminal itself, which takes the keyboard as any click
+    /// target does.
+    public override func hitTest(_ point: NSPoint) -> NSView? {
+        let hit = super.hitTest(point)
+        return hit is MTKView ? self : hit
     }
 
     /// Installs a theme; the screen and scrollback are kept and redrawn.

@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import MetalKit
 import Testing
 @testable import MercuryTerminal
 
@@ -182,5 +183,19 @@ struct TerminalViewResizeTests {
         window.contentView?.addSubview(view)
         view.setFrameSize(NSSize(width: 1100, height: 700))
         #expect(view.frame.size == NSSize(width: 1100, height: 700))
+    }
+}
+
+@Suite("Click target")
+@MainActor
+struct ClickTargetTests {
+    @Test("a click on the Metal surface lands on the terminal, which takes the keyboard")
+    func metalSurfaceClicksReachTerminal() {
+        let terminal = MercuryTerminalView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let surface = MTKView(frame: terminal.bounds)
+        terminal.addSubview(surface)
+        let hit = terminal.hitTest(NSPoint(x: 200, y: 150))
+        #expect(hit === terminal)
+        #expect(terminal.acceptsFirstResponder)
     }
 }

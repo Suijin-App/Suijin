@@ -148,6 +148,12 @@ private final class FocusingContainer: NSView {
         takeFocusIfWanted(in: window)
     }
 
+    /// A click in the margin around the terminal focuses it too, so anywhere in a pane's body selects that pane.
+    override func mouseDown(with event: NSEvent) {
+        guard let terminal, terminal.superview === self else { return super.mouseDown(with: event) }
+        window?.makeFirstResponder(terminal)
+    }
+
     private func firstResponderChanged(in window: NSWindow) {
         guard let terminal, terminal.superview === self else { return }
         if window.firstResponder === terminal {

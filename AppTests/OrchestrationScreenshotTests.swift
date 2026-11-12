@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryPTYProtocol
+import SevindaCore
+import SevindaPTYProtocol
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Offscreen renders of the worker tree (sidebar), the orchestration inspector and its settings section, light and
 /// dark, narrow and wide. Runs when `MERCURY_SCREENSHOTS` names an output folder; the images are reviewed by eye.

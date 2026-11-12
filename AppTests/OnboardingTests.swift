@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 @MainActor
 struct OnboardingTests {

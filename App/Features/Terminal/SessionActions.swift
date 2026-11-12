@@ -1,6 +1,6 @@
 import AppKit
-import MercuryCore
-import MercuryTerminal
+import SevindaCore
+import SevindaTerminal
 
 /// Tab actions shared by the menus, the tab strip and the terminal's own shortcuts; panes are in `PaneLayouts.swift`.
 extension AppModel {

@@ -1,6 +1,6 @@
-import MercuryCore
-import MercuryPTYProtocol
-import MercuryUI
+import SevindaCore
+import SevindaPTYProtocol
+import SevindaUI
 import SwiftUI
 
 /// How a dispatch looks in the sidebar and the inspector.

@@ -1,8 +1,8 @@
 import Foundation
-import MercuryCore
-import MercuryUsage
+import SevindaCore
+import SevindaUsage
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Settings → Stats & Usage: number formatting, the six-week heatmap, the range picker and the usage controller.
 /// The controller tests read synthetic logs in a temporary folder, never the user's own logs.

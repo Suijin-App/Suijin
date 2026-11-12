@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// The pieces of the update flow that run without a network or a release: the public key gate and the helper
 /// handover comparison.

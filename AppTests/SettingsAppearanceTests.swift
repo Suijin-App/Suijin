@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryAgents
-import MercuryCore
+import SevindaAgents
+import SevindaCore
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 @MainActor
 struct SettingsAppearanceTests {

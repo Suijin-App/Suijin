@@ -1,4 +1,4 @@
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// Settings over the whole main window, like an onboarding screen rather than a separate window or a sheet: a calm

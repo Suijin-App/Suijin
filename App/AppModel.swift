@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import Observation
 
 /// A place where sessions run: a folder workspace, the main checkout of a git workspace, or one of its worktrees.

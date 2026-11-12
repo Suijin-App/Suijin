@@ -1,7 +1,7 @@
 import Foundation
-import MercuryAccounts
-import MercuryCore
-import MercuryPTYProtocol
+import SevindaAccounts
+import SevindaCore
+import SevindaPTYProtocol
 import os
 
 private let logger = Logger(subsystem: "com.tekmium.mercury", category: "orchestration")

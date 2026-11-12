@@ -1,5 +1,5 @@
 import Foundation
-import MercuryTerminal
+import SevindaTerminal
 
 extension SessionRuntime {
     enum PasteError: LocalizedError {

@@ -1,5 +1,5 @@
 import Charts
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// The Resource Manager popover of the status bar. Samples only while it is shown: the `.task` loop ends when the

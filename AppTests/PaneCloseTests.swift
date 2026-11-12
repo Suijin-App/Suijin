@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryTerminal
+import SevindaCore
+import SevindaTerminal
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// ⌘W in a split tab closes the pane that has the keyboard, whichever way the pane got it: a click, the app focusing
 /// it, or AppKit moving the first responder on its own. Runs the real tab view with real shells in the PTY host.

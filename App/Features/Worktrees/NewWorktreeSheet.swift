@@ -1,6 +1,6 @@
-import MercuryCore
-import MercuryGit
-import MercuryUI
+import SevindaCore
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// Creates a worktree on a new branch and optionally starts an agent in it with a first prompt.

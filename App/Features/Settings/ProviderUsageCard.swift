@@ -1,13 +1,13 @@
-import MercuryCore
-import MercuryUI
-import MercuryUsage
+import SevindaCore
+import SevindaUI
+import SevindaUsage
 import SwiftUI
 
 /// Settings → Stats & Usage → Providers: one provider's logo and data status, its most used model and project, then
 /// tokens, sessions and turns, and the estimated cost in the selected range.
 struct ProviderUsageCard: View {
     let provider: UsageProvider
-    let summary: MercuryUsage.UsageSummary
+    let summary: SevindaUsage.UsageSummary
     /// Whether the provider has any usage at all, in any range.
     let hasData: Bool
 

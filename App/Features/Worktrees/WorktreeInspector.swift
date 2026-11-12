@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// Facts about the selected context in the inspector: path, branch, base, sessions.

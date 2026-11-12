@@ -1,5 +1,5 @@
-import MercuryGit
-import MercuryUI
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// The inspector's source control sections: branch and push, the branch's pull request and checks, the commit message,

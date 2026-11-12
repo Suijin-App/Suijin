@@ -1,6 +1,6 @@
-import MercuryAccounts
-import MercuryCore
-import MercuryUI
+import SevindaAccounts
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// Settings → Accounts: managed Claude and Codex accounts, the default for each provider, add, sign in again, remove.

@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// The detail area of a context: a tab per session plus a Changes tab (git contexts), and the selected tab's

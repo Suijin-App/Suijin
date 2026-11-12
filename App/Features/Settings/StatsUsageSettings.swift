@@ -1,7 +1,7 @@
 import Charts
-import MercuryCore
-import MercuryUI
-import MercuryUsage
+import SevindaCore
+import SevindaUI
+import SevindaUsage
 import SwiftUI
 
 /// Settings → Stats & Usage: Mercury's own counters, then the Claude Code and Codex token usage read from their local
@@ -221,7 +221,7 @@ private struct ScanProgressRow: View {
 
 /// Total tokens, estimated cost, active days and cache share for the selected scope and range.
 private struct UsageTilesRow: View {
-    let summary: MercuryUsage.UsageSummary
+    let summary: SevindaUsage.UsageSummary
 
     var body: some View {
         TileRow {
@@ -249,7 +249,7 @@ private struct UsageTilesRow: View {
 
 /// The six-week heatmap beside the token mix, stacked when the row is too narrow.
 private struct UsageChartsRow: View {
-    let heatmap: MercuryUsage.UsageSummary
+    let heatmap: SevindaUsage.UsageSummary
     let tokens: UsageTokens
 
     var body: some View {

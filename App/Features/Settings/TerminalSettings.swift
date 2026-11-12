@@ -1,5 +1,5 @@
-import MercuryTerminal
-import MercuryUI
+import SevindaTerminal
+import SevindaUI
 import SwiftUI
 
 /// Settings → Terminal: theme cards with real palette previews, font family and size with a live sample.

@@ -1,11 +1,11 @@
 import Foundation
-import MercuryPTYProtocol
-import MercuryTerminal
+import SevindaPTYProtocol
+import SevindaTerminal
 import os
 
 /// Hands the PTY host over to the new version after an update.
 ///
-/// Sparkle replaces Mercury.app (and with it Contents/MacOS/MercuryPTYHost), but the helper launchd started from the
+/// Sparkle replaces Mercury.app (and with it Contents/MacOS/SevindaPTYHost), but the helper launchd started from the
 /// old bundle keeps running, so the updated app would talk to the old helper. At launch this check compares the app's
 /// `CFBundleVersion` with the build the helper reports in its handshake. On a mismatch with no session running it asks
 /// the helper to exit, and launchd starts the new binary on the next connection. A helper that still runs sessions is

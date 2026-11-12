@@ -1,6 +1,6 @@
 import AppKit
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// The badge of a workspace in the sidebar, kept as quiet as the system's own sidebar icons: a monochrome SF Symbol,

@@ -1,10 +1,10 @@
 import AppKit
 import Darwin
 import Foundation
-import MercuryCore
+import SevindaCore
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// The Resource Manager: process tree discovery and figures from libproc, the report grouping, and offscreen renders
 /// of the popover (when `MERCURY_SCREENSHOTS` names an output folder).

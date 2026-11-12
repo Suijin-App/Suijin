@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// Status bar at the bottom of the window: usage of the selected accounts, running sessions, app memory.

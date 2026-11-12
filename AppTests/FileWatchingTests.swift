@@ -1,10 +1,10 @@
 import AppKit
 import CoreServices
 import Foundation
-import MercuryCore
+import SevindaCore
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Changes made outside Mercury (Finder, editors, agents' shells) reach the file tree and open viewer tabs.
 @MainActor

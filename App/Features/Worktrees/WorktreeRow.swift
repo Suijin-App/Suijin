@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import SwiftUI
 
 /// A worktree in the sidebar: its branch, the most urgent session activity, and the context menu of every session row

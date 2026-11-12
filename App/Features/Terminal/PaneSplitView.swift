@@ -1,5 +1,5 @@
 import AppKit
-import MercuryCore
+import SevindaCore
 import SwiftUI
 
 /// One split of a pane tree in a system `NSSplitView`: native thin dividers with the resize cursor and live dragging,

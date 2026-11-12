@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 struct AboutSettingsTests {
     @Test func aboutIsTheLastSettingsPage() {

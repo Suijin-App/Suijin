@@ -1,6 +1,6 @@
 import AppKit
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 import UniformTypeIdentifiers
 import os
@@ -12,7 +12,7 @@ private let logger = Logger(subsystem: "com.tekmium.mercury", category: "panes")
 /// The drag is a system drag session (cursor, Esc to cancel, the image sliding back on a cancel), started from the
 /// header's title by `PaneDragSource`, with a payload of its own type so tab drags (plain text) and pane drags never
 /// land on each other. While it runs, the dragged pane dims; over another pane of the same tab five zones (`PanePlacement`
-/// in MercuryCore) show where it would land with a Liquid Glass preview and a label; a drop moves it there
+/// in SevindaCore) show where it would land with a Liquid Glass preview and a label; a drop moves it there
 /// (`AppModel.movePane`) with the panes sliding into their new places (`PaneRearrangeAnimation`). Dropping it on the
 /// title-bar tab group moves it into a tab of its own.
 extension UTType {

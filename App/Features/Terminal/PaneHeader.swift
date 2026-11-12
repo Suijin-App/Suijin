@@ -1,4 +1,4 @@
-import MercuryCore
+import SevindaCore
 import SwiftUI
 
 /// The strip above a pane of a split tab: the agent's logo, status and title (the drag handle, `PaneDragHandle`),

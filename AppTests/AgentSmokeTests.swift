@@ -1,10 +1,10 @@
 import Foundation
-import MercuryAgents
-import MercuryCore
-import MercuryGit
-import MercuryTerminal
+import SevindaAgents
+import SevindaCore
+import SevindaGit
+import SevindaTerminal
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Starts the real `claude` and `codex` CLIs (no prompt, so nothing is sent to a model) through the app runtime and
 /// the PTY host, with the user's own login: the TUI must draw, and Claude's SessionStart hook must reach the events

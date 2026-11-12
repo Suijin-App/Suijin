@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// ⌘-clicked terminal links: files open in a viewer tab of the session's context, web links go to the browser.
 @MainActor

@@ -1,6 +1,6 @@
 import Charts
-import MercuryUI
-import MercuryUsage
+import SevindaUI
+import SevindaUsage
 import SwiftUI
 
 /// One day of the heatmap: its column (week, oldest first), its row (weekday from the calendar's first weekday) and

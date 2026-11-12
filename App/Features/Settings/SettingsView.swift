@@ -1,7 +1,7 @@
-import MercuryAgents
-import MercuryCore
-import MercuryTerminal
-import MercuryUI
+import SevindaAgents
+import SevindaCore
+import SevindaTerminal
+import SevindaUI
 import SwiftUI
 
 /// The pages of Settings, in sidebar order.

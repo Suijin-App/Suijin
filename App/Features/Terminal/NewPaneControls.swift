@@ -1,5 +1,5 @@
 import AppKit
-import MercuryCore
+import SevindaCore
 import SwiftUI
 
 /// What a new pane runs when no agent is picked for it: Settings → Agents → New pane runs. ⌘D, ⇧⌘D, the title-bar

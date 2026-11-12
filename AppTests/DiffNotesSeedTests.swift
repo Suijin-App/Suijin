@@ -1,12 +1,12 @@
 import Foundation
-import MercuryCore
-import MercuryDiff
-import MercuryGit
+import SevindaCore
+import SevindaDiff
+import SevindaGit
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Builds a data root for looking at diff notes and the side-by-side diff in the real app:
-/// `TEST_RUNNER_MERCURY_NOTES_SEED_ROOT=<dir> xcodebuild test -only-testing:MercuryAppTests/DiffNotesSeedTests`, then
+/// `TEST_RUNNER_MERCURY_NOTES_SEED_ROOT=<dir> xcodebuild test -only-testing:SevindaAppTests/DiffNotesSeedTests`, then
 /// launch Mercury with `MERCURY_DATA_ROOT=<dir>/data -MercuryInitialTab changes`. It holds a git workspace with one
 /// worktree whose changes carry line, range, file, sent and stale notes, and selects that worktree.
 ///

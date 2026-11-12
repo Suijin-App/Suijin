@@ -1,6 +1,6 @@
-import MercuryAccounts
-import MercuryCore
-import MercuryUI
+import SevindaAccounts
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// The status bar item of one provider, laid out like Orca's: logo, a capacity bar for the most used window, then

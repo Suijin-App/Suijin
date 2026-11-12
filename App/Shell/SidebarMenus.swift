@@ -1,5 +1,5 @@
 import AppKit
-import MercuryCore
+import SevindaCore
 import SwiftUI
 
 /// Context-menu items of a sidebar row that holds sessions (a folder's sessions, a main checkout, a worktree): start

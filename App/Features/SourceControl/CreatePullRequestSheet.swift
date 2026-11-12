@@ -1,6 +1,6 @@
-import MercuryAgents
-import MercuryGit
-import MercuryUI
+import SevindaAgents
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// Creates a GitHub pull request for the context's branch with the user's `gh`: base branch, title and body (an

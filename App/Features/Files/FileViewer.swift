@@ -1,7 +1,7 @@
 import AppKit
 import MarkdownUI
-import MercuryDiff
-import MercuryUI
+import SevindaDiff
+import SevindaUI
 import PDFKit
 import SwiftUI
 import UniformTypeIdentifiers

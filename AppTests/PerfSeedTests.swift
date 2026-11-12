@@ -1,11 +1,11 @@
 import Foundation
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Data for measuring UI responsiveness with the real app: `TEST_RUNNER_MERCURY_PERF_SEED_ROOT=<dir> xcodebuild test
-/// -only-testing:MercuryAppTests/PerfSeedTests`, then launch Mercury with `MERCURY_DATA_ROOT=<dir>/data` and
+/// -only-testing:SevindaAppTests/PerfSeedTests`, then launch Mercury with `MERCURY_DATA_ROOT=<dir>/data` and
 /// `MERCURY_PERF_OUT=<file>` (see `PerfProbe`). A git workspace of a few hundred source files with three worktrees and a
 /// folder workspace, and fourteen shells left running in the PTY host (no agents, so nothing reaches an account).
 /// `TEST_RUNNER_MERCURY_PERF_CLEANUP_ROOT=<dir>` ends the shells of such a data root again.

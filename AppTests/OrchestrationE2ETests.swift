@@ -1,10 +1,10 @@
 import Foundation
-import MercuryCore
-import MercuryGit
-import MercuryPTYProtocol
-import MercuryTerminal
+import SevindaCore
+import SevindaGit
+import SevindaPTYProtocol
+import SevindaTerminal
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Orchestration end to end with the real `claude` and `codex` (the user's own logins) through the app and the PTY
 /// host: a Claude coordinator, driven by text typed into its terminal, starts a Codex worker in a new worktree with

@@ -1,6 +1,6 @@
-import MercuryCore
-import MercuryPTYProtocol
-import MercuryUI
+import SevindaCore
+import SevindaPTYProtocol
+import SevindaUI
 import SwiftUI
 
 /// Orchestration in the inspector, for the session the selected tab shows: a worker's task, status and messages, or a

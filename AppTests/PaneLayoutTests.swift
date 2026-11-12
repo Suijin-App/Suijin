@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Split tabs in the app model: adding, closing, moving and focusing panes, their place among the tabs, and the
 /// layout coming back after a relaunch.

@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// Design system review screen: color tokens, status symbols, buttons and glass on both systems. Opened with ⌥⇧⌘G.

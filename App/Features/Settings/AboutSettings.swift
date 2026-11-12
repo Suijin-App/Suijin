@@ -1,5 +1,5 @@
 import AppKit
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// Where people reach Tekmium Solutions about Mercury. Fill these in once the real addresses exist; each link stays

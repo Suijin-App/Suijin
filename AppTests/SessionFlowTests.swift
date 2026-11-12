@@ -1,11 +1,11 @@
 import Foundation
-import MercuryAgents
-import MercuryCore
-import MercuryGit
-import MercuryPTYProtocol
-import MercuryTerminal
+import SevindaAgents
+import SevindaCore
+import SevindaGit
+import SevindaPTYProtocol
+import SevindaTerminal
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// End to end inside the signed app: workspaces (git and folder), worktrees, a shell session in the PTY host over
 /// launchd XPC, re-attaching after a simulated app restart with the scrollback, and clean teardown.

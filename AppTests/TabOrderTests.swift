@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Reordering tabs by drag and drop: the model side (the drop calls `moveTab`).
 @MainActor

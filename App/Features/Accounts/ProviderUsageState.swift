@@ -1,6 +1,6 @@
 import Foundation
-import MercuryAccounts
-import MercuryCore
+import SevindaAccounts
+import SevindaCore
 
 /// Why the last usage refresh of a provider failed, mapped to Orca's status wording.
 enum UsageFailure: Equatable, Sendable {

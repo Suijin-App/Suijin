@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryPTYProtocol
+import SevindaCore
+import SevindaPTYProtocol
 import Observation
 import os
 import Synchronization

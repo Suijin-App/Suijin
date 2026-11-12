@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// The bulk and restart actions behind the sidebar's context menus, on real shell sessions.
 @MainActor

@@ -1,6 +1,6 @@
 import AppKit
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// Popover to pick a workspace's icon (symbol, emoji, picture, GitHub avatar, or the default letter) and color.

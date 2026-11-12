@@ -1,5 +1,5 @@
 import AppKit
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// One visible row of the file tree: a node and how deep it sits.

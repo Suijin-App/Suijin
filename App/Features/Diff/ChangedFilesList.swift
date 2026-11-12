@@ -1,5 +1,5 @@
-import MercuryGit
-import MercuryUI
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// Which part of a checkout's changes a file entry belongs to.

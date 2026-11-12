@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
-import MercuryGit
-import MercuryPTYProtocol
+import SevindaCore
+import SevindaGit
+import SevindaPTYProtocol
 
 /// Executes the broker's `worker start`: picks the place (the coordinator's own folder or worktree, or a new worktree
 /// of the same repository), the account, and starts the agent with the worker prompt like any other session.

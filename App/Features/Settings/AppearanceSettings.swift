@@ -1,4 +1,4 @@
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// Settings → General → Appearance: System, Light and Dark as window thumbnails, like System Settings → Appearance.

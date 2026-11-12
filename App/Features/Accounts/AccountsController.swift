@@ -1,7 +1,7 @@
 import Foundation
-import MercuryAccounts
-import MercuryAgents
-import MercuryCore
+import SevindaAccounts
+import SevindaAgents
+import SevindaCore
 import Observation
 
 /// Managed accounts at runtime: the two providers, usage of the managed accounts and of the user's own default

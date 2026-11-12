@@ -1,10 +1,10 @@
 import AppKit
-import MercuryCore
+import SevindaCore
 import os
 
 private let logger = Logger(subsystem: "com.tekmium.mercury", category: "panes")
 
-/// Split tabs: a tab showing two to ten sessions as panes, arranged by a `PaneLayout` (MercuryCore). A tab with one
+/// Split tabs: a tab showing two to ten sessions as panes, arranged by a `PaneLayout` (SevindaCore). A tab with one
 /// session is a plain `.session` tab and has no layout; adding a pane turns it into a `.panes` tab in the same place,
 /// and the last pane but one closing turns it back.
 ///

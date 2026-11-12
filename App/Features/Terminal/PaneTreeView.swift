@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// A split tab: its pane tree in nested native split views, or the zoomed pane alone.

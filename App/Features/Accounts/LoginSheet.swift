@@ -1,5 +1,5 @@
-import MercuryAccounts
-import MercuryUI
+import SevindaAccounts
+import SevindaUI
 import SwiftUI
 
 /// Follows a CLI sign-in: shows its output, offers the sign-in link (open, or copy to use in a private window) and,

@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// The commit message editor with Generate (an agent writes the message from the staged diff, read-only) and Commit.

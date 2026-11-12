@@ -40,8 +40,8 @@ struct ProcessEntry: Equatable, Sendable {
 /// growth of user + system time between two samples divided by the wall time between them, so the first sample has
 /// no CPU figure. The actor keeps the previous CPU times, which also keeps every syscall off the main thread.
 actor ProcessSampler {
-    /// The executable name of the PTY host helper (`Contents/MacOS/MercuryPTYHost`).
-    static let terminalHostName = "MercuryPTYHost"
+    /// The executable name of the PTY host helper (`Contents/MacOS/SevindaPTYHost`).
+    static let terminalHostName = "SevindaPTYHost"
 
     private var previousCPU: [pid_t: UInt64] = [:]
     private var previousInstant: ContinuousClock.Instant?

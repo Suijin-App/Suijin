@@ -1,5 +1,5 @@
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 struct CodeSymbolsTests {
     @Test func swiftDeclarations() {

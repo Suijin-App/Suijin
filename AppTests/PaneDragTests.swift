@@ -1,9 +1,9 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryTerminal
+import SevindaCore
+import SevindaTerminal
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Rearranging panes: dropping a dragged pane on another pane's edge or middle, on the title-bar tab group, a drag
 /// that ends without a drop, and the ⌃⌥⌘ arrow moves; every change is stored.

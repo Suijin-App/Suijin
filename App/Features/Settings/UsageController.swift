@@ -1,6 +1,6 @@
 import Foundation
-import MercuryCore
-import MercuryUsage
+import SevindaCore
+import SevindaUsage
 import Observation
 
 /// Which providers the usage page sums up.
@@ -111,7 +111,7 @@ final class UsageController {
     }
 
     /// Summary for the selected scope and range.
-    func summary(now: Date = Date()) -> MercuryUsage.UsageSummary? {
+    func summary(now: Date = Date()) -> SevindaUsage.UsageSummary? {
         snapshot?.summary(provider: scope.provider, since: range.since(now: now))
     }
 

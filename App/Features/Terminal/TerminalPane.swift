@@ -1,5 +1,5 @@
 import AppKit
-import MercuryTerminal
+import SevindaTerminal
 import SwiftUI
 
 /// Hosts a live session's terminal view. The view belongs to the session, so switching tabs keeps its screen.

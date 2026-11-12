@@ -1,7 +1,7 @@
 import AppKit
-import MercuryCore
-import MercuryDiff
-import MercuryUI
+import SevindaCore
+import SevindaDiff
+import SevindaUI
 import SwiftUI
 
 /// Preferences of diff notes, kept in user defaults.

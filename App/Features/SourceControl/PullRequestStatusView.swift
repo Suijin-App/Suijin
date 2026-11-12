@@ -1,5 +1,5 @@
-import MercuryGit
-import MercuryUI
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// The inspector's pull request section: the branch's pull request with its review state and checks, or why pull

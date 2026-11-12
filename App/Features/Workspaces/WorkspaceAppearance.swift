@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 
 /// Changing how a workspace looks in the sidebar: icon and badge color.
 extension AppModel {

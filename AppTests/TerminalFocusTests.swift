@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Clicking a session in the sidebar must leave the keyboard in its terminal, not in the list (where the arrow keys
 /// would switch sessions instead of reaching the agent).

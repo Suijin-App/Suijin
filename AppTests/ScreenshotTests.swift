@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryAccounts
-import MercuryCore
+import SevindaAccounts
+import SevindaCore
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Offscreen renders of the main screens, light and dark, narrow and wide. Runs when `MERCURY_SCREENSHOTS` names an
 /// output folder (`TEST_RUNNER_MERCURY_SCREENSHOTS=<dir> xcodebuild test`); the images are reviewed by eye.

@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// The main window: workspaces in the sidebar, the selected context's tabs in the detail area, facts about it in the

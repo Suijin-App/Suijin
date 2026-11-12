@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import MercuryAgents
-import MercuryCore
-import MercuryGit
+import SevindaAgents
+import SevindaCore
+import SevindaGit
 import Observation
 import os
 

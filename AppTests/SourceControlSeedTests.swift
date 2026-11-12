@@ -1,11 +1,11 @@
 import Foundation
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Builds a data root for looking at the source control UI in the real app:
-/// `TEST_RUNNER_MERCURY_SC_SEED_ROOT=<dir> xcodebuild test -only-testing:MercuryAppTests/SourceControlSeedTests`, then
+/// `TEST_RUNNER_MERCURY_SC_SEED_ROOT=<dir> xcodebuild test -only-testing:SevindaAppTests/SourceControlSeedTests`, then
 /// launch Mercury with `MERCURY_DATA_ROOT=<dir>/data` (and, for pull request states, `MERCURY_GH_PATH=<fake gh>`).
 ///
 /// - `mercury-api`: a git workspace whose `origin` is a GitHub URL that is never contacted. Its worktree

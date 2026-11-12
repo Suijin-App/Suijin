@@ -1,4 +1,4 @@
-import MercuryCore
+import SevindaCore
 import SwiftUI
 
 /// The mark of the program a session runs: the Claude and Codex logos (trimmed to the same visual size), or a

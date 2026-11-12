@@ -1,9 +1,9 @@
 import AppKit
 import Foundation
-import MercuryCore
+import SevindaCore
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// A closed session must free its terminal: the view, its scrollback and its renderer. A handler the pane installed on
 /// the view once captured the pane (which holds the runtime), so every closed tab stayed in memory.

@@ -1,7 +1,7 @@
 import Foundation
-import MercuryCore
-import MercuryDiff
-import MercuryGit
+import SevindaCore
+import SevindaDiff
+import SevindaGit
 import Observation
 
 extension DiffNote: @retroactive DiffNoteFormattable {}

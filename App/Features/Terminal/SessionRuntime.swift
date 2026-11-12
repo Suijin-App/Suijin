@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryAgents
-import MercuryCore
-import MercuryPTYProtocol
-import MercuryTerminal
-import MercuryUI
+import SevindaAgents
+import SevindaCore
+import SevindaPTYProtocol
+import SevindaTerminal
+import SevindaUI
 import Observation
 import os
 import SwiftUI

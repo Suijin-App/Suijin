@@ -1,5 +1,5 @@
-import MercuryCore
-import MercuryUI
+import SevindaCore
+import SevindaUI
 import SwiftUI
 
 /// A selectable sidebar row: a context (folder, main checkout, worktree) or one session in it.

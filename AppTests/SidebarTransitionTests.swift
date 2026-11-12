@@ -1,9 +1,9 @@
 import AppKit
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Renders the real window through the sidebar's tricky transitions (a session opening and closing, switching to
 /// another worktree, removing a workspace) for review: opt-in with `TEST_RUNNER_MERCURY_SIDEBAR_SHOT=<file>`. At each

@@ -1,5 +1,5 @@
 import AppKit
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// The welcome tour over the whole main window, presented like Settings (same backdrop, the toolbar hidden, a fade in

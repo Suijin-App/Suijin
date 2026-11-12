@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import MercuryCore
+import SevindaCore
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Ten hosted terminals flooding output at once, all on screen: the main thread must keep serving the UI.
 /// Prints the measurements; the thresholds are generous so the test catches freezes, not noise.

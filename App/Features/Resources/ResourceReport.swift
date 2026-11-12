@@ -1,7 +1,7 @@
 import Foundation
-import MercuryAgents
-import MercuryCore
-import MercuryTerminal
+import SevindaAgents
+import SevindaCore
+import SevindaTerminal
 import Observation
 
 /// What the Resource Manager shows: one group per workspace with running sessions, then Mercury's own processes.

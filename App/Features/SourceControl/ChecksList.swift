@@ -1,5 +1,5 @@
-import MercuryGit
-import MercuryUI
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// The CI checks of a pull request with a summary line; each check opens its page in the browser.

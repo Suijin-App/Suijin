@@ -1,4 +1,4 @@
-import MercuryUI
+import SevindaUI
 import SwiftUI
 
 /// Settings > Agents: orchestration status and the opt-in user-level skill.

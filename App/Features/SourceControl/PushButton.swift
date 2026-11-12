@@ -1,5 +1,5 @@
-import MercuryGit
-import MercuryUI
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// Pushes the branch, or publishes it (`--set-upstream`) when it has no upstream yet.

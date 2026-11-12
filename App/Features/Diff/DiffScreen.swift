@@ -1,7 +1,7 @@
-import MercuryCore
-import MercuryDiff
-import MercuryGit
-import MercuryUI
+import SevindaCore
+import SevindaDiff
+import SevindaGit
+import SevindaUI
 import SwiftUI
 
 /// Changes of a git context: changed files on the left, the selected file's diff (unified or side by side) on the

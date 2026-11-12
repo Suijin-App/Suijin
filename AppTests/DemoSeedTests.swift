@@ -1,11 +1,11 @@
 import Foundation
-import MercuryCore
-import MercuryGit
+import SevindaCore
+import SevindaGit
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// Builds a demo data root for looking at the real app: `TEST_RUNNER_MERCURY_SEED_ROOT=<dir> xcodebuild test
-/// -only-testing:MercuryAppTests/DemoSeedTests`, then launch Mercury with `MERCURY_DATA_ROOT=<dir>/data`. It holds a
+/// -only-testing:SevindaAppTests/DemoSeedTests`, then launch Mercury with `MERCURY_DATA_ROOT=<dir>/data`. It holds a
 /// git workspace with two worktrees, a folder workspace, and shell sessions left running in the PTY host, so the app
 /// attaches to them on launch.
 @MainActor

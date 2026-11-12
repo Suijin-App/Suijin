@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import MercuryCore
-import MercuryTerminal
+import SevindaCore
+import SevindaTerminal
 import SwiftUI
 import Testing
-@testable import Mercury
+@testable import Sevinda
 
 /// The split tab's container: native split views sized by the layout, minimum pane sizes, double-click to share a
 /// split equally, and the pane shortcuts a terminal routes to the model.

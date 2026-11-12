@@ -134,12 +134,32 @@ struct LegacyMercuryMigration {
     private func makeBackup() throws -> URL {
         let backup = uniqueSibling(of: legacyRoot, suffix: "backup-\(timestamp())")
         do {
-            try FileManager.default.copyItem(at: legacyRoot, to: backup)
+            try Self.copyBackingUp(legacyRoot, to: backup)
         } catch {
             try? FileManager.default.removeItem(at: backup)
             throw error
         }
         return backup
+    }
+
+    /// Copies folders, regular files and symbolic links, keeping permissions. Sockets, pipes and devices are skipped:
+    /// `FileManager.copyItem` refuses them (the old helper's live `orchestration/broker.sock` made every launch fail),
+    /// and they are recreated by whatever serves them, so a backup has no use for them.
+    static func copyBackingUp(_ source: URL, to destination: URL) throws {
+        let files = FileManager.default
+        let attributes = try files.attributesOfItem(atPath: source.path)
+        switch attributes[.type] as? FileAttributeType {
+        case .typeDirectory?:
+            try files.createDirectory(at: destination, withIntermediateDirectories: false,
+                                      attributes: attributes[.posixPermissions].map { [.posixPermissions: $0] })
+            for name in try files.contentsOfDirectory(atPath: source.path) {
+                try copyBackingUp(source.appendingPathComponent(name), to: destination.appendingPathComponent(name))
+            }
+        case .typeRegular?, .typeSymbolicLink?:
+            try files.copyItem(at: source, to: destination)
+        default:
+            return
+        }
     }
 
     private func removeLeftoverHelperRecords() {

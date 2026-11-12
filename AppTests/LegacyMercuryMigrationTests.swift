@@ -171,6 +171,46 @@ struct LegacyMercuryMigrationTests {
         #expect(!sandbox.exists(skills.appendingPathComponent("mercury-orchestration")))
     }
 
+    /// The old helper keeps a live socket in `orchestration/`; `FileManager.copyItem` refuses sockets, which blocked
+    /// the move on every launch. The backup skips it, and the move (a rename) takes it along.
+    @Test func aLiveSocketInTheOldFolderDoesNotBlockTheMove() throws {
+        let sandbox = try Sandbox()
+        _ = try makeLegacyInstall(sandbox)
+        let orchestration = sandbox.legacyRoot.appendingPathComponent("orchestration", isDirectory: true)
+        try FileManager.default.createDirectory(at: orchestration, withIntermediateDirectories: true)
+        try sandbox.write("{}", to: orchestration.appendingPathComponent("state.json"))
+        let socketPath = orchestration.appendingPathComponent("broker.sock").path
+        let fd = try Self.listeningSocket(at: socketPath)
+        defer { close(fd) }
+
+        guard case .moved(let backup) = migration(sandbox).moveDataIfNeeded() else { Issue.record("expected a move"); return }
+        #expect(sandbox.exists(backup.appendingPathComponent("orchestration/state.json")))
+        #expect(!sandbox.exists(backup.appendingPathComponent("orchestration/broker.sock")))
+        #expect(sandbox.exists(sandbox.root.appendingPathComponent("orchestration/state.json")))
+    }
+
+    /// A bound Unix socket at `path`, falling back to a named pipe when the path is too long for `sun_path`; either is
+    /// a special file `copyItem` cannot copy.
+    private static func listeningSocket(at path: String) throws -> Int32 {
+        var address = sockaddr_un()
+        let bytes = Array(path.utf8)
+        guard bytes.count < MemoryLayout.size(ofValue: address.sun_path) else {
+            #expect(mkfifo(path, 0o600) == 0)
+            return -1
+        }
+        let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+        #expect(fd >= 0)
+        address.sun_family = sa_family_t(AF_UNIX)
+        withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+            for (index, byte) in bytes.enumerated() { buffer[index] = byte }
+        }
+        let result = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
+        }
+        #expect(result == 0)
+        return fd
+    }
+
     @Test func runningItAgainChangesNothing() throws {
         let sandbox = try Sandbox()
         _ = try makeLegacyInstall(sandbox)

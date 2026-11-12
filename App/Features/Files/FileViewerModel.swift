@@ -110,7 +110,7 @@ final class FileViewerModel {
 
     private func read() async {
         let url = url
-        let fresh = await Task.detached { FileViewer.read(url) }.value
+        let fresh = await Task.detached { await FileViewer.load(url) }.value
         guard !Task.isCancelled else { return }
         content = fresh
         revision += 1

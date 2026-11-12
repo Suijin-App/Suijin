@@ -12,6 +12,7 @@ extension AppModel {
 
     func closeFile(_ path: String, in context: SessionContext) {
         openFiles[context]?.removeAll { $0 == path }
+        mediaPositions[MediaPositionKey(context: context, path: path)] = nil
         if selectedTab[context] == .file(path) { selectedTab[context] = nil }
     }
 

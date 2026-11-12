@@ -79,6 +79,8 @@ final class AppModel {
     var presentedError: PresentedError?
     /// Files opened from terminal links, per context, in tab order. Kept for the app's lifetime.
     var openFiles: [SessionContext: [String]] = [:]
+    /// Where each open audio or video tab was paused when it was last hidden, in seconds; dropped when it closes.
+    @ObservationIgnored var mediaPositions: [MediaPositionKey: Double] = [:]
     /// The order the user dragged each context's session tabs into (`TabOrder.swift`); sessions not listed follow in
     /// the order they were created.
     var sessionOrder: [SessionContext: [UUID]] = AppModel.savedSessionOrder()

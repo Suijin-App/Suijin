@@ -6,9 +6,10 @@ import PDFKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A file opened from a terminal link: Markdown rendered natively, images shown, other text in a monospaced read-only
-/// view; anything else offers to open in its default app. Follows the file on disk (agents edit plans as you read):
-/// it reloads in place when written, and says so when the file is deleted or moved away.
+/// A file opened from a terminal link: Markdown rendered natively, images shown, audio and video played in the system
+/// player, other text in a monospaced read-only view; anything else offers to open in its default app. Follows the file
+/// on disk (agents edit plans as you read): it reloads in place when written, and says so when the file is deleted or
+/// moved away.
 struct FileViewer: View {
     @Environment(AppModel.self) private var model
     let path: String
@@ -16,6 +17,7 @@ struct FileViewer: View {
     @State private var file: FileViewerModel
     @State private var code = CodeViewController()
     @State private var zoom = ImageZoomController()
+    @State private var media = MediaPlaybackController()
 
     enum Content {
         case loading
@@ -25,6 +27,14 @@ struct FileViewer: View {
         case code(String, language: String)
         case pdf
         case image(NSImage)
+        /// An audio or video file by type, before AVFoundation was asked whether it can play it (`load(_:)` does).
+        case mediaFile
+        /// Audio or video AVFoundation plays.
+        case media(MediaInfo)
+        /// Audio or video AVFoundation cannot play but Quick Look can preview.
+        case quickLook
+        /// Audio or video neither can show.
+        case unplayable(isAudio: Bool)
         case unsupported
         case missing
     }
@@ -55,8 +65,25 @@ struct FileViewer: View {
             Divider()
             Group {
                 switch content {
-                case .loading:
+                case .loading, .mediaFile:
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .media(let info):
+                    MediaPlayerTab(path: path, context: context, info: info, revision: file.revision, controller: media)
+                case .quickLook:
+                    QuickLookPreview(url: url, revision: file.revision)
+                case .unplayable(let isAudio):
+                    ContentUnavailableView {
+                        if isAudio {
+                            Label("Can't Play This Audio", systemImage: "speaker.slash")
+                        } else {
+                            Label("Can't Play This Video", systemImage: "play.slash")
+                        }
+                    } description: {
+                        Text("macOS can't play or preview “\(url.lastPathComponent)”. Open it in an app that supports its format.")
+                    } actions: {
+                        Button("Open in Default App") { NSWorkspace.shared.open(url) }.glassButtonStyle()
+                        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }.glassButtonStyle()
+                    }
                 case .markdown(let text):
                     let document = MarkdownDocument(text)
                     ScrollView {
@@ -183,9 +210,24 @@ struct FileViewer: View {
                 Button { zoom.zoom(by: 1.25) } label: { Label("Zoom In", systemImage: "plus.magnifyingglass") }
                     .keyboardShortcut(ShortcutCatalog.viewerZoomIn.shortcut)
             }
+        case .media(let info):
+            Text(verbatim: info.summary)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .accessibilityLabel(Text("Media info: \(info.summary)"))
         default:
             EmptyView()
         }
+    }
+
+    /// `read(_:)`, then for audio and video files AVFoundation's answer on whether it can play them.
+    nonisolated static func load(_ url: URL) async -> Content {
+        let content = read(url)
+        guard case .mediaFile = content else { return content }
+        return await MediaProbe.content(for: url)
     }
 
     nonisolated static func read(_ url: URL) -> Content {
@@ -198,6 +240,8 @@ struct FileViewer: View {
         }
         if let type, type.conforms(to: .pdf) { return .pdf }
         if let type, type.conforms(to: .image), let image = NSImage(contentsOf: url) { return .image(image) }
+        // Never read whole: the player streams it from disk.
+        if MediaProbe.isMediaFile(url) { return .mediaFile }
         guard size <= maximumTextSize, let data = try? Data(contentsOf: url) else { return .unsupported }
         // Text is whatever decodes as UTF-8 without NUL bytes, so source files with unknown extensions still show.
         guard !data.contains(0), let text = String(data: data, encoding: .utf8) else { return .unsupported }

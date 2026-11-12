@@ -16,11 +16,31 @@ enum FileIcons {
         if !isDirectory, let badge = badges[ext] {
             image = Self.badge(badge.text, color: badge.color)
         } else {
-            let type: UTType = isDirectory ? .folder : (UTType(filenameExtension: ext) ?? .data)
-            image = rendered(NSWorkspace.shared.icon(for: type))
+            image = rendered(NSWorkspace.shared.icon(for: isDirectory ? .folder : type(forExtension: ext)))
         }
         cache[ext] = image
         return image
+    }
+
+    /// The file's icon at 128 pt (the audio player shows it large), cached by extension like `icon(forPath:)`.
+    static func largeIcon(forPath path: String) -> NSImage {
+        let ext = (path as NSString).pathExtension.lowercased()
+        if let cached = largeCache[ext] { return cached }
+        let image = rendered(NSWorkspace.shared.icon(for: type(forExtension: ext)), points: 128)
+        largeCache[ext] = image
+        return image
+    }
+
+    private static var largeCache: [String: NSImage] = [:]
+
+    /// The extension's type; media containers no installed app declares (`.mkv`, `.opus`) get the movie or audio
+    /// icon instead of a blank document.
+    private static func type(forExtension ext: String) -> UTType {
+        let type = UTType(filenameExtension: ext)
+        if type?.isDeclared != true, MediaProbe.mediaExtensions.contains(ext) {
+            return MediaProbe.audioExtensions.contains(ext) ? .audio : .movie
+        }
+        return type ?? .data
     }
 
     /// Source types macOS draws as a blank page (or mistakes: `.ts` resolves to an MPEG video type), shown as a
@@ -70,10 +90,10 @@ enum FileIcons {
         return rendered(image)
     }
 
-    /// Draws the icon at 64 px now (2× of the 32 pt the views use at most), so nothing is resolved later.
-    private static func rendered(_ icon: NSImage) -> NSImage {
-        var rect = NSRect(x: 0, y: 0, width: 64, height: 64)
+    /// Draws the icon at 2× of `points` (32 pt, the most the file views use) now, so nothing is resolved later.
+    private static func rendered(_ icon: NSImage, points: CGFloat = 32) -> NSImage {
+        var rect = NSRect(x: 0, y: 0, width: points * 2, height: points * 2)
         guard let cgImage = icon.cgImage(forProposedRect: &rect, context: nil, hints: nil) else { return icon }
-        return NSImage(cgImage: cgImage, size: NSSize(width: 32, height: 32))
+        return NSImage(cgImage: cgImage, size: NSSize(width: points, height: points))
     }
 }

@@ -79,6 +79,15 @@ their own credentials (a Keychain item named after the profile directory). The `
 `claude` and `codex` shell functions in Mercury terminals use the selected account. The user's own `~/.claude`,
 `~/.codex` and default Keychain item are never written.
 
+## Split tabs
+
+A tab shows one session, or two to ten sessions as panes. `PaneLayout` (MercuryCore) is the pane tree: n-ary splits
+along one axis with each child's share, the focused pane and a zoomed pane; its operations are pure and keep the tree
+normalized. The app keeps one layout per split tab (`App/Features/Terminal/PaneLayouts.swift`, the only code that
+changes them) and stores it as JSON in `pane_layout` (migration `v6_pane_layout`). Layouts come back at launch from the
+session records alone, so a pane whose process ended shows its ended view in its cell; panes whose session is gone
+are dropped, and a layout left with one pane becomes a plain tab again. The tab order stores split tabs by layout id.
+
 ## Terminal output flow
 
 Output travels PTY → helper → XPC → `HostedTerminalEngine` → `TerminalSession` → SwiftTerm. The app feeds SwiftTerm

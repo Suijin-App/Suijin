@@ -11,7 +11,7 @@ struct OrchestrationInspectorSection: View {
 
     var body: some View {
         let orchestration = model.runtimes.orchestration
-        if let id = model.selectedSession(in: context) {
+        if let id = model.activeSession(in: context) {
             let workers = orchestration.workers(of: id)
             let own = orchestration.dispatches(ofWorker: id)
             if let current = own.first {

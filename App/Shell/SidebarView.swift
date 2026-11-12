@@ -51,7 +51,7 @@ struct SidebarView: View {
         Binding(
             get: {
                 guard let context = model.selection else { return nil }
-                if case .session(let id)? = model.currentTab(in: context), !model.collapsedContexts.contains(context),
+                if let id = model.activeSession(in: context), !model.collapsedContexts.contains(context),
                    model.sidebarSessions(in: context).contains(where: { $0.id == id }) {
                     return .session(id)
                 }

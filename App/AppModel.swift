@@ -47,18 +47,32 @@ final class AppModel {
 
     private(set) var workspaces: [Workspace] = []
     private(set) var worktrees: [UUID: [WorktreeRecord]] = [:]
-    private(set) var sessions: [AgentSessionRecord] = []
+    private(set) var sessions: [AgentSessionRecord] = [] {
+        // A session that goes leaves its split tab (`PaneLayouts.swift`).
+        didSet { if sessions.count < oldValue.count { reconcilePaneLayouts() } }
+    }
     private(set) var accounts: [ManagedAccountRecord] = []
 
     var selection: SessionContext? {
         didSet { if selection != oldValue { setSetting(.lastSelection, selection?.storageValue) } }
     }
-    /// The selected tab (a session id, or `nil` for the diff tab) per context.
-    var selectedTab: [SessionContext: DetailTab] = [:]
-    /// Split panes: the session a tab shows is the key, its second pane the value. Kept for the app's lifetime.
-    var splits: [UUID: TerminalSplit] = [:]
-    /// The pane with keyboard focus in each split tab (the tab's own session or its second pane).
-    var focusedPane: [UUID: UUID] = [:]
+    /// The selected tab per context. Selecting `.session(id)` of a session that is a pane of a split tab selects that
+    /// tab and focuses the pane, so code that shows a session never needs to know about splits.
+    var selectedTab: [SessionContext: DetailTab] {
+        get { tabSelection }
+        set { tabSelection = normalizedSelection(newValue) }
+    }
+    private var tabSelection: [SessionContext: DetailTab] = [:]
+    /// Split tabs by layout id: each is one tab of its context showing two to ten sessions (`PaneLayouts.swift`).
+    /// Changed only through the functions there, which keep `paneIndex` and the database in step.
+    var paneLayouts: [UUID: PaneLayout] = [:] {
+        didSet { paneIndex = Dictionary(paneLayouts.values.flatMap { layout in layout.panes.map { ($0, layout.id) } },
+                                        uniquingKeysWith: { first, _ in first }) }
+    }
+    /// The split tab each pane's session belongs to.
+    @ObservationIgnored private(set) var paneIndex: [UUID: UUID] = [:]
+    /// Pending debounced writes of layouts (divider drags, focus changes).
+    @ObservationIgnored var layoutSaves: [UUID: Task<Void, Never>] = [:]
     var presentedError: PresentedError?
     /// Files opened from terminal links, per context, in tab order. Kept for the app's lifetime.
     var openFiles: [SessionContext: [String]] = [:]
@@ -75,8 +89,8 @@ final class AppModel {
     var detailWidth: CGFloat = 900
     /// Sidebar rows the user folded; every other row with sessions shows them.
     var collapsedContexts: Set<SessionContext> = []
-    /// A running agent whose tab the user asked to close; confirmed in the main window.
-    var pendingClose: AgentSessionRecord?
+    /// Sessions the user asked to close while agents among them still work; confirmed in the main window.
+    var pendingClose: PendingClose?
     /// The Settings page shown over the main window; nil while the app itself is shown.
     var settingsPage: SettingsPage?
     /// The main window, so menu commands that act on sessions do nothing while Settings or another window is key.
@@ -131,6 +145,9 @@ final class AppModel {
                 self.worktrees[workspace.id] = try await Task.detached { try store.worktrees(workspaceID: workspace.id) }.value
             }
         }
+        // Split tabs only need the session records (a pane whose process ended shows the ended view in its cell), so
+        // they come back before the sessions attach and the window shows the tabs as they were left.
+        await restorePaneLayouts()
         // Git checks run beside the session restore instead of ahead of it: the stored worktrees are enough to show
         // the window and attach the sessions.
         Task {
@@ -325,8 +342,9 @@ final class AppModel {
         }
         guard let order = sessionOrder[context], !order.isEmpty else { return inContext }
         let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        // A pane ranks where its split tab does.
         return inContext.enumerated().sorted { lhs, rhs in
-            switch (rank[lhs.element.id], rank[rhs.element.id]) {
+            switch (rank[paneIndex[lhs.element.id] ?? lhs.element.id], rank[paneIndex[rhs.element.id] ?? rhs.element.id]) {
             case let (l?, r?): l < r
             case (.some, nil): true
             case (nil, .some): false
@@ -346,16 +364,10 @@ final class AppModel {
         try? await io { [session] in try $0.save(session) }
     }
 
-    /// Ends the session's processes and forgets the tab.
+    /// Ends the session's processes and forgets its tab, or its pane in a split tab (the other panes take its room; a
+    /// single pane left becomes a plain tab in the same place).
     func closeSession(_ id: UUID) async {
         await runtimes.terminate(id)
-        // Closing a split's first pane leaves the second as a tab of its own; closing the second unsplits.
-        splits[id] = nil
-        focusedPane[id] = nil
-        for (primary, split) in splits where split.secondary == id {
-            splits[primary] = nil
-            focusedPane[primary] = nil
-        }
         sessions.removeAll { $0.id == id }
         try? await io { try $0.deleteSession(id: id) }
         for (context, tab) in selectedTab where tab == .session(id) { selectedTab[context] = nil }
@@ -419,19 +431,24 @@ final class AppModel {
     }
 }
 
-/// A tab in the detail area: one session's terminal, the worktree's changes, or a file opened from a terminal link.
+/// A tab in the detail area: one session's terminal, a split tab of several sessions, the worktree's changes, or a
+/// file opened from a terminal link.
 enum DetailTab: Hashable {
     case session(UUID)
+    /// A split tab; the id is its `PaneLayout`'s.
+    case panes(UUID)
     case changes
     /// An absolute file path.
     case file(String)
 }
 
-/// The second pane of a split tab.
-struct TerminalSplit: Hashable {
-    enum Axis: Hashable { case sideBySide, stacked }
-    let secondary: UUID
-    let axis: Axis
+/// Sessions waiting for the user to confirm closing them, because agents among them are still working.
+struct PendingClose: Identifiable {
+    let id = UUID()
+    /// Every session to close.
+    let sessions: [UUID]
+    /// The agents among them that are still working.
+    let busy: [AgentSessionRecord]
 }
 
 /// Keys of the `setting` table.

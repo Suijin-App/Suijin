@@ -2,53 +2,44 @@ import AppKit
 import MercuryCore
 import MercuryTerminal
 
-/// Tab and split actions shared by the menus, the tab strip and the terminal's own shortcuts.
+/// Tab actions shared by the menus, the tab strip and the terminal's own shortcuts; panes are in `PaneLayouts.swift`.
 extension AppModel {
-    /// Sessions shown as tabs: second panes of splits live inside their tab.
-    func tabSessions(in context: SessionContext) -> [AgentSessionRecord] {
-        let secondaries = Set(splits.values.map(\.secondary))
-        return sessions(in: context).filter { !secondaries.contains($0.id) }
+    /// The session and split tabs of a context, in tab order.
+    func sessionTabs(in context: SessionContext) -> [DetailTab] {
+        var seen = Set<DetailTab>()
+        return sessions(in: context).compactMap { session in
+            let tab = tab(of: session.id)
+            return seen.insert(tab).inserted ? tab : nil
+        }
     }
 
-    /// Every tab of a context in order: sessions, then Changes (git), then opened files.
+    /// Every session of a context in tab order; the panes of a split tab together, in reading order.
+    func tabSessions(in context: SessionContext) -> [AgentSessionRecord] {
+        let records = Dictionary(sessions(in: context).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return sessionTabs(in: context).flatMap { panes(of: $0).compactMap { records[$0] } }
+    }
+
+    /// Every tab of a context in order: sessions and split tabs, then Changes (git), then opened files.
     func tabList(in context: SessionContext) -> [DetailTab] {
-        var tabs: [DetailTab] = tabSessions(in: context).map { .session($0.id) }
+        var tabs = sessionTabs(in: context)
         if let id = workspaceID(of: context), workspace(id)?.kind == .git { tabs.append(.changes) }
         tabs += (openFiles[context] ?? []).map { .file($0) }
         return tabs
     }
 
-    /// The tab shown for a context: the selected one while it still exists, else the last session.
+    /// The tab shown for a context: the selected one while it still exists, else the last session tab.
     func currentTab(in context: SessionContext) -> DetailTab? {
         if let tab = selectedTab[context], tabList(in: context).contains(tab) { return tab }
-        return tabSessions(in: context).last.map { .session($0.id) }
+        return sessionTabs(in: context).last
     }
 
-    /// The session the selected tab shows, if the tab is a session.
-    func selectedSession(in context: SessionContext) -> UUID? {
-        let tabs = tabSessions(in: context)
-        switch currentTab(in: context) {
-        case .session(let id)?: return tabs.contains { $0.id == id } ? id : nil
-        case .changes?, .file?: return nil
-        case nil: return tabs.last?.id
-        }
-    }
-
-    /// The pane with focus in the selected tab: the pane focused last (`focusPane`, which every terminal reports to
-    /// when it becomes first responder), else the tab's session.
+    /// The pane with focus in the selected tab: the tab's session, or a split tab's focused pane (kept by
+    /// `focusPane`, which every terminal reports to when it becomes first responder). Nil for Changes and files.
     func activeSession(in context: SessionContext) -> UUID? {
-        guard let tab = selectedSession(in: context) else { return nil }
-        let panes = [tab] + (splits[tab].map { [$0.secondary] } ?? [])
-        return focusedPane[tab].flatMap { panes.contains($0) ? $0 : nil } ?? tab
-    }
-
-    /// Marks a pane as its tab's focused pane. The one entry point: the pane's terminal reports here whenever it
-    /// becomes first responder, however the keyboard got there.
-    func focusPane(_ id: UUID) {
-        if splits[id] != nil {
-            if focusedPane[id] != nil { focusedPane[id] = nil }
-        } else if let primary = splits.first(where: { $0.value.secondary == id })?.key, focusedPane[primary] != id {
-            focusedPane[primary] = id
+        switch currentTab(in: context) {
+        case .session(let id)?: id
+        case .panes(let id)?: paneLayouts[id]?.focused
+        case .changes?, .file?, nil: nil
         }
     }
 
@@ -60,36 +51,43 @@ extension AppModel {
         Task { await runtimes.start(in: context, agent: agent ?? defaultAgent, accountID: nil, prompt: nil) }
     }
 
-    /// Closes the focused pane (a split's second pane, or the tab); a file tab closes its file.
+    /// Closes the focused pane (the tab, when it has one pane); a file tab closes its file.
     func closeActive(in context: SessionContext) {
         if case .file(let path)? = currentTab(in: context) { closeFile(path, in: context); return }
         guard let id = activeSession(in: context) else { return }
         requestClose(id)
     }
 
-    /// Closes a tab; a running agent is confirmed first, as a terminal confirms closing a busy process. Shells and
-    /// ended sessions close at once.
+    /// Closes a session (its tab, or its pane); a running agent is confirmed first, as a terminal confirms closing a
+    /// busy process. Shells and ended sessions close at once.
     func requestClose(_ id: UUID) {
-        guard let record = sessions.first(where: { $0.id == id }) else { return }
-        let busy: Set<SessionActivityDisplay> = [.starting, .running, .waitingForInput, .idle]
-        if record.agent != .shell, runtimes.runtime(for: id) != nil, busy.contains(runtimes.activity(of: record)) {
-            pendingClose = record
-        } else {
-            Task { await closeSession(id) }
+        requestClose([id])
+    }
+
+    /// Closes every pane of a tab, confirming once when agents among them still work.
+    func requestCloseTab(_ tab: DetailTab) {
+        switch tab {
+        case .session, .panes: requestClose(panes(of: tab))
+        case .file(let path): if let context = selection { closeFile(path, in: context) }
+        case .changes: break
         }
     }
 
-    /// Opens a shell next to the selected tab's session. A tab that is already split keeps its split.
-    func split(in context: SessionContext, axis: TerminalSplit.Axis) {
-        guard let primary = selectedSession(in: context), splits[primary] == nil else { return }
-        Task {
-            guard let secondary = await runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil) else { return }
-            // The tab may have closed while the shell started; the shell then stays a tab of its own.
-            guard sessions.contains(where: { $0.id == primary }) else { return }
-            splits[primary] = TerminalSplit(secondary: secondary, axis: axis)
-            focusedPane[primary] = secondary
-            selectedTab[context] = .session(primary)
+    private func requestClose(_ ids: [UUID]) {
+        let busyStates: Set<SessionActivityDisplay> = [.starting, .running, .waitingForInput, .idle]
+        let records = ids.compactMap { id in sessions.first { $0.id == id } }
+        let busy = records.filter { $0.agent != .shell && runtimes.runtime(for: $0.id) != nil && busyStates.contains(runtimes.activity(of: $0)) }
+        if busy.isEmpty {
+            Task { await closeSessions(records.map(\.id)) }
+        } else {
+            pendingClose = PendingClose(sessions: records.map(\.id), busy: busy)
         }
+    }
+
+    /// Adds a pane beside the selected tab's focused pane: on its right (`.sideBySide`, ⌘D) or below it (`.stacked`,
+    /// ⇧⌘D), running the same agent as that pane. Nothing when no session tab is selected or the tab is full.
+    func split(in context: SessionContext, axis: PaneAxis) {
+        Task { await newPane(in: context, edge: axis == .sideBySide ? .right : .bottom) }
     }
 
     func selectAdjacentTab(in context: SessionContext, offset: Int) {

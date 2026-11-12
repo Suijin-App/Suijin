@@ -15,14 +15,14 @@ struct SessionTabsView: View {
             Group {
                 switch selected {
                 case .session(let id):
-                    if let split = model.splits[id] {
-                        SplitTerminalView(axis: split.axis) {
-                            pane(id)
-                        } second: {
-                            pane(split.secondary)
+                    pane(id)
+                case .panes(let id):
+                    if let layout = model.paneLayouts[id] {
+                        if let zoomed = layout.zoomed {
+                            pane(zoomed)
+                        } else {
+                            node(layout.root)
                         }
-                    } else {
-                        pane(id)
                     }
                 case .changes:
                     DiffScreen(context: context)
@@ -33,6 +33,20 @@ struct SessionTabsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    /// A split tab's tree in the system split views.
+    private func node(_ node: PaneNode) -> AnyView {
+        switch node {
+        case .pane(let id):
+            AnyView(pane(id).frame(minWidth: 160, maxWidth: .infinity, minHeight: 90, maxHeight: .infinity))
+        case .split(let axis, let children, _):
+            if axis == .sideBySide {
+                AnyView(HSplitView { ForEach(children, id: \.self) { self.node($0) } })
+            } else {
+                AnyView(VSplitView { ForEach(children, id: \.self) { self.node($0) } })
+            }
         }
     }
 
@@ -55,27 +69,6 @@ struct SessionTabsView: View {
     }
 }
 
-/// The two panes of a split tab in the system split views, each with a usable minimum size.
-struct SplitTerminalView<First: View, Second: View>: View {
-    let axis: TerminalSplit.Axis
-    @ViewBuilder var first: First
-    @ViewBuilder var second: Second
-
-    var body: some View {
-        switch axis {
-        case .sideBySide:
-            HSplitView {
-                first.frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
-                second.frame(minWidth: 200, maxWidth: .infinity, maxHeight: .infinity)
-            }
-        case .stacked:
-            VSplitView {
-                first.frame(maxWidth: .infinity, minHeight: 120, maxHeight: .infinity)
-                second.frame(maxWidth: .infinity, minHeight: 120, maxHeight: .infinity)
-            }
-        }
-    }
-}
 
 /// The tabs of a context in the window's title bar, like Safari's compact tabs: one rounded group centered in the
 /// toolbar that grows with the tabs (a single tab is a compact pill, each tab adds room) up to the toolbar's width.
@@ -150,12 +143,15 @@ struct ToolbarTabBar: View {
         ForEach(tabs, id: \.self) { tab in
             Group {
                 switch tab {
-                case .session(let id):
-                    if let session = model.sessions.first(where: { $0.id == id }) {
-                        SessionTab(session: session, isSelected: selected == tab) {
+                case .session, .panes:
+                    // A split tab reads as its focused pane, with the number of panes beside it.
+                    let shown = model.panes(of: tab)
+                    let focused = if case .panes(let id) = tab { model.paneLayouts[id]?.focused } else { shown.first }
+                    if let session = model.sessions.first(where: { $0.id == focused }) {
+                        SessionTab(session: session, paneCount: shown.count, isSelected: selected == tab) {
                             model.selectedTab[context] = tab
                         } onClose: {
-                            model.requestClose(id)
+                            model.requestCloseTab(tab)
                         }
                     }
                 case .changes:
@@ -215,6 +211,7 @@ private struct TabReordering: ViewModifier {
 private struct SessionTab: View {
     @Environment(AppModel.self) private var model
     let session: AgentSessionRecord
+    let paneCount: Int
     let isSelected: Bool
     let onSelect: () -> Void
     let onClose: () -> Void
@@ -226,6 +223,18 @@ private struct SessionTab: View {
             AgentLogo(agent: session.agent, size: 14)
                 .opacity(activity == .exited || activity == .failed ? 0.5 : 1)
             Text(verbatim: model.runtimes.displayTitle(of: session))
+            if paneCount > 1 {
+                Label {
+                    Text(verbatim: "\(paneCount)")
+                } icon: {
+                    Image(systemName: "rectangle.split.2x1")
+                }
+                .labelStyle(.titleAndIcon)
+                .font(.caption)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(Text("\(paneCount) panes"))
+            }
         }
         .help(Text(verbatim: model.runtimes.displayTitle(of: session)))
         .contextMenu { SessionMenuItems(session: session) }

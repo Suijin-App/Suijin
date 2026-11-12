@@ -132,8 +132,8 @@ final class SessionRuntimeRegistry {
         }
         // The session on screen first; all of them attach at once rather than one after another, each with its
         // scrollback, so a window with many sessions comes back as fast as its slowest one.
-        let shown = model.selection.flatMap { model.selectedSession(in: $0) }
-        restorable.sort { lhs, _ in lhs.0.id == shown }
+        let shown = Set(model.selection.map { model.visiblePanes(in: $0) } ?? [])
+        restorable.sort { lhs, rhs in shown.contains(lhs.0.id) && !shown.contains(rhs.0.id) }
         var claimed = Set<String>()
         await withTaskGroup(of: String?.self) { group in
             for (session, info) in restorable {
@@ -188,9 +188,10 @@ final class SessionRuntimeRegistry {
 
     // MARK: Start
 
-    /// Starts a session in `context`: an agent (with the chosen or default account) or the user's shell.
+    /// Starts a session in `context`: an agent (with the chosen or default account) or the user's shell. With `select`
+    /// it opens as the selected tab; a new pane is placed by its caller instead.
     @discardableResult
-    func start(in context: SessionContext, agent: AgentKind, accountID: UUID?, prompt: String?) async -> UUID? {
+    func start(in context: SessionContext, agent: AgentKind, accountID: UUID?, prompt: String?, select: Bool = true) async -> UUID? {
         guard let workspaceID = model.workspaceID(of: context), let cwd = model.directory(of: context) else { return nil }
         let id = UUID()
         let worktreeID: UUID? = if case .worktree(let tree) = context { tree } else { nil }
@@ -211,8 +212,10 @@ final class SessionRuntimeRegistry {
             record.state = runtime.terminal.hasExited ? .exited : .running
             await model.upsert(record)
             await countStart(of: agent)
-            model.selection = context
-            model.selectedTab[context] = .session(id)
+            if select {
+                model.selection = context
+                model.selectedTab[context] = .session(id)
+            }
             return id
         } catch {
             runtimes[id]?.watcher?.stop()
@@ -468,8 +471,7 @@ final class SessionRuntimeRegistry {
     private func notify(_ record: AgentSessionRecord, body: String) {
         guard model.setting(.notifyWhenWaiting) != "false" else { return }
         let context = model.context(of: record)
-        let isVisible = NSApp.isActive && model.selection == context && model.selectedTab[context] == .session(record.id)
-        guard !isVisible else { return }
+        guard !model.isShowing(record.id, in: context) else { return }
         let content = UNMutableNotificationContent()
         let place = model.worktree(record.worktreeID ?? UUID())?.branch ?? model.workspace(record.workspaceID)?.name ?? ""
         content.title = place.isEmpty ? record.title : "\(record.title) — \(place)"

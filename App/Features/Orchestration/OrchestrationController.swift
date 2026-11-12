@@ -248,7 +248,7 @@ final class OrchestrationController {
               let id = UUID(uuidString: event.sessionID),
               let record = model.sessions.first(where: { $0.id == id }) else { return }
         let context = model.context(of: record)
-        let isVisible = NSApp.isActive && model.selection == context && model.selectedTab[context] == .session(id)
+        let isVisible = model.isShowing(id, in: context)
         guard !isVisible else { return }
         let content = UNMutableNotificationContent()
         content.title = switch event.kind {

@@ -8,6 +8,13 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @AppStorage("inspector.shown") private var isInspectorShown = true
 
+    /// "End Claude?" for one working agent, "End 2 sessions?" for several.
+    private var pendingCloseTitle: Text {
+        guard let pending = model.pendingClose else { return Text(verbatim: "") }
+        if pending.busy.count == 1, let record = pending.busy.first { return Text("End \(record.title)?") }
+        return Text("End \(pending.busy.count) sessions?")
+    }
+
     var body: some View {
         @Bindable var model = model
         NavigationSplitView {
@@ -41,14 +48,20 @@ struct RootView: View {
         .background(WindowReader { model.mainWindow = $0 })
         .onAppear { SidebarClickFocus.install(model: model) }
         .confirmationDialog(
-            Text("End \(model.pendingClose?.title ?? "")?"),
+            pendingCloseTitle,
             isPresented: Binding(get: { model.pendingClose != nil }, set: { if !$0 { model.pendingClose = nil } }),
             presenting: model.pendingClose
-        ) { record in
-            Button("End Session", role: .destructive) { Task { await model.closeSession(record.id) } }
+        ) { pending in
+            Button(pending.busy.count == 1 ? "End Session" : "End Sessions", role: .destructive) {
+                Task { await model.closeSessions(pending.sessions) }
+            }
             Button("Cancel", role: .cancel) {}
-        } message: { _ in
-            Text("The agent is still working. Closing the tab stops it.")
+        } message: { pending in
+            if pending.busy.count == 1 {
+                Text("The agent is still working. Closing the tab stops it.")
+            } else {
+                Text("\(pending.busy.count) agents are still working. Closing the tab stops them.")
+            }
         }
         .sheet(item: Binding(
             get: { model.newWorktreeWorkspaceID.flatMap(model.workspace) },

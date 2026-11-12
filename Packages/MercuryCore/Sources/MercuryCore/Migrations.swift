@@ -71,6 +71,7 @@ enum Migrations {
         registerDiffNoteMigrations(&migrator)          // v3_diff_note
         registerOrchestrationMigrations(&migrator)     // v4_orchestration
         registerStatsMigrations(&migrator)             // v5_stats
+        registerPaneLayoutMigrations(&migrator)        // v6_pane_layout
         return migrator
     }
 }

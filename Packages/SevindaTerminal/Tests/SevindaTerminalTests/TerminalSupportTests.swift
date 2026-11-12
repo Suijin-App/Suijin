@@ -199,3 +199,23 @@ struct ClickTargetTests {
         #expect(terminal.acceptsFirstResponder)
     }
 }
+
+@MainActor
+@Suite("Recent text")
+struct TerminalRecentTextTests {
+    @Test("reads the last lines, scrollback included, with wrapped lines joined")
+    func lastLines() {
+        let view = SevindaTerminalView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let columns = view.getTerminal().cols
+        var output = (1...200).map { "line \($0)" }.joined(separator: "\r\n")
+        // A line longer than the screen is wide wraps over two rows.
+        let long = "claude --resume " + String(repeating: "x", count: columns)
+        output += "\r\n" + long + "\r\nlast\r\n\r\n"
+        view.feed(byteArray: Array(output.utf8)[...])
+        #expect(view.recentText(lineCount: 3) == "line 200\n\(long)\nlast")
+        // Scrolling the view back does not change what the buffer ends with.
+        view.getTerminal().buffer.yDisp = 0
+        #expect(view.recentText(lineCount: 1) == "last")
+        #expect(view.recentText(lineCount: 0) == "")
+    }
+}

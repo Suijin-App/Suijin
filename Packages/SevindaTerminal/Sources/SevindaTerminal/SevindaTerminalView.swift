@@ -492,6 +492,36 @@ open class SevindaTerminalView: TerminalView {
             .joined(separator: "\n")
     }
 
+    /// The last `lineCount` lines of the buffer, scrollback included and wherever the view is scrolled: a line wrapped
+    /// over several rows reads as one line, trailing spaces and the blank rows below the last output are dropped.
+    public func recentText(lineCount: Int) -> String {
+        let terminal = getTerminal()
+        guard lineCount > 0, terminal.bufferLine(atRow: 0) != nil else { return "" }
+        // The buffer's row count is not public; its rows are contiguous, so the last one is found by bisection.
+        var valid = 0
+        var invalid = max(terminal.rows, 1)
+        while terminal.bufferLine(atRow: invalid) != nil { valid = invalid; invalid *= 2 }
+        while invalid - valid > 1 {
+            let middle = (valid + invalid) / 2
+            if terminal.bufferLine(atRow: middle) != nil { valid = middle } else { invalid = middle }
+        }
+        var lines: [String] = []
+        var row = valid
+        while row >= 0, lines.count < lineCount {
+            guard var line = terminal.bufferLine(atRow: row) else { break }
+            var text = line.translateToString(trimRight: true)
+            // A wrapped row continues the one above it, which is full to its edge.
+            while line.isWrapped, row > 0, let previous = terminal.bufferLine(atRow: row - 1) {
+                row -= 1
+                line = previous
+                text = previous.translateToString(trimRight: false) + text
+            }
+            if !(lines.isEmpty && text.allSatisfy(\.isWhitespace)) { lines.append(text) }
+            row -= 1
+        }
+        return lines.reversed().joined(separator: "\n")
+    }
+
     open override func isAccessibilityElement() -> Bool { true }
     open override func accessibilityRole() -> NSAccessibility.Role? { .textArea }
     open override func accessibilityValue() -> Any? { visibleText() }

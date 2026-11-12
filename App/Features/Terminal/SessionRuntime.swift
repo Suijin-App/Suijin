@@ -52,6 +52,8 @@ final class SessionRuntimeRegistry {
     private(set) var reconnecting: Set<UUID> = []
     /// Why sessions do not survive quitting, when the PTY host is unavailable.
     private(set) var hostProblem: String?
+    /// The last lines a session printed before it failed, for its ended view (memory only: it can hold anything).
+    private(set) var endedOutput: [UUID: String] = [:]
     @ObservationIgnored private var usesHost = true
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var hooks: ClaudeHooks.Installation?
@@ -338,8 +340,10 @@ final class SessionRuntimeRegistry {
             forwardExit?(code)
             runtime?.watcher?.stop()
             runtime?.tracker.noteExit(code)
-            guard runtime?.isEnding != true else { return }
-            Task { await self?.sessionExited(id, code: code) }
+            guard let runtime, !runtime.isEnding else { return }
+            // Read now: the screen goes with the runtime.
+            let output = (code ?? 0) == 0 ? nil : runtime.terminal.view.recentText(lineCount: Self.endedOutputLines)
+            Task { await self?.sessionExited(id, code: code, output: output) }
         }
         return runtime
     }
@@ -375,24 +379,38 @@ final class SessionRuntimeRegistry {
         }
     }
 
+    /// Lines of a failed session's last output its ended view shows.
+    static let endedOutputLines = 8
+
     /// Records and reports an exit Sevinda did not cause, once: a session already marked ended (a finished session
-    /// re-attached after a relaunch) stays as it is and notifies nobody.
-    private func sessionExited(_ id: UUID, code: Int32?) async {
-        guard var record = model.sessions.first(where: { $0.id == id }),
-              record.state != .exited, record.state != .failed else { return }
-        record.state = (code ?? 0) == 0 ? .exited : .failed
-        record.exitCode = code
-        record.endedAt = Date()
-        await model.upsert(record)
-        if record.agent != .shell {
-            notify(record, body: (code ?? 0) == 0 ? String(localized: "Exited") : String(localized: "Exited with code \(code ?? -1)"))
+    /// re-attached after a relaunch) stays as it is and notifies nobody. Either way the runtime goes, so the session's
+    /// place shows its ended view instead of a terminal no process reads any more, and the host forgets the session.
+    private func sessionExited(_ id: UUID, code: Int32?, output: String?) async {
+        if let output, !output.isEmpty { endedOutput[id] = output }
+        if var record = model.sessions.first(where: { $0.id == id }), record.state != .exited, record.state != .failed {
+            record.state = (code ?? 0) == 0 ? .exited : .failed
+            record.exitCode = code
+            record.endedAt = Date()
+            await model.upsert(record)
+            if record.agent != .shell {
+                notify(record, body: (code ?? 0) == 0 ? String(localized: "Exited") : String(localized: "Exited with code \(code ?? -1)"))
+            }
         }
+        await release(id)
     }
 
     // MARK: End
 
-    /// Ends the session's process (SIGHUP, then SIGKILL) and drops its runtime.
+    /// Ends the session's process (SIGHUP, then SIGKILL) and forgets everything kept about it.
     func terminate(_ id: UUID) async {
+        await release(id)
+        endedOutput[id] = nil
+        titles[id] = nil
+    }
+
+    /// Ends the session's process if it still runs (SIGHUP, then SIGKILL) and drops its runtime. The title stays, so
+    /// an ended session's tab keeps its name.
+    private func release(_ id: UUID) async {
         guard let runtime = runtimes[id] else { return }
         runtime.isEnding = true
         await finishWork(runtime)?.value
@@ -401,7 +419,7 @@ final class SessionRuntimeRegistry {
         runtime.terminal.view.removeHandlers()
         runtimes[id] = nil
         activities[id] = nil
-        titles[id] = nil
+        reconnecting.remove(id)
         if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
     }
 

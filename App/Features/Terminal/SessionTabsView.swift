@@ -562,6 +562,7 @@ private struct EndedSessionView: View {
                     status
                 }
                 details
+                if failed, let output = model.runtimes.endedOutput[record.id] { lastOutput(output) }
             }
             .padding(SevindaSpacing.xl)
             .frame(maxWidth: .infinity)
@@ -644,6 +645,21 @@ private struct EndedSessionView: View {
         .font(.callout)
         .monospacedDigit()
         .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    /// What a failed session printed last (its error, usually): the terminal is gone with the process.
+    private func lastOutput(_ output: String) -> some View {
+        VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+            Text("Last output").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            ScrollView {
+                Text(verbatim: output)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 110)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     /// A large rounded Liquid Glass button (system button styles keep a small radius at this size).

@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: Migration bản cài Mercury đang có
-status: pending
+status: done
 depends_on: [3]
 ---
 

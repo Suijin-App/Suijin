@@ -17,9 +17,9 @@ Lệnh này chỉ được phép trả về các chỗ trong danh sách "Ngoại
 Kiểm tra thêm tên file và thư mục: `git ls-files | grep -i mercury` phải chỉ còn file migration, file test và lịch sử trong `plans/`.
 
 ## Build & test
-- [ ] Xoá `DerivedData` và các thư mục `Packages/*/.build`. Chạy `scripts/bootstrap.sh`.
-- [ ] `scripts/ci-local.sh`: xanh, không cảnh báo.
-- [ ] Test migration ở phase 5 qua.
+- [x] Xoá `DerivedData` và các thư mục `Packages/*/.build`. Chạy `scripts/bootstrap.sh`.
+- [x] `scripts/ci-local.sh`: xanh, không cảnh báo.
+- [x] Test migration ở phase 5 qua.
 
 ## Chạy thật
 1. **Cài mới**, dùng `MERCURY_DATA_ROOT`… giờ là `SEVINDA_DATA_ROOT` trỏ vào thư mục trống:
@@ -35,9 +35,9 @@ Kiểm tra thêm tên file và thư mục: `git ls-files | grep -i mercury` ph�
 4. **Ảnh chụp**: welcome, About, Settings, menu app, ở chế độ sáng và tối, cửa sổ 1000×640 và ~1400. Tự xem lại toàn bộ.
 
 ## Phát hành
-- [ ] Chưa có tên miền: không phát hành Sparkle. Ghi một việc riêng "bật cập nhật cho Sevinda khi có tên miền" (DNS, appcast, downloads, `SUFeedURL`, legal text).
+- [x] Chưa có tên miền: không phát hành Sparkle. Ghi một việc riêng "bật cập nhật cho Sevinda khi có tên miền" (DNS, appcast, downloads, `SUFeedURL`, legal text).
 - [ ] Ký và notarize bằng script đã đổi tên ở phase 2. Kiểm tra `spctl -a -vv Sevinda.app` và `stapler validate`.
-- [ ] Release notes: "Mercury is now Sevinda".
+- [x] Release notes: "Mercury is now Sevinda".
 - [ ] Push và tag chỉ khi được anh duyệt.
 
 ## Đổi tên thư mục repo (bước cuối, sau khi mọi thứ đã merge)
@@ -50,3 +50,8 @@ Kiểm tra thêm tên file và thư mục: `git ls-files | grep -i mercury` ph�
 
 ## Xong khi
 Đạt đủ các tiêu chí trong `plan.md`.
+
+## Kết quả (2026-11-12)
+- Ký Developer ID cho app và `SevindaPTYHost` qua `scripts/release-notarize.sh --dry-run`: được. Chưa notarize vì máy chưa có keychain profile `sevinda-notary`.
+- `ci-local.sh` xanh (9 package, app 124 test), không cảnh báo; test thời gian `TerminalFeedSchedulerTests` (giới hạn 50 ms) thỉnh thoảng đỏ khi máy tải nặng, chạy riêng thì xanh.
+- Còn lại cho anh: đổi tên thư mục repo và chép memory (mục cuối), tạo profile notary, push/tag.

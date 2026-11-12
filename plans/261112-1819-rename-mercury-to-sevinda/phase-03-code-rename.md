@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: Code: package, module, type, biến môi trường
-status: pending
+status: done
 depends_on: [2]
 ---
 

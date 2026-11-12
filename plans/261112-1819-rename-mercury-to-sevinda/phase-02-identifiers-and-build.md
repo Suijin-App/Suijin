@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: Định danh & cấu hình build
-status: pending
+status: done
 depends_on: [1]
 ---
 

@@ -27,11 +27,11 @@ Chốt mọi quyết định cần trước khi sửa code, rồi tạo nhánh v
 5. **Repo**: có đổi tên thư mục `~/Self-Works/Mercury` và remote hay không. Đổi tên thư mục sẽ làm hỏng DerivedData và đường dẫn tuyệt đối trong các script scratch; việc này không ảnh hưởng tới code.
 
 ## Chuẩn bị
-- [ ] Commit sạch trên `main`. Tạo nhánh `chore/rename-sevinda`.
-- [ ] Backup `~/Library/Application Support/Mercury` (copy nguyên thư mục, kèm `mercury.sqlite`).
-- [ ] Backup defaults: `defaults export com.tekmium.mercury ~/Desktop/mercury-defaults.plist`.
-- [ ] Ghi lại các session đang chạy trong helper (Resource Manager), và lưu những gì cần lưu trước khi làm phase 5.
-- [ ] Liệt kê đầy đủ các chỗ cần đổi, lưu vào `plans/reports/rename-inventory.txt`:
+- [x] Commit sạch trên `main`. Tạo nhánh `chore/rename-sevinda`.
+- [x] Backup `~/Library/Application Support/Mercury` (copy nguyên thư mục, kèm `mercury.sqlite`).
+- [x] Backup defaults: `defaults export com.tekmium.mercury ~/Desktop/mercury-defaults.plist`.
+- [x] Ghi lại các session đang chạy trong helper (Resource Manager), và lưu những gì cần lưu trước khi làm phase 5.
+- [x] Liệt kê đầy đủ các chỗ cần đổi, lưu vào `plans/reports/rename-inventory.txt`:
   ```sh
   git grep -n -i mercury -- . ':!plans' > plans/reports/rename-inventory.txt
   git ls-files | grep -i mercury > plans/reports/rename-paths.txt

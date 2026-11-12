@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: Nội dung người dùng nhìn thấy
-status: pending
+status: done
 depends_on: [3]
 ---
 

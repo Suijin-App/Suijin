@@ -121,7 +121,14 @@ stays bounded and the helper's scrollback stays complete.
 Every launch carries `sevinda.session` and `sevinda.dataRoot` metadata. On launch the app attaches to host sessions its
 records name, and terminates only unknown running sessions tagged with its own data root, so another data root (a
 second build, the tests) sharing the helper never loses its sessions. An exit Sevinda caused (closing a tab, quitting
-with sessions not kept) is not reported; other exits are recorded once and notified once.
+with sessions not kept) is not reported; other exits are recorded once and notified once. Either way the session's
+runtime is released (the host forgets the session), so its tab or pane shows the Session Ended view; a failed session
+keeps its last few output lines in memory for that view.
+
+An ended Claude or Codex session can be resumed in place: the same record runs again with `claude --resume <id>` or
+`codex resume <id>`, so its tab or pane, account and folder stay. The id (`agent_session.agentSessionID`, migration
+`v7_agent_session_id`) comes from Claude's hook events (`session_id`, stored as soon as a hook reports it) or from the
+resume hint the CLI prints as it exits (Codex reports its thread id only to the broker, so the hint comes first for it).
 
 Agent launches go through a plain login shell (`-l -c`), with the `PATH` that `AgentCatalog.loginShellPATH` resolved
 from an interactive login shell, passed through `/usr/bin/env` after the profile ran together with the account's
@@ -152,5 +159,6 @@ The old helper's Login Items entry can only be removed by the user (System Setti
   restart, data-root isolation, launch environment, and a 10-terminal flood (`LoadTests`). Opt-in suites:
   `SEVINDA_AGENT_SMOKE=1` (real `claude`/`codex`), `SEVINDA_SEED_ROOT=<dir>` (demo data for screenshots),
   `SEVINDA_SCREENSHOTS=<dir>` (offscreen renders of forms; use real window captures for anything with a sidebar or
-  overlapping views). Pass them with the `TEST_RUNNER_` prefix to `xcodebuild test`.
+  overlapping views), `SEVINDA_ENDED_SHOT=<file>` (the Session Ended view, captured by window id with
+  `screencapture -l`). Pass them with the `TEST_RUNNER_` prefix to `xcodebuild test`.
 - `scripts/ci-local.sh` runs everything; it must be green before a phase closes.

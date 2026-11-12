@@ -1,4 +1,5 @@
 import AppKit
+import SevindaAgents
 import SevindaCore
 import SwiftUI
 
@@ -68,6 +69,9 @@ struct SessionMenuItems: View {
             Task { await model.runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil) }
         }
         if ended {
+            if model.canResume(session) {
+                Button("Resume Session") { Task { await model.resume(session) } }
+            }
             Button("Start Again") { Task { await model.startAgain(session) } }
         }
         Button("Copy Working Directory") { copy(session.cwd) }
@@ -158,6 +162,17 @@ extension AppModel {
         let context = context(of: session)
         await closeSession(session.id)
         await runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil)
+    }
+
+    /// Whether an ended session can continue its conversation: a Claude or Codex session whose conversation id Sevinda
+    /// learned (from Claude's hooks or the hint the CLI printed as it exited).
+    func canResume(_ session: AgentSessionRecord) -> Bool {
+        session.agent != .shell && session.agentSessionID.flatMap(AgentResume.validSessionID) != nil
+    }
+
+    /// Relaunches an ended agent session with its conversation, in the same tab or pane.
+    func resume(_ session: AgentSessionRecord) async {
+        await runtimes.resume(session)
     }
 
     /// Whether `context` belongs to a git workspace (so it has changes to show).

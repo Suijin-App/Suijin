@@ -8,11 +8,15 @@ public struct ClaudeHookEvent: Sendable, Hashable {
     public var message: String?
     /// `notification_type` (Notification events), e.g. `permission_prompt`, `idle_prompt`, `auth_success`.
     public var notificationType: String?
+    /// `session_id`: Claude Code's id for the conversation, which `claude --resume` takes. Every hook carries it; it
+    /// changes when the conversation does (`/clear`), so the latest one counts.
+    public var sessionID: String?
 
-    public init(name: String, message: String? = nil, notificationType: String? = nil) {
+    public init(name: String, message: String? = nil, notificationType: String? = nil, sessionID: String? = nil) {
         self.name = name
         self.message = message
         self.notificationType = notificationType
+        self.sessionID = sessionID
     }
 }
 
@@ -137,6 +141,7 @@ public enum ClaudeHooks {
         else { return nil }
         return ClaudeHookEvent(
             name: name, message: object["message"] as? String,
-            notificationType: object["notification_type"] as? String)
+            notificationType: object["notification_type"] as? String,
+            sessionID: (object["session_id"] as? String).flatMap(AgentResume.validSessionID))
     }
 }

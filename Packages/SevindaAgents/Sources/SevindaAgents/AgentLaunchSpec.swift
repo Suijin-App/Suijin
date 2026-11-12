@@ -25,16 +25,18 @@ public struct AgentLaunchSpec: Sendable, Hashable {
 public enum AgentLaunchSpecBuilder {
     /// Builds the launch for an interactive session.
     ///
-    /// - claude: `claude [--settings <hooks file>] [prompt]`; the hook env for `sessionID` is merged
+    /// - claude: `claude [--settings <hooks file>] [--resume <id>] [prompt]`; the hook env for `sessionID` is merged
     ///   over `env` when both `hooks` and `sessionID` are given (without a session id the hooks are inert).
-    /// - codex: `codex [prompt]`; `hooks` is ignored (Claude-only).
+    /// - codex: `codex [resume <id>] [prompt]`; `hooks` is ignored (Claude-only).
     /// - shell: `binary` with no arguments.
+    ///
+    /// `resume` is the agent's own conversation id (`AgentResume`); an id that is not one is ignored.
     ///
     /// Both CLIs take the prompt as a trailing positional argument. A prompt starting with `-` is
     /// preceded by `--` so it is not parsed as an option. Blank prompts are dropped.
     public static func make(
         kind: AgentKind, binary: URL, cwd: URL, env: EnvPatch, initialPrompt: String?,
-        hooks: ClaudeHooks.Installation?, sessionID: UUID? = nil
+        hooks: ClaudeHooks.Installation?, sessionID: UUID? = nil, resume: String? = nil
     ) -> AgentLaunchSpec {
         let prompt = initialPrompt.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         var arguments: [String] = []
@@ -45,8 +47,10 @@ public enum AgentLaunchSpecBuilder {
                 arguments += ["--settings", hooks.settingsFile.path]
                 if let sessionID { finalEnv = finalEnv.merging(hooks.env(sessionID: sessionID)) }
             }
+            arguments += AgentResume.arguments(kind: .claude, sessionID: resume)
             arguments += promptArguments(prompt)
         case .codex:
+            arguments += AgentResume.arguments(kind: .codex, sessionID: resume)
             arguments += promptArguments(prompt)
         case .shell:
             break

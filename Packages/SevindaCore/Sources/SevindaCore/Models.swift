@@ -102,11 +102,14 @@ public struct AgentSessionRecord: Identifiable, Codable, Hashable, Sendable {
     public var exitCode: Int32?
     public var createdAt: Date
     public var endedAt: Date?
+    /// The agent's own id for its conversation (Claude Code's session id, Codex's thread id), so an ended session can
+    /// be resumed. Nil for shells and until the agent reported it.
+    public var agentSessionID: String?
 
     public init(
         id: UUID = UUID(), workspaceID: UUID, worktreeID: UUID? = nil, agent: AgentKind, accountID: UUID? = nil,
         title: String, cwd: String, hostSessionID: String? = nil, state: SessionState = .starting,
-        exitCode: Int32? = nil, createdAt: Date = Date(), endedAt: Date? = nil
+        exitCode: Int32? = nil, createdAt: Date = Date(), endedAt: Date? = nil, agentSessionID: String? = nil
     ) {
         self.id = id
         self.workspaceID = workspaceID
@@ -120,6 +123,7 @@ public struct AgentSessionRecord: Identifiable, Codable, Hashable, Sendable {
         self.exitCode = exitCode
         self.createdAt = createdAt
         self.endedAt = endedAt
+        self.agentSessionID = agentSessionID
     }
 }
 

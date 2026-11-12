@@ -549,6 +549,7 @@ private struct EndedSessionView: View {
 
     private static let cornerRadius: CGFloat = 28
     private var failed: Bool { record.state == .failed || (record.exitCode ?? 0) != 0 }
+    private var canResume: Bool { model.canResume(record) }
 
     var body: some View {
         VStack(spacing: SevindaSpacing.l) {
@@ -568,20 +569,40 @@ private struct EndedSessionView: View {
             .frame(maxWidth: .infinity)
             .floatingGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
             GlassGroup(spacing: SevindaSpacing.m) {
-                HStack(spacing: SevindaSpacing.m) {
-                    action("Start Again", systemImage: "arrow.clockwise", tint: .accentColor) {
-                        Task { await model.startAgain(record) }
-                    }
-                    .keyboardShortcut(.defaultAction)
-                    action(closeTitle, systemImage: "xmark", tint: nil) {
-                        Task { await model.closeSession(record.id) }
-                    }
+                // Side by side when they fit; a narrow pane stacks them so no title is cut.
+                ViewThatFits(in: .horizontal) {
+                    EqualWidthRow(spacing: SevindaSpacing.m) { actions }
+                    VStack(spacing: SevindaSpacing.s) { actions }
                 }
             }
         }
-        .frame(maxWidth: 440)
+        .frame(maxWidth: canResume ? 520 : 440)
         .padding(SevindaSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        // Resuming continues the conversation, so it is the main action whenever it is possible.
+        if canResume {
+            action("Resume Session", systemImage: "play.fill", tint: .accentColor) {
+                Task { await model.resume(record) }
+            }
+            .keyboardShortcut(.defaultAction)
+            .help(Text("Continue this conversation in this place"))
+            action("Start Again", systemImage: "arrow.clockwise", tint: nil) {
+                Task { await model.startAgain(record) }
+            }
+            .help(Text("Start a new conversation"))
+        } else {
+            action("Start Again", systemImage: "arrow.clockwise", tint: .accentColor) {
+                Task { await model.startAgain(record) }
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        action(closeTitle, systemImage: "xmark", tint: nil) {
+            Task { await model.closeSession(record.id) }
+        }
     }
 
     /// The agent's logo (a terminal symbol for a shell) with a small badge saying how it ended.
@@ -651,13 +672,12 @@ private struct EndedSessionView: View {
     private func lastOutput(_ output: String) -> some View {
         VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
             Text("Last output").font(.caption.weight(.medium)).foregroundStyle(.secondary)
-            ScrollView {
-                Text(verbatim: output)
-                    .font(.system(.caption, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(maxHeight: 110)
+            // At most `SessionRuntimeRegistry.endedOutputLines` lines; long ones wrap.
+            Text(verbatim: output)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .combine)
     }
@@ -667,12 +687,47 @@ private struct EndedSessionView: View {
         Button(action: perform) {
             Label(title, systemImage: systemImage)
                 .font(.headline)
+                .lineLimit(1)
                 .foregroundStyle(tint == nil ? Color.primary : Color.white)
+                .padding(.horizontal, SevindaSpacing.m)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, SevindaSpacing.m)
                 .floatingGlass(in: Capsule(), tint: tint, interactive: true)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// A row of equally wide views, each as wide as the widest one needs. `HStack` shares its width out evenly instead, so
+/// with `ViewThatFits` a row whose views fit in total could still cut the longest title. Custom because no system
+/// stack sizes its children this way (Apple's sample layout for this case).
+private struct EqualWidthRow: Layout {
+    var spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard !subviews.isEmpty else { return .zero }
+        let widest = maxSize(subviews)
+        let width = widest.width * CGFloat(subviews.count) + spacing * CGFloat(subviews.count - 1)
+        // Fills an offered width it fits in, so wide windows keep the buttons stretched as before.
+        let offered = proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? width
+        return CGSize(width: max(width, offered), height: widest.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard !subviews.isEmpty else { return }
+        let width = (bounds.width - spacing * CGFloat(subviews.count - 1)) / CGFloat(subviews.count)
+        var x = bounds.minX
+        for subview in subviews {
+            subview.place(at: CGPoint(x: x, y: bounds.midY), anchor: .leading,
+                          proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width + spacing
+        }
+    }
+
+    private func maxSize(_ subviews: Subviews) -> CGSize {
+        subviews.map { $0.sizeThatFits(.unspecified) }.reduce(.zero) {
+            CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height))
+        }
     }
 }

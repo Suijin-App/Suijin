@@ -26,6 +26,9 @@ final class SessionRuntime {
     var isEnding = false
     /// When the agent last started working (activity `running`); nil while it is not working. Feeds the work-time stat.
     var workingSince: Date?
+    /// The agent's own conversation id, as far as Sevinda knows it (Claude's hooks report it; a resumed session starts
+    /// with the id it resumed).
+    var agentSessionID: String?
 
     init(id: UUID, agent: AgentKind, terminal: TerminalSession) {
         self.id = id
@@ -160,6 +163,7 @@ final class SessionRuntimeRegistry {
         let hostID = info.id
         let engine = HostedTerminalEngine(client: .shared)
         let runtime = makeRuntime(id: session.id, agent: session.agent, engine: engine)
+        runtime.agentSessionID = session.agentSessionID
         reconnecting.insert(session.id)
         do {
             let scrollback = try await engine.attach(sessionID: hostID)
@@ -200,37 +204,96 @@ final class SessionRuntimeRegistry {
         // The account actually used is stored, so removing the provider's default account later stops this session too.
         let accountID = accountID ?? agent.accountProvider.flatMap { model.defaultAccount(for: $0)?.id }
         let title = defaultTitle(agent: agent, accountID: accountID)
-        var record = AgentSessionRecord(id: id, workspaceID: workspaceID, worktreeID: worktreeID, agent: agent,
+        let record = AgentSessionRecord(id: id, workspaceID: workspaceID, worktreeID: worktreeID, agent: agent,
                                         accountID: accountID, title: title, cwd: cwd.path)
         do {
             let launch = try await makeLaunch(record: record, cwd: cwd, accountID: accountID, prompt: prompt)
-            let engine: any TerminalEngine = usesHost ? HostedTerminalEngine(client: .shared) : SwiftTermEngine()
-            let runtime = makeRuntime(id: id, agent: agent, engine: engine)
-            if agent == .claude, let hooks {
-                startWatching(runtime, file: hooks.eventsFile(sessionID: id), readExisting: true)
-            }
-            try await runtime.terminal.start(launch)
-            record.hostSessionID = engine.sessionID
-            record.state = runtime.terminal.hasExited ? .exited : .running
-            await model.upsert(record)
-            await countStart(of: agent)
+            try await run(record, launch: launch)
             if select {
                 model.selection = context
                 model.selectedTab[context] = .session(id)
             }
             return id
         } catch {
-            runtimes[id]?.watcher?.stop()
-            runtimes[id] = nil
-            activities[id] = nil
-            if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
             model.presentedError = PresentedError(title: String(localized: "Could not start \(title)"),
                                                   message: error.localizedDescription)
             return nil
         }
     }
 
-    func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?) async throws -> TerminalLaunch {
+    /// Ended agent sessions being resumed, so a second click does not start the agent twice.
+    @ObservationIgnored private var resuming: Set<UUID> = []
+
+    /// Starts an ended Claude or Codex session again with its conversation (`claude --resume <id>`,
+    /// `codex resume <id>`) under the same record, so it comes back in its own tab or pane with the same account and
+    /// folder. Does nothing for a session that still runs or whose conversation id is unknown.
+    func resume(_ session: AgentSessionRecord) async {
+        guard let ended = model.sessions.first(where: { $0.id == session.id }), ended.agent != .shell,
+              runtimes[ended.id] == nil, !resuming.contains(ended.id),
+              let conversation = ended.agentSessionID.flatMap(AgentResume.validSessionID) else { return }
+        resuming.insert(ended.id)
+        defer { resuming.remove(ended.id) }
+        do {
+            let cwd = URL(fileURLWithPath: ended.cwd, isDirectory: true)
+            let launch = try await makeLaunch(record: ended, cwd: cwd, accountID: ended.accountID, prompt: nil,
+                                              resume: conversation)
+            try await relaunch(ended, launch: launch)
+        } catch {
+            model.presentedError = PresentedError(title: String(localized: "Could not resume \(ended.title)"),
+                                                  message: error.localizedDescription)
+        }
+    }
+
+    /// Runs `launch` as the ended session `ended` again: same record, so its tab or pane, title, account and folder
+    /// stay; the exit of the previous run is cleared.
+    func relaunch(_ ended: AgentSessionRecord, launch: TerminalLaunch) async throws {
+        guard runtimes[ended.id] == nil else { return }
+        var record = ended
+        record.state = .starting
+        record.exitCode = nil
+        record.endedAt = nil
+        endedOutput[record.id] = nil
+        // Stored as starting first: an exit right after the launch must not find the previous run's ended record.
+        await model.upsert(record)
+        do {
+            try await run(record, launch: launch)
+        } catch {
+            await model.upsert(ended)
+            throw error
+        }
+    }
+
+    /// Runs `launch` for `record` in a new runtime and stores the record with its host session, as running (or ended,
+    /// when the process is already gone). On failure nothing is left behind and the record is not stored.
+    func run(_ record: AgentSessionRecord, launch: TerminalLaunch) async throws {
+        var record = record
+        let id = record.id
+        let engine: any TerminalEngine = usesHost ? HostedTerminalEngine(client: .shared) : SwiftTermEngine()
+        let runtime = makeRuntime(id: id, agent: record.agent, engine: engine)
+        runtime.agentSessionID = record.agentSessionID
+        if record.agent == .claude, let hooks {
+            startWatching(runtime, file: hooks.eventsFile(sessionID: id), readExisting: true)
+        }
+        do {
+            try await runtime.terminal.start(launch)
+        } catch {
+            runtime.watcher?.stop()
+            runtimes[id] = nil
+            activities[id] = nil
+            if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
+            throw error
+        }
+        record.hostSessionID = engine.sessionID
+        record.state = runtime.terminal.hasExited ? .exited : .running
+        // A hook may have reported the conversation while the record was not stored yet.
+        record.agentSessionID = runtime.agentSessionID ?? record.agentSessionID
+        await model.upsert(record)
+        await countStart(of: record.agent)
+    }
+
+    /// The launch of `record`'s agent; `resume` is the conversation to reopen instead of starting a new one.
+    func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?,
+                    resume: String? = nil) async throws -> TerminalLaunch {
         var base = ["SEVINDA_DATA_ROOT": model.dataRoot.path, "SEVINDA_SESSION_ID": record.id.uuidString]
         // Orchestration: the session token (only ever in this environment, never in arguments) and the broker's
         // addresses. Only hosted sessions get them: the broker lives in the PTY host.
@@ -254,7 +317,7 @@ final class SessionRuntimeRegistry {
         if record.agent == .claude, let hooks { _ = try? hooks.prepareEventsFile(sessionID: record.id) }
         var spec = AgentLaunchSpecBuilder.make(kind: record.agent, binary: binary, cwd: cwd, env: accountEnv,
                                                initialPrompt: prompt, hooks: record.agent == .claude ? hooks : nil,
-                                               sessionID: record.id)
+                                               sessionID: record.id, resume: resume)
         // Codex can share a background app server; without it (or with a broken install of it) `--no-daemon` runs the
         // session on its own.
         if record.agent == .codex, model.setting(.codexNoDaemon) == "true" { spec.arguments.insert("--no-daemon", at: 0) }
@@ -343,19 +406,54 @@ final class SessionRuntimeRegistry {
             guard let runtime, !runtime.isEnding else { return }
             // Read now: the screen goes with the runtime.
             let output = (code ?? 0) == 0 ? nil : runtime.terminal.view.recentText(lineCount: Self.endedOutputLines)
-            Task { await self?.sessionExited(id, code: code, output: output) }
+            let conversation = Self.conversationID(of: runtime)
+            Task { await self?.sessionExited(id, code: code, output: output, agentSessionID: conversation) }
         }
         return runtime
     }
 
+    /// The conversation an exited agent can be resumed with. Claude's hooks report its id as it runs, so that comes
+    /// first; Codex reports none to Sevinda, so the hint it prints as it exits counts first, and either falls back to
+    /// the other.
+    static func conversationID(of runtime: SessionRuntime) -> String? {
+        guard runtime.agent != .shell else { return nil }
+        let printed = AgentResume.sessionID(inExitText: runtime.terminal.view.recentText(lineCount: Self.exitHintLines),
+                                            kind: runtime.agent)
+        return runtime.agent == .claude ? runtime.agentSessionID ?? printed : printed ?? runtime.agentSessionID
+    }
+
+    /// Lines at the end of an exited agent's screen searched for its resume hint.
+    static let exitHintLines = 40
+
     private func startWatching(_ runtime: SessionRuntime, file: URL, readExisting: Bool) {
-        let watcher = HookEventWatcher(fileURL: file, readExisting: readExisting) { [weak runtime] events in
+        let watcher = HookEventWatcher(fileURL: file, readExisting: readExisting) { [weak self, weak runtime] events in
             Task { @MainActor in
-                for event in events { runtime?.tracker.noteHookEvent(event) }
+                guard let runtime else { return }
+                for event in events {
+                    runtime.tracker.noteHookEvent(event)
+                    if let conversation = event.sessionID { self?.noteConversation(conversation, of: runtime) }
+                }
             }
         }
         watcher.start()
         runtime.watcher = watcher
+    }
+
+    /// Keeps the conversation id Claude reported, on the record too, so the session can be resumed after it ended,
+    /// even after a relaunch. It only changes when the conversation does.
+    private func noteConversation(_ conversation: String, of runtime: SessionRuntime) {
+        guard runtime.agentSessionID != conversation else { return }
+        runtime.agentSessionID = conversation
+        storeConversation(conversation, for: runtime.id)
+    }
+
+    private func storeConversation(_ conversation: String, for id: UUID) {
+        // The record is read when the write starts, so a state stored meanwhile (the exit) is not overwritten.
+        Task {
+            guard var record = model.sessions.first(where: { $0.id == id }), record.agentSessionID != conversation else { return }
+            record.agentSessionID = conversation
+            await model.upsert(record)
+        }
     }
 
     // MARK: Status
@@ -385,8 +483,12 @@ final class SessionRuntimeRegistry {
     /// Records and reports an exit Sevinda did not cause, once: a session already marked ended (a finished session
     /// re-attached after a relaunch) stays as it is and notifies nobody. Either way the runtime goes, so the session's
     /// place shows its ended view instead of a terminal no process reads any more, and the host forgets the session.
-    private func sessionExited(_ id: UUID, code: Int32?, output: String?) async {
+    private func sessionExited(_ id: UUID, code: Int32?, output: String?, agentSessionID: String?) async {
         if let output, !output.isEmpty { endedOutput[id] = output }
+        if let agentSessionID, var record = model.sessions.first(where: { $0.id == id }), record.agentSessionID != agentSessionID {
+            record.agentSessionID = agentSessionID
+            await model.upsert(record)
+        }
         if var record = model.sessions.first(where: { $0.id == id }), record.state != .exited, record.state != .failed {
             record.state = (code ?? 0) == 0 ? .exited : .failed
             record.exitCode = code

@@ -1,0 +1,175 @@
+name: Mercury
+options:
+  bundleIdPrefix: com.tekmium
+  deploymentTarget:
+    macOS: "15.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+# Package boundaries are documented in docs/architecture.md. SwiftTerm (pinned in Packages/MercuryTerminal) ships a
+# build-tool plugin, so command-line builds pass `-skipPackagePluginValidation`, and its Metal renderer needs the
+# Metal Toolchain (`xcodebuild -downloadComponent metalToolchain`).
+packages:
+  MercuryUI:          { path: Packages/MercuryUI }
+  MercuryCore:        { path: Packages/MercuryCore }
+  MercuryGit:         { path: Packages/MercuryGit }
+  MercuryPTYProtocol: { path: Packages/MercuryPTYProtocol }
+  MercuryTerminal:    { path: Packages/MercuryTerminal }
+  MercuryAgents:      { path: Packages/MercuryAgents }
+  MercuryAccounts:    { path: Packages/MercuryAccounts }
+  MercuryDiff:        { path: Packages/MercuryDiff }
+  MercuryUsage:       { path: Packages/MercuryUsage }
+  # Native SwiftUI Markdown rendering (tables, code blocks) for the file viewer tab. Pinned exactly.
+  MarkdownUI:
+    url: https://github.com/gonzalezreal/swift-markdown-ui
+    exactVersion: 2.4.1
+  # Software updates: Sparkle 2 with EdDSA-signed updates from the appcast (docs/release-process.md). Pinned exactly;
+  # an upgrade must keep `sign_update` (shipped in the package artifact) compatible with scripts/release-notarize.sh.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    # TEKMIUM SOLUTIONS COMPANY LIMITED, the same team as Capstio. Command-line builds need `-allowProvisioningUpdates`.
+    DEVELOPMENT_TEAM: YWSHDN5Y3H
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  Mercury:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes:
+          - "Mercury.entitlements"
+          - "Info.plist"
+          - "Resources/LaunchAgents/**"
+          - "Resources/Skills/**"
+      # Agent skills keep their folder layout (Contents/Resources/Skills/<skill>/SKILL.md): `mercury skills get` reads
+      # them there, and Mercury copies them into agent homes.
+      - path: App/Resources/Skills
+        type: folder
+        buildPhase: resources
+      # launchd reads the helper's plist from Contents/Library/LaunchAgents (SMAppService.agent(plistName:)).
+      - path: App/Resources/LaunchAgents/com.tekmium.mercury.ptyhost.plist
+        buildPhase:
+          copyFiles:
+            destination: wrapper
+            subpath: Contents/Library/LaunchAgents
+    dependencies:
+      - package: MercuryUI
+      - package: MercuryCore
+      - package: MercuryGit
+      - package: MercuryPTYProtocol
+        product: MercuryPTYProtocol
+      - package: MercuryTerminal
+      - package: MercuryAgents
+      - package: MercuryAccounts
+      - package: MercuryDiff
+      - package: MercuryUsage
+      - package: MarkdownUI
+      - package: Sparkle
+      # The PTY host ships next to the app executable (Contents/MacOS/MercuryPTYHost).
+      - target: MercuryPTYHost
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
+      # `mercury` goes in its own folder (Contents/Helpers) so only it lands on the PATH of Mercury's terminals; it
+      # cannot sit in Contents/MacOS next to `Mercury` on a case-insensitive volume.
+      - target: MercuryCLI
+        embed: true
+        codeSign: false
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
+    settings:
+      base:
+        PRODUCT_NAME: Mercury
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/Mercury.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "Apple Development"
+        COMBINE_HIDPI_IMAGES: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  # launchd agent that owns every terminal so sessions survive the app quitting (docs/architecture.md).
+  MercuryPTYHost:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Helpers/MercuryPTYHost
+    dependencies:
+      - package: MercuryPTYProtocol
+        product: MercuryPTYProtocol
+      - package: MercuryPTYProtocol
+        product: MercuryPTYHostKit
+    settings:
+      base:
+        PRODUCT_NAME: MercuryPTYHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.ptyhost
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "Apple Development"
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+
+  # `mercury`, the orchestration command agents run in Mercury's terminals (docs/architecture.md). Its logic is
+  # MercuryCLIKit in Packages/MercuryPTYProtocol.
+  MercuryCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Tools/MercuryCLI
+    dependencies:
+      - package: MercuryPTYProtocol
+        product: MercuryCLIKit
+    settings:
+      base:
+        PRODUCT_NAME: mercury
+        # The binary is `mercury`, but its Swift module must not be: on a case-insensitive disk `mercury.swiftmodule`
+        # and the app's `Mercury.swiftmodule` are the same file in the build folder, and the app tests fail to load.
+        PRODUCT_MODULE_NAME: MercuryCLI
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.cli
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "Apple Development"
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        SKIP_INSTALL: YES
+
+  # Tests hosted in the signed app, for what `swift test` cannot reach: the PTY host registered with launchd,
+  # the app model driving git, terminals and accounts together, and offscreen screenshots of the windows.
+  MercuryAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: AppTests
+    dependencies:
+      - target: Mercury
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.mercury.apptests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mercury.app/Contents/MacOS/Mercury"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGN_IDENTITY: "Apple Development"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Mercury:
+    build:
+      targets:
+        Mercury: all
+        MercuryAppTests: [test]
+    test:
+      targets:
+        - MercuryAppTests

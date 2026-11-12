@@ -1,0 +1,69 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    "Authentication failed." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Close" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Copied" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy Command" : {
+
+    },
+    "Dangerous" : {
+
+    },
+    "Done" : {
+
+    },
+    "Equivalent command" : {
+
+    },
+    "Needs confirmation" : {
+
+    },
+    "No matching actions" : {
+
+    },
+    "Run in Background" : {
+
+    },
+    "Running…" : {
+
+    },
+    "Safe" : {
+
+    },
+    "Search actions…" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Stop the running command" : {
+
+    },
+    "Type %@ to confirm:" : {
+
+    },
+    "Type again to confirm" : {
+
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,19 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "linear-gradient" : [ "display-p3:1.00000,1.00000,1.00000,1.00000", "display-p3:0.84000,0.90000,1.00000,1.00000" ],
+        "orientation" : { "start" : { "x" : 0.5, "y" : 0 }, "stop" : { "x" : 0.5, "y" : 1 } }
+      }
+    },
+    { "appearance" : "dark", "value" : "automatic" }
+  ],
+  "groups" : [
+    {
+      "layers" : [ { "glass" : true, "image-name" : "s.png", "name" : "s" } ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0.5 },
+      "translucency" : { "enabled" : true, "value" : 0.4 }
+    }
+  ],
+  "supported-platforms" : { "squares" : [ "macOS" ] }
+}

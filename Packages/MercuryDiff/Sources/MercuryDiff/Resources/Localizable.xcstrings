@@ -1,0 +1,78 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Add Note" : {
+      "comment" : "Saves a new diff note"
+    },
+    "Add Note on %@…" : {
+      "comment" : "Context menu item of the diff text; the argument is the location"
+    },
+    "Binary file" : {
+      "comment" : "Title shown instead of a diff for a binary file"
+    },
+    "Binary files are not shown as text." : {
+      "comment" : "Explanation shown instead of a diff for a binary file"
+    },
+    "Cancel" : {
+      "comment" : "Discards a diff note being written"
+    },
+    "Delete Note" : {
+      "comment" : "Deletes a diff note"
+    },
+    "Diff" : {
+      "comment" : "Accessibility label of the diff text"
+    },
+    "Edit Note" : {
+      "comment" : "Edits a diff note"
+    },
+    "file" : {
+      "comment" : "Location of a note on a whole file"
+    },
+    "line %lld" : {
+      "comment" : "Location of a note on one line"
+    },
+    "lines %lld–%lld" : {
+      "comment" : "Location of a note on a range of lines"
+    },
+    "Lines changed" : {
+      "comment" : "Badge on a note whose lines changed since it was written"
+    },
+    "New version" : {
+      "comment" : "Accessibility label of the right column of a side-by-side diff"
+    },
+    "No newline at end of file" : {
+      "comment" : "Marker shown in a diff when a file does not end with a newline"
+    },
+    "No textual changes" : {
+      "comment" : "Title shown when a file diff has no hunks"
+    },
+    "Note" : {
+      "comment" : "Accessibility label of the diff note editor"
+    },
+    "Note on %@" : {
+      "comment" : "Header of a diff note; the argument is its location"
+    },
+    "Old version" : {
+      "comment" : "Accessibility label of the left column of a side-by-side diff"
+    },
+    "Only file metadata such as the mode or name changed." : {
+      "comment" : "Explanation shown when a file diff has no hunks"
+    },
+    "Save" : {
+      "comment" : "Saves an edited diff note"
+    },
+    "Sent" : {
+      "comment" : "Badge on a diff note already handed to an agent"
+    },
+    "The noted lines changed since this note was written; it may no longer match." : {
+      "comment" : "Help of the stale note badge"
+    },
+    "Unsent" : {
+      "comment" : "Badge on a diff note not handed to an agent yet"
+    },
+    "Write a note for the agent…" : {
+      "comment" : "Placeholder of the diff note editor"
+    }
+  },
+  "version" : "1.0"
+}

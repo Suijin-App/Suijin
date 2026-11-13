@@ -203,6 +203,15 @@ struct PermissionModeTests {
         var ended = try record(again.id, in: model)
         ended.agentSessionID = conversation
         await model.upsert(ended)
+        // The agent saved the conversation (something was said), in a stand-in own-login folder.
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        model.accountsController.ownLoginHome = (home: home, environment: [:])
+        let saved = agent == .claude
+            ? ".claude/projects/-work/\(conversation).jsonl"
+            : ".codex/sessions/2026/11/13/rollout-2026-11-13T10-00-00-\(conversation).jsonl"
+        let file = home.appendingPathComponent(saved)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("{}\n".utf8).write(to: file)
         await model.resume(ended)
         #expect(await eventually { launches(agent).count == 3 })
         let resumed = launches(agent)[2]

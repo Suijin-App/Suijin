@@ -283,13 +283,28 @@ final class SessionRuntimeRegistry {
 
     /// Starts an ended Claude or Codex session again with its conversation (`claude --resume <id>`,
     /// `codex resume <id>`) under the same record, so it comes back in its own tab or pane with the same account and
-    /// folder. Does nothing for a session that still runs or whose conversation id is unknown.
+    /// folder. A conversation the agent never saved (nothing was said) starts afresh there instead. Does nothing for a
+    /// session that still runs or whose conversation id is unknown.
     func resume(_ session: AgentSessionRecord) async {
         guard let ended = model.sessions.first(where: { $0.id == session.id }), ended.agent != .shell,
               runtimes[ended.id] == nil, !resuming.contains(ended.id),
               let conversation = ended.agentSessionID.flatMap(AgentResume.validSessionID) else { return }
         resuming.insert(ended.id)
         defer { resuming.remove(ended.id) }
+        // Nothing was said in it, so the agent never saved it and would stop with "No conversation found": start a
+        // new conversation in the same place instead.
+        if let provider = ended.agent.accountProvider,
+           let home = model.accountsController.conversationHome(provider, accountID: ended.accountID) {
+            let transfer = ConversationTransfer(provider: provider, conversationID: conversation, cwd: ended.cwd,
+                                                source: home, target: home)
+            if await !Task.detached(operation: { transfer.sourceHasHistory }).value {
+                if case .failed(let message) = await relaunch(ended, onAccount: ended.accountID, resume: nil) {
+                    model.presentedError = PresentedError(title: String(localized: "Could not resume \(ended.title)"),
+                                                          message: message)
+                }
+                return
+            }
+        }
         do {
             let cwd = URL(fileURLWithPath: ended.cwd, isDirectory: true)
             let launch = try await makeLaunch(record: ended, cwd: cwd, accountID: ended.accountID, prompt: nil,

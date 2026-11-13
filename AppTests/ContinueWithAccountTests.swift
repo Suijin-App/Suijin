@@ -231,6 +231,29 @@ struct ContinueWithAccountTests {
         await tearDown(model)
     }
 
+    @Test func resumingAConversationNothingWasSaidInStartsAfreshInPlace() async throws {
+        let (model, context) = try await makeModel()
+        let first = try await account(.claude, "first", in: model)
+        let ended = AgentSessionRecord(workspaceID: try #require(model.workspaces.first).id, agent: .claude,
+                                       accountID: first.id, title: "Claude · \(first.displayName)", cwd: folder.path,
+                                       state: .exited, exitCode: 1, agentSessionID: conversation, permissionMode: .plan)
+        await model.upsert(ended)
+        let tabBefore = model.tab(of: ended.id)
+
+        await model.resume(ended)
+
+        #expect(model.presentedError == nil)
+        #expect(await eventually { launches(.claude).count == 1 && model.runtimes.runtime(for: ended.id) != nil })
+        let arguments = try #require(launches(.claude).last)
+        #expect(!arguments.contains("--resume") && arguments.contains("account=\(first.homePath)"))
+        let mode = try #require(arguments.firstIndex(of: "--permission-mode"))
+        #expect(arguments[mode + 1] == "plan")
+        let restarted = try record(ended.id, in: model)
+        #expect(restarted.accountID == first.id && restarted.agentSessionID != conversation && restarted.exitCode == nil)
+        #expect(model.tab(of: ended.id) == tabBefore && model.tabList(in: context).count == 1)
+        await tearDown(model)
+    }
+
     // MARK: The user's own login
 
     @Test func ownLoginGetsOnlyTheConversationsHistoryFile() async throws {

@@ -62,6 +62,16 @@ public struct ConversationTransfer: Sendable {
         public var present = 0
     }
 
+    /// Whether `source` holds this conversation's history. The agents save a conversation only once something was
+    /// said in it, so a session that only started has none, and resuming it would fail.
+    public var sourceHasHistory: Bool {
+        guard let id = AgentResume.validSessionID(conversationID) else { return false }
+        return switch provider {
+        case .claude: (try? claudeSource(id: id)) != nil
+        case .codex: (try? codexSource(id: id)) != nil
+        }
+    }
+
     // MARK: Plan
 
     /// The files to place, after checking that the history exists, every destination stays inside the target's

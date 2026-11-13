@@ -4,225 +4,6 @@
     "" : {
 
     },
-    "%@ has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed." : {
-
-    },
-    "%@ reached on %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ reached on %2$@."
-          }
-        }
-      }
-    },
-    "%@ switched accounts" : {
-
-    },
-    "%@: %@. The original conversation was not changed." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@: %2$@. The original conversation was not changed."
-          }
-        }
-      }
-    },
-    "%lld × %lld px, %@" : {
-      "comment" : "Pixel dimensions and file size of an image in the Changes view",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld × %2$lld px, %3$@"
-          }
-        }
-      }
-    },
-    "After" : {
-      "comment" : "Label of the new version of a changed image"
-    },
-    "At its limit" : {
-
-    },
-    "Before" : {
-      "comment" : "Label of the old version of a changed image"
-    },
-    "Cannot Show the Image" : {
-      "comment" : "Title shown when an image in the Changes view cannot be read"
-    },
-    "Claude Code: Automatic Switching" : {
-
-    },
-    "Claude has not reported this conversation yet. Send it a message first." : {
-
-    },
-    "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here." : {
-
-    },
-    "Codex: Automatic Switching" : {
-
-    },
-    "Continue This Session With…" : {
-
-    },
-    "Continue With Another Account" : {
-
-    },
-    "Continue With…" : {
-
-    },
-    "Continue this conversation on another account, in this place" : {
-
-    },
-    "Continues this conversation on another account in the same place" : {
-
-    },
-    "Could not continue %@ with %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Could not continue %1$@ with %2$@"
-          }
-        }
-      }
-    },
-    "Could not move to %@. %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Could not move to %1$@. %2$@"
-          }
-        }
-      }
-    },
-    "Hide" : {
-
-    },
-    "Hide until the limit resets" : {
-
-    },
-    "Image after the change" : {
-      "comment" : "Accessibility label of the new version of a changed image"
-    },
-    "Image before the change" : {
-      "comment" : "Accessibility label of the old version of a changed image"
-    },
-    "Move %@ down" : {
-
-    },
-    "Move %@ up" : {
-
-    },
-    "Move Down" : {
-
-    },
-    "Move running sessions when the default account changes" : {
-
-    },
-    "Move Up" : {
-
-    },
-    "Moved to %@ because %@ hit its %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Moved to %1$@ because %2$@ hit its %3$@."
-          }
-        }
-      }
-    },
-    "Moved to %@, the new default account." : {
-
-    },
-    "Moving conversation to %@…" : {
-
-    },
-    "No other %@ account." : {
-
-    },
-    "Only Claude and Codex sessions can move to another account." : {
-
-    },
-    "Quit Codex to move it to %@." : {
-
-    },
-    "Send Claude a message, then this session can move to %@." : {
-
-    },
-    "Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved." : {
-
-    },
-    "Sevinda does not know which conversation this session had, so it cannot continue it." : {
-
-    },
-    "Sevinda does not know which conversation this session had." : {
-
-    },
-    "Switch automatically when an account hits its limit" : {
-
-    },
-    "That account is no longer in Sevinda." : {
-
-    },
-    "The conversation's files would land outside the account's history folder, so nothing was moved." : {
-
-    },
-    "The file is not an image this Mac can read, or it is damaged." : {
-      "comment" : "Shown when an image in the Changes view cannot be decoded"
-    },
-    "The file is not there in this version." : {
-      "comment" : "Shown when one version of a changed image is missing"
-    },
-    "The other account already has a different copy of this conversation (%@). Sevinda left both copies as they are." : {
-
-    },
-    "The other account has no %@ folder yet. Sign in to it once, then try again." : {
-
-    },
-    "This session is starting." : {
-
-    },
-    "Signed in as %@ now; this session started as %@ and keeps it until Codex asks to sign in again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Signed in as %1$@ now; this session started as %2$@ and keeps it until Codex asks to sign in again."
-          }
-        }
-      }
-    },
-    "Signed in as %@ now; this session started as %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Signed in as %1$@ now; this session started as %2$@."
-          }
-        }
-      }
-    },
-    "The bar shows the account new sessions use." : {
-
-    },
-    "This session uses %@" : {
-
-    },
-    "Usage unknown" : {
-
-    },
-    "weekly %@ limit" : {
-
-    },
-    "weekly limit" : {
-
-    },
     "“%@” (#%lld) is already open for this branch. New commits you push appear in it." : {
       "comment" : "A paragraph describing a GitHub pull request that already exists for the current branch. The first argument is the pull request title. The second argument is the pull request number.",
       "isCommentAutoGenerated" : true,
@@ -377,6 +158,9 @@
     "%@ has ended. Open it to start it again." : {
 
     },
+    "%@ has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed." : {
+
+    },
     "%@ in %@" : {
 
     },
@@ -406,6 +190,16 @@
     "%@ quit with an error. Open it to see what happened." : {
 
     },
+    "%@ reached on %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reached on %2$@."
+          }
+        }
+      }
+    },
     "%@ returned no text." : {
       "comment" : "Text describing a timeout error.",
       "isCommentAutoGenerated" : true
@@ -420,6 +214,9 @@
 
     },
     "%@ stopped unexpectedly" : {
+
+    },
+    "%@ switched accounts" : {
 
     },
     "%@ tokens" : {
@@ -456,6 +253,16 @@
         }
       }
     },
+    "%@: %@. The original conversation was not changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@. The original conversation was not changed."
+          }
+        }
+      }
+    },
     "%@: %lld%% used" : {
       "localizations" : {
         "en" : {
@@ -469,6 +276,17 @@
     "%lld" : {
       "comment" : "A count of notes for a file.",
       "isCommentAutoGenerated" : true
+    },
+    "%lld × %lld px, %@" : {
+      "comment" : "Pixel dimensions and file size of an image in the Changes view",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld × %2$lld px, %3$@"
+          }
+        }
+      }
     },
     "%lld agents are still working; closing stops them." : {
 
@@ -812,6 +630,9 @@
       "comment" : "A description of a file that was added to a repository.",
       "isCommentAutoGenerated" : true
     },
+    "After" : {
+      "comment" : "Label of the new version of a changed image"
+    },
     "Agent" : {
       "comment" : "A section for configuring the agent.",
       "isCommentAutoGenerated" : true
@@ -887,6 +708,9 @@
     "Asking" : {
 
     },
+    "At its limit" : {
+
+    },
     "Audio player" : {
 
     },
@@ -924,6 +748,9 @@
     "Base" : {
       "comment" : "A label for the base branch of a new worktree.",
       "isCommentAutoGenerated" : true
+    },
+    "Before" : {
+      "comment" : "Label of the old version of a changed image"
     },
     "Below" : {
 
@@ -992,6 +819,9 @@
     "Cannot Show the Diff" : {
       "comment" : "A title for a view that can't display a diff.",
       "isCommentAutoGenerated" : true
+    },
+    "Cannot Show the Image" : {
+      "comment" : "Title shown when an image in the Changes view cannot be read"
     },
     "Change icon and color" : {
       "comment" : "A tooltip for the workspace icon.",
@@ -1106,6 +936,12 @@
     "Claude Code will run every command and change any file without asking. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
 
     },
+    "Claude Code: Automatic Switching" : {
+
+    },
+    "Claude has not reported this conversation yet. Send it a message first." : {
+
+    },
     "Claude usage updates the next time Claude runs." : {
 
     },
@@ -1169,7 +1005,13 @@
       "comment" : "The name of the Codex account provider.",
       "isCommentAutoGenerated" : true
     },
+    "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here." : {
+
+    },
     "Codex will run every command and change any file without asking, outside its sandbox. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
+
+    },
+    "Codex: Automatic Switching" : {
 
     },
     "Collapse sessions" : {
@@ -1241,6 +1083,21 @@
     "Continue this conversation in this place" : {
 
     },
+    "Continue this conversation on another account, in this place" : {
+
+    },
+    "Continue This Session With…" : {
+
+    },
+    "Continue With Another Account" : {
+
+    },
+    "Continue With…" : {
+
+    },
+    "Continues this conversation on another account in the same place" : {
+
+    },
     "Control" : {
 
     },
@@ -1296,6 +1153,16 @@
       "comment" : "Error message when adding a workspace fails.",
       "isCommentAutoGenerated" : true
     },
+    "Could not continue %@ with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not continue %1$@ with %2$@"
+          }
+        }
+      }
+    },
     "Could not delete the note" : {
       "comment" : "Error message when a note could not be deleted.",
       "isCommentAutoGenerated" : true
@@ -1318,6 +1185,16 @@
     },
     "Could not mark the notes as sent" : {
 
+    },
+    "Could not move to %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not move to %1$@. %2$@"
+          }
+        }
+      }
     },
     "Could not reach the terminal host: %@" : {
       "comment" : "Resource Manager footer when the PTY host did not answer. The argument is the error message."
@@ -1825,6 +1702,12 @@
     "Help" : {
 
     },
+    "Hide" : {
+
+    },
+    "Hide until the limit resets" : {
+
+    },
     "Highlight file paths" : {
 
     },
@@ -1835,6 +1718,12 @@
     "Idle" : {
       "comment" : "A label displayed when a session is idle.",
       "isCommentAutoGenerated" : true
+    },
+    "Image after the change" : {
+      "comment" : "Accessibility label of the new version of a changed image"
+    },
+    "Image before the change" : {
+      "comment" : "Accessibility label of the old version of a changed image"
     },
     "In a split tab, closes the focused pane only." : {
 
@@ -1982,7 +1871,16 @@
     "Mouse" : {
 
     },
+    "Move %@ down" : {
+
+    },
+    "Move %@ up" : {
+
+    },
     "Move a Zoomed Image" : {
+
+    },
+    "Move Down" : {
 
     },
     "Move focus between panes, or zoom the focused one." : {
@@ -2006,10 +1904,32 @@
     "Move Pane Up" : {
 
     },
+    "Move running sessions when the default account changes" : {
+
+    },
     "Move the keyboard focus to the pane next to this one." : {
 
     },
     "Move to New Tab" : {
+
+    },
+    "Move Up" : {
+
+    },
+    "Moved to %@ because %@ hit its %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moved to %1$@ because %2$@ hit its %3$@."
+          }
+        }
+      }
+    },
+    "Moved to %@, the new default account." : {
+
+    },
+    "Moving conversation to %@…" : {
 
     },
     "My own login" : {
@@ -2153,6 +2073,9 @@
     "No model yet" : {
 
     },
+    "No other %@ account." : {
+
+    },
     "No Preview" : {
       "comment" : "A label displayed when a file can't be previewed by Sevinda.",
       "isCommentAutoGenerated" : true
@@ -2210,6 +2133,18 @@
     "No Workspaces" : {
       "comment" : "A label displayed when a user has no workspaces.",
       "isCommentAutoGenerated" : true
+    },
+    "None of the GitHub accounts signed in to gh (%@) can see this repository. Sign in to gh with an account that has access (gh auth login), then try again.\n\n%@" : {
+      "comment" : "Error message when no GitHub account can see a repository. The argument is a list of GitHub account names.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None of the GitHub accounts signed in to gh (%1$@) can see this repository. Sign in to gh with an account that has access (gh auth login), then try again.\n\n%2$@"
+          }
+        }
+      }
     },
     "Not a valid branch name." : {
       "comment" : "A message displayed when the branch name is not valid.",
@@ -2270,6 +2205,9 @@
 
     },
     "One Worktree Each" : {
+
+    },
+    "Only Claude and Codex sessions can move to another account." : {
 
     },
     "Only monospaced fonts installed on this Mac are listed. A Nerd Font Mono family is the default when one is installed, so prompt icons render." : {
@@ -2556,6 +2494,9 @@
       "comment" : "A label for a dispatch that is waiting to start.",
       "isCommentAutoGenerated" : true
     },
+    "Quit Codex to move it to %@." : {
+
+    },
     "Ran for" : {
 
     },
@@ -2819,6 +2760,9 @@
       "comment" : "A button that sends the user's unsent diff notes to an agent.",
       "isCommentAutoGenerated" : true
     },
+    "Send Claude a message, then this session can move to %@." : {
+
+    },
     "Send notes automatically" : {
       "comment" : "A toggle that lets the user decide whether to send notes to the agent automatically.",
       "isCommentAutoGenerated" : true
@@ -2861,6 +2805,9 @@
     "Sessions end with the app: the terminal host is unavailable (%@). Allow Sevinda in System Settings → General → Login Items." : {
       "comment" : "A warning label that warns the user that Sevinda will not keep sessions running if the terminal host is unavailable. The argument is the problem describing why the terminal host is unavailable.",
       "isCommentAutoGenerated" : true
+    },
+    "Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved." : {
+
     },
     "Sessions run in a background helper, so closing or updating Sevinda does not stop your agents." : {
 
@@ -2910,6 +2857,12 @@
     "Sevinda creates and reads pull requests with your own gh. Install it, then check again." : {
       "comment" : "Text and link to install GitHub CLI to fix a pull request not being available.",
       "isCommentAutoGenerated" : true
+    },
+    "Sevinda does not know which conversation this session had, so it cannot continue it." : {
+
+    },
+    "Sevinda does not know which conversation this session had." : {
+
     },
     "Sevinda finds agents on the PATH of your login shell." : {
 
@@ -3051,6 +3004,26 @@
     "Signed in" : {
       "comment" : "A label that appears when a user has successfully signed in.",
       "isCommentAutoGenerated" : true
+    },
+    "Signed in as %@ now; this session started as %@ and keeps it until Codex asks to sign in again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in as %1$@ now; this session started as %2$@ and keeps it until Codex asks to sign in again."
+          }
+        }
+      }
+    },
+    "Signed in as %@ now; this session started as %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in as %1$@ now; this session started as %2$@."
+          }
+        }
+      }
     },
     "Skip" : {
 
@@ -3203,6 +3176,9 @@
     "Swap the focused pane with the one next to it." : {
 
     },
+    "Switch automatically when an account hits its limit" : {
+
+    },
     "Switches an image between fitting the pane and its own size." : {
 
     },
@@ -3244,9 +3220,15 @@
     "Terms of Service" : {
 
     },
+    "That account is no longer in Sevinda." : {
+
+    },
     "The agent is still working. Closing the tab stops it." : {
       "comment" : "A message in a confirmation dialog that appears when the user tries to close a session",
       "isCommentAutoGenerated" : true
+    },
+    "The bar shows the account new sessions use." : {
+
     },
     "the base branch" : {
       "comment" : "A title and a count of files in a section of the changes view. The first argument is the section title. The second argument is the number of files in the section.",
@@ -3270,12 +3252,21 @@
       "comment" : "The name of the \"All commits\" button.",
       "isCommentAutoGenerated" : true
     },
+    "The conversation's files would land outside the account's history folder, so nothing was moved." : {
+
+    },
     "The coordinator's session is no longer open in Sevinda." : {
 
     },
     "The diff is shown unified until the pane is wide enough for two columns." : {
       "comment" : "A description of the fallback to unified diff when the pane is too narrow.",
       "isCommentAutoGenerated" : true
+    },
+    "The file is not an image this Mac can read, or it is damaged." : {
+      "comment" : "Shown when an image in the Changes view cannot be decoded"
+    },
+    "The file is not there in this version." : {
+      "comment" : "Shown when one version of a changed image is missing"
     },
     "The folder is deleted and running sessions in it are stopped. The branch is kept." : {
       "comment" : "A description of the action of removing a worktree.",
@@ -3292,6 +3283,12 @@
 
     },
     "The open-source components inside Sevinda stay under their own licenses, listed under Acknowledgements in Settings → About." : {
+
+    },
+    "The other account already has a different copy of this conversation (%@). Sevinda left both copies as they are." : {
+
+    },
+    "The other account has no %@ folder yet. Sign in to it once, then try again." : {
 
     },
     "The program in this session does not accept pasted text yet. Wait until its prompt is ready, then try again." : {
@@ -3355,6 +3352,12 @@
     "This repository has no remote to push to." : {
       "comment" : "Text displayed in a note when the pull request cannot be opened because the repository has no",
       "isCommentAutoGenerated" : true
+    },
+    "This session is starting." : {
+
+    },
+    "This session uses %@" : {
+
     },
     "This workspace is a plain folder, so there is no history to compare with. Initialize a git repository to see diffs and create worktrees." : {
       "comment" : "A description of why a folder workspace has no git history.",
@@ -3491,6 +3494,9 @@
     "Usage limits come from the providers, and costs on the Stats & Usage page are estimates from your local logs. They are for information only and may differ from what a provider bills you." : {
 
     },
+    "Usage unknown" : {
+
+    },
     "Use Emoji" : {
       "comment" : "A button that uses the emoji in the text field to set the workspace's icon.",
       "isCommentAutoGenerated" : true
@@ -3552,7 +3558,13 @@
     "Weekday" : {
 
     },
+    "weekly %@ limit" : {
+
+    },
     "Weekly %@ limit" : {
+
+    },
+    "weekly limit" : {
 
     },
     "Weekly limit" : {

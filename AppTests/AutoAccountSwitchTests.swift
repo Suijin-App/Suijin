@@ -157,6 +157,38 @@ struct AutoAccountSwitchTests {
         await tearDown(model)
     }
 
+    @Test func aSessionWaitingAtAPromptIsNeverMoved() async throws {
+        let (model, context) = try await makeModel()
+        let first = try await account(.claude, "first", in: model)
+        let second = try await account(.claude, "second", in: model)
+        model.setMovesOnDefaultChange(.claude, true)
+        await model.setSwitchesAtLimit(.claude, true)?.value
+        let id = try await claudeSession(on: first, in: model, context: context)
+        let runtime = model.runtimes.runtime(for: id)
+        // A finished turn, then Claude asks for permission: the request is pending.
+        hook("Stop", id, in: model)
+        hook("PermissionRequest", id, in: model)
+
+        await model.accountsController.setDefault(second.id, for: .claude)
+        model.accountsController.setUsageForPreview(first.id, usage(1))
+        model.accountsController.setUsageForPreview(second.id, usage(0.2))
+        await model.autoSwitcher.usageChanged()
+        await settle()
+        #expect(model.runtimes.runtime(for: id) === runtime && launches(.claude).count == 1)
+
+        // A question or permission notification is no different.
+        model.runtimes.runtime(for: id)?.tracker.noteHookEvent(
+            ClaudeHookEvent(name: "Notification", notificationType: "permission_prompt"))
+        await model.autoSwitcher.usageChanged()
+        await settle()
+        #expect(try model.runtimes.runtime(for: id) === runtime && record(id, in: model).accountID == first.id)
+
+        // The user answered and the turn finished: now it moves.
+        hook("Stop", id, in: model)
+        #expect(await eventually { isOn(id, second, in: model) })
+        await tearDown(model)
+    }
+
     @Test func withTheSettingOffADefaultChangeMovesNothing() async throws {
         let (model, context) = try await makeModel()
         let first = try await account(.claude, "first", in: model)

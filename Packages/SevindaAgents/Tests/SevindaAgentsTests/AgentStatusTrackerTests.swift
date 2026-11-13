@@ -90,6 +90,38 @@ import Testing
         #expect(tracker.activity == .running)
     }
 
+    @Test func onlyAReportedTurnEndIsAFinishedTurn() {
+        let (tracker, _) = makeTracker()
+        var reported = 0
+        tracker.onTurnFinished = { reported += 1 }
+        tracker.noteOutput(at: clock.now)
+        tracker.tick(now: clock.now.addingTimeInterval(8))
+        #expect(tracker.activity == .idle && !tracker.finishedTurn, "silence alone may be an approval prompt")
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Stop"))
+        #expect(tracker.finishedTurn && reported == 1, "reported even though it already looked idle")
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Notification", notificationType: "idle_prompt"))
+        #expect(tracker.activity == .waitingForInput && tracker.finishedTurn, "still at its normal prompt")
+        tracker.noteHookEvent(ClaudeHookEvent(name: "UserPromptSubmit"))
+        #expect(!tracker.finishedTurn)
+        tracker.noteHookEvent(ClaudeHookEvent(name: "StopFailure"))
+        #expect(tracker.finishedTurn && reported == 2)
+    }
+
+    @Test func aPermissionRequestOrQuestionIsNeverAFinishedTurn() {
+        let (tracker, _) = makeTracker()
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Stop"))
+        tracker.noteHookEvent(ClaudeHookEvent(name: "PermissionRequest"))
+        #expect(tracker.activity == .waitingForInput && !tracker.finishedTurn)
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Stop"))
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Notification", notificationType: "permission_prompt"))
+        #expect(!tracker.finishedTurn)
+        tracker.noteInput(at: clock.now.addingTimeInterval(1))
+        tracker.noteOutput(at: clock.now.addingTimeInterval(1.1))
+        #expect(tracker.activity == .running && !tracker.finishedTurn)
+        tracker.noteExit(0)
+        #expect(!tracker.finishedTurn)
+    }
+
     @Test func informationalNotificationIsIgnored() {
         let (tracker, _) = makeTracker()
         tracker.noteOutput(at: clock.now)

@@ -126,13 +126,15 @@ struct AutoSwitchNote: Equatable {
 
 /// Moves running Claude and Codex sessions to another account without being asked, as Settings → Accounts allows:
 /// when the agent's default account changes, and when a session's account used up a usage window (to the first account
-/// in the fallback order that has room). It uses the same move as Continue With Another Account, and only between
-/// turns: a session in the middle of a turn waits until the agent finished it or waits for the user.
+/// in the fallback order that has room). It uses the same move as Continue With Another Account, and only once the
+/// agent reported its turn finished and sits at its normal input prompt (`AgentStatusTracker.finishedTurn`). A session
+/// in the middle of a turn, or waiting at a permission request or a question, waits until the user answered and the
+/// next turn finished: moving it then would end the agent and drop the request unseen.
 ///
-/// Never moved: shells and agents started in a shell (the record is a shell), sessions whose conversation Sevinda does
-/// not know yet (a running Codex), and Codex orchestration workers, whose resume would drop the worker settings they
-/// were started with. Claude workers keep their place in the orchestration across a move (same session, same broker
-/// identity), so they follow the settings like any other session.
+/// Never moved: shells and agents started in a shell (the record is a shell); a running Codex, which tells Sevinda
+/// neither its conversation nor when it is safely at its prompt (an approval prompt is as silent as an idle one); and
+/// so Codex orchestration workers too. Claude workers keep their place in the orchestration across a move (same
+/// session, same broker identity), so they follow the settings like any other session.
 @Observable
 @MainActor
 final class AutoAccountSwitcher {
@@ -161,7 +163,8 @@ final class AutoAccountSwitcher {
     // MARK: Events
 
     /// The user made `target` (nil = the own login) `provider`'s default. With the setting on, every running session of
-    /// that agent on another account moves to it once its turn ends; one whose conversation is unknown gets a note.
+    /// that agent on another account moves to it once its turn ends; a running Codex, or a session whose conversation is
+    /// unknown, gets a note instead.
     func defaultChanged(_ provider: AccountProvider, to target: UUID?) {
         for session in model.sessions where session.agent.accountProvider == provider {
             pendingDefault[session.id] = nil
@@ -169,8 +172,9 @@ final class AutoAccountSwitcher {
         guard model.movesOnDefaultChange(provider) else { return }
         let name = model.accountName(target, provider: provider)
         for session in model.sessions where session.agent.accountProvider == provider && session.accountID != target {
-            guard isLive(session), !isExcluded(session) else { continue }
-            guard model.runtimes.continuableConversation(of: session) != nil else {
+            // `accountProvider` already leaves shells out; a running Codex stays with a note.
+            guard isLive(session) else { continue }
+            guard session.agent != .codex, model.runtimes.continuableConversation(of: session) != nil else {
                 show(AutoSwitchNote(kind: .skipped, text: unknownConversationNote(session, target: name)), for: session.id)
                 continue
             }
@@ -179,9 +183,8 @@ final class AutoAccountSwitcher {
         }
     }
 
-    /// A session's activity changed: one that finished its turn or waits for the user may move now.
-    func activityChanged(_ id: UUID, _ activity: AgentActivity) {
-        guard Self.isBetweenTurns(activity) else { return }
+    /// The agent reported its turn finished: the session may move now.
+    func turnFinished(_ id: UUID) {
         Task { await self.moveIfReady(id) }
     }
 
@@ -218,7 +221,7 @@ final class AutoAccountSwitcher {
     func moveIfReady(_ id: UUID) async {
         guard !inFlight.contains(id), let session = model.sessions.first(where: { $0.id == id }),
               let provider = session.agent.accountProvider, isLive(session), !isExcluded(session),
-              Self.isBetweenTurns(model.runtimes.activity(of: session)) else { return }
+              isAtItsPrompt(session) else { return }
         let target: UUID?
         let reason: String
         if let pending = pendingDefault[id] {
@@ -261,22 +264,20 @@ final class AutoAccountSwitcher {
 
     // MARK: Rules
 
-    /// A turn is over when the agent finished it (idle) or waits for the user; then nothing it is doing is cut short.
-    static func isBetweenTurns(_ activity: AgentActivity) -> Bool {
-        activity == .idle || activity == .waitingForInput
-    }
-
-    static func isBetweenTurns(_ activity: SessionActivityDisplay) -> Bool {
-        activity == .idle || activity == .waitingForInput
+    /// Whether the agent reported its last turn finished and nothing came since: no new prompt, no permission request,
+    /// no question. Only then does ending it cut nothing short.
+    private func isAtItsPrompt(_ session: AgentSessionRecord) -> Bool {
+        model.runtimes.runtime(for: session.id)?.tracker.finishedTurn == true
     }
 
     private func isLive(_ session: AgentSessionRecord) -> Bool {
         model.runtimes.runtime(for: session.id) != nil && !model.runtimes.activity(of: session).isEnded
     }
 
-    /// Shells (and any agent started in one) have no account; Codex workers would lose their worker settings.
+    /// Shells (and any agent started in one) have no account; a running Codex never reports that it is safely at its
+    /// prompt.
     private func isExcluded(_ session: AgentSessionRecord) -> Bool {
-        session.agent == .shell || (session.agent == .codex && model.runtimes.orchestration.isWorker(session.id))
+        session.agent == .shell || session.agent == .codex
     }
 
     /// "5-hour limit", "weekly limit", "weekly Fable limit", as the middle of a sentence.

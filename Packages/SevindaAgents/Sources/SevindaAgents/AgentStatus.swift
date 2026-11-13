@@ -44,6 +44,12 @@ public final class AgentStatusTracker {
         didSet { if activity != oldValue { onChange?(activity) } }
     }
     public var onChange: ((AgentActivity) -> Void)?
+    /// True while the agent sits at its normal input prompt after a turn it reported as finished (Claude's Stop hook),
+    /// and nothing has happened since: no new prompt, no question or permission request, no output after input. Idle
+    /// reached only by silence never counts, since an approval prompt is silent too.
+    public private(set) var finishedTurn = false
+    /// Called when the agent reports a finished turn, also when it already looked idle.
+    public var onTurnFinished: (() -> Void)?
 
     public let idleThreshold: TimeInterval
     private let clock: () -> Date
@@ -53,6 +59,8 @@ public final class AgentStatusTracker {
 
     /// Notification types that are informational and do not mean the agent waits for the user.
     static let nonBlockingNotificationTypes: Set<String> = ["auth_success"]
+    /// The notification Claude sends after sitting at its normal input prompt for a while.
+    static let idlePromptNotificationType = "idle_prompt"
 
     public init(idleThreshold: TimeInterval = 8, clock: @escaping () -> Date = Date.init) {
         self.idleThreshold = idleThreshold
@@ -66,6 +74,7 @@ public final class AgentStatusTracker {
             guard let lastInput, lastInput >= quietSince, date >= lastInput else { return }
             self.quietSince = nil
         }
+        finishedTurn = false
         activity = .running
     }
 
@@ -80,16 +89,23 @@ public final class AgentStatusTracker {
         let now = clock()
         switch event.name {
         case "UserPromptSubmit":
+            finishedTurn = false
             quietSince = nil
             lastOutput = now
             activity = .running
         case "Notification":
             if let type = event.notificationType, Self.nonBlockingNotificationTypes.contains(type) { return }
+            // Claude's reminder that it waits at its normal prompt keeps a finished turn finished; any other
+            // notification (a permission or a question) is a request the user has not answered.
+            if event.notificationType != Self.idlePromptNotificationType { finishedTurn = false }
             enterQuiet(.waitingForInput, at: now)
         case "PermissionRequest":
+            finishedTurn = false
             enterQuiet(.waitingForInput, at: now)
         case "Stop", "StopFailure":
+            finishedTurn = true
             enterQuiet(.idle, at: now)
+            onTurnFinished?()
         default:
             break
         }
@@ -97,6 +113,7 @@ public final class AgentStatusTracker {
 
     public func noteExit(_ code: Int32?) {
         guard !activity.isTerminal else { return }
+        finishedTurn = false
         activity = code.map(AgentActivity.exited) ?? .failed("The process ended without an exit status.")
     }
 
@@ -114,6 +131,7 @@ public final class AgentStatusTracker {
         lastOutput = nil
         quietSince = nil
         lastInput = nil
+        finishedTurn = false
         activity = .starting
     }
 

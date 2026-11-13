@@ -539,6 +539,7 @@ final class SessionRuntimeRegistry {
         runtimes[id] = runtime
         observeShellAgents(runtime)
         activities[id] = runtime.tracker.activity
+        runtime.tracker.onTurnFinished = { [weak self] in self?.model.autoSwitcher.turnFinished(id) }
         runtime.tracker.onChange = { [weak self, weak runtime] activity in
             if let runtime { self?.trackWork(runtime, activity) }
             self?.activityChanged(id, activity)
@@ -638,7 +639,6 @@ final class SessionRuntimeRegistry {
     private func activityChanged(_ id: UUID, _ activity: AgentActivity) {
         let previous = activities[id]
         activities[id] = activity
-        if previous != activity { model.autoSwitcher.activityChanged(id, activity) }
         guard previous != activity, let record = model.sessions.first(where: { $0.id == id }),
               displayAgent(of: record) != .shell else { return }
         switch activity {

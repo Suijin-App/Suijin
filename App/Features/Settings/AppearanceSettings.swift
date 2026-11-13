@@ -1,4 +1,4 @@
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
 /// Settings → General → Appearance: System, Light and Dark as window thumbnails, like System Settings → Appearance.
@@ -7,7 +7,7 @@ struct AppearancePicker: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        HStack(alignment: .top, spacing: SevindaSpacing.xl) {
+        HStack(alignment: .top, spacing: SuijinSpacing.xl) {
             ForEach(AppAppearance.allCases) { appearance in
                 SelectableCard(isSelected: model.appearance == appearance, title: appearance.title) {
                     model.setAppearance(appearance)
@@ -18,7 +18,7 @@ struct AppearancePicker: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, SevindaSpacing.xs)
+        .padding(.vertical, SuijinSpacing.xs)
     }
 }
 
@@ -53,16 +53,16 @@ struct SelectableCard<Content: View>: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: SevindaSpacing.s) {
+            VStack(spacing: SuijinSpacing.s) {
                 content
-                    .clipShape(.rect(cornerRadius: SevindaRadius.control))
+                    .clipShape(.rect(cornerRadius: SuijinRadius.control))
                     .overlay {
-                        RoundedRectangle(cornerRadius: SevindaRadius.control)
+                        RoundedRectangle(cornerRadius: SuijinRadius.control)
                             .strokeBorder(.separator, lineWidth: 1)
                     }
                     .padding(3)
                     .overlay {
-                        RoundedRectangle(cornerRadius: SevindaRadius.control + 3)
+                        RoundedRectangle(cornerRadius: SuijinRadius.control + 3)
                             .strokeBorder(Color.accentColor, lineWidth: 3)
                             .opacity(isSelected ? 1 : 0)
                     }

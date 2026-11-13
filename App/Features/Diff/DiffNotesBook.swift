@@ -1,7 +1,7 @@
 import Foundation
-import SevindaCore
-import SevindaDiff
-import SevindaGit
+import SuijinCore
+import SuijinDiff
+import SuijinGit
 import Observation
 
 extension DiffNote: @retroactive DiffNoteFormattable {}

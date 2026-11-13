@@ -1,5 +1,5 @@
-import SevindaGit
-import SevindaUI
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// Pushes the branch, or publishes it (`--set-upstream`) when it has no upstream yet.
@@ -58,8 +58,8 @@ struct ToolbarPushButton: View {
                 }
                 if let status, status.ahead > 0 { Text(verbatim: "\(status.ahead)").monospacedDigit() }
                 if let status, status.behind > 0 {
-                    Image(systemName: "arrow.down").foregroundStyle(SevindaColor.warningText)
-                    Text(verbatim: "\(status.behind)").monospacedDigit().foregroundStyle(SevindaColor.warningText)
+                    Image(systemName: "arrow.down").foregroundStyle(SuijinColor.warningText)
+                    Text(verbatim: "\(status.behind)").monospacedDigit().foregroundStyle(SuijinColor.warningText)
                 }
             }
             .font(.callout)
@@ -78,9 +78,9 @@ struct GitOutputSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.m) {
             Label { Text(verbatim: report.title).font(.headline) } icon: {
-                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SevindaColor.warning)
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SuijinColor.warning)
             }
             Text("Git reported:").foregroundStyle(.secondary)
             ScrollView([.vertical, .horizontal]) {
@@ -88,10 +88,10 @@ struct GitOutputSheet: View {
                     .font(.system(.callout, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .padding(SevindaSpacing.s)
+                    .padding(SuijinSpacing.s)
             }
             .frame(minHeight: 140, maxHeight: 360)
-            .background(SevindaColor.codeBackground, in: RoundedRectangle(cornerRadius: SevindaRadius.control))
+            .background(SuijinColor.codeBackground, in: RoundedRectangle(cornerRadius: SuijinRadius.control))
             HStack {
                 Button("Copy Output") {
                     NSPasteboard.general.clearContents()
@@ -102,7 +102,7 @@ struct GitOutputSheet: View {
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(SevindaSpacing.l)
+        .padding(SuijinSpacing.l)
         .frame(width: 560)
     }
 }

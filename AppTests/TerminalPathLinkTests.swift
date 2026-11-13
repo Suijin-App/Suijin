@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Paths printed by a real shell in a real terminal pane: underlined when they exist, resolved against the directory the
 /// shell reports (OSC 7) after a `cd`. Output imitating agents is printed with `printf`; no agent runs.
@@ -18,7 +18,7 @@ struct TerminalPathLinkTests {
         let model: AppModel
         let context: SessionContext
         let id: UUID
-        let view: SevindaTerminalView
+        let view: SuijinTerminalView
         let window: NSWindow
 
         func close() async {
@@ -46,7 +46,7 @@ struct TerminalPathLinkTests {
     }
 
     static func makeFixture() async throws -> Fixture {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-pathlinks-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-pathlinks-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true).standardizedFileURL
         for directory in ["docs", "src", "sub"] {
             try FileManager.default.createDirectory(at: folder.appendingPathComponent(directory), withIntermediateDirectories: true)
@@ -54,7 +54,7 @@ struct TerminalPathLinkTests {
         for file in ["docs/plan.md", "src/a.ts", "sub/inner.md", "README.md"] {
             try "content\n".write(to: folder.appendingPathComponent(file), atomically: true, encoding: .utf8)
         }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context
@@ -109,12 +109,12 @@ struct TerminalPathLinkTests {
     }
 
     @Test func codeViewerScrollsToTheRequestedLine() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-line-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-line-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("long.swift")
         try (1...200).map { "let value\($0) = \($0)" }.joined(separator: "\n").write(to: file, atomically: true, encoding: .utf8)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: root)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.fileLineReveal = (file.path, 150, UUID())

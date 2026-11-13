@@ -1,15 +1,15 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Dropping files on the terminals of a split tab, in the real view hierarchy with real shells: the drag is routed to
 /// the pane's terminal the way AppKit routes it (the deepest view under the pointer registered for the dragged type),
 /// pasted as Terminal.app pastes it, and the pane takes the keyboard. Ended panes, pane drags and tab drags never
-/// reach a terminal. With `SEVINDA_SCREENSHOTS` set, the drop highlight and the result are rendered there.
+/// reach a terminal. With `SUIJIN_SCREENSHOTS` set, the drop highlight and the result are rendered there.
 @MainActor
 @Suite(.serialized, .timeLimit(.minutes(2)))
 struct TerminalFileDropTests {
@@ -17,7 +17,7 @@ struct TerminalFileDropTests {
     let folder: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-drop-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-drop-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
@@ -49,12 +49,12 @@ struct TerminalFileDropTests {
 
     /// The terminal's recent lines (wrapped rows joined), composed (NFC): a file name may come back from the pasteboard
     /// decomposed, and the screen keeps a letter and its accent in one cell either way.
-    private func screen(_ view: SevindaTerminalView) -> String {
+    private func screen(_ view: SuijinTerminalView) -> String {
         view.recentText(lineCount: 10).precomposedStringWithCanonicalMapping
     }
 
     private func snapshot(_ host: NSView, _ name: String, dark: Bool) throws {
-        guard let folder = ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] else { return }
+        guard let folder = ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] else { return }
         let output = URL(fileURLWithPath: folder)
         host.layoutSubtreeIfNeeded()
         let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
@@ -67,7 +67,7 @@ struct TerminalFileDropTests {
     @Test(arguments: [false, true])
     func filesDroppedOnAPaneArePastedAsPaths(dark: Bool) async throws {
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         model.setSetting(.terminalGPURendering, "false")
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
@@ -112,7 +112,7 @@ struct TerminalFileDropTests {
         let notes = folder.appendingPathComponent("it's $notes.md")
         try Data().write(to: image)
         try Data().write(to: notes)
-        let files = NSPasteboard(name: NSPasteboard.Name("sevinda.test.drop.\(UUID().uuidString)"))
+        let files = NSPasteboard(name: NSPasteboard.Name("suijin.test.drop.\(UUID().uuidString)"))
         files.clearContents()
         files.writeObjects([image as NSURL, notes as NSURL])
         #expect(TerminalFileDrop.text(for: [image, notes]) == "\(folder.path)/Ảnh\\ chụp\\ \\(1\\).png \(folder.path)/it\\'s\\ \\$notes.md")
@@ -126,11 +126,11 @@ struct TerminalFileDropTests {
         // AppKit routes file drags to the terminal under the pointer, and pane or tab drags past it.
         let target = center(of: bracketedView)
         #expect(destination(in: window, at: target, for: [.fileURL]) === bracketedView)
-        #expect(!(destination(in: window, at: target, for: [.sevindaPane]) is SevindaTerminalView))
-        #expect(!(destination(in: window, at: target, for: [.string]) is SevindaTerminalView))
+        #expect(!(destination(in: window, at: target, for: [.suijinPane]) is SuijinTerminalView))
+        #expect(!(destination(in: window, at: target, for: [.string]) is SuijinTerminalView))
         // The ended pane has no terminal to take it.
         let endedPoint = NSPoint(x: center(of: plainView).x - (target.x - center(of: plainView).x), y: target.y)
-        #expect(!(destination(in: window, at: endedPoint, for: [.fileURL]) is SevindaTerminalView))
+        #expect(!(destination(in: window, at: endedPoint, for: [.fileURL]) is SuijinTerminalView))
 
         // Hovering shows the copy cursor and the ring; the drop pastes with paste markers and focuses the pane.
         let drag = FakeDrag(pasteboard: files, window: window, location: target)
@@ -167,9 +167,9 @@ struct TerminalFileDropTests {
         #expect(Array(try Data(contentsOf: bracketedOutput)).starts(with: Array("\u{1B}[200~".utf8)))
 
         // A pane drag over a terminal is refused and types nothing.
-        let pane = NSPasteboard(name: NSPasteboard.Name("sevinda.test.pane.\(UUID().uuidString)"))
-        pane.declareTypes([.sevindaPane], owner: nil)
-        pane.setString(plain.uuidString, forType: .sevindaPane)
+        let pane = NSPasteboard(name: NSPasteboard.Name("suijin.test.pane.\(UUID().uuidString)"))
+        pane.declareTypes([.suijinPane], owner: nil)
+        pane.setString(plain.uuidString, forType: .suijinPane)
         // Once the shell's prompt after `cat` has settled.
         try await Task.sleep(for: .milliseconds(500))
         let before = bracketedView.recentText(lineCount: 10)
@@ -182,7 +182,7 @@ struct TerminalFileDropTests {
 
     @Test func fileTreeRowsDragTheirFileURLOnly() throws {
         let url = URL(fileURLWithPath: "/tmp/a b/../c.png")
-        let pasteboard = NSPasteboard(name: NSPasteboard.Name("sevinda.test.tree.\(UUID().uuidString)"))
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("suijin.test.tree.\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
         pasteboard.clearContents()
         #expect(pasteboard.writeObjects([FileOutlineController.pasteboardWriter(for: url)]))

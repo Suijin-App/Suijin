@@ -1,8 +1,8 @@
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Which account a session's tab, row and the status bar name: a managed account stays fixed (and follows its new email
 /// when it signs in to another account), the user's own login is read live, so a `/login` elsewhere shows on the
@@ -14,13 +14,13 @@ struct SessionAccountTests {
     let home: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-acct-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-acct-\(UUID().uuidString)", isDirectory: true)
         home = root.appendingPathComponent("home", isDirectory: true)
         try FileManager.default.createDirectory(at: home.appendingPathComponent(".codex"), withIntermediateDirectories: true)
     }
 
     private func makeModel() async throws -> (AppModel, UUID) {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         model.accountsController.defaultLoginReader = DefaultLoginUsageReader(realHome: home, environment: [:])
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -89,7 +89,7 @@ struct SessionAccountTests {
         await model.upsert(session)
         // The own login is someone else; the managed session still names its own account.
         #expect(model.runtimes.displayTitle(of: session) == "Claude · work@example.com · planner")
-        #expect(model.sessionAccount(of: session)?.line == "work@example.com · Sevinda account")
+        #expect(model.sessionAccount(of: session)?.line == "work@example.com · Suijin account")
 
         // The managed home signed in to another account (a `/login` inside one of its sessions).
         account.email = "new-work@example.com"
@@ -127,7 +127,7 @@ struct SessionAccountTests {
         let usage = UsageSnapshot(fiveHour: UsageWindow(usedFraction: 0.42, resetsAt: now.addingTimeInterval(3 * 3600 + 90)), sevenDay: nil,
                                   fetchedAt: now)
         let note = try #require(UsageDescription.sessionNote(managed, state: own, usage: usage, now: now))
-        #expect(note == "This session uses work@example.com · Sevinda account (42% used 3h 1m). The bar shows the account new sessions use.")
+        #expect(note == "This session uses work@example.com · Suijin account (42% used 3h 1m). The bar shows the account new sessions use.")
         #expect(UsageDescription.tooltip(provider: .claude, state: own, sections: [], sessionNote: note, now: now)
             == "Claude — own@example.com · Your own login\n\(note)")
 

@@ -1,5 +1,5 @@
 import AppKit
-import SevindaGit
+import SuijinGit
 import SwiftUI
 
 /// Chooses a folder with the system open panel and adds it as a workspace. Git or plain folder is detected by

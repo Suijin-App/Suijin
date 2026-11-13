@@ -13,7 +13,7 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
 
     var title: LocalizedStringKey {
         switch self {
-        case .welcome: "Welcome to Sevinda"
+        case .welcome: "Welcome to Suijin"
         case .workspaces: "Workspaces & Worktrees"
         case .sessions: "Sessions, Tabs & Split Panes"
         case .changes: "Changes, Diff & Pull Requests"
@@ -27,7 +27,7 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
         case .welcome: "Claude Code and Codex agents side by side, each in a git worktree of its own. Everything runs locally on your Mac."
         case .workspaces: "Bring in a repository or a folder, then give every agent a worktree of its own."
         case .sessions: "Run agents and shells in tabs, or several at once in split panes."
-        case .changes: "Review what the agents changed and ship it without leaving Sevinda."
+        case .changes: "Review what the agents changed and ship it without leaving Suijin."
         case .accounts: "Use several subscriptions and keep an eye on what they cost."
         case .getStarted: "Add your first workspace and start an agent in it."
         }
@@ -181,18 +181,18 @@ extension OnboardingTour {
 
 /// Whether the tour opens by itself at launch.
 enum OnboardingLaunchPolicy {
-    /// The launch argument that opens the tour (at a step: `-SevindaOnboarding sessions`) even when it was completed;
+    /// The launch argument that opens the tour (at a step: `-SuijinOnboarding sessions`) even when it was completed;
     /// screenshot runs use it.
-    static let forceArgument = "SevindaOnboarding"
+    static let forceArgument = "SuijinOnboarding"
 
-    /// The tour shows once, on the first launch. It stays closed under tests and in scripted runs: any `-Sevinda…`
+    /// The tour shows once, on the first launch. It stays closed under tests and in scripted runs: any `-Suijin…`
     /// launch argument (screenshots, demo panes, a forced appearance) means the window is being driven, unless that
-    /// argument is `-SevindaOnboarding` itself.
+    /// argument is `-SuijinOnboarding` itself.
     static func shouldAutoShow(completed: Bool, environment: [String: String], launchArguments: Set<String>) -> Bool {
         if launchArguments.contains(forceArgument) { return true }
         guard !completed else { return false }
         if environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil { return false }
-        return !launchArguments.contains { $0.hasPrefix("Sevinda") }
+        return !launchArguments.contains { $0.hasPrefix("Suijin") }
     }
 
     /// The step a forced launch opens at: the argument's value when it names a step, else the first step.
@@ -213,7 +213,7 @@ extension AppModel {
         showOnboarding(at: OnboardingLaunchPolicy.forcedStep(forced))
     }
 
-    /// Opens the tour (Help › Welcome to Sevinda), closing Settings first.
+    /// Opens the tour (Help › Welcome to Suijin), closing Settings first.
     func showOnboarding(at step: OnboardingStep = .welcome) {
         settingsPage = nil
         onboarding = OnboardingTour(step: step)

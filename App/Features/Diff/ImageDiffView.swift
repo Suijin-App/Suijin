@@ -1,7 +1,7 @@
 import AppKit
 import ImageIO
-import SevindaGit
-import SevindaUI
+import SuijinGit
+import SuijinUI
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -169,7 +169,7 @@ private struct ImageVersionPanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 // A lone version is the whole added or deleted file; a pair is the change.
                 switch (source.side, isPair) {
                 case (.old, true): Label("Before", systemImage: "minus.circle").foregroundStyle(.red)
@@ -177,7 +177,7 @@ private struct ImageVersionPanel: View {
                 case (.old, false): Label("Deleted", systemImage: "minus.circle").foregroundStyle(.red)
                 case (.new, false): Label("Added", systemImage: "plus.circle").foregroundStyle(.green)
                 }
-                Spacer(minLength: SevindaSpacing.s)
+                Spacer(minLength: SuijinSpacing.s)
                 if case .loaded(let decoded, _) = version {
                     Text(details(of: decoded))
                         .foregroundStyle(.secondary)
@@ -187,8 +187,8 @@ private struct ImageVersionPanel: View {
                 }
             }
             .font(.callout)
-            .padding(.horizontal, SevindaSpacing.m)
-            .padding(.vertical, SevindaSpacing.xs)
+            .padding(.horizontal, SuijinSpacing.m)
+            .padding(.vertical, SuijinSpacing.xs)
             .frame(maxWidth: .infinity, minHeight: 24)
             Group {
                 switch version {

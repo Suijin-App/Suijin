@@ -1,11 +1,11 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 import Observation
 import os
 
-private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "model")
+private let logger = Logger(subsystem: "com.tekmium.suijin", category: "model")
 
 /// A place where sessions run: a folder workspace, the main checkout of a git workspace, or one of its worktrees.
 enum SessionContext: Hashable {
@@ -33,7 +33,7 @@ extension SessionContext {
     }
 }
 
-/// An alert shown to the user: an error, or a one-time notice such as the move of an install from the old app name.
+/// An alert shown to the user: an error or a one-time notice.
 /// The message is already localized.
 struct PresentedError: Identifiable {
     let id = UUID()
@@ -41,12 +41,12 @@ struct PresentedError: Identifiable {
     let message: String
 }
 
-/// Root state of the app: workspaces, worktrees, sessions and accounts, persisted through `SevindaStore`.
+/// Root state of the app: workspaces, worktrees, sessions and accounts, persisted through `SuijinStore`.
 /// Lives on the main actor; database and git calls run off the main thread.
 @Observable
 @MainActor
 final class AppModel {
-    let store: SevindaStore
+    let store: SuijinStore
     let dataRoot: URL
 
     private(set) var workspaces: [Workspace] = []
@@ -131,40 +131,21 @@ final class AppModel {
     /// Settings → Stats & Usage: one usage store for the app's lifetime, refreshed only while that page is shown.
     @ObservationIgnored lazy var usage = UsageController(model: self)
 
-    init(store: SevindaStore, dataRoot: URL) {
+    init(store: SuijinStore, dataRoot: URL) {
         self.store = store
         self.dataRoot = dataRoot
     }
 
     /// The live app model on the user's data root.
     static func live() -> AppModel {
-        let root = SevindaPaths.dataRoot
-        // An install from before the rename moves to the new folder first (never with SEVINDA_DATA_ROOT).
-        let migration = LegacyMercuryMigration.live().flatMap { $0.root.standardizedFileURL == root.standardizedFileURL ? $0 : nil }
-        if let migration {
-            if case .blocked(let message) = migration.moveDataIfNeeded() {
-                // No Sevinda database may be created this launch, so the next launch can still move the old one.
-                let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: root)
-                model.presentedError = LegacyMercuryMigration.blockedAlert(message)
-                return model
-            }
-            migration.renameDatabaseIfPending()
-        }
+        let root = SuijinPaths.dataRoot
         do {
-            let store = try SevindaStore(url: SevindaPaths.database(in: root))
-            let model = AppModel(store: store, dataRoot: root)
-            if let migration, let report = migration.finishPending(
-                store: store, defaults: .standard,
-                legacyDefaults: UserDefaults.standard.persistentDomain(forName: LegacyMercuryMigration.legacyDefaultsDomain)
-            ) {
-                model.presentedError = LegacyMercuryMigration.notice(for: report)
-            }
-            return model
+            return AppModel(store: try SuijinStore(url: SuijinPaths.database(in: root)), dataRoot: root)
         } catch {
             // The database could not be opened (disk full, permissions). Run on an in-memory store and tell the user.
-            let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: root)
+            let model = AppModel(store: try! SuijinStore.inMemory(), dataRoot: root)
             model.presentedError = PresentedError(
-                title: String(localized: "Sevinda could not open its database"),
+                title: String(localized: "Suijin could not open its database"),
                 message: error.localizedDescription
             )
             return model
@@ -224,12 +205,12 @@ final class AppModel {
             for workspace in self.workspaces where workspace.kind == .git { await refreshWorktrees(workspaceID: workspace.id) }
         }
         #if DEBUG
-        // Screenshot runs open a tab directly: `-SevindaInitialTab changes`.
-        if UserDefaults.standard.string(forKey: "SevindaInitialTab") == "changes", let selection { selectedTab[selection] = .changes }
-        // `-SevindaInitialSettings terminal` shows that Settings page.
-        if let page = UserDefaults.standard.string(forKey: "SevindaInitialSettings").flatMap(SettingsPage.init(rawValue:)) { settingsPage = page }
-        // `-SevindaOpenFile <path>` handles a path as a ⌘-clicked terminal link does (file tab or file-tree reveal).
-        if let file = UserDefaults.standard.string(forKey: "SevindaOpenFile"), let selection {
+        // Screenshot runs open a tab directly: `-SuijinInitialTab changes`.
+        if UserDefaults.standard.string(forKey: "SuijinInitialTab") == "changes", let selection { selectedTab[selection] = .changes }
+        // `-SuijinInitialSettings terminal` shows that Settings page.
+        if let page = UserDefaults.standard.string(forKey: "SuijinInitialSettings").flatMap(SettingsPage.init(rawValue:)) { settingsPage = page }
+        // `-SuijinOpenFile <path>` handles a path as a ⌘-clicked terminal link does (file tab or file-tree reveal).
+        if let file = UserDefaults.standard.string(forKey: "SuijinOpenFile"), let selection {
             _ = openTerminalLink(file, in: selection, relativeTo: nil)
         }
         #endif
@@ -317,7 +298,7 @@ final class AppModel {
 
     // MARK: Worktrees
 
-    /// Reconciles stored worktrees with `git worktree list`: worktrees made outside Sevinda appear, removed ones go.
+    /// Reconciles stored worktrees with `git worktree list`: worktrees made outside Suijin appear, removed ones go.
     func refreshWorktrees(workspaceID: UUID) async {
         guard let workspace = workspace(workspaceID), workspace.kind == .git else { return }
         let service = WorktreeService(repository: URL(fileURLWithPath: workspace.path, isDirectory: true))
@@ -495,7 +476,7 @@ final class AppModel {
     // MARK: Helpers
 
     /// Runs a database call off the main thread.
-    func io<T: Sendable>(_ work: @escaping @Sendable (SevindaStore) throws -> T) async throws -> T {
+    func io<T: Sendable>(_ work: @escaping @Sendable (SuijinStore) throws -> T) async throws -> T {
         let store = store
         return try await Task.detached { try work(store) }.value
     }
@@ -600,11 +581,11 @@ extension AppModel {
         applyAppearance()
     }
 
-    /// Sets `NSApp.appearance` from the setting. In debug builds the `-SevindaAppearance` launch argument (screenshot
+    /// Sets `NSApp.appearance` from the setting. In debug builds the `-SuijinAppearance` launch argument (screenshot
     /// runs) wins over the setting.
     func applyAppearance() {
         #if DEBUG
-        if UserDefaults.standard.string(forKey: "SevindaAppearance") != nil { return }
+        if UserDefaults.standard.string(forKey: "SuijinAppearance") != nil { return }
         #endif
         NSApp?.appearance = appearance.nsAppearance
     }

@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// The detail area of a context: a tab per session plus a Changes tab (git contexts), and the selected tab's
@@ -480,7 +480,7 @@ struct NewSessionSheet: View {
             Form {
                 if isFolder, !model.sessions(in: context).isEmpty {
                     Label("Another session already works in this folder. Agents here edit the same files.", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(SevindaColor.warningText)
+                        .foregroundStyle(SuijinColor.warningText)
                 }
                 AgentLaunchFields(agent: $agent, accountID: $accountID, prompt: $prompt, allowsShell: true)
             }
@@ -496,7 +496,7 @@ struct NewSessionSheet: View {
                 .glassProminentButtonStyle()
                 .keyboardShortcut(.defaultAction)
             }
-            .padding(SevindaSpacing.l)
+            .padding(SuijinSpacing.l)
         }
         .frame(width: 460)
     }
@@ -516,8 +516,8 @@ private struct NoSessionView: View {
     static let cornerRadius: CGFloat = 28
 
     var body: some View {
-        VStack(spacing: SevindaSpacing.xl) {
-            VStack(spacing: SevindaSpacing.s) {
+        VStack(spacing: SuijinSpacing.xl) {
+            VStack(spacing: SuijinSpacing.s) {
                 Text("Start a Session").font(.title2.weight(.semibold))
                 if let directory = model.directory(of: context) {
                     Label {
@@ -532,8 +532,8 @@ private struct NoSessionView: View {
                     .frame(maxWidth: 520)
                 }
             }
-            GlassGroup(spacing: SevindaSpacing.m) {
-                HStack(spacing: SevindaSpacing.m) {
+            GlassGroup(spacing: SuijinSpacing.m) {
+                HStack(spacing: SuijinSpacing.m) {
                     card(.claude, title: "Claude Code", detail: detail(for: .claude))
                     card(.codex, title: "Codex", detail: detail(for: .codex))
                     card(.shell, title: "Shell", detail: Text(verbatim: "⌥⌘T"))
@@ -541,7 +541,7 @@ private struct NoSessionView: View {
             }
             .frame(maxWidth: 560)
         }
-        .padding(SevindaSpacing.xl)
+        .padding(SuijinSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -558,7 +558,7 @@ private struct NoSessionView: View {
         let button = Button {
             Task { await model.runtimes.start(in: context, agent: agent, accountID: nil, prompt: nil) }
         } label: {
-            VStack(spacing: SevindaSpacing.s) {
+            VStack(spacing: SuijinSpacing.s) {
                 Group {
                     if agent == .shell {
                         Image(systemName: "terminal").font(.system(size: 30, weight: .regular))
@@ -571,8 +571,8 @@ private struct NoSessionView: View {
                 detail.font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, SevindaSpacing.xl)
-            .padding(.horizontal, SevindaSpacing.m)
+            .padding(.vertical, SuijinSpacing.xl)
+            .padding(.horizontal, SuijinSpacing.m)
             // Real interactive Liquid Glass in a generously rounded card (system button styles keep a small radius
             // at this size); a plain control background before macOS 26.
             .floatingGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous), interactive: true)
@@ -590,7 +590,7 @@ private struct SessionProgressView: View {
     let title: LocalizedStringKey
 
     var body: some View {
-        VStack(spacing: SevindaSpacing.m) {
+        VStack(spacing: SuijinSpacing.m) {
             ProgressView().controlSize(.regular)
             Text(title).font(.callout).foregroundStyle(.secondary)
         }
@@ -612,10 +612,10 @@ private struct EndedSessionView: View {
     private var canResume: Bool { model.canResume(record) }
 
     var body: some View {
-        VStack(spacing: SevindaSpacing.l) {
-            VStack(spacing: SevindaSpacing.m) {
+        VStack(spacing: SuijinSpacing.l) {
+            VStack(spacing: SuijinSpacing.m) {
                 logo
-                VStack(spacing: SevindaSpacing.xs) {
+                VStack(spacing: SuijinSpacing.xs) {
                     Text(verbatim: model.runtimes.displayTitle(of: record))
                         .font(.title2.weight(.semibold))
                         .lineLimit(1)
@@ -625,14 +625,14 @@ private struct EndedSessionView: View {
                 details
                 if failed, let output = model.runtimes.endedOutput[record.id] { lastOutput(output) }
             }
-            .padding(SevindaSpacing.xl)
+            .padding(SuijinSpacing.xl)
             .frame(maxWidth: .infinity)
             .floatingGlass(in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-            GlassGroup(spacing: SevindaSpacing.m) {
+            GlassGroup(spacing: SuijinSpacing.m) {
                 // Side by side when they fit; a narrow pane stacks them so no title is cut.
                 ViewThatFits(in: .horizontal) {
-                    EqualWidthRow(spacing: SevindaSpacing.m) { actions }
-                    VStack(spacing: SevindaSpacing.s) { actions }
+                    EqualWidthRow(spacing: SuijinSpacing.m) { actions }
+                    VStack(spacing: SuijinSpacing.s) { actions }
                 }
             }
             if record.agent != .shell, !model.continueTargets(for: record).isEmpty {
@@ -644,7 +644,7 @@ private struct EndedSessionView: View {
             }
         }
         .frame(maxWidth: canResume ? 520 : 440)
-        .padding(SevindaSpacing.xl)
+        .padding(SuijinSpacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -710,7 +710,7 @@ private struct EndedSessionView: View {
 
     /// How long it ran, when it ended and its folder.
     private var details: some View {
-        Grid(alignment: .leading, horizontalSpacing: SevindaSpacing.m, verticalSpacing: SevindaSpacing.xs) {
+        Grid(alignment: .leading, horizontalSpacing: SuijinSpacing.m, verticalSpacing: SuijinSpacing.xs) {
             if let ended = record.endedAt {
                 GridRow {
                     Text("Ran for").foregroundStyle(.secondary)
@@ -737,7 +737,7 @@ private struct EndedSessionView: View {
 
     /// What a failed session printed last (its error, usually): the terminal is gone with the process.
     private func lastOutput(_ output: String) -> some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.xs) {
             Text("Last output").font(.caption.weight(.medium)).foregroundStyle(.secondary)
             // At most `SessionRuntimeRegistry.endedOutputLines` lines; long ones wrap. Never `.fixedSize` vertically:
             // asked for its smallest size, such a text wraps every character onto its own line (over 1,000 points for
@@ -758,9 +758,9 @@ private struct EndedSessionView: View {
                 .font(.headline)
                 .lineLimit(1)
                 .foregroundStyle(tint == nil ? Color.primary : Color.white)
-                .padding(.horizontal, SevindaSpacing.m)
+                .padding(.horizontal, SuijinSpacing.m)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, SevindaSpacing.m)
+                .padding(.vertical, SuijinSpacing.m)
                 .floatingGlass(in: Capsule(), tint: tint, interactive: true)
                 .contentShape(Capsule())
         }

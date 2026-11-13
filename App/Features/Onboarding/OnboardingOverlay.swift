@@ -1,11 +1,11 @@
 import AppKit
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
 /// The welcome tour over the whole main window, presented like Settings (same backdrop, the toolbar hidden, a fade in
 /// and out), one step at a time in a centered column. Custom on purpose: a sheet is pinned to the title bar and a
 /// window of its own would not belong to the app it introduces. ← and → move between steps, Return goes on, Esc
-/// closes; Help › Welcome to Sevinda opens it again.
+/// closes; Help › Welcome to Suijin opens it again.
 struct OnboardingOverlay: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -139,7 +139,7 @@ struct OnboardingMetrics: Equatable {
 
 // MARK: Steps
 
-/// The first step: the app icon, what Sevinda is, and its three ideas.
+/// The first step: the app icon, what Suijin is, and its three ideas.
 private struct OnboardingWelcomeStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let metrics: OnboardingMetrics
@@ -354,7 +354,7 @@ private struct OnboardingGetStartedStep: View {
             .controlSize(.extraLarge)
             .padding(.top, 6)
             .staggered(isShown, order: 2)
-            Text("You can take this tour again from Help › Welcome to Sevinda.")
+            Text("You can take this tour again from Help › Welcome to Suijin.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

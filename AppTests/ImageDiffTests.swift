@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import SevindaGit
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Image previews in the Changes view: which versions an image diff shows, where each is read from, and decoding.
 struct ImageDiffTests {
@@ -18,10 +18,10 @@ struct ImageDiffTests {
     private struct Repo {
         let root: URL
         let git = GitRunner()
-        let identity = ["-c", "user.name=Sevinda Tests", "-c", "user.email=tests@sevinda.invalid", "-c", "commit.gpgsign=false"]
+        let identity = ["-c", "user.name=Suijin Tests", "-c", "user.email=tests@suijin.invalid", "-c", "commit.gpgsign=false"]
 
         init() async throws {
-            let base = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-image-diff-\(UUID().uuidString)")
+            let base = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-image-diff-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
             root = base
             _ = try await git.run(["init", "--quiet", "--initial-branch=main"], in: root)

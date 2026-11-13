@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sevinda → "Check for Updates…", right under "About Sevinda".
+/// Suijin → "Check for Updates…", right under "About Suijin".
 struct UpdateCommands: Commands {
     var updater: UpdaterController = .shared
 
@@ -53,7 +53,7 @@ struct UpdateSettingsSection: View {
             Text("Updates are unavailable: \(message)")
                 .font(.caption).foregroundStyle(.secondary)
         case .idle, .running:
-            Text("Updates are verified with Sevinda's signing key before they install. Running sessions keep going while Sevinda restarts.")
+            Text("Updates are verified with Suijin's signing key before they install. Running sessions keep going while Suijin restarts.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

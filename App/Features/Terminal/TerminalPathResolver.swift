@@ -1,5 +1,5 @@
 import Foundation
-import SevindaGit
+import SuijinGit
 
 /// A terminal path that exists on disk.
 struct ResolvedTerminalPath: Equatable, Sendable {

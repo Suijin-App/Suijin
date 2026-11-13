@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Keeps its frame off every screen: AppKit would otherwise move a titled window back onto the user's display.
 private final class OffscreenWindow: NSWindow {
@@ -32,7 +32,7 @@ struct EndedSessionLayoutTests {
     }
 
     @Test func lastOutputKeepsTheWindowLayout() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-ended-layout-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-ended-layout-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("my-project", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -40,7 +40,7 @@ struct EndedSessionLayoutTests {
         try "#!/bin/sh\nprintf 'No conversation found with session ID: 26365d16-6f5f-4605-9d69-286ef0c2fcbe\\n'\nexit 1\n"
             .write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.load()
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)

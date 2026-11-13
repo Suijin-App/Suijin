@@ -1,5 +1,5 @@
-import SevindaGit
-import SevindaUI
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// Which part of a checkout's changes a file entry belongs to.
@@ -60,9 +60,9 @@ struct ChangedFilesList: View {
                     }
                 } header: {
                     // One line: section headers of a list keep a single line's height.
-                    HStack(spacing: SevindaSpacing.s) {
+                    HStack(spacing: SuijinSpacing.s) {
                         section.title.font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                        Spacer(minLength: SevindaSpacing.xs)
+                        Spacer(minLength: SuijinSpacing.xs)
                         section.detail.font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     }
                     .textCase(nil)
@@ -96,8 +96,8 @@ struct ChangedFilesList: View {
             commitButton(isChosen: selectedCommit == commit.sha, action: { selectedCommit = commit.sha }) {
                 Image(systemName: "smallcircle.filled.circle").font(.caption).frame(width: 14).foregroundStyle(.secondary)
                 Text(verbatim: commit.subject).lineLimit(1).truncationMode(.tail)
-                Spacer(minLength: SevindaSpacing.xs)
-                Text(verbatim: commit.shortSHA).font(SevindaFont.monoSmall).foregroundStyle(.secondary)
+                Spacer(minLength: SuijinSpacing.xs)
+                Text(verbatim: commit.shortSHA).font(SuijinFont.monoSmall).foregroundStyle(.secondary)
                 Text(commit.date, format: .relative(presentation: .numeric, unitsStyle: .narrow))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -128,14 +128,14 @@ struct ChangedFilesList: View {
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(.secondary)
-        .padding(.top, SevindaSpacing.s)
+        .padding(.top, SuijinSpacing.s)
         .listRowSeparator(.hidden)
         .selectionDisabled()
     }
 
     private func commitButton<Label: View>(isChosen: Bool, action: @escaping () -> Void, @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
-            HStack(spacing: SevindaSpacing.s) { label() }
+            HStack(spacing: SuijinSpacing.s) { label() }
                 .padding(.vertical, 3)
                 .padding(.horizontal, 6)
                 .background(isChosen ? Color.accentColor.opacity(0.15) : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -147,7 +147,7 @@ struct ChangedFilesList: View {
     }
 
     private func row(_ file: ChangedFile) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.s) {
+        HStack(alignment: .firstTextBaseline, spacing: SuijinSpacing.s) {
             ChangeStatusBadge(letter: file.kind.letter, color: file.kind.color)
                 .accessibilityLabel(file.kind.label)
             VStack(alignment: .leading, spacing: 1) {
@@ -198,10 +198,10 @@ extension FileChangeKind {
     /// The badge fill; the same colors as the Source Control panel's letters.
     var color: Color {
         switch self {
-        case .added: SevindaColor.ok
-        case .deleted, .unmerged: SevindaColor.error
+        case .added: SuijinColor.ok
+        case .deleted, .unmerged: SuijinColor.error
         case .renamed, .copied: Color.accentColor
-        default: SevindaColor.warning
+        default: SuijinColor.warning
         }
     }
 }

@@ -1,4 +1,4 @@
-import SevindaCore
+import SuijinCore
 import SwiftUI
 
 /// Window toolbar: the context's session tabs in the middle (Safari-style compact tabs), then new session, split

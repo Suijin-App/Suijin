@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// Facts about the selected context in the inspector: path, branch, base, sessions.
@@ -21,7 +21,7 @@ struct WorktreeInspector: View {
                         Section {
                             Label("Agents in a folder share the same files. Run them on separate tasks, or use a git repository for isolated worktrees.",
                                   systemImage: "exclamationmark.triangle")
-                                .foregroundStyle(SevindaColor.warningText)
+                                .foregroundStyle(SuijinColor.warningText)
                                 .font(.callout)
                         }
                     }

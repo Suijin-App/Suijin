@@ -1,5 +1,5 @@
 import Foundation
-import SevindaTerminal
+import SuijinTerminal
 
 extension SessionRuntime {
     enum PasteError: LocalizedError {

@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// Status bar at the bottom of the window: usage of the selected accounts, running sessions, app memory.
@@ -7,18 +7,18 @@ struct StatusBarView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        HStack(spacing: SevindaSpacing.l) {
+        HStack(spacing: SuijinSpacing.l) {
             UsageStatusItem(provider: .claude)
             UsageStatusItem(provider: .codex)
             UsageRefreshButton()
-            Spacer(minLength: SevindaSpacing.s)
+            Spacer(minLength: SuijinSpacing.s)
             ResourceStatusItem()
                 .layoutPriority(1)
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .lineLimit(1)
-        .padding(.horizontal, SevindaSpacing.l)
+        .padding(.horizontal, SuijinSpacing.l)
         .padding(.vertical, 5)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
@@ -27,7 +27,7 @@ struct StatusBarView: View {
     }
 }
 
-/// The running sessions and Sevinda's memory; clicking them opens the Resource Manager.
+/// The running sessions and Suijin's memory; clicking them opens the Resource Manager.
 private struct ResourceStatusItem: View {
     @Environment(AppModel.self) private var model
     @State private var isShowingResources = false
@@ -36,7 +36,7 @@ private struct ResourceStatusItem: View {
         Button {
             isShowingResources.toggle()
         } label: {
-            HStack(spacing: SevindaSpacing.l) {
+            HStack(spacing: SuijinSpacing.l) {
                 HStack(spacing: 4) {
                     Image(systemName: "terminal")
                     Text("\(model.runtimes.liveCount) running")
@@ -49,7 +49,7 @@ private struct ResourceStatusItem: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(Text("Show the Resource Manager: memory and CPU of running sessions and Sevinda"))
+        .help(Text("Show the Resource Manager: memory and CPU of running sessions and Suijin"))
         .accessibilityLabel(Text("Resource Manager"))
         .accessibilityIdentifier("resourceManagerButton")
         .popover(isPresented: $isShowingResources, arrowEdge: .top) {

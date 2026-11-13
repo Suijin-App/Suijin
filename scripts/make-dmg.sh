@@ -1,11 +1,11 @@
 #!/bin/bash
-# Package a signed (normally notarized and stapled) Sevinda.app into a compressed DMG with an Applications shortcut
+# Package a signed (normally notarized and stapled) Suijin.app into a compressed DMG with an Applications shortcut
 # to drag it onto, then sign the DMG. Called by scripts/release-notarize.sh; can also run alone.
 #
 # Usage:
-#   scripts/make-dmg.sh --app <path/to/Sevinda.app> --out <path/to/Sevinda-0.1.0.dmg> [--sign <identity>]
+#   scripts/make-dmg.sh --app <path/to/Suijin.app> --out <path/to/Suijin-0.1.0.dmg> [--sign <identity>]
 #
-#   --sign  codesign identity for the DMG (default: $SEVINDA_SIGNING_IDENTITY, else "Developer ID Application").
+#   --sign  codesign identity for the DMG (default: $SUIJIN_SIGNING_IDENTITY, else "Developer ID Application").
 #           Pass --sign - to leave the DMG unsigned (local testing only; Gatekeeper rejects it).
 #
 # No credentials are read or stored here: codesign uses the certificate already in the login Keychain.
@@ -13,7 +13,7 @@ set -euo pipefail
 
 APP=""
 OUT=""
-IDENTITY="${SEVINDA_SIGNING_IDENTITY:-Developer ID Application}"
+IDENTITY="${SUIJIN_SIGNING_IDENTITY:-Developer ID Application}"
 
 usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'make-dmg: %s\n' "$1" >&2; exit 1; }
@@ -42,19 +42,19 @@ done
 [ -n "$OUT" ] || die "missing --out"
 case "$OUT" in *.dmg) ;; *) die "--out must end in .dmg" ;; esac
 APP="${APP%/}"
-[ "$(basename "$APP")" = "Sevinda.app" ] || die "--app must point at Sevinda.app (got $APP)"
+[ "$(basename "$APP")" = "Suijin.app" ] || die "--app must point at Suijin.app (got $APP)"
 [ -d "$APP" ] || die "app not found: $APP"
 command -v hdiutil >/dev/null || die "hdiutil not found"
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" 2>/dev/null || echo unknown)"
-VOLUME="Sevinda $VERSION"
+VOLUME="Suijin $VERSION"
 
-STAGING="$(mktemp -d -t sevinda-dmg)"
+STAGING="$(mktemp -d -t suijin-dmg)"
 trap 'rm -rf "$STAGING"' EXIT
 
 step "stage the app with an Applications shortcut"
 # `ditto` keeps the code signature, extended attributes and a stapled ticket intact.
-run ditto "$APP" "$STAGING/Sevinda.app"
+run ditto "$APP" "$STAGING/Suijin.app"
 run ln -s /Applications "$STAGING/Applications"
 
 step "create the compressed disk image"

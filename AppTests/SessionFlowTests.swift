@@ -1,11 +1,11 @@
 import Foundation
-import SevindaAgents
-import SevindaCore
-import SevindaGit
-import SevindaPTYProtocol
-import SevindaTerminal
+import SuijinAgents
+import SuijinCore
+import SuijinGit
+import SuijinPTYProtocol
+import SuijinTerminal
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// End to end inside the signed app: workspaces (git and folder), worktrees, a shell session in the PTY host over
 /// launchd XPC, re-attaching after a simulated app restart with the scrollback, and clean teardown.
@@ -16,13 +16,13 @@ struct SessionFlowTests {
     let dataRoot: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-e2e-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-e2e-\(UUID().uuidString)", isDirectory: true)
         dataRoot = root.appendingPathComponent("data", isDirectory: true)
         try FileManager.default.createDirectory(at: dataRoot, withIntermediateDirectories: true)
     }
 
     private func git(_ args: [String], in dir: URL) async throws {
-        _ = try await GitRunner().run(["-c", "user.name=Sevinda Tests", "-c", "user.email=tests@example.invalid"] + args, in: dir)
+        _ = try await GitRunner().run(["-c", "user.name=Suijin Tests", "-c", "user.email=tests@example.invalid"] + args, in: dir)
     }
 
     private func makeRepository() async throws -> URL {
@@ -49,7 +49,7 @@ struct SessionFlowTests {
         let repo = try await makeRepository()
         let folder = root.appendingPathComponent("plain", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let store = try SevindaStore(url: SevindaPaths.database(in: dataRoot))
+        let store = try SuijinStore(url: SuijinPaths.database(in: dataRoot))
         let model = AppModel(store: store, dataRoot: dataRoot)
 
         await model.addWorkspace(at: repo.appendingPathComponent("README.md").deletingLastPathComponent())
@@ -65,7 +65,7 @@ struct SessionFlowTests {
         #expect(listed == [worktree.path])
 
         // A second model on the same database sees both workspaces with their kinds, and the worktree.
-        let reopened = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let reopened = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await reopened.load()
         #expect(reopened.workspaces.map(\.kind) == [.git, .folder])
         #expect(reopened.worktrees[gitWorkspace.id]?.map(\.branch) == ["feature-a"])
@@ -85,8 +85,8 @@ struct SessionFlowTests {
     @Test func shellSessionSurvivesRestartInThePTYHost() async throws {
         let folder = root.appendingPathComponent("plain", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let databaseURL = SevindaPaths.database(in: dataRoot)
-        let model = AppModel(store: try SevindaStore(url: databaseURL), dataRoot: dataRoot)
+        let databaseURL = SuijinPaths.database(in: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: dataRoot)
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
 
@@ -97,8 +97,8 @@ struct SessionFlowTests {
         let hostID = try #require(runtime.terminal.engine.sessionID)
         #expect(model.sessions.first?.hostSessionID == hostID)
 
-        runtime.terminal.send("echo SEVINDA_E2E_$((40+2))\n")
-        #expect(await eventually { runtime.terminal.view.visibleText().contains("SEVINDA_E2E_42") })
+        runtime.terminal.send("echo SUIJIN_E2E_$((40+2))\n")
+        #expect(await eventually { runtime.terminal.view.visibleText().contains("SUIJIN_E2E_42") })
 
         // Quit with sessions kept: detach only. The host still runs the shell.
         await model.runtimes.prepareForQuit()
@@ -106,11 +106,11 @@ struct SessionFlowTests {
         #expect(running.contains { $0.id == hostID && $0.isRunning })
 
         // A new app model (as after a relaunch) re-attaches and replays the scrollback.
-        let relaunched = AppModel(store: try SevindaStore(url: databaseURL), dataRoot: dataRoot)
+        let relaunched = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: dataRoot)
         await relaunched.load()
         await relaunched.runtimes.bootstrap()
         let restored = try #require(relaunched.runtimes.runtime(for: id))
-        #expect(await eventually { restored.terminal.view.visibleText().contains("SEVINDA_E2E_42") })
+        #expect(await eventually { restored.terminal.view.visibleText().contains("SUIJIN_E2E_42") })
         restored.terminal.send("echo AFTER_$((1+1))\n")
         #expect(await eventually { restored.terminal.view.visibleText().contains("AFTER_2") })
 
@@ -125,7 +125,7 @@ struct SessionFlowTests {
     @Test func anotherDataRootLeavesForeignSessionsRunning() async throws {
         let folder = root.appendingPathComponent("plain", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let owner = AppModel(store: try SevindaStore.inMemory(), dataRoot: dataRoot)
+        let owner = AppModel(store: try SuijinStore.inMemory(), dataRoot: dataRoot)
         await owner.addWorkspace(at: folder)
         await owner.runtimes.bootstrap()
         let workspace = try #require(owner.workspaces.first)
@@ -134,7 +134,7 @@ struct SessionFlowTests {
         await owner.runtimes.prepareForQuit()
 
         // A second model with its own data root and no records restores: the first one's shell must survive.
-        let stranger = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("other-data"))
+        let stranger = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("other-data"))
         await stranger.runtimes.bootstrap()
         // Termination is SIGHUP now and SIGKILL 2 s later: wait past both before checking.
         try await Task.sleep(for: .seconds(3))
@@ -147,7 +147,7 @@ struct SessionFlowTests {
     @Test func agentLaunchAppliesAccountEnvironmentAfterTheLoginShell() async throws {
         let folder = root.appendingPathComponent("plain", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: dataRoot)
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         let path = await AgentCatalog.loginShellPATH()
@@ -169,7 +169,7 @@ struct SessionFlowTests {
         }
         #expect(envArguments.last == "fix the bug")
         #expect(launch.cwd == folder.path)
-        #expect(launch.environment["SEVINDA_DATA_ROOT"] == dataRoot.path)
+        #expect(launch.environment["SUIJIN_DATA_ROOT"] == dataRoot.path)
         try? FileManager.default.removeItem(at: root)
     }
 }

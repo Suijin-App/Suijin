@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Clicking a session in the sidebar must leave the keyboard in its terminal, not in the list (where the arrow keys
 /// would switch sessions instead of reaching the agent).
@@ -10,11 +10,11 @@ import Testing
 @Suite(.serialized)
 struct TerminalFocusTests {
     @Test func clickedSessionTakesTheKeyboardFromTheList() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-focus-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-focus-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

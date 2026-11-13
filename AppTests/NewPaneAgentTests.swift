@@ -1,7 +1,7 @@
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The New pane runs setting and which agent a new pane starts: the setting, a choice made for one pane, and the
 /// focused pane's agent. Live checks only ever start shells; a Claude pane is a record with no process.
@@ -12,7 +12,7 @@ struct NewPaneAgentTests {
     let folder: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-newpane-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-newpane-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     }
@@ -28,7 +28,7 @@ struct NewPaneAgentTests {
 
     /// A model with one folder workspace and a selected Claude session record that has no process.
     private func makeModel() async throws -> (AppModel, SessionContext, AgentSessionRecord) {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
         let context = SessionContext.workspace(workspaceID)
@@ -59,7 +59,7 @@ struct NewPaneAgentTests {
     }
 
     @Test func settingRoundTripsThroughTheStoreAndTheDefaultIsStoredAsNoValue() async throws {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(model.newPaneAgent == .sameAsFocused)
         model.setNewPaneAgent(.shell)

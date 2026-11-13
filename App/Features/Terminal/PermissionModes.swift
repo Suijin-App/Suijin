@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// Permission modes in the app: their names, the default of each agent (Settings → Agents), the confirmation before an
@@ -129,7 +129,7 @@ struct PermissionsSkippedBadge: View {
     var body: some View {
         if session.skipsPermissions {
             Image(systemName: "exclamationmark.shield.fill")
-                .foregroundStyle(SevindaColor.warningText)
+                .foregroundStyle(SuijinColor.warningText)
                 .help(Text("Started with permission checks skipped"))
                 .accessibilityLabel(Text("Permissions skipped"))
         }

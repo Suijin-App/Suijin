@@ -1,6 +1,6 @@
-import SevindaAgents
-import SevindaGit
-import SevindaUI
+import SuijinAgents
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// Creates a GitHub pull request for the context's branch with the user's `gh`: base branch, title and body (an
@@ -23,7 +23,7 @@ struct CreatePullRequestSheet: View {
         VStack(spacing: 0) {
             content
             Divider()
-            footer.padding(SevindaSpacing.l)
+            footer.padding(SuijinSpacing.l)
         }
         .frame(width: 560)
         .frame(minHeight: 300)
@@ -136,7 +136,7 @@ struct CreatePullRequestSheet: View {
                     ScrollView {
                         Text(verbatim: message)
                             .font(.callout)
-                            .foregroundStyle(SevindaColor.errorText)
+                            .foregroundStyle(SuijinColor.errorText)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

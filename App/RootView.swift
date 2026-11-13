@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// The main window: workspaces in the sidebar, the selected context's tabs in the detail area, facts about it in the
@@ -85,7 +85,7 @@ struct RootView: View {
         .alert(item: $model.presentedError) { error in
             Alert(title: Text(verbatim: error.title), message: Text(verbatim: error.message))
         }
-        // Worktrees made or removed outside Sevinda (an agent running `git worktree add`) show up when the user
+        // Worktrees made or removed outside Suijin (an agent running `git worktree add`) show up when the user
         // comes back to the app or selects the repository.
         .onChange(of: model.selection) { _, context in
             guard let context, let id = model.workspaceID(of: context), let workspace = model.workspace(id) else { return }
@@ -127,10 +127,10 @@ struct RootView: View {
     }
 
     private var title: String {
-        guard let context = model.selection else { return "Sevinda" }
+        guard let context = model.selection else { return "Suijin" }
         switch context {
-        case .workspace(let id): return model.workspace(id)?.name ?? "Sevinda"
-        case .worktree(let id): return model.worktree(id)?.branch ?? "Sevinda"
+        case .workspace(let id): return model.workspace(id)?.name ?? "Suijin"
+        case .worktree(let id): return model.worktree(id)?.branch ?? "Suijin"
         }
     }
 
@@ -160,7 +160,7 @@ private struct FirstWorkspaceView: View {
 
     var body: some View {
         ContentUnavailableView {
-            VStack(spacing: SevindaSpacing.l) {
+            VStack(spacing: SuijinSpacing.l) {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
                     .interpolation(.high)
@@ -175,9 +175,9 @@ private struct FirstWorkspaceView: View {
             Text("Add a git repository to give each agent its own worktree, or a plain folder to run agents straight in it.")
                 .frame(maxWidth: 440)
         } actions: {
-            VStack(spacing: SevindaSpacing.m) {
+            VStack(spacing: SuijinSpacing.m) {
                 GlassGroup {
-                    HStack(spacing: SevindaSpacing.m) {
+                    HStack(spacing: SuijinSpacing.m) {
                         Button { AddWorkspaceFlow.run(model: model) } label: {
                             Label("Add Workspace…", systemImage: "plus")
                         }

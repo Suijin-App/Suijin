@@ -1,6 +1,6 @@
 import Charts
-import SevindaUI
-import SevindaUsage
+import SuijinUI
+import SuijinUsage
 import SwiftUI
 
 /// One day of the heatmap: its column (week, oldest first), its row (weekday from the calendar's first weekday) and
@@ -84,16 +84,16 @@ struct UsageHeatmap: View {
     private static let cellSize: CGFloat = 22
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
-            HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.s) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.s) {
+            HStack(alignment: .firstTextBaseline, spacing: SuijinSpacing.s) {
                 Text("Daily intensity").font(.headline)
-                Spacer(minLength: SevindaSpacing.s)
+                Spacer(minLength: SuijinSpacing.s)
                 if let bestDay, bestDay.tokens.total > 0 {
                     Text("Best: \(UsageFormat.day(bestDay.date))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                        .padding(.horizontal, SevindaSpacing.s)
+                        .padding(.horizontal, SuijinSpacing.s)
                         .padding(.vertical, 2)
                         .background(.quaternary, in: Capsule())
                         .help(Text("\(UsageFormat.tokens(bestDay.tokens.total)) tokens"))
@@ -103,13 +103,13 @@ struct UsageHeatmap: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
-            HStack(alignment: .top, spacing: SevindaSpacing.s) {
+            HStack(alignment: .top, spacing: SuijinSpacing.s) {
                 weekdayLabels
-                VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+                VStack(alignment: .leading, spacing: SuijinSpacing.xs) {
                     chart
                     HStack {
                         Text(verbatim: UsageFormat.day(model.start))
-                        Spacer(minLength: SevindaSpacing.xs)
+                        Spacer(minLength: SuijinSpacing.xs)
                         Text(verbatim: UsageFormat.day(model.today))
                     }
                     .font(.caption)
@@ -119,7 +119,7 @@ struct UsageHeatmap: View {
                     .accessibilityHidden(true)
                 }
             }
-            HStack(spacing: SevindaSpacing.xs) {
+            HStack(spacing: SuijinSpacing.xs) {
                 Text("Less")
                 ForEach(0...4, id: \.self) { level in
                     RoundedRectangle(cornerRadius: 2)

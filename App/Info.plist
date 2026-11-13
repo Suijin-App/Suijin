@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Sevinda</string>
+	<string>Suijin</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,7 +26,7 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<!-- Sparkle 2 (docs/release-process.md). There is no update host yet, so the build carries no SUFeedURL and the
 	     updater reports "not configured". Turning updates on means adding SUFeedURL here and the real public EdDSA key
-	     printed by `generate_keys --account sevinda -p`; only the public half lives here, the private key stays in the
+	     printed by `generate_keys --account suijin -p`; only the public half lives here, the private key stays in the
 	     release Mac's login Keychain. -->
 	<key>SUPublicEDKey</key>
 	<string>REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY</string>
@@ -39,9 +39,9 @@
 	<array>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>com.tekmium.sevinda.pane</string>
+			<string>com.tekmium.suijin.pane</string>
 			<key>UTTypeDescription</key>
-			<string>Sevinda Pane</string>
+			<string>Suijin Pane</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>

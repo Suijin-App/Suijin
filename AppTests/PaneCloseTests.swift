@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// ⌘W in a split tab closes the pane that has the keyboard, whichever way the pane got it: a click, the app focusing
 /// it, or AppKit moving the first responder on its own. Runs the real tab view with real shells in the PTY host.
@@ -20,8 +20,8 @@ struct PaneCloseTests {
         let root: URL
         let primary: UUID
         let secondary: UUID
-        let primaryView: SevindaTerminalView
-        let secondaryView: SevindaTerminalView
+        let primaryView: SuijinTerminalView
+        let secondaryView: SuijinTerminalView
 
         func tearDown() async {
             window.orderOut(nil)
@@ -40,10 +40,10 @@ struct PaneCloseTests {
     }
 
     private func makeSplitTab() async throws -> Fixture {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-pane-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-pane-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

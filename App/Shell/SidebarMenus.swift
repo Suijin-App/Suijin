@@ -1,6 +1,6 @@
 import AppKit
-import SevindaAgents
-import SevindaCore
+import SuijinAgents
+import SuijinCore
 import SwiftUI
 
 /// Context-menu items of a sidebar row that holds sessions (a folder's sessions, a main checkout, a worktree): start
@@ -173,7 +173,7 @@ extension AppModel {
                              permissionMode: session.effectivePermissionMode)
     }
 
-    /// Whether an ended session can continue its conversation: a Claude or Codex session whose conversation id Sevinda
+    /// Whether an ended session can continue its conversation: a Claude or Codex session whose conversation id Suijin
     /// learned (from Claude's hooks or the hint the CLI printed as it exited).
     func canResume(_ session: AgentSessionRecord) -> Bool {
         session.agent != .shell && session.agentSessionID.flatMap(AgentResume.validSessionID) != nil

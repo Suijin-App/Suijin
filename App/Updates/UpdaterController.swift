@@ -44,7 +44,7 @@ final class UpdaterController {
     @ObservationIgnored private let delegate = Delegate()
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
 
-    private static let logger = Logger(subsystem: "com.tekmium.sevinda", category: "updates")
+    private static let logger = Logger(subsystem: "com.tekmium.suijin", category: "updates")
 
     private var updater: SPUUpdater { standardController.updater }
 
@@ -80,7 +80,7 @@ final class UpdaterController {
     }
 
     /// Whether `bundle` carries a public EdDSA key Sparkle can verify updates with.
-    /// Updates run only with both an HTTPS feed and a real public key. Sevinda has no update host yet, so shipped builds
+    /// Updates run only with both an HTTPS feed and a real public key. Suijin has no update host yet, so shipped builds
     /// carry no `SUFeedURL` and stay here (docs/release-process.md, "Turning updates on").
     nonisolated static func isConfigured(in bundle: Bundle) -> Bool {
         hasFeedURL(in: bundle) && hasPublicKey(in: bundle)

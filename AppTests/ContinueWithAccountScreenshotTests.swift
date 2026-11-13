@@ -1,23 +1,23 @@
 import AppKit
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Renders "Continue With Another Account" for review: the limit banner over a running session, the moving progress,
 /// the ended view's menu button and the usage popover's, narrow and wide, light and dark. Opt-in with
-/// `TEST_RUNNER_SEVINDA_SWITCH_SHOT=<file>`: at each step the file receives `<name> <window number>` and the caller
+/// `TEST_RUNNER_SUIJIN_SWITCH_SHOT=<file>`: at each step the file receives `<name> <window number>` and the caller
 /// captures that window with `screencapture -l` (Liquid Glass does not draw into `cacheDisplay`, and the window server
 /// draws no window outside every display). The borderless window sits at the desktop's level, behind every app window
 /// and the desktop icons, ignores the mouse and is ordered in without activating the app, so nothing comes to the
 /// front or takes focus.
 /// A stand-in `claude` script runs instead of the real one.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SWITCH_SHOT"] != nil))
+@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SWITCH_SHOT"] != nil))
 struct ContinueWithAccountScreenshotTests {
-    let output = ProcessInfo.processInfo.environment["SEVINDA_SWITCH_SHOT"] ?? ""
+    let output = ProcessInfo.processInfo.environment["SUIJIN_SWITCH_SHOT"] ?? ""
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) async throws {
         let window = NSWindow(contentRect: CGRect(origin: CGPoint(x: 0, y: 0), size: size), styleMask: [.borderless],
@@ -39,7 +39,7 @@ struct ContinueWithAccountScreenshotTests {
     }
 
     @Test func switchViews() async throws {
-        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-switch-shots-\(UUID().uuidString)", isDirectory: true)
+        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-switch-shots-\(UUID().uuidString)", isDirectory: true)
         let folder = raw.appendingPathComponent("my-project", isDirectory: true)
         let bin = raw.appendingPathComponent("bin", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -49,7 +49,7 @@ struct ContinueWithAccountScreenshotTests {
         try "#!/bin/sh\nprintf 'Claude usage limit reached.\\n'\nIFS= read -r line\n".write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
 
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: raw.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: raw.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         let context = SessionContext.workspace(workspace.id)

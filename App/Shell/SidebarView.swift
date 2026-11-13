@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// A selectable sidebar row: a context (folder, main checkout, worktree) or one session in it.
@@ -104,9 +104,9 @@ private struct AddWorkspaceButton: View {
             .controlSize(.large)
             .help(Text("Add a git repository or a folder (⇧⌘O)"))
         }
-        .padding(.horizontal, SevindaSpacing.m)
-        .padding(.top, SevindaSpacing.s)
-        .padding(.bottom, SevindaSpacing.m)
+        .padding(.horizontal, SuijinSpacing.m)
+        .padding(.top, SuijinSpacing.s)
+        .padding(.bottom, SuijinSpacing.m)
     }
 }
 
@@ -119,7 +119,7 @@ private struct WorkspaceHeader: View {
     @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             Button { isEditingIcon = true } label: {
                 WorkspaceBadge(workspace: workspace, imageDirectory: model.workspaceIconDirectory, size: 22)
             }
@@ -138,7 +138,7 @@ private struct WorkspaceHeader: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            Spacer(minLength: SevindaSpacing.xs)
+            Spacer(minLength: SuijinSpacing.xs)
             HStack(spacing: 2) {
                 if workspace.kind == .git {
                     Button { model.newWorktreeWorkspaceID = workspace.id } label: {
@@ -166,7 +166,7 @@ private struct WorkspaceHeader: View {
         .onHover { isHovered = $0 }
         .contextMenu { menuItems }
         .help(Text(verbatim: workspace.path))
-        .confirmationDialog(Text("Remove “\(workspace.name)” from Sevinda?"), isPresented: $isConfirmingRemoval) {
+        .confirmationDialog(Text("Remove “\(workspace.name)” from Suijin?"), isPresented: $isConfirmingRemoval) {
             Button("Remove", role: .destructive) { Task { await model.removeWorkspace(workspace.id) } }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -231,7 +231,7 @@ struct WorkspaceContextRow: View {
             Label {
                 HStack {
                     title.lineLimit(1).truncationMode(.middle)
-                    Spacer(minLength: SevindaSpacing.xs)
+                    Spacer(minLength: SuijinSpacing.xs)
                     accessory
                     ContextActivityBadge(sessions: sessions)
                 }
@@ -309,7 +309,7 @@ private struct SidebarPaneTabRow: View {
                 .foregroundStyle(.secondary)
             Text("Split tab")
                 .lineLimit(1)
-            Spacer(minLength: SevindaSpacing.xs)
+            Spacer(minLength: SuijinSpacing.xs)
             ContextActivityBadge(sessions: sessions)
         }
         .padding(.leading, 34)
@@ -336,7 +336,7 @@ private struct SidebarSessionRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             PermissionsSkippedBadge(session: session)
-            Spacer(minLength: SevindaSpacing.xs)
+            Spacer(minLength: SuijinSpacing.xs)
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 Text(verbatim: Self.elapsed(from: session.createdAt, to: session.endedAt ?? context.date))
                     .font(.caption)

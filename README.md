@@ -1,4 +1,4 @@
-# Sevinda
+# Suijin
 
 A native macOS app that runs Claude Code and Codex agents side by side, each in its own git worktree (or straight in a
 plain folder), with multiple managed accounts per provider and a native diff viewer.
@@ -11,9 +11,9 @@ plain folder), with multiple managed accounts per provider and a native diff vie
 ## Build
 
 ```sh
-scripts/bootstrap.sh            # generate Sevinda.xcodeproj from project.yml
+scripts/bootstrap.sh            # generate Suijin.xcodeproj from project.yml
 scripts/ci-local.sh             # package tests + app build and tests
-open Sevinda.xcodeproj
+open Suijin.xcodeproj
 ```
 
 The first time you build in Xcode, it stops with "Plugin “SwiftTermBuildInfoPlugin” from package “SwiftTerm” must be

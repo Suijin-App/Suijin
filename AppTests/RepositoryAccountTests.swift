@@ -1,8 +1,8 @@
 import Foundation
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// A repository the active `gh` account cannot see is read with another account `gh` is signed in to, which is then
 /// remembered for that remote. A stand-in `gh` plays both accounts: it sees the repository only with the other
@@ -10,7 +10,7 @@ import Testing
 @MainActor
 struct RepositoryAccountTests {
     private func fakeGH() throws -> (GitHubCLI, URL) {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-gh-acct-\(UUID().uuidString)", isDirectory: true)
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-gh-acct-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let script = dir.appendingPathComponent("gh")
         try #"""
@@ -41,7 +41,7 @@ struct RepositoryAccountTests {
     @Test func anotherSignedInAccountReadsTheRepositoryAndIsRemembered() async throws {
         let (cli, dir) = try fakeGH()
         defer { try? FileManager.default.removeItem(at: dir) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: dir.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: dir.appendingPathComponent("data"))
         let store = SourceControlStore.shared(for: model)
         let remote = "https://github.com/o/r.git"
 
@@ -67,7 +67,7 @@ struct RepositoryAccountTests {
         let script = dir.appendingPathComponent("gh")
         let text = try String(contentsOf: script, encoding: .utf8).replacingOccurrences(of: "token-of-other\" ]", with: "nobody\" ]")
         try text.write(to: script, atomically: true, encoding: .utf8)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: dir.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: dir.appendingPathComponent("data"))
         let store = SourceControlStore.shared(for: model)
 
         do {

@@ -1,12 +1,12 @@
 import AppKit
 import Foundation
-import SevindaAgents
-import SevindaCore
-import SevindaGit
+import SuijinAgents
+import SuijinCore
+import SuijinGit
 import Observation
 import os
 
-private let statsLogger = Logger(subsystem: "com.tekmium.sevinda", category: "stats")
+private let statsLogger = Logger(subsystem: "com.tekmium.suijin", category: "stats")
 
 /// Source control state of every git context, kept for the app's lifetime so a draft commit message survives the
 /// inspector closing or another worktree being selected. One store per `AppModel`.
@@ -40,8 +40,8 @@ final class SourceControlStore {
 
     func gitHubCLI() async -> GitHubCLI? {
         #if DEBUG
-        // Screenshot runs point at a fake `gh` (`SEVINDA_GH_PATH`), so no real GitHub repository is involved.
-        if let path = ProcessInfo.processInfo.environment["SEVINDA_GH_PATH"] {
+        // Screenshot runs point at a fake `gh` (`SUIJIN_GH_PATH`), so no real GitHub repository is involved.
+        if let path = ProcessInfo.processInfo.environment["SUIJIN_GH_PATH"] {
             guard FileManager.default.isExecutableFile(atPath: path) else { return nil }
             return GitHubCLI(executable: URL(fileURLWithPath: path))
         }
@@ -519,7 +519,7 @@ final class SourceControlState {
         }
     }
 
-    /// Counts a pull request Sevinda created (an already existing one is not counted). A failure to store the stat
+    /// Counts a pull request Suijin created (an already existing one is not counted). A failure to store the stat
     /// must not fail the pull request, so it is only logged.
     private func recordCreatedPullRequest(_ url: URL) async {
         let address = url.absoluteString

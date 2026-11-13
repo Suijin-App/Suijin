@@ -1,7 +1,7 @@
-import SevindaCore
-import SevindaDiff
-import SevindaGit
-import SevindaUI
+import SuijinCore
+import SuijinDiff
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// Changes of a git context: changed files on the left, the selected file's diff (unified or side by side) on the
@@ -295,15 +295,15 @@ private struct DiffFileNotesHeader: View {
 
     var body: some View {
         let notes = headerNotes
-        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
-            HStack(spacing: SevindaSpacing.s) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 Text(verbatim: diff.displayPath)
-                    .font(SevindaFont.monoSmall)
+                    .font(SuijinFont.monoSmall)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .help(Text(verbatim: diff.displayPath))
-                Spacer(minLength: SevindaSpacing.s)
+                Spacer(minLength: SuijinSpacing.s)
                 if isNarrowFallback {
                     Label("Too narrow for side by side", systemImage: "rectangle.split.1x2")
                         .font(.caption)
@@ -323,7 +323,7 @@ private struct DiffFileNotesHeader: View {
             }
             if let book, !notes.isEmpty || draft != nil {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: SevindaSpacing.s) {
+                    VStack(alignment: .leading, spacing: SuijinSpacing.s) {
                         ForEach(notes) { note in
                             DiffNoteCard(note: note, onSave: { book.update(note.id, body: $0) },
                                          onDelete: { book.delete(note.id) })
@@ -347,8 +347,8 @@ private struct DiffFileNotesHeader: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, SevindaSpacing.m)
-        .padding(.vertical, SevindaSpacing.s)
+        .padding(.horizontal, SuijinSpacing.m)
+        .padding(.vertical, SuijinSpacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .bottom) { Divider() }

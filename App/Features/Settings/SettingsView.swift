@@ -1,7 +1,7 @@
-import SevindaAgents
-import SevindaCore
-import SevindaTerminal
-import SevindaUI
+import SuijinAgents
+import SuijinCore
+import SuijinTerminal
+import SuijinUI
 import SwiftUI
 
 /// The pages of Settings, in sidebar order.
@@ -77,20 +77,20 @@ struct GeneralSettings: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
-                Toggle("Keep sessions running after quitting Sevinda", isOn: toggleBinding(model, .keepSessionsOnQuit, default: true))
+                Toggle("Keep sessions running after quitting Suijin", isOn: toggleBinding(model, .keepSessionsOnQuit, default: true))
                 if let problem = model.runtimes.hostProblem {
                     Label {
-                        Text("Sessions end with the app: the terminal host is unavailable (\(problem)). Allow Sevinda in System Settings → General → Login Items.")
+                        Text("Sessions end with the app: the terminal host is unavailable (\(problem)). Allow Suijin in System Settings → General → Login Items.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
                     }
-                    .foregroundStyle(SevindaColor.warningText)
+                    .foregroundStyle(SuijinColor.warningText)
                     .font(.callout)
                 }
             } header: {
                 Text("Sessions")
             } footer: {
-                Text("Sessions run in a background helper, so closing or updating Sevinda does not stop your agents.")
+                Text("Sessions run in a background helper, so closing or updating Suijin does not stop your agents.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             UpdateSettingsSection()
@@ -137,7 +137,7 @@ struct AgentSettings: View {
                     Text("Codex").tag(NewPaneAgent.codex)
                 }
                 LabeledContent("Folder for new worktrees") {
-                    HStack(spacing: SevindaSpacing.s) {
+                    HStack(spacing: SuijinSpacing.s) {
                         Text(verbatim: model.setting(.worktreeRoot).map { ($0 as NSString).abbreviatingWithTildeInPath }
                              ?? String(localized: "Next to each repository"))
                             .lineLimit(1).truncationMode(.middle)
@@ -162,7 +162,7 @@ struct AgentSettings: View {
             } header: {
                 Text("Installed")
             } footer: {
-                Text("Sevinda finds agents on the PATH of your login shell.")
+                Text("Suijin finds agents on the PATH of your login shell.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
@@ -200,24 +200,24 @@ private struct InstalledAgentRow: View {
         LabeledContent {
             if let path {
                 if let binary = AgentCatalog.resolveBinary(agent.kind, path: path) {
-                    HStack(spacing: SevindaSpacing.xs) {
+                    HStack(spacing: SuijinSpacing.xs) {
                         Text(verbatim: (binary.path as NSString).abbreviatingWithTildeInPath)
                             .foregroundStyle(.secondary)
                             .lineLimit(1).truncationMode(.middle)
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(SevindaColor.ok)
+                            .foregroundStyle(SuijinColor.ok)
                             .accessibilityLabel(Text("Installed"))
                     }
                     .help(Text(verbatim: binary.path))
                 } else {
                     Label("Not found on PATH", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(SevindaColor.warningText)
+                        .foregroundStyle(SuijinColor.warningText)
                 }
             } else {
                 ProgressView().controlSize(.small)
             }
         } label: {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 AgentLogo(agent: agent.kind, size: 20)
                 Text(verbatim: agent.displayName)
             }

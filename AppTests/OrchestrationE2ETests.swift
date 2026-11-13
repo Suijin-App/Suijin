@@ -1,22 +1,22 @@
 import Foundation
-import SevindaCore
-import SevindaGit
-import SevindaPTYProtocol
-import SevindaTerminal
+import SuijinCore
+import SuijinGit
+import SuijinPTYProtocol
+import SuijinTerminal
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Orchestration end to end with the real `claude` and `codex` (the user's own logins) through the app and the PTY
 /// host: a Claude coordinator, driven by text typed into its terminal, starts a Codex worker in a new worktree with
-/// `sevinda worker start`; the worker asks, the coordinator replies, the worker reports done and the coordinator is
-/// woken. Then a worker is killed and the broker escalates. Also checks that `sevinda` refuses a terminal Sevinda did
+/// `suijin worker start`; the worker asks, the coordinator replies, the worker reports done and the coordinator is
+/// woken. Then a worker is killed and the broker escalates. Also checks that `suijin` refuses a terminal Suijin did
 /// not open.
 ///
-/// Opt-in: `TEST_RUNNER_SEVINDA_ORCH_E2E=1`, with `TEST_RUNNER_SEVINDA_PTYHOST_SERVICE` naming a helper instance of
+/// Opt-in: `TEST_RUNNER_SUIJIN_ORCH_E2E=1`, with `TEST_RUNNER_SUIJIN_PTYHOST_SERVICE` naming a helper instance of
 /// this build (scripts start one with launchctl) so the user's own helper and sessions are untouched, and
-/// `TEST_RUNNER_SEVINDA_ORCH_E2E_ROOT` a short temporary directory. Prompts are tiny; screens are never printed whole.
+/// `TEST_RUNNER_SUIJIN_ORCH_E2E_ROOT` a short temporary directory. Prompts are tiny; screens are never printed whole.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(20)), .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_ORCH_E2E"] == "1"))
+@Suite(.serialized, .timeLimit(.minutes(20)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ORCH_E2E"] == "1"))
 struct OrchestrationE2ETests {
     private func eventually(_ timeout: Duration, every: Duration = .milliseconds(500), _ condition: () async -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout
@@ -48,7 +48,7 @@ struct OrchestrationE2ETests {
     }
 
     private func git(_ args: [String], in dir: URL) async throws {
-        _ = try await GitRunner().run(["-c", "user.name=Sevinda Tests", "-c", "user.email=tests@example.invalid"] + args, in: dir)
+        _ = try await GitRunner().run(["-c", "user.name=Suijin Tests", "-c", "user.email=tests@example.invalid"] + args, in: dir)
     }
 
     /// Answers a folder-trust prompt if the agent shows one (a fresh temporary repository is never trusted).
@@ -95,7 +95,7 @@ struct OrchestrationE2ETests {
 
     @Test func claudeCoordinatorRunsACodexWorkerInANewWorktree() async throws {
         let environment = ProcessInfo.processInfo.environment
-        let base = URL(fileURLWithPath: environment["SEVINDA_ORCH_E2E_ROOT"] ?? NSTemporaryDirectory(), isDirectory: true)
+        let base = URL(fileURLWithPath: environment["SUIJIN_ORCH_E2E_ROOT"] ?? NSTemporaryDirectory(), isDirectory: true)
         let root = base.appendingPathComponent("e2e-\(UUID().uuidString.prefix(6))", isDirectory: true)
         let repo = root.appendingPathComponent("repo", isDirectory: true)
         let dataRoot = root.appendingPathComponent("data", isDirectory: true)
@@ -107,9 +107,9 @@ struct OrchestrationE2ETests {
         try await git(["commit", "-m", "initial"], in: repo)
         log("service \(PTYHostConstants.machServiceName), root \(root.path)")
 
-        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.loadSettings()
-        if environment["SEVINDA_ORCH_E2E_NO_DAEMON"] == "1" { model.setSetting(.codexNoDaemon, "true") }
+        if environment["SUIJIN_ORCH_E2E_NO_DAEMON"] == "1" { model.setSetting(.codexNoDaemon, "true") }
         await model.addWorkspace(at: repo)
         await model.runtimes.bootstrap()
         var started: [UUID] = []
@@ -125,15 +125,15 @@ struct OrchestrationE2ETests {
         let workspace = try #require(model.workspaces.first)
         let context = SessionContext.workspace(workspace.id)
 
-        // 1. `sevinda` outside Sevinda's terminals is refused, with and without a made-up token.
-        let plain = ["PATH": "/usr/bin:/bin", "SEVINDA_DATA_ROOT": dataRoot.path]
+        // 1. `suijin` outside Suijin's terminals is refused, with and without a made-up token.
+        let plain = ["PATH": "/usr/bin:/bin", "SUIJIN_DATA_ROOT": dataRoot.path]
         let (noToken, noTokenText) = try runCLI(["worker", "list"], environment: plain)
         #expect(noToken == 3, "no token: \(noTokenText)")
         var forged = plain
-        forged["SEVINDA_SESSION_TOKEN"] = OrchestrationToken.make()
+        forged["SUIJIN_SESSION_TOKEN"] = OrchestrationToken.make()
         let (forgedStatus, forgedText) = try runCLI(["inbox"], environment: forged)
-        #expect(forgedStatus == 1 && forgedText.contains("not opened by Sevinda"), "forged token: \(forgedText)")
-        log("non-Sevinda terminal refused: no token exit \(noToken), forged token exit \(forgedStatus)")
+        #expect(forgedStatus == 1 && forgedText.contains("not opened by Suijin"), "forged token: \(forgedText)")
+        log("non-Suijin terminal refused: no token exit \(noToken), forged token exit \(forgedStatus)")
 
         // 2. A Claude coordinator, driven by typing into its terminal.
         let coordinatorID = try #require(await model.runtimes.start(in: context, agent: .claude, accountID: nil, prompt: nil))
@@ -143,7 +143,7 @@ struct OrchestrationE2ETests {
         #expect(await eventually(.seconds(30)) { coordinator.terminal.view.visibleText().lowercased().contains("claude") })
         try? await Task.sleep(for: .seconds(4))
         #expect(!coordinator.terminal.hasExited, "the coordinator must still run")
-        if environment["SEVINDA_ORCH_E2E_DIAG"] == "codex" {
+        if environment["SUIJIN_ORCH_E2E_DIAG"] == "codex" {
             // A Codex worker launch with no prompt (nothing reaches a model) in a fresh worktree: no trust screen.
             await model.closeSession(coordinatorID)
             started.removeAll()
@@ -164,7 +164,7 @@ struct OrchestrationE2ETests {
             await model.removeWorktree(tree.id, force: true)
             return
         }
-        if environment["SEVINDA_ORCH_E2E_DIAG"] == "1" {
+        if environment["SUIJIN_ORCH_E2E_DIAG"] == "1" {
             // Screens only, nothing is sent to a model.
             log("diag coordinator screen:\n\(redactedScreen(coordinator.terminal.view.visibleText()))")
             await model.closeSession(coordinatorID)
@@ -172,9 +172,9 @@ struct OrchestrationE2ETests {
             return
         }
         await type("""
-        Run exactly this shell command, then end your turn without doing anything else: sevinda worker start --agent codex \
-        --worktree new --name e2e-w --spec "Ask your coordinator which number to write by running: sevinda ask --body 'Which number?' and end your turn. After the answer arrives, write just that number into answer.txt, then run: sevinda done --status success --summary 'wrote answer.txt'". \
-        Later, when Sevinda shows you a worker question, answer it by running sevinda reply with the number 42. When Sevinda reports the worker finished, reply to me with the single word FINISHED.
+        Run exactly this shell command, then end your turn without doing anything else: suijin worker start --agent codex \
+        --worktree new --name e2e-w --spec "Ask your coordinator which number to write by running: suijin ask --body 'Which number?' and end your turn. After the answer arrives, write just that number into answer.txt, then run: suijin done --status success --summary 'wrote answer.txt'". \
+        Later, when Suijin shows you a worker question, answer it by running suijin reply with the number 42. When Suijin reports the worker finished, reply to me with the single word FINISHED.
         """, into: coordinator)
 
         // 3. The worker starts in a new worktree.
@@ -191,7 +191,7 @@ struct OrchestrationE2ETests {
         #expect(dispatch.agent == .codex && dispatch.worktree == .new)
         log("worker \(dispatch.id) started in worktree \(worktree.branch)")
         let worker = try #require(model.runtimes.runtime(for: workerID))
-        // Sevinda trusts a worker's folder for the launch, so Codex must not ask (answering would save the folder in
+        // Suijin trusts a worker's folder for the launch, so Codex must not ask (answering would save the folder in
         // the user's own ~/.codex/config.toml). An update notice of the user's Codex is skipped once with Esc.
         var skippedUpdate = false
         let ready = await eventually(.seconds(60)) {
@@ -235,12 +235,12 @@ struct OrchestrationE2ETests {
         #expect(!messages.contains { $0.kind == .escalation }, "no escalation in the happy path")
         log("flow: \(messages.map { "\($0.kind.rawValue):\($0.status.rawValue)" }.joined(separator: ", ")); dispatch \(orchestration.snapshot.dispatches.first { $0.id == dispatch.id }?.status.rawValue ?? "?"); answer \(answer ?? "missing")")
 
-        // 5. A shell session in Sevinda has `sevinda` on PATH and can start a worker; killing that worker escalates.
+        // 5. A shell session in Suijin has `suijin` on PATH and can start a worker; killing that worker escalates.
         let shellID = try #require(await model.runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil))
         started.append(shellID)
         let shell = try #require(model.runtimes.runtime(for: shellID))
         try? await Task.sleep(for: .seconds(3))
-        shell.terminal.send("sevinda worker start --agent codex --spec 'Run the shell command: sleep 600' --json > \(root.path)/start.json 2>&1\r")
+        shell.terminal.send("suijin worker start --agent codex --spec 'Run the shell command: sleep 600' --json > \(root.path)/start.json 2>&1\r")
         let second = await eventually(.seconds(90)) {
             orchestration.snapshot.dispatches.contains { $0.id != dispatch.id && $0.workerSessionID != nil && $0.coordinatorSessionID == shellID.uuidString }
         }
@@ -250,7 +250,7 @@ struct OrchestrationE2ETests {
            let hostID = model.runtimes.runtime(for: victimID)?.terminal.engine.sessionID {
             started.append(victimID)
             try? await Task.sleep(for: .seconds(5))
-            // Killed from outside, as a crash or `kill` would; Sevinda did not end it.
+            // Killed from outside, as a crash or `kill` would; Suijin did not end it.
             PTYHostClient.shared.terminate(hostID)
             let escalated = await eventually(.seconds(30)) {
                 orchestration.snapshot.messages.contains { $0.kind == .escalation && $0.dispatchID == victim.id }
@@ -261,7 +261,7 @@ struct OrchestrationE2ETests {
             log("killed worker \(victim.id): status \(status?.rawValue ?? "?"), escalation \(escalated)")
         }
         let startJSON = (try? String(contentsOfFile: root.appendingPathComponent("start.json").path, encoding: .utf8)) ?? ""
-        #expect(startJSON.contains(#""ok" : true"#), "shell `sevinda worker start --json`: \(startJSON.prefix(300))")
+        #expect(startJSON.contains(#""ok" : true"#), "shell `suijin worker start --json`: \(startJSON.prefix(300))")
 
         for id in started { await model.closeSession(id) }
         started.removeAll()

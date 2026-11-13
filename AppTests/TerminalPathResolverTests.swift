@@ -1,7 +1,7 @@
 import Foundation
-import SevindaGit
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Paths printed in a terminal resolved to files on disk, and elided paths matched against a workspace's files.
 @MainActor
@@ -14,7 +14,7 @@ struct TerminalPathResolverTests {
 
     private func makeFolder() throws -> URL {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("sevinda-paths-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("suijin-paths-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("src/feature", isDirectory: true),
                                                 withIntermediateDirectories: true)
         try "let a = 1\n".write(to: root.appendingPathComponent("src/feature/x.swift"), atomically: true, encoding: .utf8)

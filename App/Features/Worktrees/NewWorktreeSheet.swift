@@ -1,6 +1,6 @@
-import SevindaCore
-import SevindaGit
-import SevindaUI
+import SuijinCore
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// Creates a worktree on a new branch and optionally starts an agent in it with a first prompt.
@@ -26,9 +26,9 @@ struct NewWorktreeSheet: View {
                     TextField("Branch", text: $branch, prompt: Text("feature/my-change"))
                         .onSubmit(create)
                     if !isBranchNameValid {
-                        Text("Not a valid branch name.").font(.caption).foregroundStyle(SevindaColor.errorText)
+                        Text("Not a valid branch name.").font(.caption).foregroundStyle(SuijinColor.errorText)
                     } else if branches.contains(trimmedBranch) {
-                        Text("A branch with this name already exists.").font(.caption).foregroundStyle(SevindaColor.errorText)
+                        Text("A branch with this name already exists.").font(.caption).foregroundStyle(SuijinColor.errorText)
                     }
                     Picker("Base", selection: $base) {
                         ForEach(branches, id: \.self) { Text(verbatim: $0).tag($0) }
@@ -46,7 +46,7 @@ struct NewWorktreeSheet: View {
                 if let error {
                     Section {
                         Label { Text(verbatim: error) } icon: { Image(systemName: "exclamationmark.triangle.fill") }
-                            .foregroundStyle(SevindaColor.errorText)
+                            .foregroundStyle(SuijinColor.errorText)
                     }
                 }
             }
@@ -62,7 +62,7 @@ struct NewWorktreeSheet: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!isValid || isWorking)
             }
-            .padding(SevindaSpacing.l)
+            .padding(SuijinSpacing.l)
         }
         .frame(width: 520)
         .navigationTitle(Text("New Worktree in \(workspace.name)"))

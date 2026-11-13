@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 import SwiftUI
 
 /// A worktree in the sidebar: its branch, the most urgent session activity, and the context menu of every session row

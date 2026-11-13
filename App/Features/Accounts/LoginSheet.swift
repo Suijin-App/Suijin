@@ -1,5 +1,5 @@
-import SevindaAccounts
-import SevindaUI
+import SuijinAccounts
+import SuijinUI
 import SwiftUI
 
 /// Follows a CLI sign-in: shows its output, offers the sign-in link (open, or copy to use in a private window) and,
@@ -17,7 +17,7 @@ struct LoginSheet: View {
     enum LoginState: Equatable { case waiting, succeeded, failed(String) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.m) {
             Text(pending.provider == .claude ? "Sign In to Claude" : "Sign In to Codex").font(.title3.bold())
             Text("Finish signing in in your browser. To use a different account than the one your browser is signed in to, copy the link and open it in a private window.")
                 .foregroundStyle(.secondary)
@@ -38,13 +38,13 @@ struct LoginSheet: View {
             }
             ScrollView {
                 Text(verbatim: lines.joined(separator: "\n"))
-                    .font(SevindaFont.monoSmall)
+                    .font(SuijinFont.monoSmall)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(SevindaSpacing.s)
+                    .padding(SuijinSpacing.s)
             }
             .frame(height: 140)
-            .background(SevindaColor.codeBackground, in: RoundedRectangle(cornerRadius: SevindaRadius.control))
+            .background(SuijinColor.codeBackground, in: RoundedRectangle(cornerRadius: SuijinRadius.control))
             if let interactive = pending.session as? any InteractiveLoginSession, state == .waiting {
                 HStack {
                     SecureField("Paste code", text: $code)
@@ -57,9 +57,9 @@ struct LoginSheet: View {
             }
             switch state {
             case .waiting: EmptyView()
-            case .succeeded: Label("Signed in", systemImage: "checkmark.circle.fill").foregroundStyle(SevindaColor.okText)
+            case .succeeded: Label("Signed in", systemImage: "checkmark.circle.fill").foregroundStyle(SuijinColor.okText)
             case .failed(let message): Label { Text(verbatim: message) } icon: { Image(systemName: "xmark.octagon.fill") }
-                .foregroundStyle(SevindaColor.errorText)
+                .foregroundStyle(SuijinColor.errorText)
             }
             HStack {
                 Spacer()
@@ -75,7 +75,7 @@ struct LoginSheet: View {
                 }
             }
         }
-        .padding(SevindaSpacing.xl)
+        .padding(SuijinSpacing.xl)
         .frame(width: 520)
         .interactiveDismissDisabled(state == .waiting)
         .task { await follow() }

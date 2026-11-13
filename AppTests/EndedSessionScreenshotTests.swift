@@ -1,20 +1,20 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Renders the Session Ended view for review: a Claude session that can be resumed, a failed session with its last
 /// output, and an ended pane beside a live one in a split tab, narrow and wide, light and dark. Opt-in with
-/// `TEST_RUNNER_SEVINDA_ENDED_SHOT=<file>`: at each step the file receives `<name> <window number>` and the window stays
+/// `TEST_RUNNER_SUIJIN_ENDED_SHOT=<file>`: at each step the file receives `<name> <window number>` and the window stays
 /// up while the caller captures it with `screencapture -l` (Liquid Glass does not draw into `cacheDisplay`). The window
 /// is ordered in without activating the app.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_ENDED_SHOT"] != nil))
+@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ENDED_SHOT"] != nil))
 struct EndedSessionScreenshotTests {
-    let output = ProcessInfo.processInfo.environment["SEVINDA_ENDED_SHOT"] ?? ""
+    let output = ProcessInfo.processInfo.environment["SUIJIN_ENDED_SHOT"] ?? ""
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) async throws {
         let window = NSWindow(contentRect: CGRect(origin: CGPoint(x: 40, y: 40), size: size), styleMask: [.titled],
@@ -36,7 +36,7 @@ struct EndedSessionScreenshotTests {
     }
 
     @Test func endedViews() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-ended-shots-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-ended-shots-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("my-project", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -44,7 +44,7 @@ struct EndedSessionScreenshotTests {
         try "#!/bin/sh\nprintf 'Error: could not reach the account.\\nRun claude /login and try again.\\n'\nexit 1\n"
             .write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         let context = SessionContext.workspace(workspace.id)

@@ -5,8 +5,11 @@
 # in Sevinda applies to the next `codex` without reopening the terminal. An empty or missing pointer keeps your
 # default login. A CODEX_HOME you set yourself wins, and so does a codex function you defined yourself: this file then
 # defines nothing. Running under a Sevinda account unsets API-key variables that would override its login.
+#
+# While it runs, the tab shows Codex with its status: the run is announced to Sevinda (see the shell integration's
+# __sevinda_agent_begin).
 if ! typeset -f codex >/dev/null 2>&1; then
-  function codex {
+  function __sevinda_codex_run {
     local __sevinda_pointer __sevinda_home=""
     if [[ -n "${CODEX_HOME:-}" || -z "${SEVINDA_DATA_ROOT:-}" ]]; then
       command codex "$@"
@@ -32,5 +35,15 @@ if ! typeset -f codex >/dev/null 2>&1; then
       export CODEX_HOME="$__sevinda_home"
       command codex "$@"
     )
+  }
+  # Tells Sevinda that codex runs in this terminal, and when it is done. The prompt hook (__sevinda_agent_prompt)
+  # reports the end too when Ctrl-C or a crash skipped the last line.
+  function codex {
+    local __sevinda_status
+    __sevinda_agent_begin codex
+    __sevinda_codex_run "$@"
+    __sevinda_status=$?
+    __sevinda_agent_end "$__sevinda_status"
+    return "$__sevinda_status"
   }
 fi

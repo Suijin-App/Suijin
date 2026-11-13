@@ -28,6 +28,8 @@ final class SessionRuntime {
     /// The agent's own conversation id, as far as Sevinda knows it (Claude's hooks report it; a resumed session starts
     /// with the id it resumed).
     var agentSessionID: String?
+    /// For a shell: the agents started in it that still run (`ShellAgentSessions.swift`).
+    var shellAgentStack = ShellAgentStack()
 
     init(id: UUID, agent: AgentKind, terminal: TerminalSession) {
         self.id = id
@@ -48,6 +50,8 @@ final class SessionRuntimeRegistry {
     /// Observable mirror of each runtime's activity, so rows and badges update.
     private(set) var activities: [UUID: AgentActivity] = [:]
     private(set) var titles: [UUID: String] = [:]
+    /// Observable mirror of the agent running in each shell session; only `ShellAgentSessions.swift` changes it.
+    var shellAgents: [UUID: AgentKind] = [:]
     /// True from launch until the sessions that kept running in the PTY host are attached again.
     private(set) var isRestoring = true
     /// Sessions whose screen is not ready yet: attaching to the host or replaying their scrollback.
@@ -77,7 +81,7 @@ final class SessionRuntimeRegistry {
     func activity(of session: AgentSessionRecord) -> SessionActivityDisplay {
         if let live = activities[session.id] {
             // A shell has no turns: while it runs it is simply running, whatever its output does.
-            if session.agent == .shell, !live.isTerminal { return .running }
+            if displayAgent(of: session) == .shell, !live.isTerminal { return .running }
             return SessionActivityDisplay(live)
         }
         return session.state == .failed ? .failed : .exited
@@ -190,7 +194,8 @@ final class SessionRuntimeRegistry {
             } else {
                 runtime.tracker.noteExit(info.exitStatus)
             }
-            if session.agent == .claude, let hooks {
+            // A shell's events come from a `claude` started in it.
+            if session.agent != .codex, let hooks {
                 startWatching(runtime, file: hooks.eventsFile(sessionID: session.id), readExisting: false)
             }
         } catch {
@@ -318,7 +323,8 @@ final class SessionRuntimeRegistry {
         runtime.agentSessionID = record.agentSessionID
         // Before the process starts, so none of its output is fed while the screen shows.
         if catchUp { runtime.terminal.catchUp() }
-        if record.agent == .claude, let hooks {
+        // A shell's events come from a `claude` started in it.
+        if record.agent != .codex, let hooks {
             startWatching(runtime, file: hooks.eventsFile(sessionID: id), readExisting: true)
         }
         do {
@@ -349,6 +355,10 @@ final class SessionRuntimeRegistry {
         guard record.agent != .shell else {
             // `sevinda` on the shell's PATH; the profile may reorder PATH but keeps entries it did not set.
             base["PATH"] = OrchestrationLaunch.path(prepending: ProcessInfo.processInfo.environment["PATH"])
+            // A `claude` started in the shell gets the hooks through Sevinda's shell function.
+            if let hooks, (try? hooks.prepareEventsFile(sessionID: record.id)) != nil {
+                base.merge(hooks.shellEnv(sessionID: record.id).set) { _, new in new }
+            }
             var launch = ShellLaunch.interactiveShell(cwd: cwd, environment: base)
             launch.metadata["sevinda.session"] = record.id.uuidString
             launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
@@ -419,6 +429,7 @@ final class SessionRuntimeRegistry {
         terminal.view.pasteGuardPolicy = agent == .shell ? .always : .unlessBracketedPaste
         let runtime = SessionRuntime(id: id, agent: agent, terminal: terminal)
         runtimes[id] = runtime
+        observeShellAgents(runtime)
         activities[id] = runtime.tracker.activity
         runtime.tracker.onChange = { [weak self, weak runtime] activity in
             if let runtime { self?.trackWork(runtime, activity) }
@@ -467,10 +478,11 @@ final class SessionRuntimeRegistry {
     /// first; Codex reports none to Sevinda, so the hint it prints as it exits counts first, and either falls back to
     /// the other.
     static func conversationID(of runtime: SessionRuntime) -> String? {
-        guard runtime.agent != .shell else { return nil }
+        let agent = runtime.activeAgent
+        guard agent != .shell else { return nil }
         let printed = AgentResume.sessionID(inExitText: runtime.terminal.view.recentText(lineCount: Self.exitHintLines),
-                                            kind: runtime.agent)
-        return runtime.agent == .claude ? runtime.agentSessionID ?? printed : printed ?? runtime.agentSessionID
+                                            kind: agent)
+        return agent == .claude ? runtime.agentSessionID ?? printed : printed ?? runtime.agentSessionID
     }
 
     /// Lines at the end of an exited agent's screen searched for its resume hint.
@@ -479,7 +491,8 @@ final class SessionRuntimeRegistry {
     private func startWatching(_ runtime: SessionRuntime, file: URL, readExisting: Bool) {
         let watcher = HookEventWatcher(fileURL: file, readExisting: readExisting) { [weak self, weak runtime] events in
             Task { @MainActor in
-                guard let runtime else { return }
+                // In a shell, only while the `claude` it started runs.
+                guard let runtime, runtime.activeAgent == .claude else { return }
                 for event in events {
                     runtime.tracker.noteHookEvent(event)
                     if let conversation = event.sessionID { self?.noteConversation(conversation, of: runtime) }
@@ -498,7 +511,7 @@ final class SessionRuntimeRegistry {
         storeConversation(conversation, for: runtime.id)
     }
 
-    private func storeConversation(_ conversation: String, for id: UUID) {
+    func storeConversation(_ conversation: String, for id: UUID) {
         // The record is read when the write starts, so a state stored meanwhile (the exit) is not overwritten.
         Task {
             guard var record = model.sessions.first(where: { $0.id == id }), record.agentSessionID != conversation else { return }
@@ -517,7 +530,8 @@ final class SessionRuntimeRegistry {
     private func activityChanged(_ id: UUID, _ activity: AgentActivity) {
         let previous = activities[id]
         activities[id] = activity
-        guard previous != activity, let record = model.sessions.first(where: { $0.id == id }), record.agent != .shell else { return }
+        guard previous != activity, let record = model.sessions.first(where: { $0.id == id }),
+              displayAgent(of: record) != .shell else { return }
         switch activity {
         case .waitingForInput:
             notify(record, .waitingForInput)
@@ -572,6 +586,7 @@ final class SessionRuntimeRegistry {
         runtime.terminal.view.removeHandlers()
         runtimes[id] = nil
         activities[id] = nil
+        shellAgents[id] = nil
         reconnecting.remove(id)
         catchingUp.remove(id)
         if let hooks { try? FileManager.default.removeItem(at: hooks.eventsFile(sessionID: id)) }
@@ -612,7 +627,7 @@ final class SessionRuntimeRegistry {
     /// it and adds its length. Returns the write, if one was started, so callers that need it finished can wait.
     @discardableResult
     func trackWork(_ runtime: SessionRuntime, _ activity: AgentActivity, at now: Date = Date()) -> Task<Void, Never>? {
-        guard runtime.agent != .shell else { return nil }
+        guard runtime.activeAgent != .shell else { return nil }
         if activity == .running {
             if runtime.workingSince == nil { runtime.workingSince = now }
             return nil
@@ -645,7 +660,7 @@ final class SessionRuntimeRegistry {
         let context = model.context(of: record)
         guard !model.isShowing(record.id, in: context) else { return }
         let place = model.worktree(record.worktreeID ?? UUID())?.branch ?? model.workspace(record.workspaceID)?.name ?? ""
-        let text = notice.text(agent: record.agent, session: displayTitle(of: record), place: place)
+        let text = notice.text(agent: displayAgent(of: record), session: displayTitle(of: record), place: place)
         // One notification per session: a newer state replaces the older banner instead of stacking.
         UserNotifier.shared.post(identifier: record.id.uuidString, title: text.title, body: text.body, session: record.id)
     }

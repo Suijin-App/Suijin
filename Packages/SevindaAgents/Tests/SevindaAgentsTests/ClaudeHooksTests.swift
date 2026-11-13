@@ -105,6 +105,11 @@ func runHookCommand(stdin: String, environment: [String: String]) throws -> Int3
         #expect(env.set["SEVINDA_HOOK_EVENTS"] == installation.eventsFile(sessionID: id).path)
         #expect(env.set["SEVINDA_SESSION_ID"] == id.uuidString)
         #expect(env.unset.isEmpty)
+        // A shell also gets the settings file its `claude` function passes with `--settings`.
+        let shell = installation.shellEnv(sessionID: id)
+        #expect(shell.set["SEVINDA_CLAUDE_SETTINGS"] == "/d/hooks/claude-settings.json")
+        #expect(shell.set["SEVINDA_HOOK_EVENTS"] == env.set["SEVINDA_HOOK_EVENTS"])
+        #expect(shell.unset.isEmpty)
     }
 
     @Test func hookCommandAppendsOneLinePerEvent() throws {

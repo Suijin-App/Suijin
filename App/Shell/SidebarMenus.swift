@@ -127,7 +127,7 @@ struct CloseAllConfirmation: ViewModifier {
 
     func body(content: Content) -> some View {
         let sessions = model.tabSessions(in: context)
-        let busy = sessions.filter { $0.agent != .shell && !model.runtimes.activity(of: $0).isEnded }.count
+        let busy = sessions.filter { model.runtimes.displayAgent(of: $0) != .shell && !model.runtimes.activity(of: $0).isEnded }.count
         content.confirmationDialog(Text("Close all \(sessions.count) sessions?"), isPresented: $isPresented) {
             Button("Close All", role: .destructive) { Task { await model.closeSessions(sessions.map(\.id)) } }
             Button("Cancel", role: .cancel) {}

@@ -52,7 +52,10 @@ extension SessionRuntimeRegistry {
     /// What a tab or sidebar row calls a session: the terminal title the program set (Claude Code names the task
     /// there), unless it is only the program's own name; otherwise the session's title.
     func displayTitle(of session: AgentSessionRecord) -> String {
-        Self.shownTitle(titles[session.id]) ?? session.title
+        if let shown = Self.shownTitle(titles[session.id]) { return shown }
+        // A shell running an agent is named after that agent until the agent names its task.
+        if session.agent == .shell, let agent = shellAgents[session.id] { return SessionNotice.name(of: agent) }
+        return session.title
     }
 
     /// The part of a terminal title a tab shows: without the spinner or symbols around it, `nil` when only the

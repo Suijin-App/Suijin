@@ -34,6 +34,8 @@ public enum ClaudeHooks {
     public static let events = ["SessionStart", "UserPromptSubmit", "Notification", "Stop"]
     public static let eventsFileEnvKey = "SEVINDA_HOOK_EVENTS"
     public static let sessionIDEnvKey = "SEVINDA_SESSION_ID"
+    /// In a Sevinda shell: the settings file the `claude` shell function passes with `--settings`.
+    public static let settingsFileEnvKey = "SEVINDA_CLAUDE_SETTINGS"
     static let hookTimeoutSeconds = 10
 
     public struct Installation: Sendable, Hashable {
@@ -69,6 +71,12 @@ public enum ClaudeHooks {
                 ClaudeHooks.eventsFileEnvKey: eventsFile(sessionID: sessionID).path,
                 ClaudeHooks.sessionIDEnvKey: sessionID.uuidString,
             ])
+        }
+
+        /// For a shell session: `env(sessionID:)` and the settings file, so a `claude` started in the shell (through
+        /// Sevinda's shell function) reports to the session's events file like a Claude session does.
+        public func shellEnv(sessionID: UUID) -> EnvPatch {
+            env(sessionID: sessionID).merging(EnvPatch(set: [ClaudeHooks.settingsFileEnvKey: settingsFile.path]))
         }
     }
 

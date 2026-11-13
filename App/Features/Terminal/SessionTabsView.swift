@@ -249,7 +249,7 @@ private struct SessionTab: View {
         let activity = model.runtimes.activity(of: session)
         ToolbarTab(isSelected: isSelected, onClose: onClose, action: onSelect) {
             SessionStatusGlyph(activity: activity)
-            AgentLogo(agent: session.agent, size: 14)
+            AgentLogo(agent: model.runtimes.displayAgent(of: session), size: 14)
                 .opacity(activity == .exited || activity == .failed ? 0.5 : 1)
             Text(verbatim: model.runtimes.displayTitle(of: session))
             if paneCount > 1 {

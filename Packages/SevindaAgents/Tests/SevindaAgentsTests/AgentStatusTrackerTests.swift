@@ -134,4 +134,21 @@ import Testing
         #expect(AgentActivity.waitingForInput.sessionState == .waitingForInput)
         #expect(AgentActivity.idle.sessionState == .idle)
     }
+
+    @Test func restartForgetsTheQuietStateButNotTheExit() {
+        let (tracker, changes) = makeTracker()
+        tracker.noteOutput(at: clock.now)
+        tracker.noteHookEvent(ClaudeHookEvent(name: "Notification", notificationType: "permission_prompt"))
+        #expect(tracker.activity == .waitingForInput)
+        tracker.restart()
+        #expect(tracker.activity == .starting)
+        // No input since the restart, yet output counts again: nothing quiet carried over.
+        tracker.noteOutput(at: clock.now.addingTimeInterval(1))
+        #expect(tracker.activity == .running)
+        #expect(changes() == [.running, .waitingForInput, .starting, .running])
+
+        tracker.noteExit(0)
+        tracker.restart()
+        #expect(tracker.activity == .exited(0))
+    }
 }

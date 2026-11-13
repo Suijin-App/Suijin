@@ -62,7 +62,7 @@ public enum ReadOnlyAgentPolicy {
     /// from one), or that point it at Sevinda's interactive hook files. They are removed for headless runs.
     static let isolatedVariables: Set<String> = [
         "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_SSE_PORT", "SEVINDA_SESSION_ID", "SEVINDA_SESSION_TOKEN",
-        "SEVINDA_HOOK_EVENTS",
+        "SEVINDA_HOOK_EVENTS", "SEVINDA_CLAUDE_SETTINGS",
         "CODEX_SANDBOX", "CODEX_SANDBOX_NETWORK_DISABLED", "CODEX_THREAD_ID",
     ]
 }

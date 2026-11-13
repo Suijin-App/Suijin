@@ -330,7 +330,7 @@ private struct SidebarSessionRow: View {
         let activity = model.runtimes.activity(of: session)
         HStack(spacing: 6) {
             SessionStatusGlyph(activity: activity)
-            AgentLogo(agent: session.agent, size: 13)
+            AgentLogo(agent: model.runtimes.displayAgent(of: session), size: 13)
                 .opacity(activity == .exited || activity == .failed ? 0.5 : 1)
             Text(verbatim: model.runtimes.displayTitle(of: session))
                 .lineLimit(1)

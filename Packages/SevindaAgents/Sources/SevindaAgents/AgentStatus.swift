@@ -106,6 +106,17 @@ public final class AgentStatusTracker {
         activity = .failed(message)
     }
 
+    /// Another program took over the terminal (an agent started in a shell, or the shell came back): the session is
+    /// `starting` again and nothing from before (a quiet state, the last output) carries over. Does nothing after the
+    /// exit.
+    public func restart() {
+        guard !activity.isTerminal else { return }
+        lastOutput = nil
+        quietSince = nil
+        lastInput = nil
+        activity = .starting
+    }
+
     /// Call periodically (about once a second) to apply the idle timeout.
     public func tick(now: Date) {
         guard activity == .running, let lastOutput, now.timeIntervalSince(lastOutput) >= idleThreshold else { return }

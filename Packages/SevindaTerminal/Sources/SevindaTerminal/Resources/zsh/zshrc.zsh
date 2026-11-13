@@ -11,6 +11,25 @@ if [[ -r "${__sevinda_user_zdotdir}/.zshrc" ]]; then
 fi
 export ZDOTDIR="${__sevinda_zdotdir}"
 
+# Agent runs: Sevinda's claude and codex functions announce the agent with a private OSC 6973 written to the terminal
+# itself (never to a redirected stdout): `start;<agent>` before it starts, `end;<agent>;<status>` once it is done, so
+# the tab shows the agent while it runs and goes back to Shell after. The prompt hook sends the end when Ctrl-C or a
+# crash cut the function short.
+function __sevinda_agent_begin {
+  typeset -g __sevinda_agent="$1"
+  { builtin printf '\e]6973;start;%s\a' "$1" >/dev/tty; } 2>/dev/null
+}
+function __sevinda_agent_end {
+  [[ -n "${__sevinda_agent:-}" ]] || return 0
+  { builtin printf '\e]6973;end;%s;%s\a' "$__sevinda_agent" "${1:-}" >/dev/tty; } 2>/dev/null
+  unset __sevinda_agent
+  return 0
+}
+function __sevinda_agent_prompt {
+  __sevinda_agent_end "$?"
+}
+autoload -Uz add-zsh-hook && add-zsh-hook precmd __sevinda_agent_prompt
+
 # After your files, so a claude or codex function of your own wins.
 if [[ -r "${__sevinda_zdotdir:h}/claude-shell-function.zsh" ]]; then
   source "${__sevinda_zdotdir:h}/claude-shell-function.zsh"
@@ -24,7 +43,7 @@ fi
 function __sevinda_report_cwd {
   builtin printf '\e]7;file://%s%s\a' "${HOST}" "${PWD//\%/%25}"
 }
-autoload -Uz add-zsh-hook && add-zsh-hook precmd __sevinda_report_cwd
+add-zsh-hook precmd __sevinda_report_cwd
 
 # A non-login shell reads no further file.
 if [[ ! -o login ]]; then

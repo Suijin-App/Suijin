@@ -18,6 +18,24 @@ elif [ -r "$HOME/.bashrc" ]; then
   . "$HOME/.bashrc"
 fi
 
+# Agent runs: Sevinda's claude and codex functions announce the agent with a private OSC 6973 written to the terminal
+# itself (never to a redirected stdout): `start;<agent>` before it starts, `end;<agent>;<status>` once it is done, so
+# the tab shows the agent while it runs and goes back to Shell after. The prompt hook sends the end when Ctrl-C or a
+# crash cut the function short.
+__sevinda_agent_begin() {
+  __sevinda_agent="$1"
+  { builtin printf '\e]6973;start;%s\a' "$1" >/dev/tty; } 2>/dev/null
+}
+__sevinda_agent_end() {
+  [ -n "${__sevinda_agent:-}" ] || return 0
+  { builtin printf '\e]6973;end;%s;%s\a' "$__sevinda_agent" "${1:-}" >/dev/tty; } 2>/dev/null
+  unset __sevinda_agent
+  return 0
+}
+__sevinda_agent_prompt() {
+  __sevinda_agent_end "$?"
+}
+
 __sevinda_integration_dir="${BASH_SOURCE[0]%/*}"
 if [ -r "$__sevinda_integration_dir/claude-shell-function.bash" ]; then
   . "$__sevinda_integration_dir/claude-shell-function.bash"
@@ -35,4 +53,9 @@ __sevinda_report_cwd() {
 case ";${PROMPT_COMMAND-};" in
   *";__sevinda_report_cwd;"*) ;;
   *) PROMPT_COMMAND="__sevinda_report_cwd${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
+esac
+# First, so it sees the status of the command that just ended.
+case ";${PROMPT_COMMAND-};" in
+  *";__sevinda_agent_prompt;"*) ;;
+  *) PROMPT_COMMAND="__sevinda_agent_prompt${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
 esac

@@ -76,7 +76,7 @@ extension AppModel {
     private func requestClose(_ ids: [UUID]) {
         let busyStates: Set<SessionActivityDisplay> = [.starting, .running, .waitingForInput, .idle]
         let records = ids.compactMap { id in sessions.first { $0.id == id } }
-        let busy = records.filter { $0.agent != .shell && runtimes.runtime(for: $0.id) != nil && busyStates.contains(runtimes.activity(of: $0)) }
+        let busy = records.filter { runtimes.displayAgent(of: $0) != .shell && runtimes.runtime(for: $0.id) != nil && busyStates.contains(runtimes.activity(of: $0)) }
         if busy.isEmpty {
             Task { await closeSessions(records.map(\.id)) }
         } else {

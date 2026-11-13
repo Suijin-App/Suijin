@@ -18,9 +18,9 @@ struct PaneHeader: View {
         let isZoomed = layout.zoomed == session.id
         let title = model.runtimes.displayTitle(of: session)
         HStack(spacing: 6) {
-            PaneDragHandle(session: session.id, agent: session.agent, title: title) {
+            PaneDragHandle(session: session.id, agent: model.runtimes.displayAgent(of: session), title: title) {
                 HStack(spacing: 6) {
-                    AgentLogo(agent: session.agent, size: 13)
+                    AgentLogo(agent: model.runtimes.displayAgent(of: session), size: 13)
                         .opacity(activity.isEnded ? 0.5 : 1)
                     SessionStatusGlyph(activity: activity)
                     Text(verbatim: title)

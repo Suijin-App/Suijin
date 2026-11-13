@@ -72,6 +72,14 @@ agent combines:
 
 The launch goes through the user's login shell so `PATH` matches their terminal, then to the PTY host.
 
+`claude` or `codex` typed in a shell session runs through Sevinda's shell functions, which announce the run with a
+private OSC written to the terminal (`ESC ] 6973 ; start;<agent>` and `end;<agent>;<status>`, the end also from the
+prompt hook after Ctrl-C), and pass Claude the same `--settings` (shell sessions get `SEVINDA_CLAUDE_SETTINGS` and
+`SEVINDA_HOOK_EVENTS`). While the agent runs, the session shows its logo, title, status and notifications, counts in
+the stats and keeps its resume id (`ShellAgentSessions.swift`); the state is runtime-only and replayed from the
+scrollback after a relaunch. The record stays a shell, and when the agent exits the tab is a shell again. `exec
+claude`, `command claude` and a `claude` function of the user's bypass the functions and stay a plain shell.
+
 ## Accounts
 
 Each managed account has its own home under the data root (`claude-profiles/<id>/home`, `codex-homes/<id>/home`).

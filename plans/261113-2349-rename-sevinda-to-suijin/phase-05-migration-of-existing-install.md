@@ -106,6 +106,14 @@ defaults delete com.tekmium.sevinda
 
 Bản backup ở bước 2 vẫn giữ, xoá tay sau vài ngày.
 
+## Phát hiện khi thực hiện (2026-11-14)
+
+Bước 1 (xoá code migration) đã xong và nằm trong commit `refactor: rename Sevinda to Suijin`. Các bước 2–6 chưa chạy.
+
+**Chép thư mục profile là chưa đủ để giữ đăng nhập.** Phiên đăng nhập của hai tài khoản không nằm trong file mà nằm trong Keychain, dưới tên `Claude Code-credentials-<8 ký tự đầu của SHA-256 đường dẫn config dir>` (xem `ClaudeKeychainReader.serviceName`). Config dir là `.../claude-profiles/<uuid>/home`, nên khi đường dẫn đổi từ `Sevinda` sang `Suijin` thì tên mục Keychain cũng đổi và Claude không tìm thấy phiên cũ. Đã kiểm tra trên máy: cả hai mục Keychain theo đường dẫn Sevinda đều tồn tại, không có file `.credentials.json` nào.
+
+Vì vậy bước 4 cần thêm một việc: sao hai mục Keychain sang tên tính theo đường dẫn Suijin. Việc này đọc credential (chỉ trong bộ nhớ, không in ra) nên cần chủ máy đồng ý trước; nếu không làm thì phải đăng nhập lại hai tài khoản.
+
 ## Kiểm chứng
 
 1. Mở Suijin. Settings › Accounts hiện **đúng hai tài khoản**, đúng label và email, trạng thái đăng nhập còn hiệu lực — **không phải đăng nhập lại**.

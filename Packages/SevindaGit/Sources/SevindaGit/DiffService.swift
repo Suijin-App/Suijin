@@ -82,7 +82,7 @@ public struct DiffService: Sendable {
     // MARK: Helpers
 
     /// The commit a committed-only scope ends at; nil for scopes that compare with the working tree.
-    private static func tip(of scope: DiffScope) -> String? {
+    static func tip(of scope: DiffScope) -> String? {
         switch scope {
         case .committed: "HEAD"
         case .commit(let sha): sha
@@ -92,7 +92,7 @@ public struct DiffService: Sendable {
 
     /// The revision the working tree is compared with: the merge base for `.againstBase`, HEAD for
     /// `.uncommitted` (the empty tree before the first commit).
-    private func baseRevision(_ scope: DiffScope) async throws -> String {
+    func baseRevision(_ scope: DiffScope) async throws -> String {
         switch scope {
         case .againstBase(let branch), .committed(let branch):
             return try await runner.text(["merge-base", "--end-of-options", branch, "HEAD"], in: worktree).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -121,7 +121,7 @@ public struct DiffService: Sendable {
     }
 
     /// A pathspec that matches exactly `path` from the toplevel, with no glob interpretation.
-    private static func literal(_ path: String) -> String { ":(top,literal)" + path }
+    static func literal(_ path: String) -> String { ":(top,literal)" + path }
 
     /// Parses `git diff --name-status -z`: `status NUL path NUL`, or `status NUL old NUL new NUL` for renames and copies.
     static func parseNameStatus(_ data: Data) -> [ChangedFile] {

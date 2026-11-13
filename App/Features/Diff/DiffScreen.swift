@@ -48,6 +48,10 @@ private struct ChangesView: View {
     @State private var commitFiles: [ChangedFile] = []
     @State private var selection: ChangeSelection?
     @State private var diff: FileDiff?
+    /// The scope `diff` was read in; an image diff reads its versions from the same revisions.
+    @State private var loadedScope: DiffScope?
+    /// Bumped whenever the checkout changes on disk, so shown images are read again.
+    @State private var contentRevision = 0
     @State private var diffError: String?
     @State private var isLoading = true
     @State private var error: String?
@@ -104,12 +108,18 @@ private struct ChangesView: View {
                     ContentUnavailableView("Cannot Show the Diff", systemImage: "exclamationmark.triangle",
                                            description: Text(verbatim: diffError))
                 } else if let diff {
+                    let images = ImageDiffSource.sources(for: diff)
                     VStack(spacing: 0) {
                         DiffFileNotesHeader(diff: diff, book: book, showsUnsentOnly: showsUnsentOnly,
-                                            layout: effectiveLayout, isNarrowFallback: effectiveLayout != layout,
+                                            layout: effectiveLayout,
+                                            isNarrowFallback: images.isEmpty && effectiveLayout != layout,
                                             scope: noteScope)
-                        DiffDocumentView(diff: diff, language: SyntaxHighlighter.language(forPath: diff.displayPath),
-                                         mode: effectiveLayout, notes: notesConfiguration(for: diff))
+                        if let loadedScope, !images.isEmpty {
+                            ImageDiffView(directory: directory, scope: loadedScope, sources: images, revision: contentRevision)
+                        } else {
+                            DiffDocumentView(diff: diff, language: SyntaxHighlighter.language(forPath: diff.displayPath),
+                                             mode: effectiveLayout, notes: notesConfiguration(for: diff))
+                        }
                     }
                 } else if selection == nil {
                     ContentUnavailableView("No File Selected", systemImage: "doc.text.magnifyingglass",
@@ -159,7 +169,11 @@ private struct ChangesView: View {
             watcher?.stop()
             // Any change matters here, including commits and branch moves under `.git`.
             watcher = FileSystemWatcher(root: directory) { _ in
-                Task { await reloadFiles(); await reloadDiff() }
+                Task {
+                    await reloadFiles()
+                    await reloadDiff()
+                    contentRevision &+= 1
+                }
             }
         }
         .onDisappear {
@@ -243,9 +257,11 @@ private struct ChangesView: View {
     private func reloadDiff() async {
         guard let requested = selection else { diff = nil; diffError = nil; return }
         let service = DiffService(worktree: directory)
+        let scope = diffScope(for: requested.group)
         do {
-            let loaded = try await service.diff(for: requested.path, scope: diffScope(for: requested.group))
+            let loaded = try await service.diff(for: requested.path, scope: scope)
             guard requested == selection else { return }
+            if scope != loadedScope { loadedScope = scope }
             if loaded != diff { diff = loaded }
             diffError = nil
         } catch {

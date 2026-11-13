@@ -516,14 +516,13 @@ final class ImageZoomController {
 
     /// Whole image visible, never enlarged past its own size.
     func fit() {
-        guard let scrollView = scrollView as? CenteringScrollView, let image = (scrollView.documentView as? NSImageView)?.image else { return }
-        scrollView.magnification = scrollView.fitMagnification(for: image.size)
+        (scrollView as? CenteringScrollView)?.fitImage()
     }
 }
 
 /// An image that fits the pane at first and zooms with pinch, ⌘ or ⌥ with the mouse wheel, a double-click, ⌘+ / ⌘− / ⌘0
 /// and the header buttons; a zoomed image pans by dragging.
-private struct ZoomableImageView: NSViewRepresentable {
+struct ZoomableImageView: NSViewRepresentable {
     let image: NSImage
     let controller: ImageZoomController
 
@@ -576,10 +575,27 @@ final class PassThroughImageView: NSImageView {
 }
 
 /// Keeps a smaller-than-the-pane image centered instead of pinned to the bottom-left corner, and fits a new image
-/// once the pane has its real size (fitting before layout would scale to a zero-sized pane).
+/// once the pane has its real size (fitting before layout would scale to a zero-sized pane). A fitted image stays
+/// fitted when the pane is resized; one the user zoomed keeps its zoom.
 final class CenteringScrollView: OverlayScrollView {
     var needsFit = false
     private var panStart: (mouse: NSPoint, origin: NSPoint)?
+    /// The magnification of the last fit and the pane size it was made for.
+    private var lastFit: (magnification: CGFloat, paneSize: NSSize)?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        contentView = CenteringClipView()
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    /// Shows the whole image, never enlarged past its own size.
+    func fitImage() {
+        guard let size = imageSize else { return }
+        magnification = fitMagnification(for: size)
+        lastFit = (magnification, contentSize)
+    }
 
     /// The magnification that shows a whole image of `size`, never enlarged past its own size.
     func fitMagnification(for size: NSSize) -> CGFloat {
@@ -617,7 +633,9 @@ final class CenteringScrollView: OverlayScrollView {
         if event.clickCount == 2, let size = imageSize {
             let point = contentView.convert(event.locationInWindow, from: nil)
             let fit = fitMagnification(for: size)
-            setMagnification(abs(magnification - fit) < 0.001 && fit < 1 ? 1 : fit, centeredAt: point)
+            let target = abs(magnification - fit) < 0.001 && fit < 1 ? 1 : fit
+            setMagnification(target, centeredAt: point)
+            if target == fit { lastFit = (magnification, contentSize) }
             return
         }
         guard canPan else { return super.mouseDown(with: event) }
@@ -647,12 +665,20 @@ final class CenteringScrollView: OverlayScrollView {
     }
 
 
+    /// A frame-based scroll view is not laid out again when only its size changes; `layout()` refits a fitted image.
+    override func setFrameSize(_ newSize: NSSize) {
+        let changed = newSize != frame.size
+        super.setFrameSize(newSize)
+        if changed { needsLayout = true }
+    }
+
     override func layout() {
         super.layout()
-        if needsFit, contentSize.width > 1, contentSize.height > 1,
-           let image = (documentView as? NSImageView)?.image, image.size.width > 0, image.size.height > 0 {
+        guard contentSize.width > 1, contentSize.height > 1, let size = imageSize, size.width > 0, size.height > 0 else { return }
+        let resizedWhileFitted = lastFit.map { abs(magnification - $0.magnification) < 0.001 && $0.paneSize != contentSize } ?? false
+        if needsFit || resizedWhileFitted {
             needsFit = false
-            magnification = fitMagnification(for: image.size)
+            fitImage()
             tile()
         }
     }
@@ -668,6 +694,18 @@ final class CenteringScrollView: OverlayScrollView {
         if size.width < bounds.width { bounds.origin.x = -(bounds.width - size.width) / 2 }
         if size.height < bounds.height { bounds.origin.y = -(bounds.height - size.height) / 2 }
         if bounds.origin != clip.bounds.origin { clip.setBoundsOrigin(bounds.origin) }
+    }
+}
+
+/// Centers a document smaller than the visible area. Done in `constrainBoundsRect`, which AppKit consults on every
+/// scroll, zoom and resize, so later scrolling cannot pin the image back to the bottom-left corner.
+final class CenteringClipView: NSClipView {
+    override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
+        var rect = super.constrainBoundsRect(proposedBounds)
+        guard let size = documentView?.frame.size else { return rect }
+        if size.width < rect.width { rect.origin.x = -(rect.width - size.width) / 2 }
+        if size.height < rect.height { rect.origin.y = -(rect.height - size.height) / 2 }
+        return rect
     }
 }
 

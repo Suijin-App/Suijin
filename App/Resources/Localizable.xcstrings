@@ -30,8 +30,28 @@
         }
       }
     },
+    "%lld × %lld px, %@" : {
+      "comment" : "Pixel dimensions and file size of an image in the Changes view",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld × %2$lld px, %3$@"
+          }
+        }
+      }
+    },
+    "After" : {
+      "comment" : "Label of the new version of a changed image"
+    },
     "At its limit" : {
 
+    },
+    "Before" : {
+      "comment" : "Label of the old version of a changed image"
+    },
+    "Cannot Show the Image" : {
+      "comment" : "Title shown when an image in the Changes view cannot be read"
     },
     "Claude Code: Automatic Switching" : {
 
@@ -85,6 +105,12 @@
     },
     "Hide until the limit resets" : {
 
+    },
+    "Image after the change" : {
+      "comment" : "Accessibility label of the new version of a changed image"
+    },
+    "Image before the change" : {
+      "comment" : "Accessibility label of the old version of a changed image"
     },
     "Move %@ down" : {
 
@@ -146,6 +172,12 @@
     },
     "The conversation's files would land outside the account's history folder, so nothing was moved." : {
 
+    },
+    "The file is not an image this Mac can read, or it is damaged." : {
+      "comment" : "Shown when an image in the Changes view cannot be decoded"
+    },
+    "The file is not there in this version." : {
+      "comment" : "Shown when one version of a changed image is missing"
     },
     "The other account already has a different copy of this conversation (%@). Sevinda left both copies as they are." : {
 

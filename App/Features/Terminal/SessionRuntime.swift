@@ -665,11 +665,9 @@ final class SessionRuntimeRegistry {
 
     // MARK: Notifications
 
-    /// Posts a notification unless the user is looking at that session right now.
+    /// Posts a notification while Sevinda is in the background (never while the user is working in it).
     private func notify(_ record: AgentSessionRecord, _ notice: SessionNotice) {
-        guard model.setting(.notifyWhenWaiting) != "false" else { return }
-        let context = model.context(of: record)
-        guard !model.isShowing(record.id, in: context) else { return }
+        guard model.setting(.notifyWhenWaiting) != "false", model.notifiesUser else { return }
         let place = model.worktree(record.worktreeID ?? UUID())?.branch ?? model.workspace(record.workspaceID)?.name ?? ""
         let text = notice.text(agent: displayAgent(of: record), session: displayTitle(of: record), place: place)
         // One notification per session: a newer state replaces the older banner instead of stacking.

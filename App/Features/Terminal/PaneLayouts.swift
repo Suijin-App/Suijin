@@ -39,9 +39,11 @@ extension AppModel {
         return panes(of: tab)
     }
 
-    /// Whether the user is looking at this session right now (the app in front, its context and tab selected).
-    func isShowing(_ session: UUID, in context: SessionContext) -> Bool {
-        NSApp.isActive && selection == context && visiblePanes(in: context).contains(session)
+    /// Whether a notification about a session should reach Notification Center: only while Sevinda is not the
+    /// active app. In front, the sidebar and tabs already show every session's state, and a banner over the window
+    /// the user is working in only interrupts.
+    var notifiesUser: Bool {
+        !NSApp.isActive
     }
 
     /// Whether another pane fits beside `session`: a plain tab always has room, a split tab up to

@@ -84,9 +84,18 @@ final class SevindaAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificat
         UNUserNotificationCenter.current().delegate = self
     }
 
+    /// Back in Sevinda, the window shows every session's state, so the banners posted while it was in the background
+    /// are cleared from Notification Center.
+    func applicationDidBecomeActive(_ notification: Notification) {
+        guard !UserNotifier.isTestHost else { return }
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+    }
+
+    /// A notification that arrives while Sevinda is in front (posted just before the user switched back) stays out of
+    /// the way: no banner or sound over the window the user is working in.
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification)
         async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        []
     }
 
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {

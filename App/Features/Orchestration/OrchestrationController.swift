@@ -243,12 +243,9 @@ final class OrchestrationController {
     // MARK: Notifications
 
     private func notify(_ event: OrchestrationAttention) {
-        guard model.setting(.notifyWhenWaiting) != "false",
+        guard model.setting(.notifyWhenWaiting) != "false", model.notifiesUser,
               let id = UUID(uuidString: event.sessionID),
               let record = model.sessions.first(where: { $0.id == id }) else { return }
-        let context = model.context(of: record)
-        let isVisible = model.isShowing(id, in: context)
-        guard !isVisible else { return }
         let title = switch event.kind {
         case .permission: String(localized: "\(record.title) needs your permission")
         case .decision: String(localized: "\(record.title) needs your decision")

@@ -136,7 +136,7 @@ private struct FileStatusRow: View {
 
     var body: some View {
         let code = FileStatusCode(entry: entry, staged: staged)
-        HStack(spacing: SevindaSpacing.xs) {
+        HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.xs) {
             Toggle(isOn: Binding(get: { staged }, set: { onToggle($0) })) { EmptyView() }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
@@ -152,9 +152,7 @@ private struct FileStatusRow: View {
                 }
             }
             Spacer(minLength: SevindaSpacing.xs)
-            Text(verbatim: code.letter)
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(code.color)
+            ChangeStatusBadge(letter: code.letter, color: code.color)
                 .help(code.description)
                 .accessibilityLabel(code.description)
         }

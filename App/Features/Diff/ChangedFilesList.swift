@@ -147,11 +147,8 @@ struct ChangedFilesList: View {
     }
 
     private func row(_ file: ChangedFile) -> some View {
-        HStack(spacing: SevindaSpacing.s) {
-            Text(verbatim: file.kind.letter)
-                .font(SevindaFont.monoSmall.bold())
-                .foregroundStyle(file.kind.color)
-                .frame(width: 14)
+        HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.s) {
+            ChangeStatusBadge(letter: file.kind.letter, color: file.kind.color)
                 .accessibilityLabel(file.kind.label)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: (file.path as NSString).lastPathComponent).lineLimit(1).truncationMode(.middle)
@@ -198,12 +195,13 @@ extension FileChangeKind {
         }
     }
 
+    /// The badge fill; the same colors as the Source Control panel's letters.
     var color: Color {
         switch self {
-        case .added: SevindaColor.okText
-        case .deleted: SevindaColor.errorText
-        case .unmerged: SevindaColor.warningText
-        default: .secondary
+        case .added: SevindaColor.ok
+        case .deleted, .unmerged: SevindaColor.error
+        case .renamed, .copied: Color.accentColor
+        default: SevindaColor.warning
         }
     }
 }

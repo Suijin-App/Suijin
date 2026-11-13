@@ -2817,7 +2817,7 @@
     "Sevinda is provided “as is” and “as available”, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We do not promise that Sevinda is free of errors, runs without interruption or works with every future version of the agents it starts." : {
 
     },
-    "Sevinda never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. The one thing it can add to `~/.claude` is its orchestration guide in `~/.claude/skills`, and only if you turn that on in Settings → Agents." : {
+    "Sevinda never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. It adds to `~/.claude` or `~/.codex` only: its orchestration guide in `~/.claude/skills`, if you turn that on in Settings → Agents; and when you continue a conversation with your own login, that conversation's history files, in `~/.claude/projects/<folder>` or `~/.codex/sessions/<date>`. It never replaces a file that is already there." : {
 
     },
     "Sevinda reads credentials into memory only for the request that needs them, and never prints or logs them." : {

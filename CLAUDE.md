@@ -47,6 +47,9 @@ Check: `Tools/comment-lint/comment-lint.py` (also runs in `scripts/ci-local.sh c
 - **Never touch the user's own logins.** Nothing writes to `~/.claude`, `~/.claude.json`, `~/.codex` or the default
   `Claude Code-credentials` Keychain item. Managed accounts live under `~/Library/Application Support/Sevinda`.
   Claude hooks are passed with `claude --settings <file>`, never installed into the user's settings.
+  One exception: continuing a conversation on "Your own login" may add that one conversation's history files under
+  `~/.claude/projects/<encoded cwd>/` or `~/.codex/sessions/YYYY/MM/DD/`, creating the folder, never replacing an
+  existing file, and touching nothing else there (`ConversationTransfer`).
 - **Never print, log or persist tokens.** Credentials are read into memory only; profile directories are 700, files 600.
 - **No orphan processes.** Every terminal runs in the PTY host helper (`SevindaPTYHost`) so it survives the app
   quitting; closing a tab terminates its session (SIGHUP, then SIGKILL). Tests that spawn processes clean them up.

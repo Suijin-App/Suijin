@@ -34,7 +34,7 @@ struct LegalDocument: Identifiable {
         components.calendar = Calendar(identifier: .gregorian)
         components.year = 2026
         components.month = 11
-        components.day = 12
+        components.day = 13
         // A fixed, valid Gregorian day always resolves to a date.
         return components.date!
     }()
@@ -135,7 +135,7 @@ struct LegalDocument: Identifiable {
                 .bullets([
                     AttributedString(localized: "Sevinda reads credentials into memory only for the request that needs them, and never prints or logs them."),
                     AttributedString(localized: "The folders Sevinda creates for managed accounts and session events are readable only by your macOS user (permissions 700), and the files it writes there are 600."),
-                    AttributedString(localized: "Sevinda never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. The one thing it can add to `~/.claude` is its orchestration guide in `~/.claude/skills`, and only if you turn that on in Settings → Agents."),
+                    AttributedString(localized: "Sevinda never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. It adds to `~/.claude` or `~/.codex` only: its orchestration guide in `~/.claude/skills`, if you turn that on in Settings → Agents; and when you continue a conversation with your own login, that conversation's history files, in `~/.claude/projects/<folder>` or `~/.codex/sessions/<date>`. It never replaces a file that is already there."),
                     AttributedString(localized: "Only terminals Sevinda opened can reach its agent coordination service; each gets a private random token."),
                 ]),
             ]),

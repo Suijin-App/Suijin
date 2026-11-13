@@ -14,7 +14,7 @@ Open points for review:
 
 ## Terms of Service
 
-*Effective November 12, 2026*
+*Effective November 13, 2026*
 
 These terms apply to your use of Mercury, a Mac app made by Tekmium Solutions. By installing or using Mercury, you agree to them. If you do not agree, do not use Mercury.
 
@@ -63,7 +63,7 @@ For questions about these terms, contact Tekmium Solutions through the details i
 
 ## Privacy & Security
 
-*Effective November 12, 2026*
+*Effective November 13, 2026*
 
 Mercury works on your Mac. There are no Mercury servers and no Mercury account, and Mercury collects no analytics, telemetry or crash reports. This policy lists what Mercury reads, what it stores and the few connections it makes.
 
@@ -102,7 +102,7 @@ When you ask Mercury to write a commit message or a pull request description, it
 
 - Mercury reads credentials into memory only for the request that needs them, and never prints or logs them.
 - The folders Mercury creates for managed accounts and session events are readable only by your macOS user (permissions 700), and the files it writes there are 600.
-- Mercury never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. The one thing it can add to `~/.claude` is its orchestration guide in `~/.claude/skills`, and only if you turn that on in Settings → Agents.
+- Mercury never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. It adds to `~/.claude` or `~/.codex` only: its orchestration guide in `~/.claude/skills`, if you turn that on in Settings → Agents; and when you continue a conversation with your own login, that conversation's history files, in `~/.claude/projects/<folder>` or `~/.codex/sessions/<date>`. It never replaces a file that is already there.
 - Only terminals Mercury opened can reach its agent coordination service; each gets a private random token.
 
 ### Your choices

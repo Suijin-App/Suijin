@@ -63,9 +63,9 @@ struct AboutSettingsTests {
         }
     }
 
-    @Test func legalDocumentsTookEffectOnTheTwelfthOfNovember2026() {
+    @Test func legalDocumentsTookEffectOnTheThirteenthOfNovember2026() {
         let day = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: LegalDocument.effective)
-        #expect(day.year == 2026 && day.month == 11 && day.day == 12)
+        #expect(day.year == 2026 && day.month == 11 && day.day == 13)
     }
 
     @Test func inlineMarkdownInTheDocumentsIsRendered() {

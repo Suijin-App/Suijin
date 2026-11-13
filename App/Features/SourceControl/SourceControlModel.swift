@@ -60,6 +60,40 @@ final class SourceControlStore {
     func forgetGitHubCLI() {
         ghLookup = nil
         authCache = [:]
+        repositoryAccounts = [:]
+    }
+
+    /// The `gh` account that could see each remote when the active one could not, by remote URL. Logins only; the
+    /// token is read from `gh` again for every use.
+    private var repositoryAccounts: [String: String] = [:]
+
+    /// Runs `operation` with `cli` as the account that can see `remoteURL`: the one that worked before, else the
+    /// active one, else each other account `gh` is signed in to on `host`. Returns the result and the CLI that got it,
+    /// for follow-up calls. When no account can see the repository the error names the accounts that were tried.
+    func withRepositoryAccount<T>(_ cli: GitHubCLI, host: String, remoteURL: String,
+                                  _ operation: (GitHubCLI) async throws -> T) async throws -> (T, GitHubCLI) {
+        if let login = repositoryAccounts[remoteURL], let chosen = try? await cli.actingAs(login, host: host),
+           let result = try? await operation(chosen) {
+            return (result, chosen)
+        }
+        do {
+            return (try await operation(cli), cli)
+        } catch let error as GitHubCLIError where GitHubCLI.isRepositoryNotVisible(error) {
+            let logins = (try? await cli.accounts(host: host)) ?? []
+            for login in logins.dropFirst() {
+                guard let other = try? await cli.actingAs(login, host: host) else { continue }
+                do {
+                    let result = try await operation(other)
+                    repositoryAccounts[remoteURL] = login
+                    return (result, other)
+                } catch let error as GitHubCLIError where GitHubCLI.isRepositoryNotVisible(error) {
+                    continue
+                }
+            }
+            guard !logins.isEmpty else { throw error }
+            let names = logins.joined(separator: ", ")
+            throw SourceControlMessage(String(localized: "None of the GitHub accounts signed in to gh (\(names)) can see this repository. Sign in to gh with an account that has access (gh auth login), then try again.\n\n\(error.output.trimmingCharacters(in: .whitespacesAndNewlines))"))
+        }
     }
 
     /// `gh auth status` per host, kept five minutes: every worktree of a repository asks for the same host.
@@ -368,7 +402,9 @@ final class SourceControlState {
                 pullRequest = .notLoggedIn(host: host)
                 return
             }
-            let found = try await cli.pullRequest(branch: branch, in: service.worktree)
+            let (found, cli) = try await store.withRepositoryAccount(cli, host: host, remoteURL: remoteURL) {
+                try await $0.pullRequest(branch: branch, in: service.worktree)
+            }
             pullRequest = .ready(found)
             if let found {
                 do {
@@ -458,9 +494,19 @@ final class SourceControlState {
             let output = (error as? GitError)?.stderr ?? error.localizedDescription
             throw SourceControlMessage(String(localized: "The branch could not be pushed, so the pull request was not created.\n\n\(output)"))
         }
+        let remote = try? await service.pushRemote()
+        let remoteURL: String? = if let remote { try? await service.remoteURL(remote) } else { nil }
+        let host = remoteURL.flatMap { GitHubCLI.gitHubHost(ofRemoteURL: $0) }
         do {
-            let url = try await cli.createPullRequest(title: title, body: body, base: base, head: branch, draft: draft,
-                                                      in: service.worktree)
+            let create = { (cli: GitHubCLI) in
+                try await cli.createPullRequest(title: title, body: body, base: base, head: branch, draft: draft,
+                                                in: service.worktree)
+            }
+            let url = if let remoteURL, let host {
+                try await store.withRepositoryAccount(cli, host: host, remoteURL: remoteURL, create).0
+            } else {
+                try await create(cli)
+            }
             await recordCreatedPullRequest(url)
             await refreshPullRequest()
             return url

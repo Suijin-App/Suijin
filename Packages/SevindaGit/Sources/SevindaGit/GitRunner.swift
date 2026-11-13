@@ -41,18 +41,38 @@ public struct GitRunner: Sendable {
     }
 
     /// Runs `git <args>` in `dir`; an exit code outside `allowedExitCodes` throws `GitError`.
+    /// Another git in the same repository (an agent committing, say) holds the index lock for a moment; a command
+    /// refused for it changed nothing, so it is tried again for about two seconds before the error is reported.
     public func run(_ args: [String], in dir: URL, allowedExitCodes: Set<Int32>) async throws -> GitResult {
-        let executable = executable
-        let result = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<GitResult, any Error>) in
-            // `Process` and pipe reads block; keep them off the cooperative pool.
-            DispatchQueue.global(qos: .userInitiated).async {
-                continuation.resume(with: Result { try Self.runBlocking(executable: executable, args: args, in: dir) })
-            }
+        var result = try await runOnce(args, in: dir)
+        for _ in 0..<Self.lockRetries where !allowedExitCodes.contains(result.exitCode) && Self.isLockBusy(result.stderr) {
+            try await Task.sleep(for: Self.lockRetryDelay)
+            result = try await runOnce(args, in: dir)
         }
         guard allowedExitCodes.contains(result.exitCode) else {
             throw GitError(args: args, exitCode: result.exitCode, stderr: String(decoding: result.stderr, as: UTF8.self))
         }
         return result
+    }
+
+    static let lockRetries = 10
+    static let lockRetryDelay = Duration.milliseconds(200)
+
+    /// Git's refusal when a `.lock` file of the repository exists (`index.lock`, a ref's lock): "Unable to create
+    /// '…/index.lock': File exists."
+    static func isLockBusy(_ stderr: Data) -> Bool {
+        let text = String(decoding: stderr, as: UTF8.self)
+        return text.contains(".lock': File exists")
+    }
+
+    private func runOnce(_ args: [String], in dir: URL) async throws -> GitResult {
+        let executable = executable
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<GitResult, any Error>) in
+            // `Process` and pipe reads block; keep them off the cooperative pool.
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(with: Result { try Self.runBlocking(executable: executable, args: args, in: dir) })
+            }
+        }
     }
 
     /// Text output helper: stdout decoded as UTF-8 (invalid bytes replaced).

@@ -28,6 +28,30 @@ import Testing
         #expect(data.count > 2_000_000)
     }
 
+    /// A command refused because another git holds the index lock runs again once the lock is gone.
+    @Test func aHeldIndexLockIsWaitedFor() async throws {
+        let repo = try await TestRepo()
+        defer { repo.cleanUp() }
+        try repo.write("a.txt", "a\n")
+        let lock = repo.url.appendingPathComponent(".git/index.lock")
+        try Data().write(to: lock)
+        Task.detached {
+            try? await Task.sleep(for: .milliseconds(500))
+            try? FileManager.default.removeItem(at: lock)
+        }
+        _ = try await repo.runner.run(["add", "a.txt"], in: repo.url)
+        #expect(try await repo.git("diff", "--cached", "--name-only").contains("a.txt"))
+    }
+
+    @Test func aLockThatStaysIsReported() async throws {
+        let repo = try await TestRepo()
+        defer { repo.cleanUp() }
+        try repo.write("a.txt", "a\n")
+        try Data().write(to: repo.url.appendingPathComponent(".git/index.lock"))
+        let error = await #expect(throws: GitError.self) { _ = try await repo.runner.run(["add", "a.txt"], in: repo.url) }
+        #expect(error?.stderr.contains("index.lock") == true)
+    }
+
     @Test func environmentIsMachineReadable() {
         let env = GitRunner.environment()
         #expect(env["LC_ALL"] == "C")

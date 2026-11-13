@@ -163,4 +163,35 @@ import Testing
         #expect(try await cli.authStatus() == .loggedIn(login: "octo"))
         #expect(try recordedArgs(dir) == ["auth", "status", "--active", "--hostname", "github.com", "--json", "hosts"])
     }
+
+    @Test func listsEveryAccountActiveFirst() async throws {
+        let (cli, dir) = try fakeGH(#"echo '{"hosts":{"github.com":[{"state":"success","active":false,"login":"other"},{"state":"error","active":false,"login":"stale"},{"state":"success","active":true,"login":"main"}]}}'"#)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        #expect(try await cli.accounts() == ["main", "other"])
+        #expect(try recordedArgs(dir) == ["auth", "status", "--hostname", "github.com", "--json", "hosts"])
+    }
+
+    /// The copy acting as another account passes that account's token to the gh it starts, and only there.
+    @Test func actingAsAnotherAccountPassesItsToken() async throws {
+        let (cli, dir) = try fakeGH("""
+        if [ "$1" = auth ]; then echo 'tok-123'; exit 0; fi
+        printf '%s|%s' "$GH_TOKEN" "$GH_HOST" > "$(dirname "$0")/env"
+        echo '{"number":1,"url":"https://github.com/o/r/pull/1","title":"t","state":"OPEN","isDraft":false}'
+        """)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let other = try await cli.actingAs("other")
+        #expect(try recordedArgs(dir) == ["auth", "token", "--hostname", "github.com", "--user", "other"])
+        #expect(cli.environment["GH_TOKEN"] == nil)
+        _ = try await other.pullRequest(branch: "x", in: dir)
+        #expect(try String(contentsOf: dir.appendingPathComponent("env"), encoding: .utf8) == "tok-123|github.com")
+    }
+
+    @Test func recognizesARepositoryTheAccountCannotSee() {
+        let graphQL = GitHubCLIError(kind: .failed(exitCode: 1),
+                                     output: "GraphQL: Could not resolve to a Repository with the name 'o/r'. (repository)")
+        #expect(GitHubCLI.isRepositoryNotVisible(graphQL))
+        #expect(GitHubCLI.isRepositoryNotVisible(GitHubCLIError(kind: .failed(exitCode: 1), output: "HTTP 404: Not Found")))
+        #expect(!GitHubCLI.isRepositoryNotVisible(GitHubCLIError(kind: .failed(exitCode: 1), output: "HTTP 502: bad gateway")))
+        #expect(!GitHubCLI.isRepositoryNotVisible(GitHubCLIError(kind: .timedOut, output: "")))
+    }
 }

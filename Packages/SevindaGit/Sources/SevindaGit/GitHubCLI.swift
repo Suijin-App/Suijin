@@ -170,6 +170,36 @@ public struct GitHubCLI: Sendable {
         return try Self.parseAuthStatus(output.stdout, host: host)
     }
 
+    /// Every account `gh` is signed in to on `host` (`gh auth status --json hosts`), the active one first. Only the
+    /// login and state fields are decoded.
+    public func accounts(host: String = "github.com") async throws -> [String] {
+        let output = try await run(["auth", "status", "--hostname", host, "--json", "hosts"], in: nil)
+        return try Self.parseAccounts(output.stdout, host: host)
+    }
+
+    /// This CLI acting as `login`, one of `gh`'s own signed-in accounts on `host`: its token is read from `gh`
+    /// (`gh auth token --user`) into the environment of the `gh` processes this copy starts, and nowhere else. It is
+    /// never printed, logged or stored.
+    public func actingAs(_ login: String, host: String = "github.com") async throws -> GitHubCLI {
+        let output = try await run(["auth", "token", "--hostname", host, "--user", login], in: nil)
+        let token = String(decoding: output.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty, !token.contains(where: \.isWhitespace) else {
+            throw GitHubCLIError(kind: .invalidOutput, output: "")
+        }
+        var copy = self
+        copy.environment[host == "github.com" ? "GH_TOKEN" : "GH_ENTERPRISE_TOKEN"] = token
+        copy.environment["GH_HOST"] = host
+        return copy
+    }
+
+    /// gh's answer when the signed-in account cannot see the repository (private to other accounts, or gone):
+    /// "Could not resolve to a Repository with the name …" from GraphQL, or a 404 from the REST API.
+    public static func isRepositoryNotVisible(_ error: GitHubCLIError) -> Bool {
+        guard case .failed = error.kind else { return false }
+        let text = error.output.lowercased()
+        return text.contains("could not resolve to a repository") || text.contains("http 404")
+    }
+
     /// The pull request whose head is `branch` (open first; gh falls back to the latest closed or merged one), or nil
     /// when the branch has none.
     public func pullRequest(branch: String, in directory: URL) async throws -> PullRequest? {
@@ -225,6 +255,19 @@ public struct GitHubCLI: Sendable {
         guard let account = accounts.first(where: { $0.active ?? false }) ?? accounts.first,
               account.state == "success", let login = account.login, !login.isEmpty else { return .notLoggedIn }
         return .loggedIn(login: login)
+    }
+
+    static func parseAccounts(_ data: Data, host: String) throws -> [String] {
+        struct Account: Decodable {
+            var state: String?
+            var active: Bool?
+            var login: String?
+        }
+        struct Status: Decodable { var hosts: [String: [Account]] }
+        let accounts = try decode(Status.self, from: data).hosts[host] ?? []
+        return accounts.filter { $0.state == "success" && !($0.login ?? "").isEmpty }
+            .sorted { ($0.active ?? false) && !($1.active ?? false) }
+            .compactMap(\.login)
     }
 
     static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {

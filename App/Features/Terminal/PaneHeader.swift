@@ -27,6 +27,7 @@ struct PaneHeader: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundStyle(isFocused ? .primary : .secondary)
+                    PermissionsSkippedBadge(session: session)
                     Spacer(minLength: 0)
                 }
             }

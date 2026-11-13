@@ -69,6 +69,9 @@ final class SessionRuntimeRegistry {
     @ObservationIgnored private(set) lazy var orchestration = OrchestrationController(model: model)
     /// `--plugin-dir` for Claude sessions: the orchestration skill, unless the user installed it in `~/.claude/skills`.
     @ObservationIgnored private var claudePlugin: URL?
+    /// Where agents are looked up instead of the login shell's PATH; nil in the app. Tests point it at stand-in
+    /// `claude` and `codex` scripts so no real agent starts.
+    @ObservationIgnored var agentSearchPath: String?
 
     init(model: AppModel) {
         self.model = model
@@ -238,18 +241,23 @@ final class SessionRuntimeRegistry {
 
     // MARK: Start
 
-    /// Starts a session in `context`: an agent (with the chosen or default account) or the user's shell. With `select`
-    /// it opens as the selected tab; a new pane is placed by its caller instead.
+    /// Starts a session in `context`: an agent (with the chosen or default account, in the chosen or default
+    /// permission mode) or the user's shell. With `select` it opens as the selected tab; a new pane is placed by its
+    /// caller instead.
     @discardableResult
-    func start(in context: SessionContext, agent: AgentKind, accountID: UUID?, prompt: String?, select: Bool = true) async -> UUID? {
+    func start(in context: SessionContext, agent: AgentKind, accountID: UUID?, prompt: String?, select: Bool = true,
+               permissionMode: AgentPermissionMode? = nil) async -> UUID? {
         guard let workspaceID = model.workspaceID(of: context), let cwd = model.directory(of: context) else { return nil }
         let id = UUID()
         let worktreeID: UUID? = if case .worktree(let tree) = context { tree } else { nil }
         // The account actually used is stored, so removing the provider's default account later stops this session too.
         let accountID = accountID ?? agent.accountProvider.flatMap { model.defaultAccount(for: $0)?.id }
         let title = defaultTitle(agent: agent, accountID: accountID)
+        // Stored for resuming and repeating the session; ask is stored as no value, as for sessions from before modes.
+        let mode = model.permissionMode(for: agent, choice: permissionMode)
         let record = AgentSessionRecord(id: id, workspaceID: workspaceID, worktreeID: worktreeID, agent: agent,
-                                        accountID: accountID, title: title, cwd: cwd.path)
+                                        accountID: accountID, title: title, cwd: cwd.path,
+                                        permissionMode: mode == .ask ? nil : mode)
         do {
             let launch = try await makeLaunch(record: record, cwd: cwd, accountID: accountID, prompt: prompt)
             try await run(record, launch: launch)
@@ -345,7 +353,8 @@ final class SessionRuntimeRegistry {
         await countStart(of: record.agent)
     }
 
-    /// The launch of `record`'s agent; `resume` is the conversation to reopen instead of starting a new one.
+    /// The launch of `record`'s agent in its permission mode; `resume` is the conversation to reopen instead of starting
+    /// a new one.
     func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?,
                     resume: String? = nil) async throws -> TerminalLaunch {
         var base = ["SEVINDA_DATA_ROOT": model.dataRoot.path, "SEVINDA_SESSION_ID": record.id.uuidString]
@@ -364,7 +373,8 @@ final class SessionRuntimeRegistry {
             launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
             return launch
         }
-        let path = await AgentCatalog.loginShellPATH()
+        let path: String
+        if let agentSearchPath { path = agentSearchPath } else { path = await AgentCatalog.loginShellPATH() }
         guard let binary = AgentCatalog.resolveBinary(record.agent, path: path) else {
             throw SessionError.agentNotFound(AgentCatalog.definition(for: record.agent)?.binaryName ?? record.agent.rawValue)
         }
@@ -375,7 +385,8 @@ final class SessionRuntimeRegistry {
         if record.agent == .claude, let hooks { _ = try? hooks.prepareEventsFile(sessionID: record.id) }
         var spec = AgentLaunchSpecBuilder.make(kind: record.agent, binary: binary, cwd: cwd, env: accountEnv,
                                                initialPrompt: prompt, hooks: record.agent == .claude ? hooks : nil,
-                                               sessionID: record.id, resume: resume)
+                                               sessionID: record.id, resume: resume,
+                                               permissionMode: record.effectivePermissionMode)
         // Codex can share a background app server; without it (or with a broken install of it) `--no-daemon` runs the
         // session on its own.
         if record.agent == .codex, model.setting(.codexNoDaemon) == "true" { spec.arguments.insert("--no-daemon", at: 0) }

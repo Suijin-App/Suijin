@@ -3379,6 +3379,72 @@
     },
     "⌘-click it in a terminal" : {
 
+    },
+    "Ask" : {
+
+    },
+    "Auto-Accept Edits" : {
+
+    },
+    "Plan" : {
+
+    },
+    "Auto" : {
+
+    },
+    "Read-Only" : {
+
+    },
+    "Skip All Permissions" : {
+
+    },
+    "Ask (Default)" : {
+
+    },
+    "Auto-Accept Edits (Default)" : {
+
+    },
+    "Plan (Default)" : {
+
+    },
+    "Auto (Default)" : {
+
+    },
+    "Read-Only (Default)" : {
+
+    },
+    "Skip All Permissions (Default)" : {
+
+    },
+    "Permissions" : {
+
+    },
+    "Started with permission checks skipped" : {
+
+    },
+    "Permissions skipped" : {
+
+    },
+    "Start %@ without permission checks?" : {
+
+    },
+    "Start Anyway" : {
+
+    },
+    "Codex will run every command and change any file without asking, outside its sandbox. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
+
+    },
+    "Claude Code will run every command and change any file without asking. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
+
+    },
+    "Don’t ask again" : {
+
+    },
+    "%@ permissions" : {
+
+    },
+    "New sessions, panes, ⌘T and ⌘D start with these modes; the Permissions menu picks another for one session. Resume Session, Start Again and New Session Like This keep the session’s mode. Skip All Permissions lets the agent change anything without asking." : {
+
     }
   },
   "version" : "1.1"

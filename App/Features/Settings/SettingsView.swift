@@ -154,6 +154,7 @@ struct AgentSettings: View {
                 Text("New tabs start the default agent. New panes (⌘D, ⇧⌘D, the split button) run the chosen agent; the split button's menu can pick another each time. New worktrees are created in the chosen folder, or next to their repository.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            PermissionDefaultsSection()
             Section {
                 ForEach(AgentCatalog.all, id: \.kind) { agent in
                     InstalledAgentRow(agent: agent, path: path)

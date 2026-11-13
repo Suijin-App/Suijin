@@ -139,6 +139,13 @@ An ended Claude or Codex session can be resumed in place: the same record runs a
 `v7_agent_session_id`) comes from Claude's hook events (`session_id`, stored as soon as a hook reports it) or from the
 resume hint the CLI prints as it exits (Codex reports its thread id only to the broker, so the hint comes first for it).
 
+Each agent session starts in a permission mode (`AgentPermissionMode`, stored in `agent_session.permissionMode`,
+migration `v8_permission_mode`, NULL meaning Ask): the per-agent default from Settings › Agents, or one picked in the
+Permissions submenu; `AgentLaunchSpecBuilder.permissionArguments` maps it to CLI flags (Claude
+`--permission-mode acceptEdits|plan` or `--dangerously-skip-permissions`; Codex `--sandbox …`/`--ask-for-approval …`
+or `--dangerously-bypass-approvals-and-sandbox`, placed before `resume`). Resume, Start Again and New Session Like
+This reuse the record's mode; headless text generation (`ReadOnlyAgentPolicy`) and agents typed in a shell are unaffected.
+
 Agent launches go through a plain login shell (`-l -c`), with the `PATH` that `AgentCatalog.loginShellPATH` resolved
 from an interactive login shell, passed through `/usr/bin/env` after the profile ran together with the account's
 environment changes. Interactive shells get the full integration (`ZDOTDIR` wrapper, bash rcfile).

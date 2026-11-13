@@ -23,6 +23,9 @@ struct ContextRowMenuItems: View {
                     }
                 }
             }
+            PermissionModeMenu { agent, mode in
+                Task { await model.runtimes.start(in: context, agent: agent, accountID: nil, prompt: nil, permissionMode: mode) }
+            }
         }
         if model.isGitContext(context) {
             Button("Show Changes") {
@@ -66,7 +69,10 @@ struct SessionMenuItems: View {
         let context = model.context(of: session)
         let ended = model.runtimes.runtime(for: session.id) == nil || model.runtimes.activity(of: session).isEnded
         Button("New Session Like This") {
-            Task { await model.runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil) }
+            Task {
+                await model.runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil,
+                                           permissionMode: session.effectivePermissionMode)
+            }
         }
         if ended {
             if model.canResume(session) {
@@ -157,11 +163,13 @@ extension AppModel {
         for id in ids { await closeSession(id) }
     }
 
-    /// Replaces an ended session with a new one of the same agent and account, in the same tab position's context.
+    /// Replaces an ended session with a new one of the same agent, account and permission mode, in the same tab
+    /// position's context.
     func startAgain(_ session: AgentSessionRecord) async {
         let context = context(of: session)
         await closeSession(session.id)
-        await runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil)
+        await runtimes.start(in: context, agent: session.agent, accountID: session.accountID, prompt: nil,
+                             permissionMode: session.effectivePermissionMode)
     }
 
     /// Whether an ended session can continue its conversation: a Claude or Codex session whose conversation id Sevinda

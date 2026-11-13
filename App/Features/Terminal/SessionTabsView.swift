@@ -252,6 +252,7 @@ private struct SessionTab: View {
             AgentLogo(agent: model.runtimes.displayAgent(of: session), size: 14)
                 .opacity(activity == .exited || activity == .failed ? 0.5 : 1)
             Text(verbatim: model.runtimes.displayTitle(of: session))
+            PermissionsSkippedBadge(session: session)
             if paneCount > 1 {
                 Label {
                     Text(verbatim: "\(paneCount)")
@@ -332,6 +333,7 @@ struct NewSessionMenu: View {
                 Button { start(.shell, account: nil) } label: {
                     Label { Text("Shell") } icon: { Image(systemName: "terminal") }
                 }
+                PermissionModeMenu { agent, mode in start(agent, account: nil, permissionMode: mode) }
             }
             Divider()
             Button("New Session with Prompt…") { isConfiguring = true }
@@ -375,9 +377,12 @@ struct NewSessionMenu: View {
         }
     }
 
-    private func start(_ agent: AgentKind, account: UUID?) {
+    private func start(_ agent: AgentKind, account: UUID?, permissionMode: AgentPermissionMode? = nil) {
         if agent != .shell, agent != model.defaultAgent { model.setSetting(.defaultAgent, agent.rawValue) }
-        Task { await model.runtimes.start(in: context, agent: agent, accountID: account, prompt: nil) }
+        Task {
+            await model.runtimes.start(in: context, agent: agent, accountID: account, prompt: nil,
+                                       permissionMode: permissionMode)
+        }
     }
 
     static func name(of agent: AgentKind) -> String {

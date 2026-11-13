@@ -53,11 +53,12 @@ extension AppModel {
     // MARK: Adding panes
 
     /// Starts a session and shows it as a pane beside `target` (the selected tab's focused pane when nil) on `edge`.
-    /// `agent` nil runs the same agent with the same account as the target pane. The new pane takes the keyboard.
+    /// `agent` nil runs the same agent with the same account as the target pane; `permissionMode` nil uses the agent's
+    /// default mode. The new pane takes the keyboard.
     /// Returns the new session, nil when nothing started (no session tab selected, the tab is full, the start failed).
     @discardableResult
     func newPane(in context: SessionContext, beside target: UUID? = nil, edge: PaneEdge, agent: AgentKind? = nil,
-                 accountID: UUID? = nil) async -> UUID? {
+                 accountID: UUID? = nil, permissionMode: AgentPermissionMode? = nil) async -> UUID? {
         guard let target = target ?? activeSession(in: context),
               let record = sessions.first(where: { $0.id == target }), self.context(of: record) == context else { return nil }
         guard canAddPane(beside: target) else {
@@ -67,7 +68,8 @@ extension AppModel {
         }
         let agent = agent ?? record.agent
         let account = agent == record.agent ? (accountID ?? record.accountID) : accountID
-        guard let id = await runtimes.start(in: context, agent: agent, accountID: account, prompt: nil, select: false) else { return nil }
+        guard let id = await runtimes.start(in: context, agent: agent, accountID: account, prompt: nil, select: false,
+                                            permissionMode: permissionMode) else { return nil }
         do {
             try insertPane(id, beside: target, edge: edge)
         } catch {

@@ -81,6 +81,7 @@ struct RootView: View {
         )) { workspace in
             NewWorktreeSheet(workspace: workspace)
         }
+        .modifier(PermissionConfirmationAlert())
         .alert(item: $model.presentedError) { error in
             Alert(title: Text(verbatim: error.title), message: Text(verbatim: error.message))
         }

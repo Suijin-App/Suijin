@@ -73,6 +73,7 @@ enum Migrations {
         registerStatsMigrations(&migrator)             // v5_stats
         registerPaneLayoutMigrations(&migrator)        // v6_pane_layout
         registerAgentSessionMigrations(&migrator)      // v7_agent_session_id
+        registerPermissionModeMigrations(&migrator)    // v8_permission_mode
         return migrator
     }
 }

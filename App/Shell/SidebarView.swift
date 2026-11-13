@@ -335,6 +335,7 @@ private struct SidebarSessionRow: View {
             Text(verbatim: model.runtimes.displayTitle(of: session))
                 .lineLimit(1)
                 .truncationMode(.tail)
+            PermissionsSkippedBadge(session: session)
             Spacer(minLength: SevindaSpacing.xs)
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 Text(verbatim: Self.elapsed(from: session.createdAt, to: session.endedAt ?? context.date))

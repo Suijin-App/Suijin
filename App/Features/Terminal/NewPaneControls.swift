@@ -54,8 +54,9 @@ extension AppModel {
     /// account when nil). Returns the new session, nil when nothing started.
     @discardableResult
     func addPane(in context: SessionContext, axis: PaneAxis, agent: NewPaneAgent? = nil,
-                 accountID: UUID? = nil) async -> UUID? {
-        await newPane(in: context, edge: axis.newPaneEdge, agent: (agent ?? newPaneAgent).agent, accountID: accountID)
+                 accountID: UUID? = nil, permissionMode: AgentPermissionMode? = nil) async -> UUID? {
+        await newPane(in: context, edge: axis.newPaneEdge, agent: (agent ?? newPaneAgent).agent, accountID: accountID,
+                      permissionMode: permissionMode)
     }
 
     /// Adds a pane beside `session` (any session, not only the focused pane) on `edge` with the New pane runs
@@ -127,6 +128,9 @@ struct SplitPaneButton: View {
         Button { add(axis, agent: .shell) } label: {
             Label { Text("Shell") } icon: { Image(systemName: "terminal") }
         }
+        PermissionModeMenu { agent, mode in
+            add(axis, agent: agent == .codex ? .codex : .claude, permissionMode: mode)
+        }
     }
 
     @ViewBuilder
@@ -155,7 +159,8 @@ struct SplitPaneButton: View {
         }
     }
 
-    private func add(_ axis: PaneAxis, agent: NewPaneAgent? = nil, accountID: UUID? = nil) {
-        Task { await model.addPane(in: context, axis: axis, agent: agent, accountID: accountID) }
+    private func add(_ axis: PaneAxis, agent: NewPaneAgent? = nil, accountID: UUID? = nil,
+                     permissionMode: AgentPermissionMode? = nil) {
+        Task { await model.addPane(in: context, axis: axis, agent: agent, accountID: accountID, permissionMode: permissionMode) }
     }
 }

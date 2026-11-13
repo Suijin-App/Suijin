@@ -105,6 +105,8 @@ final class AppModel {
     var collapsedContexts: Set<SessionContext> = []
     /// Sessions the user asked to close while agents among them still work; confirmed in the main window.
     var pendingClose: PendingClose?
+    /// A start without permission checks waiting for the user to confirm it (`PermissionModes.swift`).
+    var pendingPermissionConfirmation: PendingPermissionConfirmation?
     /// The Settings page shown over the main window; nil while the app itself is shown.
     var settingsPage: SettingsPage?
     /// The welcome tour shown over the main window; nil while it is closed (`OnboardingOverlay.swift`).
@@ -532,6 +534,11 @@ enum SettingKey: String, CaseIterable {
     case notifyWhenWaiting = "notifications.waiting"
     case lastSelection = "ui.lastSelection"
     case codexNoDaemon = "agents.codex.noDaemon"
+    /// `AgentPermissionMode` raw values new sessions start with; missing means ask.
+    case claudePermissionMode = "agents.claude.permissionMode"
+    case codexPermissionMode = "agents.codex.permissionMode"
+    /// "true" once the user chose not to confirm starting an agent without permission checks again.
+    case skipPermissionsConfirmed = "agents.skipPermissionsConfirmed"
     /// `AppAppearance` raw value; missing means follow the system.
     case appearance = "ui.appearance"
     /// "true" once the welcome tour was finished or skipped, so it no longer opens at launch.

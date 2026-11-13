@@ -180,12 +180,16 @@ struct TerminalFileDropTests {
         #expect(bracketedView.recentText(lineCount: 10) == before)
     }
 
-    @Test func fileTreeRowsDragTheirFileURLOnly() {
+    @Test func fileTreeRowsDragTheirFileURLOnly() throws {
         let url = URL(fileURLWithPath: "/tmp/a b/../c.png")
-        let provider = FileTreeView.dragItem(for: url)
-        #expect(provider.registeredTypeIdentifiers.contains("public.file-url"))
-        #expect(!provider.registeredTypeIdentifiers.contains("public.utf8-plain-text"))
-        #expect(!provider.registeredTypeIdentifiers.contains("public.plain-text"))
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("sevinda.test.tree.\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        pasteboard.clearContents()
+        #expect(pasteboard.writeObjects([FileOutlineController.pasteboardWriter(for: url)]))
+        let types = try #require(pasteboard.pasteboardItems?.first?.types)
+        #expect(types == [.fileURL])
+        let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]
+        #expect(urls?.map(\.path) == ["/tmp/c.png"])
     }
 }
 

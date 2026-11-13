@@ -123,6 +123,16 @@ final class FileTree {
         return FileManager.default.fileExists(atPath: root.url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
+    /// The node at an absolute `path`, found by walking down from the root (reading the folders on the way).
+    func node(at path: String) -> FileNode? {
+        var nodes = roots
+        while let next = nodes.first(where: { path == $0.url.path || path.hasPrefix($0.url.path + "/") }) {
+            if next.url.path == path { return next }
+            nodes = next.children ?? []
+        }
+        return nil
+    }
+
     var isWatching: Bool { watcher?.isWatching == true }
 
     func startWatching() {

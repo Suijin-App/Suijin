@@ -184,6 +184,12 @@ enum ShortcutCatalog {
         MouseGesture(id: "pathActions", title: "Path Actions",
                      detail: "Open with the default app, reveal in the file tree or Finder, copy, or find the full path of a shortened one.",
                      gesture: "Right-click a path in a terminal", systemImage: "contextualmenu.and.cursorarrow"),
+        MouseGesture(id: "zoomImage", title: "Zoom an Image", detail: "Zooms around the pointer in the image viewer.",
+                     gesture: "Scroll with ⌘ or ⌥ held", systemImage: "plus.magnifyingglass"),
+        MouseGesture(id: "fitImage", title: "Fit or Actual Size", detail: "Switches an image between fitting the pane and its own size.",
+                     gesture: "Double-click an image", systemImage: "arrow.up.left.and.down.right.magnifyingglass"),
+        MouseGesture(id: "panImage", title: "Move a Zoomed Image", detail: nil,
+                     gesture: "Drag the image", systemImage: "hand.raised"),
     ]
 
     private static func focus(_ id: String, _ title: LocalizedStringResource, _ key: KeyEquivalent) -> AppShortcut {

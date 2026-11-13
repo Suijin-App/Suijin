@@ -521,7 +521,8 @@ final class ImageZoomController {
     }
 }
 
-/// An image that fits the pane at first and zooms with pinch, ⌘+ / ⌘− / ⌘0 and the header buttons.
+/// An image that fits the pane at first and zooms with pinch, ⌘ or ⌥ with the mouse wheel, a double-click, ⌘+ / ⌘− / ⌘0
+/// and the header buttons; a zoomed image pans by dragging.
 private struct ZoomableImageView: NSViewRepresentable {
     let image: NSImage
     let controller: ImageZoomController
@@ -534,7 +535,7 @@ private struct ZoomableImageView: NSViewRepresentable {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.backgroundColor = .windowBackgroundColor
-        let imageView = NSImageView()
+        let imageView = PassThroughImageView()
         imageView.imageScaling = .scaleNone
         scrollView.documentView = imageView
         controller.scrollView = scrollView
@@ -569,16 +570,82 @@ private struct ZoomableImageView: NSViewRepresentable {
     }
 }
 
+/// The image itself takes no clicks, so presses and drags reach the scroll view, which pans and zooms.
+final class PassThroughImageView: NSImageView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
 /// Keeps a smaller-than-the-pane image centered instead of pinned to the bottom-left corner, and fits a new image
 /// once the pane has its real size (fitting before layout would scale to a zero-sized pane).
-private final class CenteringScrollView: OverlayScrollView {
+final class CenteringScrollView: OverlayScrollView {
     var needsFit = false
+    private var panStart: (mouse: NSPoint, origin: NSPoint)?
 
     /// The magnification that shows a whole image of `size`, never enlarged past its own size.
     func fitMagnification(for size: NSSize) -> CGFloat {
         guard size.width > 0, size.height > 0 else { return 1 }
         return max(min(contentSize.width / size.width, contentSize.height / size.height, 1), minMagnification)
     }
+
+    private var imageSize: NSSize? { (documentView as? NSImageView)?.image?.size }
+
+    /// Whether the image is larger than the pane, so there is something to pan.
+    private var canPan: Bool {
+        guard let document = documentView else { return false }
+        let size = document.frame.size, visible = contentView.bounds.size
+        return size.width > visible.width + 0.5 || size.height > visible.height + 0.5
+    }
+
+    // MARK: Mouse
+
+    /// A mouse wheel with ⌘ (or ⌥) zooms around the pointer, as in Preview; without them the wheel scrolls. Trackpad
+    /// pinches still go through the scroll view's own magnification.
+    override func scrollWheel(with event: NSEvent) {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        guard flags.contains(.command) || flags.contains(.option), event.scrollingDeltaY != 0 else {
+            super.scrollWheel(with: event)
+            return
+        }
+        let steps = event.hasPreciseScrollingDeltas ? event.scrollingDeltaY / 40 : event.scrollingDeltaY
+        let factor = pow(1.15, max(min(steps, 4), -4))
+        let point = contentView.convert(event.locationInWindow, from: nil)
+        setMagnification(magnification * factor, centeredAt: point)
+    }
+
+    /// Dragging with the mouse pans a zoomed image; a double-click switches between the fitted and actual size.
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2, let size = imageSize {
+            let point = contentView.convert(event.locationInWindow, from: nil)
+            let fit = fitMagnification(for: size)
+            setMagnification(abs(magnification - fit) < 0.001 && fit < 1 ? 1 : fit, centeredAt: point)
+            return
+        }
+        guard canPan else { return super.mouseDown(with: event) }
+        panStart = (event.locationInWindow, contentView.bounds.origin)
+        NSCursor.closedHand.push()
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let start = panStart else { return super.mouseDragged(with: event) }
+        let scale = max(magnification, 0.0001)
+        let delta = NSPoint(x: (event.locationInWindow.x - start.mouse.x) / scale,
+                            y: (event.locationInWindow.y - start.mouse.y) / scale)
+        let target = NSPoint(x: start.origin.x - delta.x, y: start.origin.y - delta.y)
+        contentView.scroll(to: contentView.constrainBoundsRect(NSRect(origin: target, size: contentView.bounds.size)).origin)
+        reflectScrolledClipView(contentView)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard panStart != nil else { return super.mouseUp(with: event) }
+        panStart = nil
+        NSCursor.pop()
+    }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if canPan { addCursorRect(contentView.frame, cursor: .openHand) }
+    }
+
 
     override func layout() {
         super.layout()
@@ -592,6 +659,8 @@ private final class CenteringScrollView: OverlayScrollView {
 
     override func tile() {
         super.tile()
+        // Zooming changes whether the image can be panned, and so the cursor shown over it.
+        window?.invalidateCursorRects(for: self)
         guard let document = documentView else { return }
         let clip = contentView
         var bounds = clip.bounds

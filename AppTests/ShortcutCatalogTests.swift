@@ -79,7 +79,7 @@ struct ShortcutCatalogTests {
     @Test func searchFindsGestures() {
         let sections = ShortcutCatalog.sections(matching: "double-click")
         #expect(sections.map(\.group) == [.mouse])
-        #expect(sections.first?.gestures.map(\.id) == ["equalizeByDivider"])
+        #expect(sections.first?.gestures.map(\.id) == ["equalizeByDivider", "fitImage"])
     }
 
     @Test func blankSearchShowsEverythingAndNoMatchShowsNothing() {

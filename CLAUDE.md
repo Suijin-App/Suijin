@@ -14,6 +14,8 @@ viewer. Local only: no SSH, no remote hosts, no cloud.
   `String` that reaches the screen without going through localization.
 - Plans in `plans/` may be written in Vietnamese; product docs in `docs/` and commit messages are English.
 - **Commit messages** follow Conventional Commits, e.g. `feat: add worktree sheet`.
+- **Commit author.** Every commit is authored and committed as `vuvv-dev <vuvo.dev.work@gmail.com>` (the repository's
+  local git config sets it); never commit under another identity or pass `--author`.
 
 Check: `Tools/comment-lint/comment-lint.py` (also runs in `scripts/ci-local.sh checks`).
 

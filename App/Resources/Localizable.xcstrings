@@ -17,6 +17,9 @@
         }
       }
     },
+    "%@ switched accounts" : {
+
+    },
     "%@: %@. The original conversation was not changed." : {
       "localizations" : {
         "en" : {
@@ -27,10 +30,19 @@
         }
       }
     },
+    "At its limit" : {
+
+    },
+    "Claude Code: Automatic Switching" : {
+
+    },
     "Claude has not reported this conversation yet. Send it a message first." : {
 
     },
     "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here." : {
+
+    },
+    "Codex: Automatic Switching" : {
 
     },
     "Continue This Session With…" : {
@@ -58,10 +70,48 @@
         }
       }
     },
+    "Could not move to %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not move to %1$@. %2$@"
+          }
+        }
+      }
+    },
     "Hide" : {
 
     },
     "Hide until the limit resets" : {
+
+    },
+    "Move %@ down" : {
+
+    },
+    "Move %@ up" : {
+
+    },
+    "Move Down" : {
+
+    },
+    "Move running sessions when the default account changes" : {
+
+    },
+    "Move Up" : {
+
+    },
+    "Moved to %@ because %@ hit its %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moved to %1$@ because %2$@ hit its %3$@."
+          }
+        }
+      }
+    },
+    "Moved to %@, the new default account." : {
 
     },
     "Moving conversation to %@…" : {
@@ -73,10 +123,22 @@
     "Only Claude and Codex sessions can move to another account." : {
 
     },
+    "Quit Codex to move it to %@." : {
+
+    },
+    "Send Claude a message, then this session can move to %@." : {
+
+    },
+    "Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved." : {
+
+    },
     "Sevinda does not know which conversation this session had, so it cannot continue it." : {
 
     },
     "Sevinda does not know which conversation this session had." : {
+
+    },
+    "Switch automatically when an account hits its limit" : {
 
     },
     "That account is no longer in Sevinda." : {
@@ -118,6 +180,15 @@
 
     },
     "This session uses %@" : {
+
+    },
+    "Usage unknown" : {
+
+    },
+    "weekly %@ limit" : {
+
+    },
+    "weekly limit" : {
 
     },
     "“%@” (#%lld) is already open for this branch. New commits you push appear in it." : {

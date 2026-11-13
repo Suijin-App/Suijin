@@ -320,17 +320,28 @@ final class SessionRuntimeRegistry {
     }
 
     /// Continues `session`'s conversation under another account of the same agent (`accountID` nil = the user's own
-    /// login), in the same tab or pane with the same folder and permission mode. The history files are checked first,
-    /// then the agent is ended if it runs, its history placed in the target account's folder (`ConversationTransfer`:
-    /// linked or copied, never moved or replacing anything), and the agent resumed there. On failure the session is
-    /// left ended on its own account with its history as it was, and the error is shown.
+    /// login), in the same tab or pane with the same folder and permission mode, and shows an error when it could not.
     func continueConversation(_ session: AgentSessionRecord, onAccount accountID: UUID?, named targetName: String) async {
+        let title = displayTitle(of: model.sessions.first { $0.id == session.id } ?? session)
+        if case .failed(let message) = await moveConversation(session, onAccount: accountID, named: targetName) {
+            model.presentedError = PresentedError(title: String(localized: "Could not continue \(title) with \(targetName)"),
+                                                  message: message)
+        }
+    }
+
+    /// Moves `session`'s conversation to another account of the same agent (`accountID` nil = the user's own login) and
+    /// resumes it there, in the same tab or pane with the same folder and permission mode. The history files are
+    /// checked first, then the agent is ended if it runs, its history placed in the target account's folder
+    /// (`ConversationTransfer`: linked or copied, never moved or replacing anything), and the agent resumed there. On
+    /// failure the session is left ended on its own account with its history as it was (or still running, when the
+    /// check failed). Returns what happened, so the caller decides how to tell the user.
+    func moveConversation(_ session: AgentSessionRecord, onAccount accountID: UUID?,
+                          named targetName: String) async -> ConversationMoveOutcome {
         guard let current = model.sessions.first(where: { $0.id == session.id }),
               let provider = current.agent.accountProvider, current.accountID != accountID,
               !resuming.contains(current.id), movingConversation[current.id] == nil,
-              let conversation = continuableConversation(of: current) else { return }
+              let conversation = continuableConversation(of: current) else { return .notStarted }
         let id = current.id
-        let failureTitle = String(localized: "Could not continue \(displayTitle(of: current)) with \(targetName)")
         movingConversation[id] = targetName
         resuming.insert(id)
         defer {
@@ -339,9 +350,7 @@ final class SessionRuntimeRegistry {
         }
         guard let source = model.accountsController.conversationHome(provider, accountID: current.accountID),
               let target = model.accountsController.conversationHome(provider, accountID: accountID) else {
-            model.presentedError = PresentedError(title: failureTitle,
-                                                  message: String(localized: "That account is no longer in Sevinda."))
-            return
+            return .failed(String(localized: "That account is no longer in Sevinda."))
         }
         let transfer = ConversationTransfer(provider: provider, conversationID: conversation, cwd: current.cwd,
                                             source: source, target: target)
@@ -349,8 +358,7 @@ final class SessionRuntimeRegistry {
             // Before the agent is ended: a conversation that cannot move keeps running where it is.
             _ = try await Task.detached { try transfer.plan() }.value
         } catch {
-            model.presentedError = PresentedError(title: failureTitle, message: ConversationMove.message(for: error, agent: current.agent))
-            return
+            return .failed(ConversationMove.message(for: error, agent: current.agent))
         }
         var original = current
         if runtimes[id] != nil {
@@ -365,8 +373,7 @@ final class SessionRuntimeRegistry {
         do {
             _ = try await Task.detached { try transfer.run() }.value
         } catch {
-            model.presentedError = PresentedError(title: failureTitle, message: ConversationMove.message(for: error, agent: current.agent))
-            return
+            return .failed(ConversationMove.message(for: error, agent: current.agent))
         }
         var moved = original
         moved.accountID = accountID
@@ -379,9 +386,10 @@ final class SessionRuntimeRegistry {
             let launch = try await makeLaunch(record: moved, cwd: URL(fileURLWithPath: moved.cwd, isDirectory: true),
                                               accountID: accountID, prompt: nil, resume: conversation)
             try await relaunch(moved, launch: launch, catchUp: true)
+            return .moved
         } catch {
             await model.upsert(original)
-            model.presentedError = PresentedError(title: failureTitle, message: error.localizedDescription)
+            return .failed(error.localizedDescription)
         }
     }
 
@@ -630,6 +638,7 @@ final class SessionRuntimeRegistry {
     private func activityChanged(_ id: UUID, _ activity: AgentActivity) {
         let previous = activities[id]
         activities[id] = activity
+        if previous != activity { model.autoSwitcher.activityChanged(id, activity) }
         guard previous != activity, let record = model.sessions.first(where: { $0.id == id }),
               displayAgent(of: record) != .shell else { return }
         switch activity {
@@ -674,6 +683,7 @@ final class SessionRuntimeRegistry {
         endedOutput[id] = nil
         titles[id] = nil
         launchLogins[id] = nil
+        model.autoSwitcher.forget(id)
     }
 
     /// Ends the session's process if it still runs (SIGHUP, then SIGKILL) and drops its runtime. The title stays, so
@@ -805,6 +815,16 @@ enum SessionNotice: Equatable {
         case .shell: String(localized: "Shell")
         }
     }
+}
+
+/// What became of a request to move a conversation to another account.
+enum ConversationMoveOutcome: Equatable {
+    /// The agent runs on the other account now.
+    case moved
+    /// Nothing was tried: the session is gone, already on that account, already moving, or its conversation is unknown.
+    case notStarted
+    /// The move failed with this plain-language reason; the session stays on its own account.
+    case failed(String)
 }
 
 enum SessionError: LocalizedError {

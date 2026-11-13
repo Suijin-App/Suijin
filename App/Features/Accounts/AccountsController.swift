@@ -91,10 +91,12 @@ final class AccountsController {
     }
 
     /// Makes `accountID` (nil = the user's own login) the default for new sessions and for `claude`/`codex` typed in
-    /// Sevinda terminals.
-    func setDefault(_ accountID: UUID?, for kind: AccountProvider) async {
+    /// Sevinda terminals. With `movesSessions` (the user chose it), running sessions follow when Settings asks for that.
+    func setDefault(_ accountID: UUID?, for kind: AccountProvider, movesSessions: Bool = true) async {
         let key: SettingKey = kind == .claude ? .defaultClaudeAccount : .defaultCodexAccount
+        let previous = model.defaultAccount(for: kind)?.id
         model.setSetting(key, accountID?.uuidString)
+        if movesSessions, previous != accountID { model.autoSwitcher.defaultChanged(kind, to: accountID) }
         await writePointers()
         await refreshUsage()
     }
@@ -212,13 +214,15 @@ final class AccountsController {
             }
         }
         for kind in AccountProvider.allCases {
-            guard model.defaultAccount(for: kind) == nil else {
+            // The own login is also read while sessions switch at their limit: it may be where they go, or where they are.
+            guard model.defaultAccount(for: kind) == nil || model.switchesAtLimit(kind) else {
                 defaultLoginUsage[kind] = nil
                 continue
             }
             if !manual, let retryAt = defaultLoginUsage[kind]?.failure?.retryAt, retryAt > .now { continue }
             if await !refreshDefaultLogin(kind) { allOK = false }
         }
+        await model.autoSwitcher.usageChanged()
         return allOK
     }
 
@@ -247,6 +251,13 @@ final class AccountsController {
     /// Screenshot tests show usage without a network request.
     func setUsageForPreview(_ id: UUID, _ snapshot: UsageSnapshot) {
         usage[id] = snapshot
+    }
+
+    /// Tests set the usage of the user's own login of `kind` (nil = signed out) without a network request.
+    func setDefaultLoginUsageForPreview(_ kind: AccountProvider, _ snapshot: UsageSnapshot?) {
+        defaultLoginUsage[kind] = snapshot.map {
+            ProviderUsageState(snapshot: $0, failure: nil, accountName: defaultLoginEmail[kind], isManaged: false)
+        }
     }
 
     /// Sample default-login usage for both providers; `failedCodex` shows Codex in its failed state instead.
@@ -316,8 +327,9 @@ final class AccountsController {
         await model.perform(String(localized: "Could not remove the account")) {
             try await provider.removeHome(URL(fileURLWithPath: account.homePath, isDirectory: true))
         }
+        // Falling back to the own login is not the user's choice of a new default, so no session moves for it.
         if model.defaultAccount(for: account.provider)?.id == account.id {
-            await setDefault(nil, for: account.provider)
+            await setDefault(nil, for: account.provider, movesSessions: false)
         }
         usage[account.id] = nil
         usageFailures[account.id] = nil

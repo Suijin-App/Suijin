@@ -3,7 +3,8 @@ import SevindaCore
 import SevindaUI
 import SwiftUI
 
-/// Settings → Accounts: managed Claude and Codex accounts, the default for each provider, add, sign in again, remove.
+/// Settings → Accounts: managed Claude and Codex accounts, the default for each provider, add, sign in again, remove,
+/// and when running sessions switch accounts on their own.
 struct AccountsSettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var pending: PendingLogin?
@@ -42,6 +43,7 @@ struct AccountsSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                AutoSwitchSettingsSection(provider: provider)
             }
         }
         .formStyle(.grouped)
@@ -161,5 +163,95 @@ struct UsageGauge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(label) window \(percent) percent used"))
+    }
+}
+
+/// Automatic switching for one agent: following a new default account, and moving at a usage limit to the first account
+/// with room in an order the user sets. Both off by default.
+struct AutoSwitchSettingsSection: View {
+    @Environment(AppModel.self) private var model
+    let provider: AccountProvider
+
+    var body: some View {
+        Section {
+            Toggle("Move running sessions when the default account changes", isOn: Binding(
+                get: { model.movesOnDefaultChange(provider) },
+                set: { model.setMovesOnDefaultChange(provider, $0) }))
+            Toggle("Switch automatically when an account hits its limit", isOn: Binding(
+                get: { model.switchesAtLimit(provider) },
+                set: { model.setSwitchesAtLimit(provider, $0) }))
+            if model.switchesAtLimit(provider) {
+                let order = model.fallbackOrder(for: provider)
+                ForEach(Array(order.enumerated()), id: \.element) { index, entry in
+                    FallbackAccountRow(provider: provider, entry: entry, position: index + 1,
+                                       onMoveUp: index > 0 ? { move(order, from: index, to: index - 1) } : nil,
+                                       onMoveDown: index < order.count - 1 ? { move(order, from: index, to: index + 1) } : nil)
+                }
+                .onMove { source, destination in
+                    var reordered = order
+                    reordered.move(fromOffsets: source, toOffset: destination)
+                    model.setFallbackOrder(reordered, for: provider)
+                }
+            }
+        } header: {
+            Text(provider == .claude ? "Claude Code: Automatic Switching" : "Codex: Automatic Switching")
+        } footer: {
+            Text("Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func move(_ order: [FallbackAccount], from: Int, to: Int) {
+        var reordered = order
+        reordered.swapAt(from, to)
+        model.setFallbackOrder(reordered, for: provider)
+    }
+}
+
+/// One account in the fallback order: its place, name and whether it has room, with buttons to move it.
+private struct FallbackAccountRow: View {
+    @Environment(AppModel.self) private var model
+    let provider: AccountProvider
+    let entry: FallbackAccount
+    let position: Int
+    let onMoveUp: (() -> Void)?
+    let onMoveDown: (() -> Void)?
+
+    var body: some View {
+        let name = model.accountName(entry.accountID, provider: provider)
+        HStack(spacing: SevindaSpacing.s) {
+            Text(verbatim: "\(position).")
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Image(systemName: entry == .ownLogin ? "person.crop.circle" : "person.crop.circle.badge.checkmark")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(verbatim: name)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .layoutPriority(1)
+            Spacer(minLength: SevindaSpacing.s)
+            status
+            Button { onMoveUp?() } label: { Image(systemName: "chevron.up") }
+                .disabled(onMoveUp == nil)
+                .help(Text("Move Up"))
+                .accessibilityLabel(Text("Move \(name) up"))
+            Button { onMoveDown?() } label: { Image(systemName: "chevron.down") }
+                .disabled(onMoveDown == nil)
+                .help(Text("Move Down"))
+                .accessibilityLabel(Text("Move \(name) down"))
+        }
+        .buttonStyle(.borderless)
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var status: some View {
+        if model.knownUsage(of: entry.accountID, provider: provider) == nil {
+            Text("Usage unknown").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+        } else if !model.hasRoom(entry.accountID, provider: provider) {
+            Text("At its limit").font(.caption).foregroundStyle(SevindaColor.warning).lineLimit(1)
+        }
     }
 }

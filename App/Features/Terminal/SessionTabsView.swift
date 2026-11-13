@@ -92,7 +92,10 @@ struct SessionPaneContent: View {
                 }
                 .overlay(alignment: .top) {
                     if state == .terminal, let record = model.sessions.first(where: { $0.id == session }), record.agent != .shell {
-                        UsageLimitBanner(session: record)
+                        VStack(spacing: 0) {
+                            AutoSwitchNoteView(session: session)
+                            UsageLimitBanner(session: record)
+                        }
                     }
                 }
         } else if let record = model.sessions.first(where: { $0.id == session }) {

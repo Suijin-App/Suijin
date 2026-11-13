@@ -2,6 +2,14 @@
 
 ## 0.1.0 (unreleased)
 
+- Settings › Accounts can switch accounts automatically, separately for Claude Code and Codex and off by default.
+  "Move running sessions when the default account changes" moves every running session on another account to the new
+  default. "Switch automatically when an account hits its limit" moves a session whose account used up a usage
+  window to the first account with room in an order you set; with none, the limit banner stays. Sessions move with
+  their conversation, as Continue With Another Account does, once their current turn ends, never back to an account
+  still at its limit, and not again for a limit within ten minutes. A note in the pane (and a notification while
+  Sevinda is in the background) says where a session went and why. Shells and agents started in them never move; a
+  running Codex, whose conversation Sevinda learns only when it quits, stays with a note.
 - Continue With Another Account (session context menu, Session Ended view, usage popover) carries a Claude Code or
   Codex conversation to another managed account or your own login when an account runs out: Sevinda ends the agent,
   places the conversation's history in the other account's folder (linked or copied, never moved or replacing a

@@ -123,6 +123,8 @@ final class AppModel {
     @ObservationIgnored lazy var runtimes = SessionRuntimeRegistry(model: self)
     /// Managed accounts at runtime (providers, usage, pointer files).
     @ObservationIgnored lazy var accountsController = AccountsController(model: self)
+    /// Moves running sessions to another account on their own when Settings → Accounts asks for it.
+    @ObservationIgnored lazy var autoSwitcher = AutoAccountSwitcher(model: self)
     /// Settings → Stats & Usage: one usage store for the app's lifetime, refreshed only while that page is shown.
     @ObservationIgnored lazy var usage = UsageController(model: self)
 
@@ -527,6 +529,16 @@ struct PendingClose: Identifiable {
 enum SettingKey: String, CaseIterable {
     case defaultClaudeAccount = "accounts.claude.default"
     case defaultCodexAccount = "accounts.codex.default"
+    /// "true" moves running sessions to the agent's new default account when the default changes; missing means off.
+    case claudeMoveOnDefaultChange = "accounts.claude.moveOnDefaultChange"
+    case codexMoveOnDefaultChange = "accounts.codex.moveOnDefaultChange"
+    /// "true" moves a session whose account used up a usage window to the next account with room; missing means off.
+    case claudeSwitchAtLimit = "accounts.claude.switchAtLimit"
+    case codexSwitchAtLimit = "accounts.codex.switchAtLimit"
+    /// The accounts a session at its limit moves to, in order: comma-separated managed account ids, and "own" for the
+    /// user's own login. Missing means managed accounts by name, then the own login.
+    case claudeFallbackOrder = "accounts.claude.fallbackOrder"
+    case codexFallbackOrder = "accounts.codex.fallbackOrder"
     case worktreeRoot = "worktrees.root"
     case defaultAgent = "agents.default"
     /// `NewPaneAgent` raw value; missing means the same agent as the focused pane.

@@ -2,6 +2,11 @@
 
 ## 0.1.0 (unreleased)
 
+- Continue With Another Account (session context menu, Session Ended view, usage popover) carries a Claude Code or
+  Codex conversation to another managed account or your own login when an account runs out: Sevinda ends the agent,
+  places the conversation's history in the other account's folder (linked or copied, never moved or replacing a
+  file) and resumes it in the same tab or pane with the same folder and permission mode. A running session whose
+  account used up a usage window shows a banner offering the other accounts.
 - Claude Code and Codex sessions start in a permission mode: Ask, Auto-Accept Edits, Plan or Skip All Permissions for
   Claude; Ask, Auto, Read-Only or Skip All Permissions for Codex. Settings › Agents sets each agent's default, and the
   Permissions submenu of the new-session, split and sidebar menus picks one for a single session. Resume Session, Start

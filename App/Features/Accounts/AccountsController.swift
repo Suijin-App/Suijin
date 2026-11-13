@@ -29,6 +29,11 @@ final class AccountsController {
         ? DefaultLoginUsageReader(realHome: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-no-login"),
                                   environment: [:])
         : DefaultLoginUsageReader()
+    /// The home folder and environment the user's own `~/.claude` (or `CLAUDE_CONFIG_DIR`) and `~/.codex` (or
+    /// `CODEX_HOME`) are found from, for moving a conversation there. The test host uses an empty home that tests fill.
+    @ObservationIgnored var ownLoginHome = UserNotifier.isTestHost
+        ? (home: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-no-login"), environment: [String: String]())
+        : (home: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true), environment: ProcessInfo.processInfo.environment)
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var identityTask: Task<Void, Never>?
     @ObservationIgnored private var providers: [AccountProvider: any ManagedAccountProvider] = [:]
@@ -66,6 +71,23 @@ final class AccountsController {
         let home = URL(fileURLWithPath: account.homePath, isDirectory: true)
         try? await provider.prepareForLaunch(home: home)
         return provider.launchEnv(home: home)
+    }
+
+    /// The folder an account keeps its conversations in: a managed account's `CLAUDE_CONFIG_DIR` / `CODEX_HOME`, or for
+    /// the user's own login (`accountID` nil) their own config folder. Nil for an unknown account.
+    func conversationHome(_ kind: AccountProvider, accountID: UUID?) -> URL? {
+        if let accountID {
+            return model.accounts.first { $0.id == accountID && $0.provider == kind }
+                .map { URL(fileURLWithPath: $0.homePath, isDirectory: true) }
+        }
+        let (home, environment) = ownLoginHome
+        return switch kind {
+        case .claude:
+            ClaudeKeychainReader.defaultLoginConfigDir(environment: environment, realHome: home)
+                ?? home.appendingPathComponent(".claude", isDirectory: true)
+        case .codex:
+            CodexIdentity.defaultLoginHome(environment: environment, realHome: home)
+        }
     }
 
     /// Makes `accountID` (nil = the user's own login) the default for new sessions and for `claude`/`codex` typed in

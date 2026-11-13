@@ -80,6 +80,7 @@ struct SessionMenuItems: View {
             }
             Button("Start Again") { Task { await model.startAgain(session) } }
         }
+        if session.agent != .shell { ContinueWithAccountMenu(session: session) }
         Button("Copy Working Directory") { copy(session.cwd) }
         Divider()
         let layout = model.layout(containing: session.id)

@@ -99,9 +99,6 @@ extension AppModel {
 
     /// The focused session of the selected tab when it runs `provider`'s agent, with its account.
     func focusedSessionAccount(for provider: AccountProvider) -> SessionAccount? {
-        guard let context = selection, let id = activeSession(in: context),
-              let session = sessions.first(where: { $0.id == id }), session.agent.accountProvider == provider
-        else { return nil }
-        return sessionAccount(of: session)
+        focusedSession(for: provider).flatMap(sessionAccount(of:))
     }
 }

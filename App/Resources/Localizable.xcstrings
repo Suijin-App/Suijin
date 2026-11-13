@@ -4,6 +4,96 @@
     "" : {
 
     },
+    "%@ has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed." : {
+
+    },
+    "%@ reached on %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reached on %2$@."
+          }
+        }
+      }
+    },
+    "%@: %@. The original conversation was not changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@. The original conversation was not changed."
+          }
+        }
+      }
+    },
+    "Claude has not reported this conversation yet. Send it a message first." : {
+
+    },
+    "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here." : {
+
+    },
+    "Continue This Session With…" : {
+
+    },
+    "Continue With Another Account" : {
+
+    },
+    "Continue With…" : {
+
+    },
+    "Continue this conversation on another account, in this place" : {
+
+    },
+    "Continues this conversation on another account in the same place" : {
+
+    },
+    "Could not continue %@ with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not continue %1$@ with %2$@"
+          }
+        }
+      }
+    },
+    "Hide" : {
+
+    },
+    "Hide until the limit resets" : {
+
+    },
+    "Moving conversation to %@…" : {
+
+    },
+    "No other %@ account." : {
+
+    },
+    "Only Claude and Codex sessions can move to another account." : {
+
+    },
+    "Sevinda does not know which conversation this session had, so it cannot continue it." : {
+
+    },
+    "Sevinda does not know which conversation this session had." : {
+
+    },
+    "That account is no longer in Sevinda." : {
+
+    },
+    "The conversation's files would land outside the account's history folder, so nothing was moved." : {
+
+    },
+    "The other account already has a different copy of this conversation (%@). Sevinda left both copies as they are." : {
+
+    },
+    "The other account has no %@ folder yet. Sign in to it once, then try again." : {
+
+    },
+    "This session is starting." : {
+
+    },
     "Signed in as %@ now; this session started as %@ and keeps it until Codex asks to sign in again." : {
       "localizations" : {
         "en" : {

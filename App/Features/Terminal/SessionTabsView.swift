@@ -51,6 +51,8 @@ enum SessionPaneState: Hashable {
 
 extension AppModel {
     func paneState(of session: UUID) -> SessionPaneState {
+        // A conversation moving to another account covers the session from the click, while the old agent still ends.
+        if runtimes.movingConversation[session] != nil, sessions.contains(where: { $0.id == session }) { return .resuming }
         if runtimes.runtime(for: session) != nil {
             if runtimes.reconnecting.contains(session) { return .reconnecting }
             return runtimes.catchingUp.contains(session) ? .resuming : .terminal
@@ -84,16 +86,30 @@ struct SessionPaneContent: View {
                 .overlay {
                     switch state {
                     case .reconnecting: SessionProgressView(title: "Reconnecting to session…")
-                    case .resuming: SessionProgressView(title: "Resuming session…")
+                    case .resuming: resumingView
                     case .terminal, .ended, .missing: EmptyView()
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if state == .terminal, let record = model.sessions.first(where: { $0.id == session }), record.agent != .shell {
+                        UsageLimitBanner(session: record)
                     }
                 }
         } else if let record = model.sessions.first(where: { $0.id == session }) {
             switch state {
             case .reconnecting: SessionProgressView(title: "Reconnecting to session…")
-            case .resuming: SessionProgressView(title: "Resuming session…")
+            case .resuming: resumingView
             case .terminal, .ended, .missing: EndedSessionView(record: record, closeTitle: closeTitle)
             }
+        }
+    }
+
+    /// "Moving conversation to …" while the conversation changes account, "Resuming session…" otherwise.
+    @ViewBuilder private var resumingView: some View {
+        if let target = model.runtimes.movingConversation[session] {
+            SessionProgressView(title: "Moving conversation to \(target)…")
+        } else {
+            SessionProgressView(title: "Resuming session…")
         }
     }
 }
@@ -619,6 +635,13 @@ private struct EndedSessionView: View {
                     EqualWidthRow(spacing: SevindaSpacing.m) { actions }
                     VStack(spacing: SevindaSpacing.s) { actions }
                 }
+            }
+            if record.agent != .shell, !model.continueTargets(for: record).isEmpty {
+                ContinueWithAccountMenu(session: record)
+                    .menuStyle(.button)
+                    .glassButtonStyle()
+                    .fixedSize()
+                    .help(Text("Continue this conversation on another account, in this place"))
             }
         }
         .frame(maxWidth: canResume ? 520 : 440)

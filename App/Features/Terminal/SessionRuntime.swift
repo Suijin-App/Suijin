@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SevindaAccounts
 import SevindaAgents
 import SevindaCore
 import SevindaPTYProtocol
@@ -297,6 +298,90 @@ final class SessionRuntimeRegistry {
         } catch {
             model.presentedError = PresentedError(title: String(localized: "Could not resume \(ended.title)"),
                                                   message: error.localizedDescription)
+        }
+    }
+
+    /// Sessions whose conversation is moving to another account, with that account's name, from the click until the
+    /// agent runs under it. Their place shows a progress view meanwhile.
+    private(set) var movingConversation: [UUID: String] = [:]
+
+    /// Shows `id`'s moving progress toward `name` (nil hides it) without moving anything: for screenshots, whose
+    /// real move is over before it can be captured.
+    func previewMovingConversation(_ id: UUID, to name: String?) {
+        movingConversation[id] = name
+    }
+
+    /// The conversation `record` would continue with: what the running agent reported (or printed), else the one
+    /// stored on the record. Nil for a shell or an unknown or malformed id.
+    func continuableConversation(of record: AgentSessionRecord) -> String? {
+        guard record.agent != .shell else { return nil }
+        let live = runtimes[record.id].flatMap { $0.agent == .shell ? nil : Self.conversationID(of: $0) }
+        return (live ?? record.agentSessionID).flatMap(AgentResume.validSessionID)
+    }
+
+    /// Continues `session`'s conversation under another account of the same agent (`accountID` nil = the user's own
+    /// login), in the same tab or pane with the same folder and permission mode. The history files are checked first,
+    /// then the agent is ended if it runs, its history placed in the target account's folder (`ConversationTransfer`:
+    /// linked or copied, never moved or replacing anything), and the agent resumed there. On failure the session is
+    /// left ended on its own account with its history as it was, and the error is shown.
+    func continueConversation(_ session: AgentSessionRecord, onAccount accountID: UUID?, named targetName: String) async {
+        guard let current = model.sessions.first(where: { $0.id == session.id }),
+              let provider = current.agent.accountProvider, current.accountID != accountID,
+              !resuming.contains(current.id), movingConversation[current.id] == nil,
+              let conversation = continuableConversation(of: current) else { return }
+        let id = current.id
+        let failureTitle = String(localized: "Could not continue \(displayTitle(of: current)) with \(targetName)")
+        movingConversation[id] = targetName
+        resuming.insert(id)
+        defer {
+            movingConversation[id] = nil
+            resuming.remove(id)
+        }
+        guard let source = model.accountsController.conversationHome(provider, accountID: current.accountID),
+              let target = model.accountsController.conversationHome(provider, accountID: accountID) else {
+            model.presentedError = PresentedError(title: failureTitle,
+                                                  message: String(localized: "That account is no longer in Sevinda."))
+            return
+        }
+        let transfer = ConversationTransfer(provider: provider, conversationID: conversation, cwd: current.cwd,
+                                            source: source, target: target)
+        do {
+            // Before the agent is ended: a conversation that cannot move keeps running where it is.
+            _ = try await Task.detached { try transfer.plan() }.value
+        } catch {
+            model.presentedError = PresentedError(title: failureTitle, message: ConversationMove.message(for: error, agent: current.agent))
+            return
+        }
+        var original = current
+        if runtimes[id] != nil {
+            await release(id)
+            // Stored as ended: Sevinda ended it, so no notification, and it can still be resumed where it was.
+            original = model.sessions.first(where: { $0.id == id }) ?? current
+            original.state = .exited
+            original.endedAt = Date()
+            original.agentSessionID = conversation
+            await model.upsert(original)
+        }
+        do {
+            _ = try await Task.detached { try transfer.run() }.value
+        } catch {
+            model.presentedError = PresentedError(title: failureTitle, message: ConversationMove.message(for: error, agent: current.agent))
+            return
+        }
+        var moved = original
+        moved.accountID = accountID
+        moved.agentSessionID = conversation
+        if original.title == defaultTitle(agent: original.agent, accountID: original.accountID) {
+            moved.title = defaultTitle(agent: moved.agent, accountID: accountID)
+        }
+        if accountID != nil { launchLogins[id] = nil }
+        do {
+            let launch = try await makeLaunch(record: moved, cwd: URL(fileURLWithPath: moved.cwd, isDirectory: true),
+                                              accountID: accountID, prompt: nil, resume: conversation)
+            try await relaunch(moved, launch: launch, catchUp: true)
+        } catch {
+            await model.upsert(original)
+            model.presentedError = PresentedError(title: failureTitle, message: error.localizedDescription)
         }
     }
 

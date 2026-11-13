@@ -152,6 +152,12 @@ struct UsageDetailsPopover: View {
                 Text("Updated \(fetched, format: .relative(presentation: .named))")
                     .font(.caption).foregroundStyle(.tertiary)
             }
+            // The focused session can move to another account from here, where its limit shows.
+            if let session = model.focusedSession(for: provider), !model.continueTargets(for: session).isEmpty {
+                ContinueWithAccountMenu(session: session, title: "Continue This Session With…")
+                    .controlSize(.small)
+                    .fixedSize()
+            }
             Divider()
             HStack {
                 Button("Account Settings…") { withAnimation(.easeOut(duration: 0.18)) { model.settingsPage = .accounts } }

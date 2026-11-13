@@ -51,6 +51,8 @@ struct TerminalPane: View {
         let model = model, context = context, id = runtime.id
         // The route names this pane: ⌘W typed here closes this pane, whatever the model last marked as focused.
         view.onKeyRoute = { route in model.handle(route, in: context, from: id) }
+        // Dropped files become pasted paths, except while the session is reconnecting (nothing would receive them).
+        view.acceptsFileDrop = { !model.runtimes.reconnecting.contains(id) }
         let bases = linkBases
         // ⌘-clicking a link SwiftTerm found itself: with path links off, relative to the session's directory only, as
         // before path links existed.

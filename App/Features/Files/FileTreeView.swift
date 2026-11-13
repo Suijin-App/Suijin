@@ -11,7 +11,8 @@ private struct FileRow: Identifiable {
 
 /// The inspector's file browser: the context's folder as a tree of rows with their own fold chevrons (a flat list,
 /// so folders can be opened from code to reveal a path, which `List(children:)` cannot do). Choosing a file opens it
-/// in a viewer tab; choosing a folder folds or unfolds it. The tree follows changes on disk while it is shown.
+/// in a viewer tab; choosing a folder folds or unfolds it. Rows drag out as file URLs (onto a terminal, which pastes
+/// their paths, or to the Finder). The tree follows changes on disk while it is shown.
 struct FileTreeView: View {
     @Environment(AppModel.self) private var model
     let context: SessionContext
@@ -40,10 +41,12 @@ struct FileTreeView: View {
                     if filter.trimmingCharacters(in: .whitespaces).isEmpty {
                         ForEach(visibleRows) { row in
                             rowView(row.node, depth: row.depth).tag(row.node.url)
+                                .onDrag { Self.dragItem(for: row.node.url) }
                         }
                     } else {
                         ForEach(matches) { node in
                             rowView(node, depth: 0, showsFolder: true).tag(node.url)
+                                .onDrag { Self.dragItem(for: node.url) }
                         }
                     }
                 }
@@ -163,6 +166,12 @@ struct FileTreeView: View {
                 Button("Open in Default App") { NSWorkspace.shared.open(node.url) }
             }
         }
+    }
+
+    /// A row's drag payload: its file URL only (`public.file-url`, `public.url`), no plain text, so tab reordering and
+    /// pane targets ignore it, a terminal pastes the path and the Finder takes the file.
+    static func dragItem(for url: URL) -> NSItemProvider {
+        NSItemProvider(object: url.standardizedFileURL as NSURL)
     }
 
     private func toggle(_ path: String) {

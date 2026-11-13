@@ -31,6 +31,8 @@ open class SevindaTerminalView: TerminalView {
     public var onOpenLink: ((String) -> Bool)?
     public var onPasteReview: ((PasteReview, _ decide: @escaping @MainActor (TerminalInsertAction?) -> Void) -> Void)?
     public var pasteGuardPolicy: PasteGuardPolicy = .always
+    /// Whether dropped files are pasted as paths now (see `TerminalFileDrop`); nil takes every file drop.
+    public var acceptsFileDrop: (() -> Bool)?
 
     /// Smaller than any terminal anyone uses. A view in a container that is not laid out yet, or one collapsing during
     /// a tab switch, is briefly this small; resizing the emulator to it reflows every line into a few columns, which
@@ -68,6 +70,7 @@ open class SevindaTerminalView: TerminalView {
         // Like Terminal.app: Option composes characters (accents on a US layout) instead of acting as Meta.
         optionAsMetaKey = false
         setAccessibilityIdentifier("terminal.view")
+        registerForFileDrops()
         Self.installKeyMonitor()
     }
 
@@ -175,6 +178,7 @@ open class SevindaTerminalView: TerminalView {
         onOpenFileLink = nil
         linkMenuProvider = nil
         linkResolver = nil
+        acceptsFileDrop = nil
         pendingLinkOpen?.cancel()
         pendingLinkOpen = nil
     }

@@ -1,5 +1,5 @@
-import SevindaGit
-import SevindaUI
+import SuijinGit
+import SuijinUI
 import SwiftUI
 
 /// The inspector's source control sections: branch and push, the branch's pull request and checks, the commit message,
@@ -32,7 +32,7 @@ struct SourceControlPanel: View {
                 }
             } else if let error = state.statusError {
                 Label { Text(verbatim: error).textSelection(.enabled) } icon: {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SevindaColor.warningText)
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SuijinColor.warningText)
                 }
                 .font(.callout)
             } else {
@@ -40,7 +40,7 @@ struct SourceControlPanel: View {
             }
             if let success = state.lastSuccess {
                 Label { Text(verbatim: success).lineLimit(2) } icon: {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SevindaColor.ok)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SuijinColor.ok)
                 }
                 .font(.callout)
             }
@@ -136,7 +136,7 @@ private struct FileStatusRow: View {
 
     var body: some View {
         let code = FileStatusCode(entry: entry, staged: staged)
-        HStack(alignment: .firstTextBaseline, spacing: SevindaSpacing.xs) {
+        HStack(alignment: .firstTextBaseline, spacing: SuijinSpacing.xs) {
             Toggle(isOn: Binding(get: { staged }, set: { onToggle($0) })) { EmptyView() }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
@@ -151,7 +151,7 @@ private struct FileStatusRow: View {
                     Text(verbatim: folder).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
                 }
             }
-            Spacer(minLength: SevindaSpacing.xs)
+            Spacer(minLength: SuijinSpacing.xs)
             ChangeStatusBadge(letter: code.letter, color: code.color)
                 .help(code.description)
                 .accessibilityLabel(code.description)
@@ -168,20 +168,20 @@ struct FileStatusCode {
 
     init(entry: StatusEntry, staged: Bool) {
         if entry.isConflicted {
-            (letter, color, description) = ("!", SevindaColor.error, Text("Conflict"))
+            (letter, color, description) = ("!", SuijinColor.error, Text("Conflict"))
             return
         }
         if entry.isUntracked {
-            (letter, color, description) = ("U", SevindaColor.ok, Text("Untracked"))
+            (letter, color, description) = ("U", SuijinColor.ok, Text("Untracked"))
             return
         }
         switch staged ? entry.index : entry.worktree {
-        case .added: (letter, color, description) = ("A", SevindaColor.ok, Text("Added"))
-        case .deleted: (letter, color, description) = ("D", SevindaColor.error, Text("Deleted"))
+        case .added: (letter, color, description) = ("A", SuijinColor.ok, Text("Added"))
+        case .deleted: (letter, color, description) = ("D", SuijinColor.error, Text("Deleted"))
         case .renamed: (letter, color, description) = ("R", Color.accentColor, Text("Renamed"))
         case .copied: (letter, color, description) = ("C", Color.accentColor, Text("Copied"))
-        case .typeChanged: (letter, color, description) = ("T", SevindaColor.warning, Text("Type changed"))
-        default: (letter, color, description) = ("M", SevindaColor.warning, Text("Modified"))
+        case .typeChanged: (letter, color, description) = ("T", SuijinColor.warning, Text("Type changed"))
+        default: (letter, color, description) = ("M", SuijinColor.warning, Text("Modified"))
         }
     }
 }
@@ -196,13 +196,13 @@ struct AheadBehindLabel: View {
         } else if status.ahead == 0 && status.behind == 0 {
             Label("Up to date", systemImage: "checkmark").font(.callout).foregroundStyle(.secondary)
         } else {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 if status.ahead > 0 {
                     Label { Text("\(status.ahead) to push") } icon: { Image(systemName: "arrow.up") }
                 }
                 if status.behind > 0 {
                     Label { Text("\(status.behind) behind") } icon: { Image(systemName: "arrow.down") }
-                        .foregroundStyle(SevindaColor.warningText)
+                        .foregroundStyle(SuijinColor.warningText)
                 }
             }
             .font(.callout)

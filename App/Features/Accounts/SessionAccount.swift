@@ -1,6 +1,6 @@
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 
 /// The account an agent session uses, as its tab, sidebar row and the status bar describe it.
 ///
@@ -41,9 +41,9 @@ struct SessionAccount: Equatable {
         lhs?.lowercased() == rhs?.lowercased()
     }
 
-    /// "someone@example.com · Sevinda account" or "· Your own login".
+    /// "someone@example.com · Suijin account" or "· Your own login".
     var line: String {
-        let source = isManaged ? String(localized: "Sevinda account") : String(localized: "Your own login")
+        let source = isManaged ? String(localized: "Suijin account") : String(localized: "Your own login")
         guard let name, !name.isEmpty else { return source }
         return "\(name) · \(source)"
     }

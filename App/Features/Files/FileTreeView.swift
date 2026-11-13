@@ -1,5 +1,5 @@
 import AppKit
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
 /// The inspector's file browser: the context's folder as an outline (`FileOutline`). A click on a file opens it in a
@@ -17,7 +17,7 @@ struct FileTreeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 TextField("Filter", text: $filter, prompt: Text("Filter files"))
                     .textFieldStyle(.roundedBorder)
                 Button { tree?.reloadAll() } label: { Image(systemName: "arrow.clockwise") }
@@ -25,7 +25,7 @@ struct FileTreeView: View {
                     .help(Text("Reload the folder"))
                     .accessibilityLabel(Text("Reload"))
             }
-            .padding(SevindaSpacing.s)
+            .padding(SuijinSpacing.s)
             FileOutline(
                 content: .init(tree: tree, revision: tree?.revision ?? 0, matches: isFiltering ? matches : nil,
                                expanded: model.expandedFolders(in: context), reveal: reveal),

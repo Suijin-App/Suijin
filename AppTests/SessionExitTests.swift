@@ -1,11 +1,11 @@
 import AppKit
 import Foundation
-import SevindaAgents
-import SevindaCore
-import SevindaTerminal
+import SuijinAgents
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// An agent that exits on its own (Ctrl-C twice in Claude Code or Codex) must leave its pane for the Session Ended
 /// view: the dead terminal stays on screen otherwise, and nothing can be done in it. A small script stands in for the
@@ -43,7 +43,7 @@ struct SessionExitTests {
     }
 
     private func makeFixture() async throws -> Fixture {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-exit-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-exit-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let script = root.appendingPathComponent("fake-agent.sh")
@@ -58,7 +58,7 @@ struct SessionExitTests {
         while :; do sleep 0.1; done
         """.write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

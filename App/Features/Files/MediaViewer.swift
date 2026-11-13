@@ -3,7 +3,7 @@ import AVFoundation
 import AVKit
 import QuickLookThumbnailing
 import QuickLookUI
-import SevindaUI
+import SuijinUI
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -238,11 +238,11 @@ struct MediaPlayerTab: View {
     }
 
     private func audioLayout(_ player: AVPlayer) -> some View {
-        VStack(spacing: SevindaSpacing.l) {
+        VStack(spacing: SuijinSpacing.l) {
             Spacer(minLength: 0)
             Image(nsImage: FileIcons.largeIcon(forPath: path))
                 .accessibilityHidden(true)
-            VStack(spacing: SevindaSpacing.xs) {
+            VStack(spacing: SuijinSpacing.xs) {
                 Text(verbatim: url.lastPathComponent)
                     .font(.title3.weight(.semibold))
                     .lineLimit(2)
@@ -263,7 +263,7 @@ struct MediaPlayerTab: View {
                 .accessibilityLabel(Text("Audio player"))
             Spacer(minLength: 0)
         }
-        .padding(SevindaSpacing.xl)
+        .padding(SuijinSpacing.xl)
     }
 }
 

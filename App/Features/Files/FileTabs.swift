@@ -16,7 +16,7 @@ extension AppModel {
         if selectedTab[context] == .file(path) { selectedTab[context] = nil }
     }
 
-    /// Handles a link ⌘-clicked in a terminal of `context`: files open in a viewer tab (Finder only for files Sevinda
+    /// Handles a link ⌘-clicked in a terminal of `context`: files open in a viewer tab (Finder only for files Suijin
     /// cannot show), folders in the inspector's file tree; web and mail links return `false` so the terminal opens
     /// them in their default app. Relative paths are resolved against `directory`, the session's working directory; a
     /// `:line` or `:line:column` suffix is split off (`TerminalPathResolver.locations(for:bases:)`).
@@ -38,7 +38,7 @@ extension AppModel {
 
     /// Opens a path from a terminal in the app: a folder in the inspector's file tree (the inspector opens on its Files
     /// tab), a file in a viewer tab (at its line, when the path named one and the viewer shows code), or in Finder when
-    /// Sevinda cannot show it.
+    /// Suijin cannot show it.
     func openTerminalPath(_ resolved: ResolvedTerminalPath, in context: SessionContext) {
         let standardized = resolved.url.standardizedFileURL
         if resolved.isDirectory {
@@ -53,7 +53,7 @@ extension AppModel {
         }
     }
 
-    /// Opens a file in a viewer tab, or shows it in Finder when Sevinda cannot display it (binary, unknown format).
+    /// Opens a file in a viewer tab, or shows it in Finder when Suijin cannot display it (binary, unknown format).
     /// Returns whether it opened in the app.
     @discardableResult
     func open(fileAt url: URL, in context: SessionContext) -> Bool {

@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The Shortcuts settings list `ShortcutCatalog`; these tests keep it equal to the real bindings.
 @MainActor

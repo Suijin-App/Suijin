@@ -1,7 +1,7 @@
 import Foundation
-import SevindaAccounts
-import SevindaAgents
-import SevindaCore
+import SuijinAccounts
+import SuijinAgents
+import SuijinCore
 import Observation
 
 /// Managed accounts at runtime: the two providers, usage of the managed accounts and of the user's own default
@@ -26,13 +26,13 @@ final class AccountsController {
     /// Reads the default logins read-only; tokens never leave the request. The test host reads an empty home instead of
     /// the user's own logins; tests point it at a home they fill.
     @ObservationIgnored var defaultLoginReader = UserNotifier.isTestHost
-        ? DefaultLoginUsageReader(realHome: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-no-login"),
+        ? DefaultLoginUsageReader(realHome: FileManager.default.temporaryDirectory.appendingPathComponent("suijin-no-login"),
                                   environment: [:])
         : DefaultLoginUsageReader()
     /// The home folder and environment the user's own `~/.claude` (or `CLAUDE_CONFIG_DIR`) and `~/.codex` (or
     /// `CODEX_HOME`) are found from, for moving a conversation there. The test host uses an empty home that tests fill.
     @ObservationIgnored var ownLoginHome = UserNotifier.isTestHost
-        ? (home: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-no-login"), environment: [String: String]())
+        ? (home: FileManager.default.temporaryDirectory.appendingPathComponent("suijin-no-login"), environment: [String: String]())
         : (home: URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true), environment: ProcessInfo.processInfo.environment)
     @ObservationIgnored private var pollTask: Task<Void, Never>?
     @ObservationIgnored private var identityTask: Task<Void, Never>?
@@ -91,7 +91,7 @@ final class AccountsController {
     }
 
     /// Makes `accountID` (nil = the user's own login) the default for new sessions and for `claude`/`codex` typed in
-    /// Sevinda terminals. With `movesSessions` (the user chose it), running sessions follow when Settings asks for that.
+    /// Suijin terminals. With `movesSessions` (the user chose it), running sessions follow when Settings asks for that.
     func setDefault(_ accountID: UUID?, for kind: AccountProvider, movesSessions: Bool = true) async {
         let key: SettingKey = kind == .claude ? .defaultClaudeAccount : .defaultCodexAccount
         let previous = model.defaultAccount(for: kind)?.id
@@ -130,8 +130,8 @@ final class AccountsController {
     func startPolling() {
         pollTask?.cancel()
         #if DEBUG
-        // `-SevindaPreviewUsage 1` (or `failed`) shows sample usage for screenshots, without any network request.
-        if let preview = UserDefaults.standard.string(forKey: "SevindaPreviewUsage") {
+        // `-SuijinPreviewUsage 1` (or `failed`) shows sample usage for screenshots, without any network request.
+        if let preview = UserDefaults.standard.string(forKey: "SuijinPreviewUsage") {
             fillPreviewUsage(failedCodex: preview == "failed")
             return
         }

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Produce a release of Sevinda outside the Mac App Store (docs/release-process.md):
+# Produce a release of Suijin outside the Mac App Store (docs/release-process.md):
 #   archive (Release, hardened runtime) → export with Developer ID → check the nested PTY host helper is signed with
 #   Developer ID, hardened runtime and a timestamp (re-sign inside out if not) → verify the app → notarize and staple
 #   the app → DMG (scripts/make-dmg.sh) → notarize and staple the DMG → Gatekeeper checks.
@@ -16,12 +16,12 @@
 #              Without a Developer ID certificate it signs with Apple Development and says so.
 #
 # Environment (all optional; none of them holds a secret):
-#   SEVINDA_NOTARY_PROFILE     notarytool keychain profile name (default: sevinda-notary). The owner creates it once
-#                              with `xcrun notarytool store-credentials`; the password stays in the Keychain.
-#   SEVINDA_TEAM_ID            Apple team (default: YWSHDN5Y3H, Tekmium Solutions).
-#   SEVINDA_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
-#                              the team found in the Keychain).
-#   SEVINDA_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).
+#   SUIJIN_NOTARY_PROFILE     notarytool keychain profile name (default: suijin-notary). The owner creates it once
+#                             with `xcrun notarytool store-credentials`; the password stays in the Keychain.
+#   SUIJIN_TEAM_ID            Apple team (default: YWSHDN5Y3H, Tekmium Solutions).
+#   SUIJIN_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
+#                             the team found in the Keychain).
+#   SUIJIN_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).
 #
 # Nothing here writes or prints a private key or password: notarytool reads its profile from the login Keychain.
 set -euo pipefail
@@ -38,10 +38,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-NOTARY_PROFILE="${SEVINDA_NOTARY_PROFILE:-sevinda-notary}"
-TEAM_ID="${SEVINDA_TEAM_ID:-YWSHDN5Y3H}"
-APP_ID="com.tekmium.sevinda"
-HELPER_ID="com.tekmium.sevinda.ptyhost"
+NOTARY_PROFILE="${SUIJIN_NOTARY_PROFILE:-suijin-notary}"
+TEAM_ID="${SUIJIN_TEAM_ID:-YWSHDN5Y3H}"
+APP_ID="com.tekmium.suijin"
+HELPER_ID="com.tekmium.suijin.ptyhost"
 
 STEP=0
 BLOCKERS=()
@@ -77,17 +77,17 @@ plist_value() { /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null || true;
 VERSION="$(project_setting MARKETING_VERSION)"
 BUILD_NUMBER="$(project_setting CURRENT_PROJECT_VERSION)"
 [ -n "$VERSION" ] && [ -n "$BUILD_NUMBER" ] || die "cannot read MARKETING_VERSION / CURRENT_PROJECT_VERSION from project.yml"
-OUT="${SEVINDA_RELEASE_DIR:-$ROOT/build/release/$VERSION}"
-ARCHIVE="$OUT/Sevinda.xcarchive"
+OUT="${SUIJIN_RELEASE_DIR:-$ROOT/build/release/$VERSION}"
+ARCHIVE="$OUT/Suijin.xcarchive"
 EXPORT="$OUT/export"
-APP="$EXPORT/Sevinda.app"
-HELPER="$APP/Contents/MacOS/SevindaPTYHost"
+APP="$EXPORT/Suijin.app"
+HELPER="$APP/Contents/MacOS/SuijinPTYHost"
 DERIVED="$OUT/DerivedData"
-DMG="$OUT/Sevinda-$VERSION.dmg"
-APP_ZIP="$OUT/Sevinda-$VERSION-notarize.zip"
+DMG="$OUT/Suijin-$VERSION.dmg"
+APP_ZIP="$OUT/Suijin-$VERSION-notarize.zip"
 EXPORT_OPTIONS="$OUT/ExportOptions.plist"
 
-printf 'Sevinda release %s (%s)%s\n' "$VERSION" "$BUILD_NUMBER" \
+printf 'Suijin release %s (%s)%s\n' "$VERSION" "$BUILD_NUMBER" \
   "$([ "$DRY_RUN" = 1 ] && echo ' — DRY RUN: builds and signs locally, nothing is notarized or published')"
 note "output:          $OUT"
 note "notary profile:  $NOTARY_PROFILE"
@@ -102,14 +102,14 @@ for tool in notarytool stapler; do
 done
 note "tools found"
 # Updates stay off until there is an update host: the app must not point Sparkle anywhere yet.
-[ -z "$(plist_value App/Info.plist SUFeedURL)" ] || block "App/Info.plist has a SUFeedURL; updates are not set up for Sevinda yet (docs/release-process.md)"
+[ -z "$(plist_value App/Info.plist SUFeedURL)" ] || block "App/Info.plist has a SUFeedURL; updates are not set up for Suijin yet (docs/release-process.md)"
 
 # Lists certificate names only; private keys never leave the Keychain.
 IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 DEVELOPER_ID="$(sed -n "s/.*\"\(Developer ID Application: .*($TEAM_ID)\)\"/\1/p" <<<"$IDENTITIES" | head -1)"
 EXPORT_METHOD="developer-id"
-if [ -n "${SEVINDA_SIGNING_IDENTITY:-}" ]; then
-  IDENTITY="$SEVINDA_SIGNING_IDENTITY"
+if [ -n "${SUIJIN_SIGNING_IDENTITY:-}" ]; then
+  IDENTITY="$SUIJIN_SIGNING_IDENTITY"
 elif [ -n "$DEVELOPER_ID" ]; then
   IDENTITY="$DEVELOPER_ID"
 elif [ "$DRY_RUN" = 1 ]; then
@@ -129,18 +129,18 @@ run rm -rf "$ARCHIVE" "$EXPORT"
 run mkdir -p "$OUT"
 run xcodegen generate --quiet
 LOG="$OUT/archive.log"
-show xcodebuild archive -project Sevinda.xcodeproj -scheme Sevinda -configuration Release \
+show xcodebuild archive -project Suijin.xcodeproj -scheme Suijin -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath "$DERIVED" \
   -skipPackagePluginValidation -allowProvisioningUpdates -packageAuthorizationProvider netrc \
   ENABLE_HARDENED_RUNTIME=YES DEVELOPMENT_TEAM="$TEAM_ID"
 note "(log: $LOG)"
-xcodebuild archive -project Sevinda.xcodeproj -scheme Sevinda -configuration Release \
+xcodebuild archive -project Suijin.xcodeproj -scheme Suijin -configuration Release \
   -destination 'generic/platform=macOS' -archivePath "$ARCHIVE" -derivedDataPath "$DERIVED" \
   -skipPackagePluginValidation -allowProvisioningUpdates -packageAuthorizationProvider netrc \
   ENABLE_HARDENED_RUNTIME=YES DEVELOPMENT_TEAM="$TEAM_ID" >"$LOG" 2>&1 \
   || { grep -E "error:" "$LOG" | sort -u | head -20 >&2; die "archive failed; see $LOG"; }
-[ -x "$ARCHIVE/Products/Applications/Sevinda.app/Contents/MacOS/SevindaPTYHost" ] \
-  || die "the archived app does not contain Contents/MacOS/SevindaPTYHost"
+[ -x "$ARCHIVE/Products/Applications/Suijin.app/Contents/MacOS/SuijinPTYHost" ] \
+  || die "the archived app does not contain Contents/MacOS/SuijinPTYHost"
 note "archived $ARCHIVE"
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -170,9 +170,9 @@ if ! xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$EXPORT" -ex
   # same development identity, so a dry run can go on with it and re-sign below.
   warn "development export failed (see $LOG); using the archived app"
   run mkdir -p "$EXPORT"
-  run ditto "$ARCHIVE/Products/Applications/Sevinda.app" "$APP"
+  run ditto "$ARCHIVE/Products/Applications/Suijin.app" "$APP"
 fi
-[ -d "$APP" ] || die "export produced no Sevinda.app in $EXPORT"
+[ -d "$APP" ] || die "export produced no Suijin.app in $EXPORT"
 note "exported $APP"
 
 # ---------------------------------------------------------------------------------------------------------------------

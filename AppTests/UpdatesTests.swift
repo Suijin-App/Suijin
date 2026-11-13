@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The pieces of the update flow that run without a network or a release: the public key gate and the helper
 /// handover comparison.

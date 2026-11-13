@@ -1,26 +1,26 @@
 import Foundation
-import SevindaCore
-import SevindaDiff
-import SevindaGit
+import SuijinCore
+import SuijinDiff
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Builds a data root for looking at diff notes and the side-by-side diff in the real app:
-/// `TEST_RUNNER_SEVINDA_NOTES_SEED_ROOT=<dir> xcodebuild test -only-testing:SevindaAppTests/DiffNotesSeedTests`, then
-/// launch Sevinda with `SEVINDA_DATA_ROOT=<dir>/data -SevindaInitialTab changes`. It holds a git workspace with one
+/// `TEST_RUNNER_SUIJIN_NOTES_SEED_ROOT=<dir> xcodebuild test -only-testing:SuijinAppTests/DiffNotesSeedTests`, then
+/// launch Suijin with `SUIJIN_DATA_ROOT=<dir>/data -SuijinInitialTab changes`. It holds a git workspace with one
 /// worktree whose changes carry line, range, file, sent and stale notes, and selects that worktree.
 ///
-/// With `SEVINDA_NOTES_SEED_CLAUDE=1` it also starts the real `claude` in the worktree (no prompt, nothing is sent to a
+/// With `SUIJIN_NOTES_SEED_CLAUDE=1` it also starts the real `claude` in the worktree (no prompt, nothing is sent to a
 /// model), pastes the unsent notes into its prompt the way "Send to agent" does, without pressing Return, and checks
 /// the prompt took them as one paste; the session keeps running so the app attaches to it (see
-/// `SEVINDA_NOTES_SEED_CLAUDE_DIR` below for Claude's folder trust). `SEVINDA_NOTES_SEED_CLEANUP=1`
+/// `SUIJIN_NOTES_SEED_CLAUDE_DIR` below for Claude's folder trust). `SUIJIN_NOTES_SEED_CLEANUP=1`
 /// ends the sessions of that data root again.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_ROOT"] != nil))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_ROOT"] != nil))
 struct DiffNotesSeedTests {
     private var base: URL {
         get throws {
-            URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_ROOT"]), isDirectory: true)
+            URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_ROOT"]), isDirectory: true)
         }
     }
 
@@ -33,14 +33,14 @@ struct DiffNotesSeedTests {
         return condition()
     }
 
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_CLEANUP"] != "1"))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_CLEANUP"] != "1"))
     func seed() async throws {
         let base = try base
         try? FileManager.default.removeItem(at: base)
         let repo = base.appendingPathComponent("review-demo", isDirectory: true)
         try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
         let git = GitRunner()
-        let identity = ["-c", "user.name=Sevinda Demo", "-c", "user.email=demo@example.invalid"]
+        let identity = ["-c", "user.name=Suijin Demo", "-c", "user.email=demo@example.invalid"]
         _ = try await git.run(["init", "-b", "main"], in: repo)
         // Listed first among the changes, so the Changes tab opens on it.
         try FileManager.default.createDirectory(at: repo.appendingPathComponent("App"), withIntermediateDirectories: true)
@@ -50,7 +50,7 @@ struct DiffNotesSeedTests {
         _ = try await git.run(identity + ["commit", "-m", "initial"], in: repo)
 
         let dataRoot = base.appendingPathComponent("data", isDirectory: true)
-        let store = try SevindaStore(url: SevindaPaths.database(in: dataRoot))
+        let store = try SuijinStore(url: SuijinPaths.database(in: dataRoot))
         let model = AppModel(store: store, dataRoot: dataRoot)
         await model.addWorkspace(at: repo)
         let workspaceID = try #require(model.workspaces.first).id
@@ -81,13 +81,13 @@ struct DiffNotesSeedTests {
         for item in notes { try store.save(item) }
         try store.setSetting("ui.lastSelection", SessionContext.worktree(tree.id).storageValue)
 
-        guard ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_CLAUDE"] == "1" else { return }
+        guard ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_CLAUDE"] == "1" else { return }
         await model.runtimes.bootstrap()
         // Claude asks before working in a folder it has not been trusted with, and this test never answers that
-        // dialog. `SEVINDA_NOTES_SEED_CLAUDE_DIR` names a folder Claude already trusts to run in instead (as a plain
+        // dialog. `SUIJIN_NOTES_SEED_CLAUDE_DIR` names a folder Claude already trusts to run in instead (as a plain
         // folder workspace; nothing is submitted, so nothing there changes).
         var context = SessionContext.worktree(tree.id)
-        if let trusted = ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_CLAUDE_DIR"] {
+        if let trusted = ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_CLAUDE_DIR"] {
             await model.addWorkspace(at: URL(fileURLWithPath: trusted, isDirectory: true))
             let folder = try #require(model.workspaces.first { $0.path == URL(fileURLWithPath: trusted).standardizedFileURL.path })
             context = .workspace(folder.id)
@@ -117,10 +117,10 @@ struct DiffNotesSeedTests {
         await model.runtimes.prepareForQuit()
     }
 
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_NOTES_SEED_CLEANUP"] == "1"))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_CLEANUP"] == "1"))
     func cleanup() async throws {
         let dataRoot = try base.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.load()
         await model.runtimes.bootstrap()
         for session in model.sessions { await model.closeSession(session.id) }

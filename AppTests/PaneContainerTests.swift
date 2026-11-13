@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The split tab's container: native split views sized by the layout, minimum pane sizes, double-click to share a
 /// split equally, and the pane shortcuts a terminal routes to the model.
@@ -31,10 +31,10 @@ struct PaneContainerTests {
     }
 
     private func makeSplitTab() async throws -> (AppModel, SessionContext, PaneLayout, NSWindow, URL) {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-container-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-container-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspaceID = try #require(model.workspaces.first).id
         let context = SessionContext.workspace(workspaceID)

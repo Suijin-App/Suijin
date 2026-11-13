@@ -1,5 +1,5 @@
 import AppKit
-import SevindaTerminal
+import SuijinTerminal
 import SwiftUI
 
 /// Hosts a live session's terminal view. The view belongs to the session, so switching tabs keeps its screen.
@@ -142,7 +142,7 @@ struct TerminalPane: View {
 /// reads as one surface. `onFocus` runs whenever the terminal really becomes the window's first responder (a click,
 /// the app or AppKit moving the keyboard), so the model's focused pane follows the keyboard.
 private struct TerminalViewHost: NSViewRepresentable {
-    let view: SevindaTerminalView
+    let view: SuijinTerminalView
     let background: NSColor
     let isFocused: Bool
     let onFocus: @MainActor () -> Void
@@ -183,7 +183,7 @@ private struct TerminalViewHost: NSViewRepresentable {
 /// path reports `onFocus`, and the keyboard falling to the window itself (the focused pane next to this one closed,
 /// so its view left the window) is taken back when this pane should have it.
 private final class FocusingContainer: NSView {
-    weak var terminal: SevindaTerminalView?
+    weak var terminal: SuijinTerminalView?
     var wantsFocus = false
     var onFocus: (@MainActor () -> Void)?
     private var observation: NSKeyValueObservation?

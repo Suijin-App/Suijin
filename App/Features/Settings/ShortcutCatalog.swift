@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaDiff
+import SuijinCore
+import SuijinDiff
 import SwiftUI
 
 /// The sections of the Shortcuts settings, in display order.
@@ -44,7 +44,7 @@ struct MouseGesture: Identifiable {
     let systemImage: String
 }
 
-/// Every keyboard shortcut and mouse gesture of Sevinda. The single source of truth: menu commands and buttons bind
+/// Every keyboard shortcut and mouse gesture of Suijin. The single source of truth: menu commands and buttons bind
 /// `ShortcutCatalog.<entry>.shortcut`, and tests check the terminal key routes against these entries.
 @MainActor
 enum ShortcutCatalog {
@@ -146,11 +146,11 @@ enum ShortcutCatalog {
     static let keyboardShortcuts = AppShortcut(id: "keyboardShortcuts", title: "Keyboard Shortcuts",
                                                detail: "Open this list from the Help menu.",
                                                group: .app, shortcut: KeyboardShortcut("/", modifiers: .command))
-    static let closeSettings = AppShortcut(id: "closeSettings", title: "Back to Sevinda",
+    static let closeSettings = AppShortcut(id: "closeSettings", title: "Back to Suijin",
                                            detail: "Leave Settings or the welcome tour, or cancel a sheet.",
                                            group: .app, shortcut: .cancelAction)
     static let designGallery = AppShortcut(id: "designGallery", title: "Design Gallery",
-                                           detail: "Open the gallery of Sevinda’s controls in a window of its own.",
+                                           detail: "Open the gallery of Suijin’s controls in a window of its own.",
                                            group: .app, shortcut: KeyboardShortcut("g", modifiers: [.command, .option, .shift]))
 
     /// Every keyboard shortcut, in display order within each group.

@@ -1,6 +1,6 @@
-import SevindaCore
-import SevindaPTYProtocol
-import SevindaUI
+import SuijinCore
+import SuijinPTYProtocol
+import SuijinUI
 import SwiftUI
 
 /// Orchestration in the inspector, for the session the selected tab shows: a worker's task, status and messages, or a
@@ -32,7 +32,7 @@ struct OrchestrationInspectorSection: View {
                     Text("Workers")
                 } footer: {
                     if let problem = orchestration.problem {
-                        Text(verbatim: problem).font(.caption).foregroundStyle(SevindaColor.warningText)
+                        Text(verbatim: problem).font(.caption).foregroundStyle(SuijinColor.warningText)
                     }
                 }
             }
@@ -48,7 +48,7 @@ private struct DispatchHeader: View {
             Image(systemName: dispatch.status.systemImage).foregroundStyle(dispatch.status.color)
             AgentLogo(agent: dispatch.agent == .claude ? .claude : .codex, size: 12)
             Text(verbatim: dispatch.name).lineLimit(1).truncationMode(.tail)
-            Spacer(minLength: SevindaSpacing.xs)
+            Spacer(minLength: SuijinSpacing.xs)
             dispatch.status.label.font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -92,7 +92,7 @@ private struct DispatchDetails: View {
         if let note = dispatch.lastError {
             Label { Text(verbatim: note) } icon: { Image(systemName: "exclamationmark.triangle") }
                 .font(.callout)
-                .foregroundStyle(SevindaColor.warningText)
+                .foregroundStyle(SuijinColor.warningText)
         }
         let messages = orchestration.messages(of: dispatch)
         if messages.isEmpty {
@@ -111,7 +111,7 @@ private struct MessageRow: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Image(systemName: symbol)
-                .foregroundStyle(message.kind == .escalation ? SevindaColor.warning : Color.secondary)
+                .foregroundStyle(message.kind == .escalation ? SuijinColor.warning : Color.secondary)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {

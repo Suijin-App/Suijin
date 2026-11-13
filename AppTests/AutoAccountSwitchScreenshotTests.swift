@@ -1,21 +1,21 @@
 import AppKit
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Renders automatic account switching for review: Settings → Accounts with both switches on and a fallback order, and
 /// the note a session's pane shows after it moved, narrow and wide, light and dark. Opt-in with
-/// `TEST_RUNNER_SEVINDA_AUTOSWITCH_SHOT=<file>`: at each step the file receives `<name> <window number>` and the caller
+/// `TEST_RUNNER_SUIJIN_AUTOSWITCH_SHOT=<file>`: at each step the file receives `<name> <window number>` and the caller
 /// captures that window with `screencapture -l`. The borderless window sits at the desktop's level, behind every app
 /// window and the desktop icons, ignores the mouse and is ordered in without activating the app, so nothing comes to
 /// the front or takes focus. A stand-in `claude` script runs instead of the real one.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_AUTOSWITCH_SHOT"] != nil))
+@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_AUTOSWITCH_SHOT"] != nil))
 struct AutoAccountSwitchScreenshotTests {
-    let output = ProcessInfo.processInfo.environment["SEVINDA_AUTOSWITCH_SHOT"] ?? ""
+    let output = ProcessInfo.processInfo.environment["SUIJIN_AUTOSWITCH_SHOT"] ?? ""
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) async throws {
         let window = NSWindow(contentRect: CGRect(origin: CGPoint(x: 0, y: 0), size: size), styleMask: [.borderless],
@@ -37,7 +37,7 @@ struct AutoAccountSwitchScreenshotTests {
     }
 
     @Test func autoSwitchViews() async throws {
-        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-autoswitch-shots-\(UUID().uuidString)", isDirectory: true)
+        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-autoswitch-shots-\(UUID().uuidString)", isDirectory: true)
         let folder = raw.appendingPathComponent("my-project", isDirectory: true)
         let bin = raw.appendingPathComponent("bin", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -47,7 +47,7 @@ struct AutoAccountSwitchScreenshotTests {
         try "#!/bin/sh\nprintf 'Resumed conversation.\\n'\nIFS= read -r line\n".write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
 
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: raw.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: raw.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context

@@ -1,4 +1,4 @@
-name: Sevinda
+name: Suijin
 options:
   bundleIdPrefix: com.tekmium
   deploymentTarget:
@@ -7,19 +7,19 @@ options:
   createIntermediateGroups: true
   groupSortPosition: top
 
-# Package boundaries are documented in docs/architecture.md. SwiftTerm (pinned in Packages/SevindaTerminal) ships a
+# Package boundaries are documented in docs/architecture.md. SwiftTerm (pinned in Packages/SuijinTerminal) ships a
 # build-tool plugin, so command-line builds pass `-skipPackagePluginValidation`, and its Metal renderer needs the
 # Metal Toolchain (`xcodebuild -downloadComponent metalToolchain`).
 packages:
-  SevindaUI:          { path: Packages/SevindaUI }
-  SevindaCore:        { path: Packages/SevindaCore }
-  SevindaGit:         { path: Packages/SevindaGit }
-  SevindaPTYProtocol: { path: Packages/SevindaPTYProtocol }
-  SevindaTerminal:    { path: Packages/SevindaTerminal }
-  SevindaAgents:      { path: Packages/SevindaAgents }
-  SevindaAccounts:    { path: Packages/SevindaAccounts }
-  SevindaDiff:        { path: Packages/SevindaDiff }
-  SevindaUsage:       { path: Packages/SevindaUsage }
+  SuijinUI:          { path: Packages/SuijinUI }
+  SuijinCore:        { path: Packages/SuijinCore }
+  SuijinGit:         { path: Packages/SuijinGit }
+  SuijinPTYProtocol: { path: Packages/SuijinPTYProtocol }
+  SuijinTerminal:    { path: Packages/SuijinTerminal }
+  SuijinAgents:      { path: Packages/SuijinAgents }
+  SuijinAccounts:    { path: Packages/SuijinAccounts }
+  SuijinDiff:        { path: Packages/SuijinDiff }
+  SuijinUsage:       { path: Packages/SuijinUsage }
   # Native SwiftUI Markdown rendering (tables, code blocks) for the file viewer tab. Pinned exactly.
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui
@@ -42,49 +42,49 @@ settings:
     CODE_SIGN_STYLE: Automatic
 
 targets:
-  Sevinda:
+  Suijin:
     type: application
     platform: macOS
     sources:
       - path: App
         excludes:
-          - "Sevinda.entitlements"
+          - "Suijin.entitlements"
           - "Info.plist"
           - "Resources/LaunchAgents/**"
           - "Resources/Skills/**"
-      # Agent skills keep their folder layout (Contents/Resources/Skills/<skill>/SKILL.md): `sevinda skills get` reads
-      # them there, and Sevinda copies them into agent homes.
+      # Agent skills keep their folder layout (Contents/Resources/Skills/<skill>/SKILL.md): `suijin skills get` reads
+      # them there, and Suijin copies them into agent homes.
       - path: App/Resources/Skills
         type: folder
         buildPhase: resources
       # launchd reads the helper's plist from Contents/Library/LaunchAgents (SMAppService.agent(plistName:)).
-      - path: App/Resources/LaunchAgents/com.tekmium.sevinda.ptyhost.plist
+      - path: App/Resources/LaunchAgents/com.tekmium.suijin.ptyhost.plist
         buildPhase:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchAgents
     dependencies:
-      - package: SevindaUI
-      - package: SevindaCore
-      - package: SevindaGit
-      - package: SevindaPTYProtocol
-        product: SevindaPTYProtocol
-      - package: SevindaTerminal
-      - package: SevindaAgents
-      - package: SevindaAccounts
-      - package: SevindaDiff
-      - package: SevindaUsage
+      - package: SuijinUI
+      - package: SuijinCore
+      - package: SuijinGit
+      - package: SuijinPTYProtocol
+        product: SuijinPTYProtocol
+      - package: SuijinTerminal
+      - package: SuijinAgents
+      - package: SuijinAccounts
+      - package: SuijinDiff
+      - package: SuijinUsage
       - package: MarkdownUI
       - package: Sparkle
-      # The PTY host ships next to the app executable (Contents/MacOS/SevindaPTYHost).
-      - target: SevindaPTYHost
+      # The PTY host ships next to the app executable (Contents/MacOS/SuijinPTYHost).
+      - target: SuijinPTYHost
         embed: true
         codeSign: false
         copy:
           destination: executables
-      # `sevinda` goes in its own folder (Contents/Helpers) so only it lands on the PATH of Sevinda's terminals; it
-      # cannot sit in Contents/MacOS next to `Sevinda` on a case-insensitive volume.
-      - target: SevindaCLI
+      # `suijin` goes in its own folder (Contents/Helpers) so only it lands on the PATH of Suijin's terminals; it
+      # cannot sit in Contents/MacOS next to `Suijin` on a case-insensitive volume.
+      - target: SuijinCLI
         embed: true
         codeSign: false
         copy:
@@ -92,55 +92,55 @@ targets:
           subpath: Contents/Helpers
     settings:
       base:
-        PRODUCT_NAME: Sevinda
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda
+        PRODUCT_NAME: Suijin
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.suijin
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: App/Info.plist
-        CODE_SIGN_ENTITLEMENTS: App/Sevinda.entitlements
+        CODE_SIGN_ENTITLEMENTS: App/Suijin.entitlements
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   # launchd agent that owns every terminal so sessions survive the app quitting (docs/architecture.md).
-  SevindaPTYHost:
+  SuijinPTYHost:
     type: tool
     platform: macOS
     sources:
-      - path: Helpers/SevindaPTYHost
+      - path: Helpers/SuijinPTYHost
     dependencies:
-      - package: SevindaPTYProtocol
-        product: SevindaPTYProtocol
-      - package: SevindaPTYProtocol
-        product: SevindaPTYHostKit
+      - package: SuijinPTYProtocol
+        product: SuijinPTYProtocol
+      - package: SuijinPTYProtocol
+        product: SuijinPTYHostKit
     settings:
       base:
-        PRODUCT_NAME: SevindaPTYHost
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.ptyhost
+        PRODUCT_NAME: SuijinPTYHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.suijin.ptyhost
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
         SKIP_INSTALL: YES
 
-  # `sevinda`, the orchestration command agents run in Sevinda's terminals (docs/architecture.md). Its logic is
-  # SevindaCLIKit in Packages/SevindaPTYProtocol.
-  SevindaCLI:
+  # `suijin`, the orchestration command agents run in Suijin's terminals (docs/architecture.md). Its logic is
+  # SuijinCLIKit in Packages/SuijinPTYProtocol.
+  SuijinCLI:
     type: tool
     platform: macOS
     sources:
-      - path: Tools/SevindaCLI
+      - path: Tools/SuijinCLI
     dependencies:
-      - package: SevindaPTYProtocol
-        product: SevindaCLIKit
+      - package: SuijinPTYProtocol
+        product: SuijinCLIKit
     settings:
       base:
-        PRODUCT_NAME: sevinda
-        # The binary is `sevinda`, but its Swift module must not be: on a case-insensitive disk `sevinda.swiftmodule`
-        # and the app's `Sevinda.swiftmodule` are the same file in the build folder, and the app tests fail to load.
-        PRODUCT_MODULE_NAME: SevindaCLI
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.cli
+        PRODUCT_NAME: suijin
+        # The binary is `suijin`, but its Swift module must not be: on a case-insensitive disk `suijin.swiftmodule`
+        # and the app's `Suijin.swiftmodule` are the same file in the build folder, and the app tests fail to load.
+        PRODUCT_MODULE_NAME: SuijinCLI
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.suijin.cli
         ENABLE_HARDENED_RUNTIME: YES
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
@@ -149,27 +149,27 @@ targets:
 
   # Tests hosted in the signed app, for what `swift test` cannot reach: the PTY host registered with launchd,
   # the app model driving git, terminals and accounts together, and offscreen screenshots of the windows.
-  SevindaAppTests:
+  SuijinAppTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: AppTests
     dependencies:
-      - target: Sevinda
+      - target: Suijin
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.sevinda.apptests
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Sevinda.app/Contents/MacOS/Sevinda"
+        PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.suijin.apptests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Suijin.app/Contents/MacOS/Suijin"
         BUNDLE_LOADER: "$(TEST_HOST)"
         CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  Sevinda:
+  Suijin:
     build:
       targets:
-        Sevinda: all
-        SevindaAppTests: [test]
+        Suijin: all
+        SuijinAppTests: [test]
     test:
       targets:
-        - SevindaAppTests
+        - SuijinAppTests

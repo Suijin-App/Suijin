@@ -1,6 +1,6 @@
-import SevindaAccounts
-import SevindaCore
-import SevindaUI
+import SuijinAccounts
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// Settings → Accounts: managed Claude and Codex accounts, the default for each provider, add, sign in again, remove,
@@ -32,7 +32,7 @@ struct AccountsSettingsView: View {
                         }
                     }
                 } header: {
-                    HStack(spacing: SevindaSpacing.s) {
+                    HStack(spacing: SuijinSpacing.s) {
                         AgentLogo(agent: provider == .claude ? .claude : .codex, size: 16)
                         Text(provider == .claude ? "Claude Code" : "Codex")
                     }
@@ -89,7 +89,7 @@ private struct DefaultAccountPicker: View {
                 Text(verbatim: account.displayName).tag(Optional(account.id))
             }
         }
-        .help(Text("Used by new sessions and by `\(provider.rawValue)` typed in Sevinda terminals"))
+        .help(Text("Used by new sessions and by `\(provider.rawValue)` typed in Suijin terminals"))
     }
 }
 
@@ -101,7 +101,7 @@ struct AccountRow: View {
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: SevindaSpacing.m) {
+        HStack(spacing: SuijinSpacing.m) {
             Image(systemName: "person.crop.circle.fill")
                 .font(.title)
                 .foregroundStyle(.secondary)
@@ -112,7 +112,7 @@ struct AccountRow: View {
                     Text(verbatim: organization).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
-            Spacer(minLength: SevindaSpacing.s)
+            Spacer(minLength: SuijinSpacing.s)
             if let usage = model.accountsController.usage[account.id] {
                 UsageSummary(usage: usage).font(.caption)
             }
@@ -137,7 +137,7 @@ struct UsageSummary: View {
     let usage: UsageSnapshot
 
     var body: some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             if let window = usage.fiveHour { UsageGauge(window: window, label: Text("5h")) }
             if let window = usage.sevenDay { UsageGauge(window: window, label: Text("7d")) }
         }
@@ -154,7 +154,7 @@ struct UsageGauge: View {
             Gauge(value: min(max(window.usedFraction, 0), 1)) { label }
                 .gaugeStyle(.accessoryLinearCapacity)
                 .labelsHidden()
-                .tint(window.usedFraction > 0.9 ? SevindaColor.error : window.usedFraction > 0.7 ? SevindaColor.warning : SevindaColor.ok)
+                .tint(window.usedFraction > 0.9 ? SuijinColor.error : window.usedFraction > 0.7 ? SuijinColor.warning : SuijinColor.ok)
                 .frame(width: 44)
             Text("\(label) \(percent)%").monospacedDigit()
             if let reset = window.resetsAt, reset > .now {
@@ -196,7 +196,7 @@ struct AutoSwitchSettingsSection: View {
         } header: {
             Text(provider == .claude ? "Claude Code: Automatic Switching" : "Codex: Automatic Switching")
         } footer: {
-            Text("Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved.")
+            Text("Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Suijin knows and that has room; if none has, it stays and offers the choice. Shells are never moved.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -220,7 +220,7 @@ private struct FallbackAccountRow: View {
 
     var body: some View {
         let name = model.accountName(entry.accountID, provider: provider)
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             Text(verbatim: "\(position).")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
@@ -232,7 +232,7 @@ private struct FallbackAccountRow: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .layoutPriority(1)
-            Spacer(minLength: SevindaSpacing.s)
+            Spacer(minLength: SuijinSpacing.s)
             status
             Button { onMoveUp?() } label: { Image(systemName: "chevron.up") }
                 .disabled(onMoveUp == nil)
@@ -251,7 +251,7 @@ private struct FallbackAccountRow: View {
         if model.knownUsage(of: entry.accountID, provider: provider) == nil {
             Text("Usage unknown").font(.caption).foregroundStyle(.secondary).lineLimit(1)
         } else if !model.hasRoom(entry.accountID, provider: provider) {
-            Text("At its limit").font(.caption).foregroundStyle(SevindaColor.warning).lineLimit(1)
+            Text("At its limit").font(.caption).foregroundStyle(SuijinColor.warning).lineLimit(1)
         }
     }
 }

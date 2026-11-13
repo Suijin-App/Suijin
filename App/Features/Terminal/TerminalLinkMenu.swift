@@ -1,7 +1,7 @@
 import AppKit
-import SevindaCore
-import SevindaTerminal
-import SevindaUI
+import SuijinCore
+import SuijinTerminal
+import SuijinUI
 import SwiftUI
 
 /// The context menu for a right-click on a path or link in a terminal: actions for the path first, then the terminal's
@@ -24,7 +24,7 @@ struct TerminalLinkMenu {
 
     let model: AppModel
     let context: SessionContext
-    let view: SevindaTerminalView
+    let view: SuijinTerminalView
     /// Folders a relative path is tried against, in order.
     let bases: [URL?]
 
@@ -191,8 +191,8 @@ struct FullPathFinder: View {
     private var root: URL? { model.directory(of: context)?.standardizedFileURL }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.m) {
-            VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.m) {
+            VStack(alignment: .leading, spacing: SuijinSpacing.xs) {
                 Text("Find Full Path").font(.headline)
                 Text(verbatim: elided)
                     .font(.callout.monospaced())
@@ -231,12 +231,12 @@ struct FullPathFinder: View {
                     .disabled(selection == nil)
             }
         }
-        .padding(SevindaSpacing.l)
+        .padding(SuijinSpacing.l)
         .task { await search() }
     }
 
     private func row(_ url: URL) -> some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             Image(nsImage: FileIcons.icon(forPath: url.path))
                 .resizable()
                 .frame(width: 16, height: 16)

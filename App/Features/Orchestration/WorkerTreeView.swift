@@ -1,6 +1,6 @@
-import SevindaCore
-import SevindaPTYProtocol
-import SevindaUI
+import SuijinCore
+import SuijinPTYProtocol
+import SuijinUI
 import SwiftUI
 
 /// How a dispatch looks in the sidebar and the inspector.
@@ -21,10 +21,10 @@ extension DispatchStatus {
 
     var color: Color {
         switch self {
-        case .queued, .starting, .exited: SevindaColor.idle
-        case .running, .succeeded: SevindaColor.ok
-        case .asking, .stalled: SevindaColor.warning
-        case .failed, .startFailed: SevindaColor.error
+        case .queued, .starting, .exited: SuijinColor.idle
+        case .running, .succeeded: SuijinColor.ok
+        case .asking, .stalled: SuijinColor.warning
+        case .failed, .startFailed: SuijinColor.error
         }
     }
 
@@ -86,13 +86,13 @@ private struct WorkerRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundStyle(.secondary)
-                Spacer(minLength: SevindaSpacing.xs)
+                Spacer(minLength: SuijinSpacing.xs)
                 dispatch.status.label
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
-            .padding(.leading, SevindaSpacing.s)
+            .padding(.leading, SuijinSpacing.s)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

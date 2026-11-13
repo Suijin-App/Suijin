@@ -1,7 +1,7 @@
-import SevindaAccounts
-import SevindaAgents
-import SevindaCore
-import SevindaUI
+import SuijinAccounts
+import SuijinAgents
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// An account a session's conversation can continue on: a managed account of the same agent, or the user's own login.
@@ -37,9 +37,9 @@ extension AppModel {
         guard runtimes.continuableConversation(of: session) == nil else { return nil }
         let running = runtimes.runtime(for: session.id) != nil && !runtimes.activity(of: session).isEnded
         return switch (session.agent, running) {
-        case (.codex, true): String(localized: "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here.")
+        case (.codex, true): String(localized: "Codex tells Suijin which conversation this is when it quits. Quit Codex, then continue from here.")
         case (_, true): String(localized: "Claude has not reported this conversation yet. Send it a message first.")
-        default: String(localized: "Sevinda does not know which conversation this session had, so it cannot continue it.")
+        default: String(localized: "Suijin does not know which conversation this session had, so it cannot continue it.")
         }
     }
 
@@ -56,7 +56,7 @@ extension AppModel {
         return session
     }
 
-    /// A usage window of the account a running session uses that is used up, from the usage Sevinda polls. Nil when
+    /// A usage window of the account a running session uses that is used up, from the usage Suijin polls. Nil when
     /// the session does not run, its account's usage is unknown, or (own login) the login changed since it started.
     func reachedLimit(of session: AgentSessionRecord, now: Date = .now) -> UsageSection? {
         guard runtimes.runtime(for: session.id) != nil, !runtimes.activity(of: session).isEnded,
@@ -79,13 +79,13 @@ enum ConversationMove {
         let name = agent.sessionTitle
         return switch error {
         case .invalidConversationID:
-            String(localized: "Sevinda does not know which conversation this session had.")
+            String(localized: "Suijin does not know which conversation this session had.")
         case .historyNotFound:
             String(localized: "\(name) has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed.")
         case .targetMissing:
             String(localized: "The other account has no \(name) folder yet. Sign in to it once, then try again.")
         case .conflict(let path):
-            String(localized: "The other account already has a different copy of this conversation (\(path)). Sevinda left both copies as they are.")
+            String(localized: "The other account already has a different copy of this conversation (\(path)). Suijin left both copies as they are.")
         case .unsafeDestination:
             String(localized: "The conversation's files would land outside the account's history folder, so nothing was moved.")
         case .io(let path, let code):
@@ -136,7 +136,7 @@ struct ContinueWithAccountItems: View {
 }
 
 /// A slim banner at the top of a running session whose account used up a usage window, offering the other accounts.
-/// Closing it hides it until that window resets. Shown only from the usage Sevinda polls, never from screen text.
+/// Closing it hides it until that window resets. Shown only from the usage Suijin polls, never from screen text.
 struct UsageLimitBanner: View {
     @Environment(AppModel.self) private var model
     let session: AgentSessionRecord
@@ -154,7 +154,7 @@ struct UsageLimitBanner: View {
     }
 
     private func content(section: UsageSection, account: SessionAccount, now: Date) -> some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             Image(systemName: "exclamationmark.circle.fill")
                 .foregroundStyle(.orange)
                 .accessibilityHidden(true)
@@ -170,7 +170,7 @@ struct UsageLimitBanner: View {
                 }
             }
             .layoutPriority(1)
-            Spacer(minLength: SevindaSpacing.s)
+            Spacer(minLength: SuijinSpacing.s)
             ContinueWithAccountMenu(session: session, title: "Continue With…")
                 .fixedSize()
             Button {
@@ -182,11 +182,11 @@ struct UsageLimitBanner: View {
             .help(Text("Hide until the limit resets"))
             .accessibilityLabel(Text("Hide"))
         }
-        .padding(.horizontal, SevindaSpacing.m)
-        .padding(.vertical, SevindaSpacing.s)
+        .padding(.horizontal, SuijinSpacing.m)
+        .padding(.vertical, SuijinSpacing.s)
         .frame(maxWidth: 560)
         .floatingGlass(in: Capsule())
-        .padding(SevindaSpacing.s)
+        .padding(SuijinSpacing.s)
         .accessibilityElement(children: .contain)
     }
 }

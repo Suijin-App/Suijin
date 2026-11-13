@@ -4,225 +4,6 @@
     "" : {
 
     },
-    "%@ has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed." : {
-
-    },
-    "%@ reached on %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ reached on %2$@."
-          }
-        }
-      }
-    },
-    "%@ switched accounts" : {
-
-    },
-    "%@: %@. The original conversation was not changed." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@: %2$@. The original conversation was not changed."
-          }
-        }
-      }
-    },
-    "%lld × %lld px, %@" : {
-      "comment" : "Pixel dimensions and file size of an image in the Changes view",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld × %2$lld px, %3$@"
-          }
-        }
-      }
-    },
-    "After" : {
-      "comment" : "Label of the new version of a changed image"
-    },
-    "At its limit" : {
-
-    },
-    "Before" : {
-      "comment" : "Label of the old version of a changed image"
-    },
-    "Cannot Show the Image" : {
-      "comment" : "Title shown when an image in the Changes view cannot be read"
-    },
-    "Claude Code: Automatic Switching" : {
-
-    },
-    "Claude has not reported this conversation yet. Send it a message first." : {
-
-    },
-    "Codex tells Sevinda which conversation this is when it quits. Quit Codex, then continue from here." : {
-
-    },
-    "Codex: Automatic Switching" : {
-
-    },
-    "Continue This Session With…" : {
-
-    },
-    "Continue With Another Account" : {
-
-    },
-    "Continue With…" : {
-
-    },
-    "Continue this conversation on another account, in this place" : {
-
-    },
-    "Continues this conversation on another account in the same place" : {
-
-    },
-    "Could not continue %@ with %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Could not continue %1$@ with %2$@"
-          }
-        }
-      }
-    },
-    "Could not move to %@. %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Could not move to %1$@. %2$@"
-          }
-        }
-      }
-    },
-    "Hide" : {
-
-    },
-    "Hide until the limit resets" : {
-
-    },
-    "Image after the change" : {
-      "comment" : "Accessibility label of the new version of a changed image"
-    },
-    "Image before the change" : {
-      "comment" : "Accessibility label of the old version of a changed image"
-    },
-    "Move %@ down" : {
-
-    },
-    "Move %@ up" : {
-
-    },
-    "Move Down" : {
-
-    },
-    "Move running sessions when the default account changes" : {
-
-    },
-    "Move Up" : {
-
-    },
-    "Moved to %@ because %@ hit its %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Moved to %1$@ because %2$@ hit its %3$@."
-          }
-        }
-      }
-    },
-    "Moved to %@, the new default account." : {
-
-    },
-    "Moving conversation to %@…" : {
-
-    },
-    "No other %@ account." : {
-
-    },
-    "Only Claude and Codex sessions can move to another account." : {
-
-    },
-    "Quit Codex to move it to %@." : {
-
-    },
-    "Send Claude a message, then this session can move to %@." : {
-
-    },
-    "Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Sevinda knows and that has room; if none has, it stays and offers the choice. Shells are never moved." : {
-
-    },
-    "Sevinda does not know which conversation this session had, so it cannot continue it." : {
-
-    },
-    "Sevinda does not know which conversation this session had." : {
-
-    },
-    "Switch automatically when an account hits its limit" : {
-
-    },
-    "That account is no longer in Sevinda." : {
-
-    },
-    "The conversation's files would land outside the account's history folder, so nothing was moved." : {
-
-    },
-    "The file is not an image this Mac can read, or it is damaged." : {
-      "comment" : "Shown when an image in the Changes view cannot be decoded"
-    },
-    "The file is not there in this version." : {
-      "comment" : "Shown when one version of a changed image is missing"
-    },
-    "The other account already has a different copy of this conversation (%@). Sevinda left both copies as they are." : {
-
-    },
-    "The other account has no %@ folder yet. Sign in to it once, then try again." : {
-
-    },
-    "This session is starting." : {
-
-    },
-    "Signed in as %@ now; this session started as %@ and keeps it until Codex asks to sign in again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Signed in as %1$@ now; this session started as %2$@ and keeps it until Codex asks to sign in again."
-          }
-        }
-      }
-    },
-    "Signed in as %@ now; this session started as %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Signed in as %1$@ now; this session started as %2$@."
-          }
-        }
-      }
-    },
-    "The bar shows the account new sessions use." : {
-
-    },
-    "This session uses %@" : {
-
-    },
-    "Usage unknown" : {
-
-    },
-    "weekly %@ limit" : {
-
-    },
-    "weekly limit" : {
-
-    },
     "“%@” (#%lld) is already open for this branch. New commits you push appear in it." : {
       "comment" : "A paragraph describing a GitHub pull request that already exists for the current branch. The first argument is the pull request title. The second argument is the pull request number.",
       "isCommentAutoGenerated" : true,
@@ -281,19 +62,19 @@
       "comment" : "A message that appears in a dialog box when the user tries to run a tool that's not installed. The argument is the name of the tool.",
       "isCommentAutoGenerated" : true
     },
-    "**Git.** Sevinda pushes a branch only when you ask, using your own remotes and git credentials." : {
+    "**Git.** Suijin pushes a branch only when you ask, using your own remotes and git credentials." : {
 
     },
-    "**GitHub.** If the GitHub CLI (`gh`) is installed, Sevinda uses it with your own GitHub sign-in to show a branch's pull request and checks, and to create pull requests you ask for. When you ask for a workspace's GitHub avatar, Sevinda downloads the repository owner's public picture from github.com." : {
+    "**GitHub.** If the GitHub CLI (`gh`) is installed, Suijin uses it with your own GitHub sign-in to show a branch's pull request and checks, and to create pull requests you ask for. When you ask for a workspace's GitHub avatar, Suijin downloads the repository owner's public picture from github.com." : {
 
     },
     "**Markdown files.** When a Markdown file you open shows images from the web, they load from their addresses, as in a browser." : {
 
     },
-    "**Updates.** This version of Sevinda does not check for updates. When a later version does, this policy will name the address it asks and how to turn the check off." : {
+    "**Updates.** This version of Suijin does not check for updates. When a later version does, this policy will name the address it asks and how to turn the check off." : {
 
     },
-    "**Usage limits.** For each Claude or Codex login whose limits Sevinda shows, it asks Anthropic (`api.anthropic.com`) or OpenAI (`chatgpt.com`) with that login's own token, now and then and when you click refresh. Only the token (and the Codex account ID) is sent; the reply holds percentages and reset times." : {
+    "**Usage limits.** For each Claude or Codex login whose limits Suijin shows, it asks Anthropic (`api.anthropic.com`) or OpenAI (`chatgpt.com`) with that login's own token, now and then and when you click refresh. Only the token (and the Codex account ID) is sent; the reply holds percentages and reset times." : {
 
     },
     "%@ %lld percent used" : {
@@ -377,6 +158,9 @@
     "%@ has ended. Open it to start it again." : {
 
     },
+    "%@ has not saved this conversation in the current account's folder yet, so there is nothing to move. The session was not changed." : {
+
+    },
     "%@ in %@" : {
 
     },
@@ -406,6 +190,16 @@
     "%@ quit with an error. Open it to see what happened." : {
 
     },
+    "%@ reached on %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reached on %2$@."
+          }
+        }
+      }
+    },
     "%@ returned no text." : {
       "comment" : "Text describing a timeout error.",
       "isCommentAutoGenerated" : true
@@ -420,6 +214,9 @@
 
     },
     "%@ stopped unexpectedly" : {
+
+    },
+    "%@ switched accounts" : {
 
     },
     "%@ tokens" : {
@@ -456,6 +253,16 @@
         }
       }
     },
+    "%@: %@. The original conversation was not changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@. The original conversation was not changed."
+          }
+        }
+      }
+    },
     "%@: %lld%% used" : {
       "localizations" : {
         "en" : {
@@ -469,6 +276,17 @@
     "%lld" : {
       "comment" : "A count of notes for a file.",
       "isCommentAutoGenerated" : true
+    },
+    "%lld × %lld px, %@" : {
+      "comment" : "Pixel dimensions and file size of an image in the Changes view",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld × %2$lld px, %3$@"
+          }
+        }
+      }
     },
     "%lld agents are still working; closing stops them." : {
 
@@ -674,7 +492,7 @@
       "comment" : "A description of an error that occurs when a user tries to create a branch with a name that already exists.",
       "isCommentAutoGenerated" : true
     },
-    "A database (`sevinda.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes you write, your settings and the counters behind the Stats page." : {
+    "A database (`suijin.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes you write, your settings and the counters behind the Stats page." : {
 
     },
     "A home folder for each managed account. Managed Claude sign-ins are kept in the macOS Keychain; managed Codex sign-ins stay in that account's folder, where Codex itself stores them." : {
@@ -812,6 +630,9 @@
       "comment" : "A description of a file that was added to a repository.",
       "isCommentAutoGenerated" : true
     },
+    "After" : {
+      "comment" : "Label of the new version of a changed image"
+    },
     "Agent" : {
       "comment" : "A section for configuring the agent.",
       "isCommentAutoGenerated" : true
@@ -836,7 +657,7 @@
       "comment" : "A warning that agents in a folder share the same files.",
       "isCommentAutoGenerated" : true
     },
-    "Agents in Sevinda's terminals can start worker agents with the `sevinda` command and get their results back. Sevinda's Claude sessions already load the guide; the toggle adds it to Claude Code outside Sevinda too, where `sevinda` itself does not work." : {
+    "Agents in Suijin's terminals can start worker agents with the `suijin` command and get their results back. Suijin's Claude sessions already load the guide; the toggle adds it to Claude Code outside Suijin too, where `suijin` itself does not work." : {
       "comment" : "A description of the orchestration settings section.",
       "isCommentAutoGenerated" : true
     },
@@ -875,7 +696,7 @@
       "comment" : "The text of a review decision.",
       "isCommentAutoGenerated" : true
     },
-    "As far as the law allows, Tekmium Solutions is not liable for indirect, incidental, special or consequential damages, or for lost data, code, work or profits, that arise from your use of Sevinda. Nothing in these terms limits rights you have under laws that cannot be waived." : {
+    "As far as the law allows, Tekmium Solutions is not liable for indirect, incidental, special or consequential damages, or for lost data, code, work or profits, that arise from your use of Suijin. Nothing in these terms limits rights you have under laws that cannot be waived." : {
 
     },
     "Ask" : {
@@ -885,6 +706,9 @@
 
     },
     "Asking" : {
+
+    },
+    "At its limit" : {
 
     },
     "Audio player" : {
@@ -912,10 +736,10 @@
     "Back" : {
 
     },
-    "Back to Sevinda" : {
+    "Back to Suijin" : {
 
     },
-    "Back to Sevinda (Esc)" : {
+    "Back to Suijin (Esc)" : {
 
     },
     "Banners appear while you look at another tab or app; clicking one opens that session." : {
@@ -924,6 +748,9 @@
     "Base" : {
       "comment" : "A label for the base branch of a new worktree.",
       "isCommentAutoGenerated" : true
+    },
+    "Before" : {
+      "comment" : "Label of the old version of a changed image"
     },
     "Below" : {
 
@@ -992,6 +819,9 @@
     "Cannot Show the Diff" : {
       "comment" : "A title for a view that can't display a diff.",
       "isCommentAutoGenerated" : true
+    },
+    "Cannot Show the Image" : {
+      "comment" : "Title shown when an image in the Changes view cannot be read"
     },
     "Change icon and color" : {
       "comment" : "A tooltip for the workspace icon.",
@@ -1091,7 +921,7 @@
       "comment" : "The name of the section for Claude accounts.",
       "isCommentAutoGenerated" : true
     },
-    "Claude Code (by Anthropic) and Codex (by OpenAI) are separate programs you install. Sevinda starts them on your Mac, in the folders you choose. What they send to their providers, such as your prompts, code and files, is governed by those providers' terms and privacy policies. None of it passes through Tekmium Solutions." : {
+    "Claude Code (by Anthropic) and Codex (by OpenAI) are separate programs you install. Suijin starts them on your Mac, in the folders you choose. What they send to their providers, such as your prompts, code and files, is governed by those providers' terms and privacy policies. None of it passes through Tekmium Solutions." : {
 
     },
     "Claude Code and Codex agents run together, each in its own tab or pane." : {
@@ -1104,6 +934,12 @@
 
     },
     "Claude Code will run every command and change any file without asking. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
+
+    },
+    "Claude Code: Automatic Switching" : {
+
+    },
+    "Claude has not reported this conversation yet. Send it a message first." : {
 
     },
     "Claude usage updates the next time Claude runs." : {
@@ -1169,7 +1005,13 @@
       "comment" : "The name of the Codex account provider.",
       "isCommentAutoGenerated" : true
     },
+    "Codex tells Suijin which conversation this is when it quits. Quit Codex, then continue from here." : {
+
+    },
     "Codex will run every command and change any file without asking, outside its sandbox. Use this only in a folder you can afford to lose, ideally an isolated machine." : {
+
+    },
+    "Codex: Automatic Switching" : {
 
     },
     "Collapse sessions" : {
@@ -1229,7 +1071,7 @@
       "comment" : "A label for the connected state of the broker.",
       "isCommentAutoGenerated" : true
     },
-    "Connections Sevinda makes" : {
+    "Connections Suijin makes" : {
 
     },
     "Contact" : {
@@ -1239,6 +1081,21 @@
 
     },
     "Continue this conversation in this place" : {
+
+    },
+    "Continue this conversation on another account, in this place" : {
+
+    },
+    "Continue This Session With…" : {
+
+    },
+    "Continue With Another Account" : {
+
+    },
+    "Continue With…" : {
+
+    },
+    "Continues this conversation on another account in the same place" : {
 
     },
     "Control" : {
@@ -1296,6 +1153,16 @@
       "comment" : "Error message when adding a workspace fails.",
       "isCommentAutoGenerated" : true
     },
+    "Could not continue %@ with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not continue %1$@ with %2$@"
+          }
+        }
+      }
+    },
     "Could not delete the note" : {
       "comment" : "Error message when a note could not be deleted.",
       "isCommentAutoGenerated" : true
@@ -1318,6 +1185,16 @@
     },
     "Could not mark the notes as sent" : {
 
+    },
+    "Could not move to %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not move to %1$@. %2$@"
+          }
+        }
+      }
     },
     "Could not reach the terminal host: %@" : {
       "comment" : "Resource Manager footer when the PTY host did not answer. The argument is the error message."
@@ -1485,7 +1362,7 @@
       "comment" : "A label for the dispatch ID.",
       "isCommentAutoGenerated" : true
     },
-    "Do not sell, rent, sublicense or redistribute Sevinda, or remove its copyright notices, without written permission from Tekmium Solutions." : {
+    "Do not sell, rent, sublicense or redistribute Suijin, or remove its copyright notices, without written permission from Tekmium Solutions." : {
 
     },
     "Don’t ask again" : {
@@ -1611,7 +1488,7 @@
     "Estimated at API list prices; not your subscription bill." : {
 
     },
-    "Events from open Claude Code sessions, including the prompts you send, so Sevinda knows when an agent waits for you. Each session's file is deleted when you close its tab." : {
+    "Events from open Claude Code sessions, including the prompts you send, so Suijin knows when an agent waits for you. Each session's file is deleted when you close its tab." : {
 
     },
     "Every agent gets a branch and a folder of its own." : {
@@ -1627,7 +1504,7 @@
     "Every session in this list ends and its tab closes." : {
 
     },
-    "Everything Sevinda keeps is on your Mac, in `~/Library/Application Support/Sevinda`:" : {
+    "Everything Suijin keeps is on your Mac, in `~/Library/Application Support/Suijin`:" : {
 
     },
     "Exited" : {
@@ -1825,6 +1702,12 @@
     "Help" : {
 
     },
+    "Hide" : {
+
+    },
+    "Hide until the limit resets" : {
+
+    },
     "Highlight file paths" : {
 
     },
@@ -1835,6 +1718,12 @@
     "Idle" : {
       "comment" : "A label displayed when a session is idle.",
       "isCommentAutoGenerated" : true
+    },
+    "Image after the change" : {
+      "comment" : "Accessibility label of the new version of a changed image"
+    },
+    "Image before the change" : {
+      "comment" : "Accessibility label of the old version of a changed image"
     },
     "In a split tab, closes the focused pane only." : {
 
@@ -1877,8 +1766,8 @@
       "comment" : "A tooltip that appears when you press the keyboard shortcut to open the symbols menu.",
       "isCommentAutoGenerated" : true
     },
-    "Keep sessions running after quitting Sevinda" : {
-      "comment" : "A toggle that lets the user decide whether to keep sessions running after quitting Sevinda.",
+    "Keep sessions running after quitting Suijin" : {
+      "comment" : "A toggle that lets the user decide whether to keep sessions running after quitting Suijin.",
       "isCommentAutoGenerated" : true
     },
     "Keyboard shortcut: Shift Command O" : {
@@ -1950,12 +1839,6 @@
     "Memory" : {
       "comment" : "Column and summary title: memory usage."
     },
-    "Mercury is now Sevinda" : {
-
-    },
-    "Mercury is still open. Quit Mercury, then open Sevinda again to bring over your workspaces and settings." : {
-
-    },
     "Merged" : {
       "comment" : "A label for a pull request that has been merged.",
       "isCommentAutoGenerated" : true
@@ -1982,7 +1865,16 @@
     "Mouse" : {
 
     },
+    "Move %@ down" : {
+
+    },
+    "Move %@ up" : {
+
+    },
     "Move a Zoomed Image" : {
+
+    },
+    "Move Down" : {
 
     },
     "Move focus between panes, or zoom the focused one." : {
@@ -2006,10 +1898,32 @@
     "Move Pane Up" : {
 
     },
+    "Move running sessions when the default account changes" : {
+
+    },
     "Move the keyboard focus to the pane next to this one." : {
 
     },
     "Move to New Tab" : {
+
+    },
+    "Move Up" : {
+
+    },
+    "Moved to %@ because %@ hit its %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moved to %1$@ because %2$@ hit its %3$@."
+          }
+        }
+      }
+    },
+    "Moved to %@, the new default account." : {
+
+    },
+    "Moving conversation to %@…" : {
 
     },
     "My own login" : {
@@ -2040,7 +1954,7 @@
     "New %@ session (⌘T)" : {
 
     },
-    "New and visible terminals use the theme. Automatic uses Sevinda Light or Sevinda Dark to match the appearance." : {
+    "New and visible terminals use the theme. Automatic uses Suijin Light or Suijin Dark to match the appearance." : {
 
     },
     "New input, output and cache tokens in the selected range." : {
@@ -2153,8 +2067,11 @@
     "No model yet" : {
 
     },
+    "No other %@ account." : {
+
+    },
     "No Preview" : {
-      "comment" : "A label displayed when a file can't be previewed by Sevinda.",
+      "comment" : "A label displayed when a file can't be previewed by Suijin.",
       "isCommentAutoGenerated" : true
     },
     "No running session in this worktree" : {
@@ -2175,18 +2092,18 @@
       "comment" : "A placeholder text displayed when there are no tabs to show in the toolbar.",
       "isCommentAutoGenerated" : true
     },
-    "No Sevinda account matches “%@” for this agent; omit --account to use the default." : {
+    "No Suijin account matches “%@” for this agent; omit --account to use the default." : {
       "comment" : "The error message when the requested account name does not match any known accounts. The first argument is the requested account name. The second argument is a list of known account names.",
       "isCommentAutoGenerated" : true
     },
-    "No single Sevinda account matches “%@” for this agent. Accounts: %@." : {
+    "No single Suijin account matches “%@” for this agent. Accounts: %@." : {
       "comment" : "The list of known accounts is joined with \", \" and a conjunction.",
       "isCommentAutoGenerated" : true,
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No single Sevinda account matches “%1$@” for this agent. Accounts: %2$@."
+            "value" : "No single Suijin account matches “%1$@” for this agent. Accounts: %2$@."
           }
         }
       }
@@ -2210,6 +2127,18 @@
     "No Workspaces" : {
       "comment" : "A label displayed when a user has no workspaces.",
       "isCommentAutoGenerated" : true
+    },
+    "None of the GitHub accounts signed in to gh (%@) can see this repository. Sign in to gh with an account that has access (gh auth login), then try again.\n\n%@" : {
+      "comment" : "Error message when no GitHub account can see a repository. The argument is a list of GitHub account names.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None of the GitHub accounts signed in to gh (%1$@) can see this repository. Sign in to gh with an account that has access (gh auth login), then try again.\n\n%2$@"
+          }
+        }
+      }
     },
     "Not a valid branch name." : {
       "comment" : "A message displayed when the branch name is not valid.",
@@ -2243,7 +2172,7 @@
       "comment" : "A label for a menu that sends notes to an agent.",
       "isCommentAutoGenerated" : true
     },
-    "Notes sent to an agent are pasted into its prompt. With this on, Sevinda also presses Return so the agent starts right away." : {
+    "Notes sent to an agent are pasted into its prompt. With this on, Suijin also presses Return so the agent starts right away." : {
       "comment" : "A description of the \"Send notes automatically\" toggle.",
       "isCommentAutoGenerated" : true
     },
@@ -2272,13 +2201,16 @@
     "One Worktree Each" : {
 
     },
+    "Only Claude and Codex sessions can move to another account." : {
+
+    },
     "Only monospaced fonts installed on this Mac are listed. A Nerd Font Mono family is the default when one is installed, so prompt icons render." : {
 
     },
-    "Only Sevinda is using resources right now." : {
+    "Only Suijin is using resources right now." : {
       "comment" : "Resource Manager empty state description."
     },
-    "Only terminals Sevinda opened can reach its agent coordination service; each gets a private random token." : {
+    "Only terminals Suijin opened can reach its agent coordination service; each gets a private random token." : {
 
     },
     "Open" : {
@@ -2325,7 +2257,7 @@
     "Open Settings" : {
 
     },
-    "Open the gallery of Sevinda’s controls in a window of its own." : {
+    "Open the gallery of Suijin’s controls in a window of its own." : {
 
     },
     "Open the issue tracker" : {
@@ -2556,6 +2488,9 @@
       "comment" : "A label for a dispatch that is waiting to start.",
       "isCommentAutoGenerated" : true
     },
+    "Quit Codex to move it to %@." : {
+
+    },
     "Ran for" : {
 
     },
@@ -2624,7 +2559,7 @@
       "comment" : "The text of a button that removes a worktree.",
       "isCommentAutoGenerated" : true
     },
-    "Remove “%@” from Sevinda?" : {
+    "Remove “%@” from Suijin?" : {
       "comment" : "A confirmation dialog that appears when the user swipes or taps the trash can icon in the workspace header. The argument is the name of the workspace.",
       "isCommentAutoGenerated" : true
     },
@@ -2632,7 +2567,7 @@
       "comment" : "A confirmation dialog asking the user to confirm the removal of a given account.",
       "isCommentAutoGenerated" : true
     },
-    "Remove a workspace, account or session in Sevinda at any time. Removing a workspace does not delete its folder." : {
+    "Remove a workspace, account or session in Suijin at any time. Removing a workspace does not delete its folder." : {
 
     },
     "Remove and Discard Changes" : {
@@ -2729,7 +2664,7 @@
       "comment" : "A label for a pull request review decision.",
       "isCommentAutoGenerated" : true
     },
-    "Review what the agents changed and ship it without leaving Sevinda." : {
+    "Review what the agents changed and ship it without leaving Suijin." : {
 
     },
     "Right" : {
@@ -2819,6 +2754,9 @@
       "comment" : "A button that sends the user's unsent diff notes to an agent.",
       "isCommentAutoGenerated" : true
     },
+    "Send Claude a message, then this session can move to %@." : {
+
+    },
     "Send notes automatically" : {
       "comment" : "A toggle that lets the user decide whether to send notes to the agent automatically.",
       "isCommentAutoGenerated" : true
@@ -2858,11 +2796,14 @@
     "Sessions & Tabs" : {
 
     },
-    "Sessions end with the app: the terminal host is unavailable (%@). Allow Sevinda in System Settings → General → Login Items." : {
-      "comment" : "A warning label that warns the user that Sevinda will not keep sessions running if the terminal host is unavailable. The argument is the problem describing why the terminal host is unavailable.",
+    "Sessions end with the app: the terminal host is unavailable (%@). Allow Suijin in System Settings → General → Login Items." : {
+      "comment" : "A warning label that warns the user that Suijin will not keep sessions running if the terminal host is unavailable. The argument is the problem describing why the terminal host is unavailable.",
       "isCommentAutoGenerated" : true
     },
-    "Sessions run in a background helper, so closing or updating Sevinda does not stop your agents." : {
+    "Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Suijin knows and that has room; if none has, it stays and offers the choice. Shells are never moved." : {
+
+    },
+    "Sessions run in a background helper, so closing or updating Suijin does not stop your agents." : {
 
     },
     "Sessions using this account are stopped, the account is signed out and its folder is deleted." : {
@@ -2883,60 +2824,63 @@
     "Settings…" : {
 
     },
-    "Sevinda" : {
+    "Suijin" : {
       "comment" : "The name of the app.",
       "isCommentAutoGenerated" : true
     },
-    "Sevinda account" : {
+    "Suijin account" : {
 
     },
-    "Sevinda activity plus Claude and Codex token usage read from their local logs." : {
+    "Suijin activity plus Claude and Codex token usage read from their local logs." : {
 
     },
-    "Sevinda can offer updates through its built-in updater. An update may add, change or remove features, and these terms apply to it too." : {
+    "Suijin can offer updates through its built-in updater. An update may add, change or remove features, and these terms apply to it too." : {
 
     },
-    "Sevinda could not bring over your Mercury data: %@ Nothing was changed; open Sevinda again to retry." : {
-
-    },
-    "Sevinda could not open its database" : {
+    "Suijin could not open its database" : {
       "comment" : "Title of an error shown to the user when the database could not be opened.",
       "isCommentAutoGenerated" : true
     },
-    "Sevinda could not start the agent." : {
-      "comment" : "Error message displayed when Sevinda fails to start the agent.",
+    "Suijin could not start the agent." : {
+      "comment" : "Error message displayed when Suijin fails to start the agent.",
       "isCommentAutoGenerated" : true
     },
-    "Sevinda creates and reads pull requests with your own gh. Install it, then check again." : {
+    "Suijin creates and reads pull requests with your own gh. Install it, then check again." : {
       "comment" : "Text and link to install GitHub CLI to fix a pull request not being available.",
       "isCommentAutoGenerated" : true
     },
-    "Sevinda finds agents on the PATH of your login shell." : {
+    "Suijin does not know which conversation this session had, so it cannot continue it." : {
 
     },
-    "Sevinda is built with these open-source projects, each used under its own license." : {
+    "Suijin does not know which conversation this session had." : {
 
     },
-    "Sevinda is provided “as is” and “as available”, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We do not promise that Sevinda is free of errors, runs without interruption or works with every future version of the agents it starts." : {
+    "Suijin finds agents on the PATH of your login shell." : {
 
     },
-    "Sevinda never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. It adds to `~/.claude` or `~/.codex` only: its orchestration guide in `~/.claude/skills`, if you turn that on in Settings → Agents; and when you continue a conversation with your own login, that conversation's history files, in `~/.claude/projects/<folder>` or `~/.codex/sessions/<date>`. It never replaces a file that is already there." : {
+    "Suijin is built with these open-source projects, each used under its own license." : {
 
     },
-    "Sevinda reads credentials into memory only for the request that needs them, and never prints or logs them." : {
+    "Suijin is provided “as is” and “as available”, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We do not promise that Suijin is free of errors, runs without interruption or works with every future version of the agents it starts." : {
 
     },
-    "Sevinda shows Markdown, code, text, images and PDFs. Open this file in its default app instead." : {
+    "Suijin never changes your own Claude Code or Codex sign-ins or settings. Its Claude hooks are passed to each session it starts, not installed in your settings. It adds to `~/.claude` or `~/.codex` only: its orchestration guide in `~/.claude/skills`, if you turn that on in Settings → Agents; and when you continue a conversation with your own login, that conversation's history files, in `~/.claude/projects/<folder>` or `~/.codex/sessions/<date>`. It never replaces a file that is already there." : {
+
+    },
+    "Suijin reads credentials into memory only for the request that needs them, and never prints or logs them." : {
+
+    },
+    "Suijin shows Markdown, code, text, images and PDFs. Open this file in its default app instead." : {
       "comment" : "A description of what to do if the file viewer can't display the file.",
       "isCommentAutoGenerated" : true
     },
-    "Sevinda starts programs you install yourself: Claude Code, Codex, git, the GitHub CLI and your shell. Your use of them, and of the accounts behind them, is governed by their providers' own terms (for example Anthropic, OpenAI and GitHub). Sevinda does not provide those accounts or plans." : {
+    "Suijin starts programs you install yourself: Claude Code, Codex, git, the GitHub CLI and your shell. Your use of them, and of the accounts behind them, is governed by their providers' own terms (for example Anthropic, OpenAI and GitHub). Suijin does not provide those accounts or plans." : {
 
     },
-    "Sevinda works on your Mac. There are no Sevinda servers and no Sevinda account, and Sevinda collects no analytics, telemetry or crash reports. This policy lists what Sevinda reads, what it stores and the few connections it makes." : {
+    "Suijin works on your Mac. There are no Suijin servers and no Suijin account, and Suijin collects no analytics, telemetry or crash reports. This policy lists what Suijin reads, what it stores and the few connections it makes." : {
 
     },
-    "Sevinda, its name and its icon belong to Tekmium Solutions." : {
+    "Suijin, its name and its icon belong to Tekmium Solutions." : {
 
     },
     "Share of prompt tokens read from or written to the cache." : {
@@ -2998,7 +2942,7 @@
     "Show the focused pane alone, or all panes again." : {
 
     },
-    "Show the Resource Manager: memory and CPU of running sessions and Sevinda" : {
+    "Show the Resource Manager: memory and CPU of running sessions and Suijin" : {
       "comment" : "Tooltip of the status bar item that opens the Resource Manager."
     },
     "Show this session" : {
@@ -3030,7 +2974,7 @@
       "comment" : "A button that opens a terminal to sign in to GitHub.",
       "isCommentAutoGenerated" : true
     },
-    "Sign in once in a terminal; Sevinda never stores a GitHub token." : {
+    "Sign in once in a terminal; Suijin never stores a GitHub token." : {
       "comment" : "Text and button to sign in to GitHub.",
       "isCommentAutoGenerated" : true
     },
@@ -3051,6 +2995,26 @@
     "Signed in" : {
       "comment" : "A label that appears when a user has successfully signed in.",
       "isCommentAutoGenerated" : true
+    },
+    "Signed in as %@ now; this session started as %@ and keeps it until Codex asks to sign in again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in as %1$@ now; this session started as %2$@ and keeps it until Codex asks to sign in again."
+          }
+        }
+      }
+    },
+    "Signed in as %@ now; this session started as %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in as %1$@ now; this session started as %2$@."
+          }
+        }
+      }
     },
     "Skip" : {
 
@@ -3203,6 +3167,9 @@
     "Swap the focused pane with the one next to it." : {
 
     },
+    "Switch automatically when an account hits its limit" : {
+
+    },
     "Switches an image between fitting the pane and its own size." : {
 
     },
@@ -3222,7 +3189,7 @@
       "comment" : "A label for the task of a dispatch.",
       "isCommentAutoGenerated" : true
     },
-    "Tekmium Solutions grants you a personal, non-exclusive, non-transferable license to install and use Sevinda on Macs you own or control." : {
+    "Tekmium Solutions grants you a personal, non-exclusive, non-transferable license to install and use Suijin on Macs you own or control." : {
 
     },
     "Tekmium Solutions is not responsible for what an agent does in your repositories, on your Mac or in your accounts." : {
@@ -3235,7 +3202,7 @@
     "Terminal host" : {
       "comment" : "Row title for the PTY host helper process in the Resource Manager."
     },
-    "Terminal output stays in the memory of Sevinda's background helper, so sessions survive quitting the app. Sevinda does not write it to disk." : {
+    "Terminal output stays in the memory of Suijin's background helper, so sessions survive quitting the app. Suijin does not write it to disk." : {
 
     },
     "Terminal preview in %@" : {
@@ -3244,9 +3211,15 @@
     "Terms of Service" : {
 
     },
+    "That account is no longer in Suijin." : {
+
+    },
     "The agent is still working. Closing the tab stops it." : {
       "comment" : "A message in a confirmation dialog that appears when the user tries to close a session",
       "isCommentAutoGenerated" : true
+    },
+    "The bar shows the account new sessions use." : {
+
     },
     "the base branch" : {
       "comment" : "A title and a count of files in a section of the changes view. The first argument is the section title. The second argument is the number of files in the section.",
@@ -3270,12 +3243,21 @@
       "comment" : "The name of the \"All commits\" button.",
       "isCommentAutoGenerated" : true
     },
-    "The coordinator's session is no longer open in Sevinda." : {
+    "The conversation's files would land outside the account's history folder, so nothing was moved." : {
+
+    },
+    "The coordinator's session is no longer open in Suijin." : {
 
     },
     "The diff is shown unified until the pane is wide enough for two columns." : {
       "comment" : "A description of the fallback to unified diff when the pane is too narrow.",
       "isCommentAutoGenerated" : true
+    },
+    "The file is not an image this Mac can read, or it is damaged." : {
+      "comment" : "Shown when an image in the Changes view cannot be decoded"
+    },
+    "The file is not there in this version." : {
+      "comment" : "Shown when one version of a changed image is missing"
     },
     "The folder is deleted and running sessions in it are stopped. The branch is kept." : {
       "comment" : "A description of the action of removing a worktree.",
@@ -3288,10 +3270,16 @@
     "The folders and repositories you add as workspaces, to show their files and changes, run git and start agents in them." : {
 
     },
-    "The folders Sevinda creates for managed accounts and session events are readable only by your macOS user (permissions 700), and the files it writes there are 600." : {
+    "The folders Suijin creates for managed accounts and session events are readable only by your macOS user (permissions 700), and the files it writes there are 600." : {
 
     },
-    "The open-source components inside Sevinda stay under their own licenses, listed under Acknowledgements in Settings → About." : {
+    "The open-source components inside Suijin stay under their own licenses, listed under Acknowledgements in Settings → About." : {
+
+    },
+    "The other account already has a different copy of this conversation (%@). Suijin left both copies as they are." : {
+
+    },
+    "The other account has no %@ folder yet. Sign in to it once, then try again." : {
 
     },
     "The program in this session does not accept pasted text yet. Wait until its prompt is ready, then try again." : {
@@ -3335,13 +3323,13 @@
     "The terminal host refused the orchestration connection." : {
 
     },
-    "The usage service is limiting requests. Sevinda tries again later." : {
+    "The usage service is limiting requests. Suijin tries again later." : {
 
     },
     "Theme" : {
 
     },
-    "These terms apply to your use of Sevinda, a Mac app made by Tekmium Solutions. By installing or using Sevinda, you agree to them. If you do not agree, do not use Sevinda." : {
+    "These terms apply to your use of Suijin, a Mac app made by Tekmium Solutions. By installing or using Suijin, you agree to them. If you do not agree, do not use Suijin." : {
 
     },
     "This branch has no pull request yet." : {
@@ -3355,6 +3343,12 @@
     "This repository has no remote to push to." : {
       "comment" : "Text displayed in a note when the pull request cannot be opened because the repository has no",
       "isCommentAutoGenerated" : true
+    },
+    "This session is starting." : {
+
+    },
+    "This session uses %@" : {
+
     },
     "This workspace is a plain folder, so there is no history to compare with. Initialize a git repository to see diffs and create worktrees." : {
       "comment" : "A description of why a folder workspace has no git history.",
@@ -3375,7 +3369,7 @@
       "comment" : "A heading for the title and description of a pull request.",
       "isCommentAutoGenerated" : true
     },
-    "To remove everything Sevinda stored, quit Sevinda and delete `~/Library/Application Support/Sevinda`." : {
+    "To remove everything Suijin stored, quit Suijin and delete `~/Library/Application Support/Suijin`." : {
 
     },
     "Token activity over the last six weeks." : {
@@ -3468,7 +3462,7 @@
       "comment" : "A message that appears when the update check fails. The argument is the error message.",
       "isCommentAutoGenerated" : true
     },
-    "Updates are verified with Sevinda's signing key before they install. Running sessions keep going while Sevinda restarts." : {
+    "Updates are verified with Suijin's signing key before they install. Running sessions keep going while Suijin restarts." : {
       "comment" : "A description of how updates are verified and managed.",
       "isCommentAutoGenerated" : true
     },
@@ -3491,6 +3485,9 @@
     "Usage limits come from the providers, and costs on the Stats & Usage page are estimates from your local logs. They are for information only and may differ from what a provider bills you." : {
 
     },
+    "Usage unknown" : {
+
+    },
     "Use Emoji" : {
       "comment" : "A button that uses the emoji in the text field to set the workspace's icon.",
       "isCommentAutoGenerated" : true
@@ -3502,11 +3499,11 @@
     "Use several subscriptions and keep an eye on what they cost." : {
 
     },
-    "Used by new sessions and by `%@` typed in Sevinda terminals" : {
+    "Used by new sessions and by `%@` typed in Suijin terminals" : {
       "comment" : "The help text for the default account picker.",
       "isCommentAutoGenerated" : true
     },
-    "Using Sevinda" : {
+    "Using Suijin" : {
 
     },
     "Version %@ (%@)" : {
@@ -3540,7 +3537,7 @@
       "comment" : "A message that appears when a message is waiting for the turn to end.",
       "isCommentAutoGenerated" : true
     },
-    "We may update these terms. The effective date at the top shows the current version. Using Sevinda after a change means you accept the updated terms." : {
+    "We may update these terms. The effective date at the top shows the current version. Using Suijin after a change means you accept the updated terms." : {
 
     },
     "week" : {
@@ -3552,28 +3549,34 @@
     "Weekday" : {
 
     },
+    "weekly %@ limit" : {
+
+    },
     "Weekly %@ limit" : {
+
+    },
+    "weekly limit" : {
 
     },
     "Weekly limit" : {
 
     },
-    "Welcome to Sevinda" : {
+    "Welcome to Suijin" : {
 
     },
     "Welcome tour" : {
 
     },
-    "What Sevinda reads" : {
+    "What Suijin reads" : {
 
     },
-    "What Sevinda stores" : {
+    "What Suijin stores" : {
 
     },
-    "When Sevinda's handling of data changes, we update this policy and the effective date at the top." : {
+    "When Suijin's handling of data changes, we update this policy and the effective date at the top." : {
 
     },
-    "When you ask Sevinda to write a commit message or a pull request description, it runs your agent with the changes as the prompt, so those changes go to that agent's provider as well." : {
+    "When you ask Suijin to write a commit message or a pull request description, it runs your agent with the changes as the prompt, so those changes go to that agent's provider as well." : {
 
     },
     "Worker" : {
@@ -3620,10 +3623,7 @@
     "You are responsible for your agents" : {
 
     },
-    "You can remove Mercury from System Settings → General → Login Items and delete the Mercury app." : {
-
-    },
-    "You can take this tour again from Help › Welcome to Sevinda." : {
+    "You can take this tour again from Help › Welcome to Suijin." : {
 
     },
     "You choose the folders, accounts and permissions each agent gets." : {
@@ -3635,10 +3635,7 @@
     "Your choices" : {
 
     },
-    "Your Claude Code and Codex logs (`~/.claude/projects`, `~/.codex/sessions` and those of the accounts Sevinda manages), read-only, for the Stats & Usage page. Sevinda keeps only token counts, model names, project folder names and dates from them, never the text of prompts or replies." : {
-
-    },
-    "Your Mercury data was not moved yet" : {
+    "Your Claude Code and Codex logs (`~/.claude/projects`, `~/.codex/sessions` and those of the accounts Suijin manages), read-only, for the Stats & Usage page. Suijin keeps only token counts, model names, project folder names and dates from them, never the text of prompts or replies." : {
 
     },
     "your own login" : {
@@ -3648,9 +3645,6 @@
     "Your own login" : {
       "comment" : "The text that appears when a context has no active sessions.",
       "isCommentAutoGenerated" : true
-    },
-    "Your workspaces and settings came along. Sessions that were running in Mercury have ended; open one and choose Start Again." : {
-
     },
     "Zoom an Image" : {
 

@@ -1,18 +1,18 @@
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Reordering tabs by drag and drop: the model side (the drop calls `moveTab`).
 @MainActor
 @Suite(.serialized)
 struct TabOrderTests {
     @Test func movingASessionTabReordersTabsSidebarAndSurvivesARelaunch() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-order-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-order-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = try SevindaStore.inMemory()
+        let store = try SuijinStore.inMemory()
         let model = AppModel(store: store, dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
@@ -46,7 +46,7 @@ struct TabOrderTests {
     }
 
     @Test func movingAFileTabReordersOpenFiles() {
-        let model = AppModel(store: try! SevindaStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
+        let model = AppModel(store: try! SuijinStore.inMemory(), dataRoot: FileManager.default.temporaryDirectory)
         let context = SessionContext.workspace(UUID())
         model.openFiles[context] = ["/a", "/b", "/c"]
         model.moveTab(.file("/a"), onto: .file("/c"), in: context)
@@ -58,7 +58,7 @@ struct TabOrderTests {
     /// Every tab moves anywhere: Changes before the sessions, a file between them; new tabs open beside their kind,
     /// and the order is kept across launches.
     @Test func anyTabMovesAnywhere() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-order-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-order-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("repo", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -67,7 +67,7 @@ struct TabOrderTests {
         git.arguments = ["init", "-q", folder.path]
         try git.run()
         git.waitUntilExit()
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         #expect(workspace.kind == .git)

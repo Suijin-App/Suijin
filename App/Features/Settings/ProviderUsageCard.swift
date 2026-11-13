@@ -1,22 +1,22 @@
-import SevindaCore
-import SevindaUI
-import SevindaUsage
+import SuijinCore
+import SuijinUI
+import SuijinUsage
 import SwiftUI
 
 /// Settings → Stats & Usage → Providers: one provider's logo and data status, its most used model and project, then
 /// tokens, sessions and turns, and the estimated cost in the selected range.
 struct ProviderUsageCard: View {
     let provider: UsageProvider
-    let summary: SevindaUsage.UsageSummary
+    let summary: SuijinUsage.UsageSummary
     /// Whether the provider has any usage at all, in any range.
     let hasData: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
-            HStack(spacing: SevindaSpacing.s) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 AgentLogo(agent: agent, size: 20)
                 Text(verbatim: name).font(.headline).lineLimit(1)
-                Spacer(minLength: SevindaSpacing.s)
+                Spacer(minLength: SuijinSpacing.s)
                 Group {
                     if hasData {
                         Label("Has data", systemImage: "checkmark.circle.fill")
@@ -25,7 +25,7 @@ struct ProviderUsageCard: View {
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(hasData ? AnyShapeStyle(SevindaColor.okText) : AnyShapeStyle(.secondary))
+                .foregroundStyle(hasData ? AnyShapeStyle(SuijinColor.okText) : AnyShapeStyle(.secondary))
                 .lineLimit(1)
             }
             Text(verbatim: detail)
@@ -34,7 +34,7 @@ struct ProviderUsageCard: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(Text(verbatim: detail))
-            Grid(alignment: .leading, horizontalSpacing: SevindaSpacing.m, verticalSpacing: SevindaSpacing.xs) {
+            Grid(alignment: .leading, horizontalSpacing: SuijinSpacing.m, verticalSpacing: SuijinSpacing.xs) {
                 row("Tokens", UsageFormat.tokens(summary.tokens.total))
                 row("Sessions · turns",
                     "\(UsageFormat.count(summary.sessions)) · \(UsageFormat.count(summary.turns))")

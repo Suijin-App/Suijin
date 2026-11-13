@@ -1,10 +1,10 @@
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 
 /// The agents running in a shell session, innermost last, as the shell functions' markers report them
 /// (`ShellAgentMarker`). A start pushes its agent; an end removes the latest run of that agent and anything started
-/// inside it (which cannot outlive it). Names Sevinda does not know, and ends without a start (a replay that lost the
+/// inside it (which cannot outlive it). Names Suijin does not know, and ends without a start (a replay that lost the
 /// start, a second report of the same end), change nothing.
 struct ShellAgentStack: Equatable {
     private(set) var agents: [AgentKind] = []

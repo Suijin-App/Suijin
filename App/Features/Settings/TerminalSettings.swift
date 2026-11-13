@@ -1,5 +1,5 @@
-import SevindaTerminal
-import SevindaUI
+import SuijinTerminal
+import SuijinUI
 import SwiftUI
 
 /// Settings → Terminal: theme cards with real palette previews, font family and size with a live sample.
@@ -23,7 +23,7 @@ struct TerminalSettings: View {
             } header: {
                 Text("Theme")
             } footer: {
-                Text("New and visible terminals use the theme. Automatic uses Sevinda Light or Sevinda Dark to match the appearance.")
+                Text("New and visible terminals use the theme. Automatic uses Suijin Light or Suijin Dark to match the appearance.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
@@ -35,7 +35,7 @@ struct TerminalSettings: View {
                     ForEach(families, id: \.self) { Text(verbatim: $0).tag($0) }
                 }
                 LabeledContent("Font size") {
-                    HStack(spacing: SevindaSpacing.s) {
+                    HStack(spacing: SuijinSpacing.s) {
                         Text("\(Int(fontSize)) pt").monospacedDigit()
                         Stepper("Font size", value: Binding(
                             get: { fontSize },
@@ -101,14 +101,14 @@ private struct ThemeGrid: View {
     let family: String?
     let select: (String) -> Void
 
-    private let columns = [GridItem(.adaptive(minimum: 128, maximum: 180), spacing: SevindaSpacing.l, alignment: .top)]
+    private let columns = [GridItem(.adaptive(minimum: 128, maximum: 180), spacing: SuijinSpacing.l, alignment: .top)]
 
     var body: some View {
-        LazyVGrid(columns: columns, alignment: .leading, spacing: SevindaSpacing.l) {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: SuijinSpacing.l) {
             SelectableCard(isSelected: selection.isEmpty, title: "Automatic") { select("") } content: {
-                TerminalSample(theme: TerminalThemes.sevindaLight, family: family)
+                TerminalSample(theme: TerminalThemes.suijinLight, family: family)
                     .overlay {
-                        TerminalSample(theme: TerminalThemes.sevindaDark, family: family)
+                        TerminalSample(theme: TerminalThemes.suijinDark, family: family)
                             .mask(alignment: .trailing) {
                                 GeometryReader { proxy in
                                     Rectangle().frame(width: proxy.size.width / 2).frame(maxWidth: .infinity, alignment: .trailing)
@@ -122,7 +122,7 @@ private struct ThemeGrid: View {
                 }
             }
         }
-        .padding(.vertical, SevindaSpacing.xs)
+        .padding(.vertical, SuijinSpacing.xs)
     }
 }
 
@@ -167,7 +167,7 @@ private struct FontPreview: View {
     private func ansi(_ index: Int) -> Color { theme.ansi[index].color }
 
     private func prompt(_ command: String = "") -> Text {
-        Text(colored([("~/sevinda", ansi(4)), (" main", ansi(5)), (" *", ansi(3)), (" $ ", theme.foreground.color),
+        Text(colored([("~/suijin", ansi(4)), (" main", ansi(5)), (" *", ansi(3)), (" $ ", theme.foreground.color),
                       (command, theme.foreground.color)]))
     }
 
@@ -194,12 +194,12 @@ private struct FontPreview: View {
         .font(Font(TerminalTheme.font(family: family, size: size) as CTFont))
         .lineLimit(1)
         .fixedSize(horizontal: true, vertical: true)
-        .padding(SevindaSpacing.m)
+        .padding(SuijinSpacing.m)
         .frame(maxWidth: .infinity, maxHeight: 260, alignment: .topLeading)
         .clipped()
-        .background(theme.background.color, in: .rect(cornerRadius: SevindaRadius.control))
+        .background(theme.background.color, in: .rect(cornerRadius: SuijinRadius.control))
         .overlay {
-            RoundedRectangle(cornerRadius: SevindaRadius.control).strokeBorder(.separator, lineWidth: 1)
+            RoundedRectangle(cornerRadius: SuijinRadius.control).strokeBorder(.separator, lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Terminal preview in \(theme.name)"))

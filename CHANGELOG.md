@@ -8,11 +8,11 @@
   window to the first account with room in an order you set; with none, the limit banner stays. Sessions move with
   their conversation, as Continue With Another Account does, only once the agent finished its turn and sits at its
   normal prompt (never while it waits at a permission request or a question), never back to an account still at its
-  limit, and not again for a limit within ten minutes. A note in the pane (and a notification while Sevinda is in the
+  limit, and not again for a limit within ten minutes. A note in the pane (and a notification while Suijin is in the
   background) says where a session went and why. Shells and agents started in them never move; a running Codex, which
-  tells Sevinda neither its conversation nor when it is safely at its prompt, stays with a note.
+  tells Suijin neither its conversation nor when it is safely at its prompt, stays with a note.
 - Continue With Another Account (session context menu, Session Ended view, usage popover) carries a Claude Code or
-  Codex conversation to another managed account or your own login when an account runs out: Sevinda ends the agent,
+  Codex conversation to another managed account or your own login when an account runs out: Suijin ends the agent,
   places the conversation's history in the other account's folder (linked or copied, never moved or replacing a
   file) and resumes it in the same tab or pane with the same folder and permission mode. A running session whose
   account used up a usage window shows a banner offering the other accounts.
@@ -26,5 +26,5 @@
 - Resume Session on the Session Ended view continues a Claude Code or Codex conversation in the same tab or pane.
 - Settings › Shortcuts lists every keyboard shortcut and mouse gesture, searchable by action or key. Help ›
   Keyboard Shortcuts (⌘/) opens it.
-- Mercury is now Sevinda. The first launch moves an existing install (workspaces, accounts, settings) to the
-  new name; see `docs/architecture.md`, "Moving an install from the old name".
+- Sevinda is now Suijin. The bundle identifier changed with the name, so macOS treats Suijin as a new app: grant Full
+  Disk Access, Accessibility and Notifications again in System Settings. Suijin starts with an empty data folder.

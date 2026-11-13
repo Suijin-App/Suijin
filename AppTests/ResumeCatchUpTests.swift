@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Resume Session reopens a conversation, and the agent prints all of it again as it starts. The pane shows "Resuming
 /// session…" over a hidden terminal until that output settles, then the terminal already at its end: no scrolling
@@ -13,7 +13,7 @@ import Testing
 @Suite(.serialized, .timeLimit(.minutes(2)))
 struct ResumeCatchUpTests {
     @Test func aResumedSessionShowsAtItsEndWithoutScrolling() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-resume-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-resume-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -29,7 +29,7 @@ struct ResumeCatchUpTests {
         """.write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
 
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         let context = SessionContext.workspace(workspace.id)
@@ -81,13 +81,13 @@ struct ResumeCatchUpTests {
     }
 
     /// Renders the resuming pane for review, narrow and wide, light and dark, then runs a resume with and without the
-    /// catch-up for comparison. Opt-in with `TEST_RUNNER_SEVINDA_RESUME_SHOT=<file>`: at each step the file receives
+    /// catch-up for comparison. Opt-in with `TEST_RUNNER_SUIJIN_RESUME_SHOT=<file>`: at each step the file receives
     /// `<name> <window number>` and the window stays up while the caller captures it with `screencapture -l`. The
     /// window is ordered in without activating the app.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_RESUME_SHOT"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_RESUME_SHOT"] != nil))
     func resumingScreens() async throws {
-        let output = ProcessInfo.processInfo.environment["SEVINDA_RESUME_SHOT"] ?? ""
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-resume-shots-\(UUID().uuidString)", isDirectory: true)
+        let output = ProcessInfo.processInfo.environment["SUIJIN_RESUME_SHOT"] ?? ""
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-resume-shots-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("my-project", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -99,7 +99,7 @@ struct ResumeCatchUpTests {
         while :; do sleep 1; done
         """.write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let workspace = try #require(model.workspaces.first)
         let context = SessionContext.workspace(workspace.id)

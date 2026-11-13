@@ -1,19 +1,19 @@
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// ⌘-clicked terminal links: files open in a viewer tab of the session's context, web links go to the browser.
 @MainActor
 struct TerminalLinkTests {
     @Test func pathsOpenFileTabsAndWebLinksDoNot() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-links-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-links-\(UUID().uuidString)", isDirectory: true)
         let docs = root.appendingPathComponent("docs", isDirectory: true)
         try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let plan = docs.appendingPathComponent("plan.md")
         try "# Plan\n".write(to: plan, atomically: true, encoding: .utf8)
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: root)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         let path = plan.standardizedFileURL.path
@@ -33,7 +33,7 @@ struct TerminalLinkTests {
     }
 
     @Test func fileViewerReadsMarkdownTextImagesAndRejectsBinary() throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-viewer-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-viewer-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let markdown = root.appendingPathComponent("a.md"), text = root.appendingPathComponent("a.swift"), binary = root.appendingPathComponent("a.bin")

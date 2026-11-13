@@ -1,9 +1,9 @@
 import AppKit
 import Foundation
-import SevindaCore
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The inspector's file tree on the system outline view: selecting a row (what pressing does) opens and folds
 /// nothing, a click opens a file or folds a folder once, a drag carries the rows' file URLs and opens nothing, and
@@ -34,7 +34,7 @@ struct FileTreeOutlineTests {
 
         init(files: [String], expanded: [String] = []) throws {
             let folder = FileManager.default.temporaryDirectory
-                .appendingPathComponent("sevinda-tree-\(UUID().uuidString)", isDirectory: true).standardizedFileURL
+                .appendingPathComponent("suijin-tree-\(UUID().uuidString)", isDirectory: true).standardizedFileURL
             self.folder = folder
             for file in files { try Self.write(folder.appendingPathComponent(file)) }
             let recorder = Recorder()
@@ -101,7 +101,7 @@ struct FileTreeOutlineTests {
             #expect(outline.canDragRows(with: rows, at: outline.rect(ofRow: row).origin))
             let writers = rows.compactMap { outline.item(atRow: $0) }
                 .compactMap { controller.outlineView(outline, pasteboardWriterForItem: $0) }
-            let pasteboard = NSPasteboard(name: NSPasteboard.Name("sevinda.test.tree.\(UUID().uuidString)"))
+            let pasteboard = NSPasteboard(name: NSPasteboard.Name("suijin.test.tree.\(UUID().uuidString)"))
             defer { pasteboard.releaseGlobally() }
             pasteboard.clearContents()
             pasteboard.writeObjects(writers)
@@ -318,15 +318,15 @@ struct FileTreeOutlineTests {
         let key = "fileTree.expandedFolders"
         let saved = UserDefaults.standard.object(forKey: key)
         defer { UserDefaults.standard.set(saved, forKey: key) }
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-tree-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-tree-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let kept = root.appendingPathComponent("kept").path
         try FileManager.default.createDirectory(atPath: kept, withIntermediateDirectories: true)
         let context = SessionContext.workspace(UUID())
 
-        let first = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let first = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         first.setExpandedFolders([kept, root.appendingPathComponent("gone").path], in: context)
-        let relaunched = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let relaunched = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         #expect(relaunched.expandedFolders(in: context) == [kept], "folders deleted since are dropped")
         relaunched.setExpandedFolders([], in: context)
         #expect((UserDefaults.standard.dictionary(forKey: key)?[context.storageValue]) == nil)
@@ -349,11 +349,11 @@ struct FileTreeOutlineTests {
         let key = "fileTree.expandedFolders"
         let saved = UserDefaults.standard.object(forKey: key)
         defer { UserDefaults.standard.set(saved, forKey: key) }
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-tree-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-tree-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let folder = root.appendingPathComponent("work", isDirectory: true)
         for file in ["src/main.swift", "README.md"] { try Fixture.write(folder.appendingPathComponent(file)) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         let directory = try #require(model.directory(of: context)).standardizedFileURL
@@ -378,15 +378,15 @@ struct FileTreeOutlineTests {
     }
 
     /// Offscreen renders of the tree (a revealed file selected) and of the filtered list, in a narrow and a wide
-    /// inspector, light and dark. Runs when `SEVINDA_SCREENSHOTS` names an output folder; reviewed by eye. The views'
+    /// inspector, light and dark. Runs when `SUIJIN_SCREENSHOTS` names an output folder; reviewed by eye. The views'
     /// cached display is drawn over the window background; the selection's material does not render this way.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] != nil))
     func screenshots() async throws {
-        let output = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"]))
+        let output = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"]))
         let key = "fileTree.expandedFolders"
         let saved = UserDefaults.standard.object(forKey: key)
         defer { UserDefaults.standard.set(saved, forKey: key) }
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-tree-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-tree-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
         let folder = root.appendingPathComponent("demo", isDirectory: true)
         let files = ["App/Features/Files/FileOutline.swift", "App/Features/Files/FileTreeView.swift",
@@ -394,7 +394,7 @@ struct FileTreeOutlineTests {
                      "App/Resources/Localizable.xcstrings", "docs/architecture.md", "Assets/logo.png", "Package.swift",
                      "README.md", "scripts/ci-local.sh"]
         for file in files { try Fixture.write(folder.appendingPathComponent(file)) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         let directory = try #require(model.directory(of: context)).standardizedFileURL

@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// A split tab: its pane tree in nested native split views, or the zoomed pane alone.

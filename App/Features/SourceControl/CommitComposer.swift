@@ -1,5 +1,5 @@
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// The commit message editor with Generate (an agent writes the message from the staged diff, read-only) and Commit.
@@ -9,7 +9,7 @@ struct CommitComposer: View {
     let surface: SourceControlSurface
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SevindaSpacing.s) {
+        VStack(alignment: .leading, spacing: SuijinSpacing.s) {
             TextEditor(text: $state.draftMessage)
                 .font(.body)
                 .frame(minHeight: 64, maxHeight: 180)
@@ -26,8 +26,8 @@ struct CommitComposer: View {
                 .accessibilityLabel(Text("Commit message"))
 
             if let error = state.generationError {
-                HStack(alignment: .top, spacing: SevindaSpacing.xs) {
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SevindaColor.warningText)
+                HStack(alignment: .top, spacing: SuijinSpacing.xs) {
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(SuijinColor.warningText)
                     ScrollView {
                         Text(verbatim: error).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -40,7 +40,7 @@ struct CommitComposer: View {
                 .font(.callout)
             }
 
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 if state.isGenerating {
                     ProgressView().controlSize(.small)
                     Button("Cancel") { state.cancelGeneration() }

@@ -1,5 +1,5 @@
 import Charts
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
 /// The Resource Manager popover of the status bar. Samples only while it is shown: the `.task` loop ends when the
@@ -73,25 +73,25 @@ struct ResourceManagerView: View {
                 Label {
                     Text(verbatim: problem).lineLimit(2)
                 } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SevindaColor.warning)
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(SuijinColor.warning)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, SevindaSpacing.m)
-                .padding(.vertical, SevindaSpacing.s)
+                .padding(.horizontal, SuijinSpacing.m)
+                .padding(.vertical, SuijinSpacing.s)
             }
         }
         .frame(width: Self.width)
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: SevindaSpacing.m) {
+        HStack(alignment: .center, spacing: SuijinSpacing.m) {
             Label("Resource Manager", systemImage: "memorychip")
                 .font(.headline)
                 .lineLimit(1)
-            Spacer(minLength: SevindaSpacing.s)
+            Spacer(minLength: SuijinSpacing.s)
             if let report {
-                HStack(spacing: SevindaSpacing.m) {
+                HStack(spacing: SuijinSpacing.m) {
                     summary(Text("CPU"), value: Self.cpuText(report.cpu))
                     summary(Text("Memory"), value: Self.memoryText(report.memory))
                 }
@@ -104,8 +104,8 @@ struct ResourceManagerView: View {
             .help(Text("Refresh"))
             .accessibilityLabel(Text("Refresh"))
         }
-        .padding(.horizontal, SevindaSpacing.m)
-        .padding(.vertical, SevindaSpacing.s + 2)
+        .padding(.horizontal, SuijinSpacing.m)
+        .padding(.vertical, SuijinSpacing.s + 2)
     }
 
     private func summary(_ title: Text, value: Text) -> some View {
@@ -116,37 +116,37 @@ struct ResourceManagerView: View {
     }
 
     private var columnHeader: some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             Text("Name").frame(maxWidth: .infinity, alignment: .leading)
             Text("CPU").frame(width: Self.cpuColumn, alignment: .trailing)
             Text("Memory").frame(width: Self.memoryColumn, alignment: .trailing)
         }
         .font(.caption)
         .foregroundStyle(.secondary)
-        .padding(.horizontal, SevindaSpacing.m + SevindaSpacing.xs)
-        .padding(.top, SevindaSpacing.s)
+        .padding(.horizontal, SuijinSpacing.m + SuijinSpacing.xs)
+        .padding(.top, SuijinSpacing.s)
         .padding(.bottom, 2)
         .accessibilityHidden(true)
     }
 
     private func list(_ report: ResourceReport) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
+            VStack(alignment: .leading, spacing: SuijinSpacing.xs) {
                 if report.sessionGroups.isEmpty {
                     ContentUnavailableView {
                         Label("No Running Sessions", systemImage: "terminal")
                     } description: {
-                        Text("Only Sevinda is using resources right now.")
+                        Text("Only Suijin is using resources right now.")
                     }
                     .controlSize(.small)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, SevindaSpacing.s)
+                    .padding(.vertical, SuijinSpacing.s)
                 }
                 ForEach(report.sessionGroups) { group in groupView(group) }
-                groupView(report.sevinda)
+                groupView(report.suijin)
             }
-            .padding(.horizontal, SevindaSpacing.m)
-            .padding(.bottom, SevindaSpacing.m)
+            .padding(.horizontal, SuijinSpacing.m)
+            .padding(.bottom, SuijinSpacing.m)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
         }
         .frame(height: min(max(listHeight, 1), Self.maxListHeight))
@@ -166,7 +166,7 @@ struct ResourceManagerView: View {
                 }
             }
         } label: {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 Text(verbatim: group.title)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
@@ -209,7 +209,7 @@ private struct ResourceRowView: View {
     let row: ResourceReport.Row
 
     var body: some View {
-        HStack(spacing: SevindaSpacing.s) {
+        HStack(spacing: SuijinSpacing.s) {
             icon.frame(width: 16)
             if let activity = row.activity {
                 Circle()
@@ -242,7 +242,7 @@ private struct ResourceRowView: View {
         .font(.callout)
         .monospacedDigit()
         .padding(.vertical, 4)
-        .padding(.horizontal, SevindaSpacing.xs)
+        .padding(.horizontal, SuijinSpacing.xs)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }

@@ -1,34 +1,34 @@
 import Foundation
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
-/// Data for measuring UI responsiveness with the real app: `TEST_RUNNER_SEVINDA_PERF_SEED_ROOT=<dir> xcodebuild test
-/// -only-testing:SevindaAppTests/PerfSeedTests`, then launch Sevinda with `SEVINDA_DATA_ROOT=<dir>/data` and
-/// `SEVINDA_PERF_OUT=<file>` (see `PerfProbe`). A git workspace of a few hundred source files with three worktrees and a
+/// Data for measuring UI responsiveness with the real app: `TEST_RUNNER_SUIJIN_PERF_SEED_ROOT=<dir> xcodebuild test
+/// -only-testing:SuijinAppTests/PerfSeedTests`, then launch Suijin with `SUIJIN_DATA_ROOT=<dir>/data` and
+/// `SUIJIN_PERF_OUT=<file>` (see `PerfProbe`). A git workspace of a few hundred source files with three worktrees and a
 /// folder workspace, and fourteen shells left running in the PTY host (no agents, so nothing reaches an account).
-/// `TEST_RUNNER_SEVINDA_PERF_CLEANUP_ROOT=<dir>` ends the shells of such a data root again.
+/// `TEST_RUNNER_SUIJIN_PERF_CLEANUP_ROOT=<dir>` ends the shells of such a data root again.
 @MainActor
 @Suite(.serialized)
 struct PerfSeedTests {
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_PERF_SEED_ROOT"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_PERF_SEED_ROOT"] != nil))
     func seed() async throws {
-        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_PERF_SEED_ROOT"]), isDirectory: true)
+        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_PERF_SEED_ROOT"]), isDirectory: true)
         try? FileManager.default.removeItem(at: base)
-        let repo = base.appendingPathComponent("sevinda-api", isDirectory: true)
+        let repo = base.appendingPathComponent("suijin-api", isDirectory: true)
         let folder = base.appendingPathComponent("design-notes", isDirectory: true)
         for dir in [repo, folder] { try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) }
         try Self.writeSourceTree(in: repo)
         try "notes\n".write(to: folder.appendingPathComponent("notes.md"), atomically: true, encoding: .utf8)
         let git = GitRunner()
-        let identity = ["-c", "user.name=Sevinda Perf", "-c", "user.email=perf@example.invalid"]
+        let identity = ["-c", "user.name=Suijin Perf", "-c", "user.email=perf@example.invalid"]
         _ = try await git.run(["init", "-b", "main"], in: repo)
         _ = try await git.run(["add", "."], in: repo)
         _ = try await git.run(identity + ["commit", "-m", "initial"], in: repo)
 
         let dataRoot = base.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.addWorkspace(at: repo)
         await model.addWorkspace(at: folder)
         let gitID = try #require(model.workspaces.first).id
@@ -58,11 +58,11 @@ struct PerfSeedTests {
         await model.runtimes.prepareForQuit()
     }
 
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_PERF_CLEANUP_ROOT"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_PERF_CLEANUP_ROOT"] != nil))
     func cleanup() async throws {
-        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_PERF_CLEANUP_ROOT"]), isDirectory: true)
+        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_PERF_CLEANUP_ROOT"]), isDirectory: true)
         let dataRoot = base.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.loadSettings()
         await model.load()
         await model.runtimes.bootstrap()
@@ -84,7 +84,7 @@ struct PerfSeedTests {
                 }
             }
         }
-        try "# sevinda-api\n".write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+        try "# suijin-api\n".write(to: root.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
         try "{}\n".write(to: root.appendingPathComponent("package.json"), atomically: true, encoding: .utf8)
     }
 }

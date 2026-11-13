@@ -1,6 +1,6 @@
 import AppKit
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// Popover to pick a workspace's icon (symbol, emoji, picture, GitHub avatar, or the default letter) and color.
@@ -18,8 +18,8 @@ struct WorkspaceIconEditor: View {
 
     var body: some View {
         if let workspace = model.workspace(workspaceID) {
-            VStack(alignment: .leading, spacing: SevindaSpacing.m) {
-                HStack(spacing: SevindaSpacing.m) {
+            VStack(alignment: .leading, spacing: SuijinSpacing.m) {
+                HStack(spacing: SuijinSpacing.m) {
                     WorkspaceBadge(workspace: workspace, imageDirectory: model.workspaceIconDirectory, size: 40)
                     VStack(alignment: .leading) {
                         Text(verbatim: workspace.name).font(.headline).lineLimit(1)
@@ -80,7 +80,7 @@ struct WorkspaceIconEditor: View {
                     Button("Reset") { set(icon: nil, color: nil) }
                 }
             }
-            .padding(SevindaSpacing.l)
+            .padding(SuijinSpacing.l)
             .frame(width: 340)
             .task { githubOwner = await AppModel.githubOwner(of: workspace) }
         }

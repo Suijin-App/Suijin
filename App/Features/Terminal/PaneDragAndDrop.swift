@@ -1,27 +1,27 @@
 import AppKit
-import SevindaCore
-import SevindaUI
+import SuijinCore
+import SuijinUI
 import SwiftUI
 import UniformTypeIdentifiers
 import os
 
-private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "panes")
+private let logger = Logger(subsystem: "com.tekmium.suijin", category: "panes")
 
 /// Rearranging the panes of a split tab by dragging a pane's header.
 ///
 /// The drag is a system drag session (cursor, Esc to cancel, the image sliding back on a cancel), started from the
 /// header's title by `PaneDragSource`, with a payload of its own type so tab drags (plain text) and pane drags never
 /// land on each other. While it runs, the dragged pane dims; over another pane of the same tab five zones (`PanePlacement`
-/// in SevindaCore) show where it would land with a Liquid Glass preview and a label; a drop moves it there
+/// in SuijinCore) show where it would land with a Liquid Glass preview and a label; a drop moves it there
 /// (`AppModel.movePane`) with the panes sliding into their new places (`PaneRearrangeAnimation`). Dropping it on the
 /// title-bar tab group moves it into a tab of its own.
 extension UTType {
     /// A pane being dragged; the payload is its session id.
-    static let sevindaPane = UTType(exportedAs: "com.tekmium.sevinda.pane")
+    static let suijinPane = UTType(exportedAs: "com.tekmium.suijin.pane")
 }
 
 extension NSPasteboard.PasteboardType {
-    static let sevindaPane = NSPasteboard.PasteboardType(UTType.sevindaPane.identifier)
+    static let suijinPane = NSPasteboard.PasteboardType(UTType.suijinPane.identifier)
 }
 
 /// The pane drag in progress, if any: which pane is dragged and where it would land.
@@ -195,7 +195,7 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
     /// Starts the system drag session with a picture of the pane's logo and title under the pointer.
     func beginDrag(session: UUID, from event: NSEvent) {
         let item = NSPasteboardItem()
-        item.setString(session.uuidString, forType: .sevindaPane)
+        item.setString(session.uuidString, forType: .suijinPane)
         let dragging = NSDraggingItem(pasteboardWriter: item)
         let scale = window?.backingScaleFactor ?? 2
         let start = convert(event.locationInWindow, from: nil)
@@ -280,7 +280,7 @@ struct PaneDropTarget: ViewModifier {
             .animation(.easeOut(duration: 0.15), value: isSource)
             .overlay { PaneDropPreview(placement: drag.target?.pane == session ? drag.target?.placement : nil) }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-            .onDrop(of: [.sevindaPane], delegate: PaneDropDelegate(model: model, pane: session, size: size))
+            .onDrop(of: [.suijinPane], delegate: PaneDropDelegate(model: model, pane: session, size: size))
     }
 }
 
@@ -290,7 +290,7 @@ private struct PaneDropDelegate: DropDelegate {
     let size: CGSize
 
     func validateDrop(info: DropInfo) -> Bool {
-        info.hasItemsConforming(to: [.sevindaPane]) && model.canDropDraggedPane(onto: pane)
+        info.hasItemsConforming(to: [.suijinPane]) && model.canDropDraggedPane(onto: pane)
     }
 
     func dropEntered(info: DropInfo) {
@@ -393,7 +393,7 @@ struct PaneTabBarDropTarget: ViewModifier {
                 }
             }
             .animation(.easeOut(duration: 0.12), value: isTargeted)
-            .onDrop(of: [.sevindaPane], delegate: TabBarDropDelegate(model: model, context: context, isTargeted: $isTargeted))
+            .onDrop(of: [.suijinPane], delegate: TabBarDropDelegate(model: model, context: context, isTargeted: $isTargeted))
     }
 }
 
@@ -403,7 +403,7 @@ private struct TabBarDropDelegate: DropDelegate {
     @Binding var isTargeted: Bool
 
     func validateDrop(info: DropInfo) -> Bool {
-        info.hasItemsConforming(to: [.sevindaPane]) && model.canDropDraggedPaneOnTabBar(in: context)
+        info.hasItemsConforming(to: [.suijinPane]) && model.canDropDraggedPaneOnTabBar(in: context)
     }
 
     func dropEntered(info: DropInfo) { isTargeted = true }

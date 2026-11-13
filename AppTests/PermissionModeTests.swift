@@ -1,7 +1,7 @@
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Permission modes in the app: the default per agent and a choice for one session, the confirmation before an agent
 /// starts without permission checks, and the mode a session keeps when it is resumed, started again or repeated.
@@ -14,7 +14,7 @@ struct PermissionModeTests {
     let bin: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-perm-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-perm-\(UUID().uuidString)", isDirectory: true)
         folder = root.appendingPathComponent("work", isDirectory: true)
         bin = root.appendingPathComponent("bin", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -52,7 +52,7 @@ struct PermissionModeTests {
     }
 
     private func makeModel() async throws -> (AppModel, SessionContext) {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         await model.runtimes.bootstrap()
@@ -81,7 +81,7 @@ struct PermissionModeTests {
     // MARK: Defaults
 
     @Test func defaultsAreAskAndAChoiceOverridesTheSetting() async throws {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(model.defaultPermissionMode(for: .claude) == .ask)
         #expect(model.defaultPermissionMode(for: .codex) == .ask)
@@ -109,7 +109,7 @@ struct PermissionModeTests {
     // MARK: Confirmation
 
     @Test func skippingChecksIsConfirmedUntilTheUserTurnsTheQuestionOff() async throws {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         defer { try? FileManager.default.removeItem(at: root) }
         var started: [AgentPermissionMode] = []
 

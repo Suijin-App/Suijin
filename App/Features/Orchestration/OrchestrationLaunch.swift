@@ -1,22 +1,22 @@
 import Foundation
-import SevindaAccounts
-import SevindaCore
-import SevindaPTYProtocol
+import SuijinAccounts
+import SuijinCore
+import SuijinPTYProtocol
 import os
 
-private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "orchestration")
+private let logger = Logger(subsystem: "com.tekmium.suijin", category: "orchestration")
 
-/// What every terminal Sevinda opens gets for orchestration: the bundled `sevinda` on `PATH`, the session token and
+/// What every terminal Suijin opens gets for orchestration: the bundled `suijin` on `PATH`, the session token and
 /// the broker's addresses in the environment, the orchestration skill, and for Codex the `notify` hook.
 enum OrchestrationLaunch {
-    static let skillName = "sevinda-orchestration"
+    static let skillName = "suijin-orchestration"
 
-    /// `Sevinda.app/Contents/Helpers`: holds only `sevinda`, so only it joins `PATH`.
+    /// `Suijin.app/Contents/Helpers`: holds only `suijin`, so only it joins `PATH`.
     static var cliDirectory: URL {
         Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers", isDirectory: true)
     }
 
-    static var cliPath: String { cliDirectory.appendingPathComponent("sevinda").path }
+    static var cliPath: String { cliDirectory.appendingPathComponent("suijin").path }
 
     static var isCLIAvailable: Bool { FileManager.default.isExecutableFile(atPath: cliPath) }
 
@@ -36,7 +36,7 @@ enum OrchestrationLaunch {
         ]
     }
 
-    /// `PATH` with Sevinda's CLI folder first.
+    /// `PATH` with Suijin's CLI folder first.
     static func path(prepending base: String?) -> String {
         guard isCLIAvailable else { return base ?? "/usr/bin:/bin:/usr/sbin:/sbin" }
         let parts = (base ?? "/usr/bin:/bin:/usr/sbin:/sbin").split(separator: ":").map(String.init).filter { $0 != cliDirectory.path }
@@ -46,7 +46,7 @@ enum OrchestrationLaunch {
     // MARK: Claude
 
     /// `<dataRoot>/orchestration/claude-plugin`, a plugin holding the skill. Claude loads it with `--plugin-dir`, so
-    /// every Sevinda Claude session (managed profile or the user's own login) sees the skill and nothing is written
+    /// every Suijin Claude session (managed profile or the user's own login) sees the skill and nothing is written
     /// into a profile's `skills` folder, which is a link to the user's `~/.claude/skills`.
     static func claudePluginDirectory(dataRoot: URL) -> URL {
         OrchestrationPaths.directory(dataRoot: dataRoot).appendingPathComponent("claude-plugin", isDirectory: true)
@@ -57,7 +57,7 @@ enum OrchestrationLaunch {
     static func installClaudePlugin(dataRoot: URL) -> URL? {
         guard let skill = bundledSkill, let text = try? Data(contentsOf: skill) else { return nil }
         let root = claudePluginDirectory(dataRoot: dataRoot)
-        let manifest = Data(#"{"name":"sevinda","description":"Sevinda agent orchestration: start worker agents and get their results back.","version":"1.0.0"}"#.utf8)
+        let manifest = Data(#"{"name":"suijin","description":"Suijin agent orchestration: start worker agents and get their results back.","version":"1.0.0"}"#.utf8)
         do {
             try writeIfChanged(manifest, to: root.appendingPathComponent(".claude-plugin/plugin.json"))
             try writeIfChanged(text, to: root.appendingPathComponent("skills/\(skillName)/SKILL.md"))
@@ -68,7 +68,7 @@ enum OrchestrationLaunch {
         }
     }
 
-    /// The user-level skill (`~/.claude/skills/sevinda-orchestration`) when the user turned it on in Settings.
+    /// The user-level skill (`~/.claude/skills/suijin-orchestration`) when the user turned it on in Settings.
     static func userClaudeSkill(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
         home.appendingPathComponent(".claude/skills/\(skillName)/SKILL.md")
     }
@@ -88,7 +88,7 @@ enum OrchestrationLaunch {
 
     /// Copies the skill into a managed Codex home's `skills` folder when that folder is the home's own. A `skills`
     /// that links to the user's `~/.codex/skills` is left alone (writing through it would change the user's folder);
-    /// those sessions read the guide with `sevinda skills get orchestration`, and workers get it in their prompt.
+    /// those sessions read the guide with `suijin skills get orchestration`, and workers get it in their prompt.
     static func installCodexSkill(home: URL) {
         guard let skill = bundledSkill, let text = try? Data(contentsOf: skill) else { return }
         let skills = home.appendingPathComponent("skills", isDirectory: true)

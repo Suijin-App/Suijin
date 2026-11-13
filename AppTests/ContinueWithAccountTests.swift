@@ -1,8 +1,8 @@
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Continuing a conversation on another account: the history is placed in the target account's folder, the agent is
 /// resumed there in the same record (tab or pane, folder, permission mode), and a failure leaves the session and its
@@ -18,7 +18,7 @@ struct ContinueWithAccountTests {
     let conversation = "5a0c2f9e-1b3d-4e5f-8a7b-9c0d1e2f3a4b"
 
     init() throws {
-        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-continue-\(UUID().uuidString)", isDirectory: true)
+        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-continue-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: raw, withIntermediateDirectories: true)
         root = raw.resolvingSymlinksInPath()
         folder = root.appendingPathComponent("work", isDirectory: true)
@@ -57,7 +57,7 @@ struct ContinueWithAccountTests {
     }
 
     private func makeModel() async throws -> (AppModel, SessionContext) {
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         model.accountsController.ownLoginHome = (home: ownHome, environment: [:])
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
@@ -67,7 +67,7 @@ struct ContinueWithAccountTests {
         return (model, context)
     }
 
-    /// A managed account whose folder exists. Not a real profile path, so Sevinda does not set it up from `~/.claude`.
+    /// A managed account whose folder exists. Not a real profile path, so Suijin does not set it up from `~/.claude`.
     private func account(_ provider: AccountProvider, _ name: String, in model: AppModel) async throws -> ManagedAccountRecord {
         let parent = provider == .claude ? "claude-profiles" : "codex-homes"
         let home = model.dataRoot.appendingPathComponent("\(parent)/\(name)/home", isDirectory: true)

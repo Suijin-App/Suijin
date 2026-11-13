@@ -1,8 +1,8 @@
 import AppKit
 import Foundation
-import SevindaCore
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Ten hosted terminals flooding output at once, all on screen: the main thread must keep serving the UI.
 /// Prints the measurements; the thresholds are generous so the test catches freezes, not noise.
@@ -10,11 +10,11 @@ import Testing
 @Suite(.serialized, .timeLimit(.minutes(3)))
 struct LoadTests {
     @Test func tenFloodingTerminalsKeepTheMainThreadResponsive() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-load-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-load-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         await model.runtimes.bootstrap()
@@ -45,7 +45,7 @@ struct LoadTests {
         let usageBefore = Self.cpuSeconds()
         let start = ContinuousClock.now
         for id in ids {
-            model.runtimes.runtime(for: id)?.terminal.send("yes 'Sevinda load test line with some width to it' | head -n 400000; echo LOAD_DONE_$((7*6))\n")
+            model.runtimes.runtime(for: id)?.terminal.send("yes 'Suijin load test line with some width to it' | head -n 400000; echo LOAD_DONE_$((7*6))\n")
         }
         // Measure the longest gap between main-thread ticks scheduled every 10 ms while the output streams in.
         var worstGap: Duration = .zero

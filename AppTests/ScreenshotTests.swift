@@ -1,17 +1,17 @@
 import AppKit
 import Foundation
-import SevindaAccounts
-import SevindaCore
+import SuijinAccounts
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
-/// Offscreen renders of the main screens, light and dark, narrow and wide. Runs when `SEVINDA_SCREENSHOTS` names an
-/// output folder (`TEST_RUNNER_SEVINDA_SCREENSHOTS=<dir> xcodebuild test`); the images are reviewed by eye.
+/// Offscreen renders of the main screens, light and dark, narrow and wide. Runs when `SUIJIN_SCREENSHOTS` names an
+/// output folder (`TEST_RUNNER_SUIJIN_SCREENSHOTS=<dir> xcodebuild test`); the images are reviewed by eye.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] != nil))
 struct ScreenshotTests {
-    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] ?? NSTemporaryDirectory())
+    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] ?? NSTemporaryDirectory())
     static let sizes: [(String, CGSize)] = [("narrow", CGSize(width: 1000, height: 640)), ("wide", CGSize(width: 1280, height: 760))]
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) throws {
@@ -34,15 +34,15 @@ struct ScreenshotTests {
     }
 
     private func sampleModel(empty: Bool) async throws -> AppModel {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-shots-\(UUID().uuidString)")
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-shots-\(UUID().uuidString)")
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root)
         guard !empty else { return model }
-        let repo = Workspace(name: "sevinda-api", path: "/Users/demo/Code/sevinda-api", kind: .git, sortOrder: 0)
+        let repo = Workspace(name: "suijin-api", path: "/Users/demo/Code/suijin-api", kind: .git, sortOrder: 0)
         let folder = Workspace(name: "design-notes", path: "/Users/demo/Documents/design-notes", kind: .folder, sortOrder: 1)
         for workspace in [repo, folder] { try model.store.save(workspace) }
         let trees = [
-            WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/sevinda-api-worktrees/feature/usage-bar", branch: "feature/usage-bar", baseBranch: "main"),
-            WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/sevinda-api-worktrees/fix/login-timeout", branch: "fix/login-timeout", baseBranch: "main"),
+            WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/suijin-api-worktrees/feature/usage-bar", branch: "feature/usage-bar", baseBranch: "main"),
+            WorktreeRecord(workspaceID: repo.id, path: "/Users/demo/Code/suijin-api-worktrees/fix/login-timeout", branch: "fix/login-timeout", baseBranch: "main"),
         ]
         for tree in trees { try model.store.save(tree) }
         let sessions = [

@@ -1,6 +1,6 @@
 import AppKit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Zooming and panning an image with a mouse: ⌘ or ⌥ with the wheel zooms around the pointer, a plain wheel scrolls,
 /// a double-click switches between fitted and actual size, and dragging pans a zoomed image. Everything runs in a

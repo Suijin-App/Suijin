@@ -1,33 +1,33 @@
 import Foundation
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
-/// Builds a demo data root for looking at the real app: `TEST_RUNNER_SEVINDA_SEED_ROOT=<dir> xcodebuild test
-/// -only-testing:SevindaAppTests/DemoSeedTests`, then launch Sevinda with `SEVINDA_DATA_ROOT=<dir>/data`. It holds a
+/// Builds a demo data root for looking at the real app: `TEST_RUNNER_SUIJIN_SEED_ROOT=<dir> xcodebuild test
+/// -only-testing:SuijinAppTests/DemoSeedTests`, then launch Suijin with `SUIJIN_DATA_ROOT=<dir>/data`. It holds a
 /// git workspace with two worktrees, a folder workspace, and shell sessions left running in the PTY host, so the app
 /// attaches to them on launch.
 @MainActor
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SEED_ROOT"] != nil))
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SEED_ROOT"] != nil))
 struct DemoSeedTests {
     @Test func seed() async throws {
-        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SEVINDA_SEED_ROOT"]), isDirectory: true)
+        let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_SEED_ROOT"]), isDirectory: true)
         try? FileManager.default.removeItem(at: base)
-        let repo = base.appendingPathComponent("sevinda-api", isDirectory: true)
+        let repo = base.appendingPathComponent("suijin-api", isDirectory: true)
         let folder = base.appendingPathComponent("design-notes", isDirectory: true)
         for dir in [repo, folder] { try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true) }
         let git = GitRunner()
-        let identity = ["-c", "user.name=Sevinda Demo", "-c", "user.email=demo@example.invalid"]
+        let identity = ["-c", "user.name=Suijin Demo", "-c", "user.email=demo@example.invalid"]
         _ = try await git.run(["init", "-b", "main"], in: repo)
         try "import Foundation\n\nstruct UsageBar {\n    var fraction: Double\n}\n".write(to: repo.appendingPathComponent("UsageBar.swift"), atomically: true, encoding: .utf8)
-        try "# sevinda-api\n".write(to: repo.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+        try "# suijin-api\n".write(to: repo.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
         _ = try await git.run(["add", "."], in: repo)
         _ = try await git.run(identity + ["commit", "-m", "initial"], in: repo)
         try "notes\n".write(to: folder.appendingPathComponent("notes.md"), atomically: true, encoding: .utf8)
 
         let dataRoot = base.appendingPathComponent("data", isDirectory: true)
-        let model = AppModel(store: try SevindaStore(url: SevindaPaths.database(in: dataRoot)), dataRoot: dataRoot)
+        let model = AppModel(store: try SuijinStore(url: SuijinPaths.database(in: dataRoot)), dataRoot: dataRoot)
         await model.addWorkspace(at: repo)
         await model.addWorkspace(at: folder)
         let gitID = try #require(model.workspaces.first).id

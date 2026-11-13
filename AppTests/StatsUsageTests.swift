@@ -1,8 +1,8 @@
 import Foundation
-import SevindaCore
-import SevindaUsage
+import SuijinCore
+import SuijinUsage
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Settings → Stats & Usage: number formatting, the six-week heatmap, the range picker and the usage controller.
 /// The controller tests read synthetic logs in a temporary folder, never the user's own logs.
@@ -84,13 +84,13 @@ struct StatsUsageTests {
 
     @Test func accountHomesBecomeLogRoots() {
         let accounts = [
-            ManagedAccountRecord(provider: .claude, label: "Work", homePath: "/tmp/sevinda-a"),
-            ManagedAccountRecord(provider: .codex, label: "Codex", homePath: "/tmp/sevinda-b"),
+            ManagedAccountRecord(provider: .claude, label: "Work", homePath: "/tmp/suijin-a"),
+            ManagedAccountRecord(provider: .codex, label: "Codex", homePath: "/tmp/suijin-b"),
         ]
         let sources = UsageController.sources(for: accounts)
-        #expect(sources.claudeRoots.contains(URL(fileURLWithPath: "/tmp/sevinda-a/projects", isDirectory: true)))
-        #expect(sources.codexRoots.contains(URL(fileURLWithPath: "/tmp/sevinda-b/sessions", isDirectory: true)))
-        #expect(!sources.claudeRoots.contains { $0.path.hasPrefix("/tmp/sevinda-b") })
+        #expect(sources.claudeRoots.contains(URL(fileURLWithPath: "/tmp/suijin-a/projects", isDirectory: true)))
+        #expect(sources.codexRoots.contains(URL(fileURLWithPath: "/tmp/suijin-b/sessions", isDirectory: true)))
+        #expect(!sources.claudeRoots.contains { $0.path.hasPrefix("/tmp/suijin-b") })
     }
 
     // MARK: Controller
@@ -105,7 +105,7 @@ struct StatsUsageTests {
 
         init() throws {
             url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("sevinda-usage-ui-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("suijin-usage-ui-\(UUID().uuidString)", isDirectory: true)
                 .resolvingSymlinksInPath()
             try FileManager.default.createDirectory(at: claudeRoot, withIntermediateDirectories: true)
             try FileManager.default.createDirectory(at: codexRoot, withIntermediateDirectories: true)
@@ -137,7 +137,7 @@ struct StatsUsageTests {
         }
     }
 
-    private func controller(_ folder: LogFolder, stats: SevindaStats = SevindaStats(agentsSpawned: 3)) -> UsageController {
+    private func controller(_ folder: LogFolder, stats: SuijinStats = SuijinStats(agentsSpawned: 3)) -> UsageController {
         UsageController(store: UsageStore(cacheURL: folder.cacheURL, sources: folder.sources),
                         sources: { folder.sources }, loadStats: { stats })
     }
@@ -176,7 +176,7 @@ struct StatsUsageTests {
     @Test func concurrentRefreshesJoinAndStatsLoad() async throws {
         let folder = try LogFolder()
         try folder.appendClaudeTurn(id: "1", input: 1, output: 1)
-        let usage = controller(folder, stats: SevindaStats(agentsSpawned: 7, agentWorkSeconds: 60))
+        let usage = controller(folder, stats: SuijinStats(agentsSpawned: 7, agentWorkSeconds: 60))
         let first = usage.refresh()
         let second = usage.refresh()
         await first.value

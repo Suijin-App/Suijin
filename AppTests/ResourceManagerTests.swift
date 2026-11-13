@@ -1,13 +1,13 @@
 import AppKit
 import Darwin
 import Foundation
-import SevindaCore
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// The Resource Manager: process tree discovery and figures from libproc, the report grouping, and offscreen renders
-/// of the popover (when `SEVINDA_SCREENSHOTS` names an output folder).
+/// of the popover (when `SUIJIN_SCREENSHOTS` names an output folder).
 @Suite(.serialized, .timeLimit(.minutes(1)))
 struct ResourceManagerTests {
     /// Starts `/bin/sh -c "<script>"` as a child of the test process; the caller ends it with `stop`.
@@ -115,15 +115,15 @@ struct ResourceManagerTests {
     }
 
     @MainActor
-    @Test func reportWithoutSessionsHasOnlySevinda() throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-resources-\(UUID().uuidString)")
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root)
+    @Test func reportWithoutSessionsHasOnlySuijin() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-resources-\(UUID().uuidString)")
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root)
         let report = ResourceReport.build(model: model, figures: [
             .app: ResourceFigures(memory: 200_000_000, cpu: 3),
             .terminalHost: ResourceFigures(memory: 300_000_000, cpu: 1.5),
         ])
         #expect(report.sessionGroups.isEmpty)
-        #expect(report.sevinda.rows.map(\.id) == [.terminalHost, .app], "largest memory first")
+        #expect(report.suijin.rows.map(\.id) == [.terminalHost, .app], "largest memory first")
         #expect(report.memory == 500_000_000)
         #expect(report.cpu == 4.5)
     }
@@ -131,9 +131,9 @@ struct ResourceManagerTests {
     // MARK: Screenshots
 
     @MainActor
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] != nil))
     func popoverScreenshots() throws {
-        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] ?? NSTemporaryDirectory())
+        let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] ?? NSTemporaryDirectory())
         let api = UUID(), web = UUID()
         func row(_ agent: AgentKind, _ title: String, branch: String? = nil, _ activity: SessionActivityDisplay,
                  memory: UInt64, cpu: Double?) -> ResourceReport.Row {
@@ -142,7 +142,7 @@ struct ResourceManagerTests {
         }
         let busy = ResourceReport(
             sessionGroups: [
-                ResourceReport.Group(id: .workspace(api), title: "sevinda-api", rows: [
+                ResourceReport.Group(id: .workspace(api), title: "suijin-api", rows: [
                     row(.claude, "Refactor the session restore path and keep the scrollback replay fast", branch: "fix-restore",
                         .running, memory: 812_000_000, cpu: 34.2),
                     row(.codex, "Codex", branch: "feature/a-very-long-branch-name-for-layout", .waitingForInput, memory: 245_000_000, cpu: 0.4),
@@ -152,8 +152,8 @@ struct ResourceManagerTests {
                     row(.claude, "Claude", .idle, memory: 402_000_000, cpu: 1.1),
                 ]),
             ],
-            sevinda: ResourceReport.Group(id: .sevinda, title: "Sevinda", rows: [
-                ResourceReport.Row(id: .app, title: "Sevinda", icon: .symbol("macwindow"),
+            suijin: ResourceReport.Group(id: .suijin, title: "Suijin", rows: [
+                ResourceReport.Row(id: .app, title: "Suijin", icon: .symbol("macwindow"),
                                    figures: ResourceFigures(memory: 286_000_000, cpu: 2.7)),
                 ResourceReport.Row(id: .terminalHost, title: "Terminal host", icon: .symbol("server.rack"),
                                    figures: ResourceFigures(memory: 21_000_000, cpu: 0.3)),
@@ -162,9 +162,9 @@ struct ResourceManagerTests {
         let history: [ResourceReport.GroupID: [UInt64]] = [
             .workspace(api): (0..<18).map { 1_000_000_000 + UInt64($0 % 5) * 30_000_000 + UInt64($0) * 4_000_000 },
             .workspace(web): (0..<18).map { 380_000_000 + UInt64(($0 * 7) % 4) * 8_000_000 },
-            .sevinda: (0..<18).map { 300_000_000 + UInt64($0) * 400_000 },
+            .suijin: (0..<18).map { 300_000_000 + UInt64($0) * 400_000 },
         ]
-        let idle = ResourceReport(sessionGroups: [], sevinda: busy.sevinda)
+        let idle = ResourceReport(sessionGroups: [], suijin: busy.suijin)
         let cases: [(String, ResourceReport?, String?)] = [
             ("busy", busy, nil),
             ("empty", idle, "Could not reach the terminal host: The connection was interrupted."),

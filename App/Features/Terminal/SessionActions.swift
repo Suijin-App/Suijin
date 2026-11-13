@@ -1,6 +1,6 @@
 import AppKit
-import SevindaCore
-import SevindaTerminal
+import SuijinCore
+import SuijinTerminal
 
 /// Tab actions shared by the menus, the tab strip and the terminal's own shortcuts; panes are in `PaneLayouts.swift`.
 extension AppModel {

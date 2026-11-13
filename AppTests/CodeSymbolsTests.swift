@@ -1,5 +1,5 @@
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 struct CodeSymbolsTests {
     @Test func swiftDeclarations() {

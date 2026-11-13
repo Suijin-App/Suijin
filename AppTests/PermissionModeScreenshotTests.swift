@@ -1,16 +1,16 @@
 import AppKit
 import Foundation
-import SevindaCore
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Offscreen renders of the permission defaults in Settings → Agents, light and dark, narrow and wide. Runs when
-/// `SEVINDA_SCREENSHOTS` names an output folder; the images are reviewed by eye.
+/// `SUIJIN_SCREENSHOTS` names an output folder; the images are reviewed by eye.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] != nil))
 struct PermissionModeScreenshotTests {
-    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] ?? NSTemporaryDirectory())
+    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] ?? NSTemporaryDirectory())
     static let sizes: [(String, CGSize)] = [("narrow", CGSize(width: 1000, height: 900)), ("wide", CGSize(width: 1400, height: 900))]
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) throws {
@@ -32,9 +32,9 @@ struct PermissionModeScreenshotTests {
     }
 
     @Test func agentSettings() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-perm-shots-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-perm-shots-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: root)
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: root)
         model.setDefaultPermissionMode(.acceptEdits, for: .claude)
         model.setDefaultPermissionMode(.bypass, for: .codex)
 

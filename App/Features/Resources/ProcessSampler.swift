@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// What the Resource Manager measures: a running session, Sevinda itself, or the terminal host helper.
+/// What the Resource Manager measures: a running session, Suijin itself, or the terminal host helper.
 enum ResourceKey: Hashable, Sendable {
     case session(UUID)
     case app
@@ -19,7 +19,7 @@ struct ResourceFigures: Equatable, Sendable {
 enum ResourceTarget: Sendable {
     /// A process and every descendant (a session: its shell and the agent processes under it).
     case tree(pid_t)
-    /// One process alone (Sevinda itself: its in-process terminals are counted with their sessions).
+    /// One process alone (Suijin itself: its in-process terminals are counted with their sessions).
     case process(pid_t)
     /// The PTY host helper: the parent of the hosted session processes when it carries the helper's name, otherwise
     /// the first process of the current user with that name.
@@ -40,8 +40,8 @@ struct ProcessEntry: Equatable, Sendable {
 /// growth of user + system time between two samples divided by the wall time between them, so the first sample has
 /// no CPU figure. The actor keeps the previous CPU times, which also keeps every syscall off the main thread.
 actor ProcessSampler {
-    /// The executable name of the PTY host helper (`Contents/MacOS/SevindaPTYHost`).
-    static let terminalHostName = "SevindaPTYHost"
+    /// The executable name of the PTY host helper (`Contents/MacOS/SuijinPTYHost`).
+    static let terminalHostName = "SuijinPTYHost"
 
     private var previousCPU: [pid_t: UInt64] = [:]
     private var previousInstant: ContinuousClock.Instant?

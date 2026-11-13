@@ -1,7 +1,7 @@
 import Foundation
-import SevindaCore
-import SevindaGit
-import SevindaPTYProtocol
+import SuijinCore
+import SuijinGit
+import SuijinPTYProtocol
 
 /// Executes the broker's `worker start`: picks the place (the coordinator's own folder or worktree, or a new worktree
 /// of the same repository), the account, and starts the agent with the worker prompt like any other session.
@@ -25,7 +25,7 @@ struct WorkerLauncher {
             model.selection = selection
             model.selectedTab = tabs
             guard let id else {
-                let reason = model.presentedError?.message ?? String(localized: "Sevinda could not start the agent.")
+                let reason = model.presentedError?.message ?? String(localized: "Suijin could not start the agent.")
                 model.presentedError = shownError // reported to the coordinator instead of an alert
                 return WorkerLaunchResult(dispatchID: request.dispatchID, workerSessionID: nil, error: reason)
             }
@@ -114,13 +114,13 @@ enum WorkerLaunchError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .coordinatorGone:
-            String(localized: "The coordinator's session is no longer open in Sevinda.")
+            String(localized: "The coordinator's session is no longer open in Suijin.")
         case .notGit(let name):
             String(localized: "“\(name)” is a plain folder, so there is no new worktree to make. Use --worktree current.")
         case .account(let requested, let known):
             known.isEmpty
-                ? String(localized: "No Sevinda account matches “\(requested)” for this agent; omit --account to use the default.")
-                : String(localized: "No single Sevinda account matches “\(requested)” for this agent. Accounts: \(known).")
+                ? String(localized: "No Suijin account matches “\(requested)” for this agent; omit --account to use the default.")
+                : String(localized: "No single Suijin account matches “\(requested)” for this agent. Accounts: \(known).")
         }
     }
 }

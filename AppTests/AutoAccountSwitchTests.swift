@@ -1,9 +1,9 @@
 import Foundation
-import SevindaAccounts
-import SevindaAgents
-import SevindaCore
+import SuijinAccounts
+import SuijinAgents
+import SuijinCore
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Automatic account switching: running sessions follow a new default account and leave an account at its limit for
 /// the first account with room, between turns only, never bouncing back and never touching shells. Stand-in `claude`
@@ -18,7 +18,7 @@ struct AutoAccountSwitchTests {
     let conversation = "7b1d3f0a-2c4e-4f6a-9b8c-0d1e2f3a4b5c"
 
     init() throws {
-        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-autoswitch-\(UUID().uuidString)", isDirectory: true)
+        let raw = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-autoswitch-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: raw, withIntermediateDirectories: true)
         root = raw.resolvingSymlinksInPath()
         folder = root.appendingPathComponent("work", isDirectory: true)
@@ -62,8 +62,8 @@ struct AutoAccountSwitchTests {
         try? await Task.sleep(for: .milliseconds(600))
     }
 
-    private func makeModel(store: SevindaStore? = nil) async throws -> (AppModel, SessionContext) {
-        let model = AppModel(store: try store ?? SevindaStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
+    private func makeModel(store: SuijinStore? = nil) async throws -> (AppModel, SessionContext) {
+        let model = AppModel(store: try store ?? SuijinStore.inMemory(), dataRoot: root.appendingPathComponent("data"))
         model.accountsController.ownLoginHome = (home: root.appendingPathComponent("home", isDirectory: true), environment: [:])
         await model.addWorkspace(at: folder)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
@@ -73,7 +73,7 @@ struct AutoAccountSwitchTests {
         return (model, context)
     }
 
-    /// A managed account whose folder exists. Not a real profile path, so Sevinda does not set it up from `~/.claude`.
+    /// A managed account whose folder exists. Not a real profile path, so Suijin does not set it up from `~/.claude`.
     private func account(_ provider: AccountProvider, _ name: String, in model: AppModel) async throws -> ManagedAccountRecord {
         let parent = provider == .claude ? "claude-profiles" : "codex-homes"
         let home = model.dataRoot.appendingPathComponent("\(parent)/\(name)/home", isDirectory: true)
@@ -349,7 +349,7 @@ struct AutoAccountSwitchTests {
     // MARK: Settings
 
     @Test func settingsAreStoredAndTheOrderFollowsTheAccounts() async throws {
-        let store = try SevindaStore.inMemory()
+        let store = try SuijinStore.inMemory()
         let (model, _) = try await makeModel(store: store)
         let alpha = try await account(.claude, "alpha", in: model)
         let beta = try await account(.claude, "beta", in: model)

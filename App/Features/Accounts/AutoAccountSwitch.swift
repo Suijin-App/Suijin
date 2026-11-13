@@ -1,9 +1,9 @@
 import Foundation
 import Observation
-import SevindaAccounts
-import SevindaAgents
-import SevindaCore
-import SevindaUI
+import SuijinAccounts
+import SuijinAgents
+import SuijinCore
+import SuijinUI
 import SwiftUI
 
 /// One place in an agent's fallback order: a managed account or the user's own login.
@@ -99,7 +99,7 @@ extension AppModel {
         return accountsController.defaultLoginEmail[provider].map { "\($0) · \(own)" } ?? own
     }
 
-    /// The usage Sevinda last read for an account (`accountID` nil = the user's own login); nil when unknown.
+    /// The usage Suijin last read for an account (`accountID` nil = the user's own login); nil when unknown.
     func knownUsage(of accountID: UUID?, provider: AccountProvider) -> UsageSnapshot? {
         if let accountID { return accountsController.usage[accountID] }
         return accountsController.defaultLoginUsage[provider]?.snapshot
@@ -131,7 +131,7 @@ struct AutoSwitchNote: Equatable {
 /// in the middle of a turn, or waiting at a permission request or a question, waits until the user answered and the
 /// next turn finished: moving it then would end the agent and drop the request unseen.
 ///
-/// Never moved: shells and agents started in a shell (the record is a shell); a running Codex, which tells Sevinda
+/// Never moved: shells and agents started in a shell (the record is a shell); a running Codex, which tells Suijin
 /// neither its conversation nor when it is safely at its prompt (an approval prompt is as silent as an idle one); and
 /// so Codex orchestration workers too. Claude workers keep their place in the orchestration across a move (same
 /// session, same broker identity), so they follow the settings like any other session.
@@ -316,7 +316,7 @@ final class AutoAccountSwitcher {
     }
     #endif
 
-    /// A notification only while Sevinda is in the background, and only when the user allows session notifications.
+    /// A notification only while Suijin is in the background, and only when the user allows session notifications.
     private func notifyIfInBackground(_ session: AgentSessionRecord, text: String) {
         guard model.setting(.notifyWhenWaiting) != "false", model.notifiesUser else { return }
         let name = SessionNotice.name(of: session.agent)
@@ -334,7 +334,7 @@ struct AutoSwitchNoteView: View {
 
     var body: some View {
         if let note = model.autoSwitcher.notes[session] {
-            HStack(spacing: SevindaSpacing.s) {
+            HStack(spacing: SuijinSpacing.s) {
                 Image(systemName: note.kind == .moved ? "arrow.triangle.swap" : "info.circle")
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
@@ -343,7 +343,7 @@ struct AutoSwitchNoteView: View {
                     .lineLimit(2)
                     .truncationMode(.middle)
                     .layoutPriority(1)
-                Spacer(minLength: SevindaSpacing.s)
+                Spacer(minLength: SuijinSpacing.s)
                 Button {
                     model.autoSwitcher.dismissNote(session)
                 } label: {
@@ -353,11 +353,11 @@ struct AutoSwitchNoteView: View {
                 .help(Text("Hide"))
                 .accessibilityLabel(Text("Hide"))
             }
-            .padding(.horizontal, SevindaSpacing.m)
-            .padding(.vertical, SevindaSpacing.s)
+            .padding(.horizontal, SuijinSpacing.m)
+            .padding(.vertical, SuijinSpacing.s)
             .frame(maxWidth: 560)
             .floatingGlass(in: Capsule())
-            .padding(SevindaSpacing.s)
+            .padding(SuijinSpacing.s)
             .accessibilityElement(children: .contain)
         }
     }

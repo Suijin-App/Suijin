@@ -1,7 +1,7 @@
 import Foundation
 import UserNotifications
 
-/// Every notification Sevinda posts goes through here. In the test host nothing reaches Notification Center: the tests
+/// Every notification Suijin posts goes through here. In the test host nothing reaches Notification Center: the tests
 /// run the real session code (exits, turns, orchestration) and must not fill the user's notifications. What would have
 /// been posted is kept instead, so tests can check it.
 @MainActor

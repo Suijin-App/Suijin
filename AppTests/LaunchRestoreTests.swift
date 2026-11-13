@@ -1,11 +1,11 @@
 import AppKit
 import Foundation
 import Observation
-import SevindaCore
-import SevindaPTYProtocol
-import SevindaTerminal
+import SuijinCore
+import SuijinPTYProtocol
+import SuijinTerminal
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Records every distinct value of `read` the window would draw: each change is read back on the main actor after the
 /// work that made it (as SwiftUI renders once that work yields), so a state that is replaced within the same turn is
@@ -43,7 +43,7 @@ struct LaunchRestoreTests {
     }
 
     @Test func aRelaunchOpensStraightIntoTheRestoredState() async throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-launch-\(UUID().uuidString)", isDirectory: true)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-launch-\(UUID().uuidString)", isDirectory: true)
         let folder = root.appendingPathComponent("work", isDirectory: true)
         let dataRoot = root.appendingPathComponent("data", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -61,8 +61,8 @@ struct LaunchRestoreTests {
         let codexID = "019a5f3e-8c2b-7d41-a9e0-3b6c1d2e4f50"
 
         // First run: a session that ends while the app is open, and one still running when the app quits.
-        let database = SevindaPaths.database(in: dataRoot)
-        let first = AppModel(store: try SevindaStore(url: database), dataRoot: dataRoot)
+        let database = SuijinPaths.database(in: dataRoot)
+        let first = AppModel(store: try SuijinStore(url: database), dataRoot: dataRoot)
         await first.addWorkspace(at: folder)
         let workspace = try #require(first.workspaces.first)
         let context = SessionContext.workspace(workspace.id)
@@ -96,8 +96,8 @@ struct LaunchRestoreTests {
         #expect(await eventually { (try? await PTYHostClient.shared.listSessions())?.contains { $0.id == awayHost && !$0.isRunning } == true })
         #expect(await eventually { (try? first.store.setting(SettingKey.lastSelection.rawValue)) == context.storageValue })
 
-        // Relaunch, as `SevindaApp` does, recording what the detail column and each session's place show throughout.
-        let second = AppModel(store: try SevindaStore(url: database), dataRoot: dataRoot)
+        // Relaunch, as `SuijinApp` does, recording what the detail column and each session's place show throughout.
+        let second = AppModel(store: try SuijinStore(url: database), dataRoot: dataRoot)
         let detail = StateRecorder { second.detailState }
         let endedPane = StateRecorder { second.paneState(of: ended.id) }
         let awayPane = StateRecorder { second.paneState(of: away.id) }

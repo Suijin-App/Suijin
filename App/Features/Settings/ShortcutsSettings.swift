@@ -1,14 +1,14 @@
 import AppKit
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
-/// Every keyboard shortcut and mouse gesture of Sevinda, grouped and searchable by action or by key ("split", "⌘D").
+/// Every keyboard shortcut and mouse gesture of Suijin, grouped and searchable by action or by key ("split", "⌘D").
 /// Read-only: the list comes from `ShortcutCatalog`, which the menus and buttons bind their shortcuts from.
 struct ShortcutsSettings: View {
     @State private var query: String
 
-    /// `-SevindaShortcutsSearch <text>` starts with that search, for screenshots.
-    init(initialQuery: String = UserDefaults.standard.string(forKey: "SevindaShortcutsSearch") ?? "") {
+    /// `-SuijinShortcutsSearch <text>` starts with that search, for screenshots.
+    init(initialQuery: String = UserDefaults.standard.string(forKey: "SuijinShortcutsSearch") ?? "") {
         _query = State(initialValue: initialQuery)
     }
 
@@ -17,8 +17,8 @@ struct ShortcutsSettings: View {
         VStack(spacing: 0) {
             ShortcutSearchField(text: $query)
                 // Lined up with the grouped form's sections below.
-                .padding(.horizontal, SevindaSpacing.xl + SevindaSpacing.xs)
-                .padding(.top, SevindaSpacing.s)
+                .padding(.horizontal, SuijinSpacing.xl + SuijinSpacing.xs)
+                .padding(.top, SuijinSpacing.s)
             if sections.isEmpty {
                 ContentUnavailableView.search(text: query)
                     .frame(maxHeight: .infinity)

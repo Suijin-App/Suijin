@@ -1,16 +1,16 @@
 import AppKit
 import Foundation
-import SevindaAgents
-import SevindaCore
+import SuijinAgents
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 @MainActor
 struct SettingsAppearanceTests {
     private func model() throws -> AppModel {
-        AppModel(store: try SevindaStore.inMemory(),
-                 dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-appearance-\(UUID().uuidString)"))
+        AppModel(store: try SuijinStore.inMemory(),
+                 dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("suijin-appearance-\(UUID().uuidString)"))
     }
 
     @Test func missingOrUnknownAppearanceFollowsTheSystem() {
@@ -41,12 +41,12 @@ struct SettingsAppearanceTests {
     }
 }
 
-/// Offscreen renders of every Settings tab, light and dark. Runs when `SEVINDA_SCREENSHOTS` names an output folder,
+/// Offscreen renders of every Settings tab, light and dark. Runs when `SUIJIN_SCREENSHOTS` names an output folder,
 /// like `ScreenshotTests`; the images are reviewed by eye.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] != nil))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] != nil))
 struct SettingsScreenshotTests {
-    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SEVINDA_SCREENSHOTS"] ?? NSTemporaryDirectory())
+    let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] ?? NSTemporaryDirectory())
 
     private func render<V: View>(_ name: String, height: CGFloat, dark: Bool, @ViewBuilder _ content: () -> V) throws {
         let size = CGSize(width: 720, height: height)
@@ -70,8 +70,8 @@ struct SettingsScreenshotTests {
     @Test func settingsTabs() async throws {
         // Resolve the login shell PATH first, so the Installed rows show their final state.
         _ = await AgentCatalog.loginShellPATH()
-        let model = AppModel(store: try SevindaStore.inMemory(),
-                             dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-settings-shots-\(UUID().uuidString)"))
+        let model = AppModel(store: try SuijinStore.inMemory(),
+                             dataRoot: FileManager.default.temporaryDirectory.appendingPathComponent("suijin-settings-shots-\(UUID().uuidString)"))
         model.setSetting(.terminalTheme, "dracula")
         for dark in [false, true] {
             model.setSetting(.appearance, dark ? "dark" : nil)

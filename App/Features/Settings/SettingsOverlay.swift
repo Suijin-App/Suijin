@@ -1,4 +1,4 @@
-import SevindaUI
+import SuijinUI
 import SwiftUI
 
 /// Settings over the whole main window, like an onboarding screen rather than a separate window or a sheet: a calm
@@ -10,7 +10,7 @@ struct SettingsOverlay: View {
     let page: SettingsPage
 
     var body: some View {
-        VStack(spacing: SevindaSpacing.m) {
+        VStack(spacing: SuijinSpacing.m) {
             ZStack {
                 HStack {
                     Button { close() } label: {
@@ -19,7 +19,7 @@ struct SettingsOverlay: View {
                     .glassButtonStyle()
                     .controlSize(.large)
                     .keyboardShortcut(ShortcutCatalog.closeSettings.shortcut)
-                    .help(Text("Back to Sevinda (Esc)"))
+                    .help(Text("Back to Suijin (Esc)"))
                     .accessibilityIdentifier("settings.back")
                     Spacer()
                 }
@@ -32,7 +32,7 @@ struct SettingsOverlay: View {
             }
             // Clear of the window buttons, which stay in the transparent title bar.
             .padding(.leading, 78)
-            .padding(.trailing, SevindaSpacing.xl)
+            .padding(.trailing, SuijinSpacing.xl)
             .padding(.top, 10)
             page.content
                 // The grouped forms sit on the backdrop instead of their own opaque page.

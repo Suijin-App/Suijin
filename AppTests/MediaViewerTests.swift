@@ -2,10 +2,10 @@ import AppKit
 import AVFoundation
 import AVKit
 import Foundation
-import SevindaCore
+import SuijinCore
 import SwiftUI
 import Testing
-@testable import Sevinda
+@testable import Suijin
 
 /// Audio and video in the file viewer: which viewer a file gets, and the player's life with its tab. Sample media is
 /// written at test time into a temporary folder (a second of video, a second of tone), nothing is checked in.
@@ -93,7 +93,7 @@ struct MediaViewerTests {
 
     @Test func mediaFilesOpenInATabNotFinder() async throws {
         let folder = try MediaFolder()
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: folder.url("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: folder.url("data"))
         let context = SessionContext.workspace(UUID())
         let url = folder.url("clip.mkv")
         try Data([0x1A, 0x45, 0xDF, 0xA3, 0, 0, 0, 0]).write(to: url)
@@ -158,7 +158,7 @@ struct MediaViewerTests {
 
     @Test func tabPausesWhenHiddenResumesWhenShownAndForgetsWhenClosed() async throws {
         let folder = try MediaFolder()
-        let model = AppModel(store: try SevindaStore.inMemory(), dataRoot: folder.url("data"))
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: folder.url("data"))
         let context = SessionContext.workspace(UUID())
         let url = folder.url("clip.mp4")
         try await MediaSamples.writeVideo(to: url, fileType: .mp4, codec: .h264, width: 320, height: 240, seconds: 2)
@@ -310,7 +310,7 @@ private final class MediaFolder {
     let root: URL
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-media-\(UUID().uuidString)", isDirectory: true)
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-media-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     }
 

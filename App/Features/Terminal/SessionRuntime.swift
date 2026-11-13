@@ -1,16 +1,16 @@
 import AppKit
 import Foundation
-import SevindaAccounts
-import SevindaAgents
-import SevindaCore
-import SevindaPTYProtocol
-import SevindaTerminal
-import SevindaUI
+import SuijinAccounts
+import SuijinAgents
+import SuijinCore
+import SuijinPTYProtocol
+import SuijinTerminal
+import SuijinUI
 import Observation
 import os
 import SwiftUI
 
-private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "sessions")
+private let logger = Logger(subsystem: "com.tekmium.suijin", category: "sessions")
 
 /// One live session: its terminal (engine + view) and, for agents, the status tracker fed by output, input,
 /// Claude hook events and the exit.
@@ -22,11 +22,11 @@ final class SessionRuntime {
     let tracker = AgentStatusTracker()
     var watcher: HookEventWatcher?
     var title: String?
-    /// Sevinda itself is ending this session (tab closed, quit): its exit is expected and is not reported.
+    /// Suijin itself is ending this session (tab closed, quit): its exit is expected and is not reported.
     var isEnding = false
     /// When the agent last started working (activity `running`); nil while it is not working. Feeds the work-time stat.
     var workingSince: Date?
-    /// The agent's own conversation id, as far as Sevinda knows it (Claude's hooks report it; a resumed session starts
+    /// The agent's own conversation id, as far as Suijin knows it (Claude's hooks report it; a resumed session starts
     /// with the id it resumed).
     var agentSessionID: String?
     /// For a shell: the agents started in it that still run (`ShellAgentSessions.swift`).
@@ -177,7 +177,7 @@ final class SessionRuntimeRegistry {
         // Only sessions this data root started are ours to clean up: another data root (a second install, the tests)
         // shares the same host, and its sessions must keep running.
         for orphan in hostSessions where !claimed.contains(orphan.id) && orphan.isRunning
-            && orphan.metadata["sevinda.dataRoot"] == model.dataRoot.path {
+            && orphan.metadata["suijin.dataRoot"] == model.dataRoot.path {
             PTYHostClient.shared.terminate(orphan.id)
         }
     }
@@ -219,7 +219,7 @@ final class SessionRuntimeRegistry {
         return runtimes[session.id] == nil ? nil : hostID
     }
 
-    /// Records the end of a session whose process exited while Sevinda was closed, without showing its terminal. Its
+    /// Records the end of a session whose process exited while Suijin was closed, without showing its terminal. Its
     /// scrollback is fed to a terminal that never goes on screen, for what the ended view needs: the last lines of a
     /// failure and the conversation to resume (Codex prints it as it exits). Until then the session's place shows the
     /// reconnecting view, as for any session that is not back yet, and then the ended view, once.
@@ -366,7 +366,7 @@ final class SessionRuntimeRegistry {
         }
         guard let source = model.accountsController.conversationHome(provider, accountID: current.accountID),
               let target = model.accountsController.conversationHome(provider, accountID: accountID) else {
-            return .failed(String(localized: "That account is no longer in Sevinda."))
+            return .failed(String(localized: "That account is no longer in Suijin."))
         }
         let transfer = ConversationTransfer(provider: provider, conversationID: conversation, cwd: current.cwd,
                                             source: source, target: target)
@@ -390,7 +390,7 @@ final class SessionRuntimeRegistry {
         return await relaunch(original, onAccount: accountID, resume: conversation)
     }
 
-    /// Ends `current`'s agent when it runs and stores the record as ended (Sevinda ended it, so no notification, and it
+    /// Ends `current`'s agent when it runs and stores the record as ended (Suijin ended it, so no notification, and it
     /// can still be resumed where it was). Returns the stored record.
     private func endForMove(_ current: AgentSessionRecord, conversation: String?) async -> AgentSessionRecord {
         guard runtimes[current.id] != nil else { return current }
@@ -485,20 +485,20 @@ final class SessionRuntimeRegistry {
     /// a new one.
     func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?,
                     resume: String? = nil) async throws -> TerminalLaunch {
-        var base = ["SEVINDA_DATA_ROOT": model.dataRoot.path, "SEVINDA_SESSION_ID": record.id.uuidString]
+        var base = ["SUIJIN_DATA_ROOT": model.dataRoot.path, "SUIJIN_SESSION_ID": record.id.uuidString]
         // Orchestration: the session token (only ever in this environment, never in arguments) and the broker's
         // addresses. Only hosted sessions get them: the broker lives in the PTY host.
         if usesHost { base.merge(OrchestrationLaunch.environment(dataRoot: model.dataRoot)) { _, new in new } }
         guard record.agent != .shell else {
-            // `sevinda` on the shell's PATH; the profile may reorder PATH but keeps entries it did not set.
+            // `suijin` on the shell's PATH; the profile may reorder PATH but keeps entries it did not set.
             base["PATH"] = OrchestrationLaunch.path(prepending: ProcessInfo.processInfo.environment["PATH"])
-            // A `claude` started in the shell gets the hooks through Sevinda's shell function.
+            // A `claude` started in the shell gets the hooks through Suijin's shell function.
             if let hooks, (try? hooks.prepareEventsFile(sessionID: record.id)) != nil {
                 base.merge(hooks.shellEnv(sessionID: record.id).set) { _, new in new }
             }
             var launch = ShellLaunch.interactiveShell(cwd: cwd, environment: base)
-            launch.metadata["sevinda.session"] = record.id.uuidString
-            launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
+            launch.metadata["suijin.session"] = record.id.uuidString
+            launch.metadata["suijin.dataRoot"] = model.dataRoot.path
             return launch
         }
         let path: String
@@ -524,7 +524,7 @@ final class SessionRuntimeRegistry {
         // session on its own.
         if record.agent == .codex, model.setting(.codexNoDaemon) == "true" { spec.arguments.insert("--no-daemon", at: 0) }
         if usesHost, record.agent == .codex {
-            // Codex reports each finished turn through `notify` (`sevinda hook codex-notify`), set for this launch only.
+            // Codex reports each finished turn through `notify` (`suijin hook codex-notify`), set for this launch only.
             let home = spec.env.set["CODEX_HOME"].map { URL(fileURLWithPath: $0, isDirectory: true) }
             if let home { OrchestrationLaunch.installCodexSkill(home: home) }
             spec.arguments.insert(contentsOf: OrchestrationLaunch.codexNotifyArguments(home: home), at: 0)
@@ -546,9 +546,9 @@ final class SessionRuntimeRegistry {
         for (key, value) in spec.env.set.sorted(by: { $0.key < $1.key }) { envArguments.append("\(key)=\(value)") }
         var launch = ShellLaunch.command("/usr/bin/env", envArguments + [spec.binary.path] + spec.arguments,
                                          cwd: spec.cwd, environment: base, interactive: false)
-        launch.metadata["sevinda.session"] = record.id.uuidString
+        launch.metadata["suijin.session"] = record.id.uuidString
         launch.metadata["agent"] = record.agent.rawValue
-        launch.metadata["sevinda.dataRoot"] = model.dataRoot.path
+        launch.metadata["suijin.dataRoot"] = model.dataRoot.path
         return launch
     }
 
@@ -616,7 +616,7 @@ final class SessionRuntimeRegistry {
     }
 
     /// The conversation an exited agent can be resumed with. Claude's hooks report its id as it runs, so that comes
-    /// first; Codex reports none to Sevinda, so the hint it prints as it exits counts first, and either falls back to
+    /// first; Codex reports none to Suijin, so the hint it prints as it exits counts first, and either falls back to
     /// the other.
     static func conversationID(of runtime: SessionRuntime) -> String? {
         let agent = runtime.activeAgent
@@ -686,7 +686,7 @@ final class SessionRuntimeRegistry {
     /// Lines of a failed session's last output its ended view shows.
     static let endedOutputLines = 8
 
-    /// Records and reports an exit Sevinda did not cause, once: a session already marked ended (a finished session
+    /// Records and reports an exit Suijin did not cause, once: a session already marked ended (a finished session
     /// re-attached after a relaunch) stays as it is and notifies nobody. Either way the runtime goes, so the session's
     /// place shows its ended view instead of a terminal no process reads any more, and the host forgets the session.
     private func sessionExited(_ id: UUID, code: Int32?, output: String?, agentSessionID: String?) async {
@@ -739,7 +739,7 @@ final class SessionRuntimeRegistry {
     func prepareForQuit() async {
         let keep = usesHost && model.setting(.keepSessionsOnQuit) != "false"
         if keep {
-            // The agents keep working in the host, but only time Sevinda saw is counted; a relaunch that finds them
+            // The agents keep working in the host, but only time Suijin saw is counted; a relaunch that finds them
             // running opens a new interval.
             for runtime in runtimes.values {
                 await finishWork(runtime)?.value
@@ -797,7 +797,7 @@ final class SessionRuntimeRegistry {
 
     // MARK: Notifications
 
-    /// Posts a notification while Sevinda is in the background (never while the user is working in it).
+    /// Posts a notification while Suijin is in the background (never while the user is working in it).
     private func notify(_ record: AgentSessionRecord, _ notice: SessionNotice) {
         guard model.setting(.notifyWhenWaiting) != "false", model.notifiesUser else { return }
         let place = model.worktree(record.worktreeID ?? UUID())?.branch ?? model.workspace(record.workspaceID)?.name ?? ""
@@ -910,12 +910,12 @@ enum SessionActivityDisplay: Equatable {
 
     var color: Color {
         switch self {
-        case .starting: SevindaColor.idle
-        case .running: SevindaColor.ok
-        case .waitingForInput: SevindaColor.warning
-        case .idle: SevindaColor.agent
-        case .exited: SevindaColor.idle
-        case .failed: SevindaColor.error
+        case .starting: SuijinColor.idle
+        case .running: SuijinColor.ok
+        case .waitingForInput: SuijinColor.warning
+        case .idle: SuijinColor.agent
+        case .exited: SuijinColor.idle
+        case .failed: SuijinColor.error
         }
     }
 

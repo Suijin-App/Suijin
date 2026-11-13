@@ -1,12 +1,12 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaPTYProtocol
+import SuijinCore
+import SuijinPTYProtocol
 import Observation
 import os
 import Synchronization
 
-private let logger = Logger(subsystem: "com.tekmium.sevinda", category: "orchestration")
+private let logger = Logger(subsystem: "com.tekmium.suijin", category: "orchestration")
 
 /// The app's link to the orchestration broker of its data root, which lives in the PTY host helper.
 ///

@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import SevindaCore
-import SevindaGit
+import SuijinCore
+import SuijinGit
 
 /// Changing how a workspace looks in the sidebar: icon and badge color.
 extension AppModel {

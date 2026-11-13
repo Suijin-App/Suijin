@@ -200,21 +200,34 @@ struct ContinueWithAccountTests {
         await tearDown(model)
     }
 
-    @Test func missingHistoryLeavesAnEndedSessionOnItsAccount() async throws {
-        let (model, _) = try await makeModel()
+    @Test func aSessionWithNothingSaidYetStartsAfreshOnTheTarget() async throws {
+        let (model, context) = try await makeModel()
         let first = try await account(.claude, "first", in: model)
         let second = try await account(.claude, "second", in: model)
-        let ended = AgentSessionRecord(workspaceID: try #require(model.workspaces.first).id, agent: .claude,
-                                       accountID: first.id, title: "Claude", cwd: folder.path, state: .exited,
-                                       agentSessionID: conversation)
-        await model.upsert(ended)
+        let id = try #require(await model.runtimes.start(in: context, agent: .claude, accountID: first.id, prompt: nil,
+                                                          permissionMode: .plan))
+        #expect(await eventually { launches(.claude).count == 1 })
+        // Claude reported its conversation as it started, but saves it only once something is said.
+        model.runtimes.storeConversation(conversation, for: id)
+        #expect(await eventually { try record(id, in: model).agentSessionID == conversation })
+        let tabBefore = model.tab(of: id)
+        let firstRuntime = model.runtimes.runtime(for: id)
 
-        await model.continueConversation(ended, on: ContinueTarget(accountID: second.id, name: "second"))
+        await model.continueConversation(try record(id, in: model), on: ContinueTarget(accountID: second.id, name: "second"))
 
-        #expect(model.presentedError != nil)
-        #expect(try record(ended.id, in: model) == ended)
-        #expect(launches(.claude).isEmpty)
-        #expect(try FileManager.default.contentsOfDirectory(atPath: second.homePath).isEmpty)
+        #expect(model.presentedError == nil)
+        #expect(await eventually { launches(.claude).count == 2 && model.runtimes.runtime(for: id) != nil })
+        #expect(model.runtimes.runtime(for: id) !== firstRuntime)
+        let arguments = try #require(launches(.claude).last)
+        #expect(arguments.contains("account=\(second.homePath)"))
+        #expect(!arguments.contains("--resume"))
+        let mode = try #require(arguments.firstIndex(of: "--permission-mode"))
+        #expect(arguments[mode + 1] == "plan")
+        let moved = try record(id, in: model)
+        #expect(moved.accountID == second.id && moved.agentSessionID != conversation)
+        #expect(model.tab(of: id) == tabBefore && model.tabList(in: context).count == 1)
+        // Nothing was copied into the other account's history.
+        #expect(!FileManager.default.fileExists(atPath: second.homePath + "/projects"))
         await tearDown(model)
     }
 

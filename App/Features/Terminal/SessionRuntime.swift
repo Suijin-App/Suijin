@@ -332,7 +332,8 @@ final class SessionRuntimeRegistry {
     /// Moves `session`'s conversation to another account of the same agent (`accountID` nil = the user's own login) and
     /// resumes it there, in the same tab or pane with the same folder and permission mode. The history files are
     /// checked first, then the agent is ended if it runs, its history placed in the target account's folder
-    /// (`ConversationTransfer`: linked or copied, never moved or replacing anything), and the agent resumed there. On
+    /// (`ConversationTransfer`: linked or copied, never moved or replacing anything), and the agent resumed there. A
+    /// conversation the agent has not saved yet (nothing was said) starts afresh on the target instead. On
     /// failure the session is left ended on its own account with its history as it was (or still running, when the
     /// check failed). Returns what happened, so the caller decides how to tell the user.
     func moveConversation(_ session: AgentSessionRecord, onAccount accountID: UUID?,
@@ -357,35 +358,51 @@ final class SessionRuntimeRegistry {
         do {
             // Before the agent is ended: a conversation that cannot move keeps running where it is.
             _ = try await Task.detached { try transfer.plan() }.value
+        } catch ConversationTransferError.historyNotFound {
+            // The agent saves a conversation only once something was said in it (it searches every project folder
+            // of the account), so there is nothing to carry over: start it afresh on the other account instead.
+            let original = await endForMove(current, conversation: nil)
+            return await relaunch(original, onAccount: accountID, resume: nil)
         } catch {
             return .failed(ConversationMove.message(for: error, agent: current.agent))
         }
-        var original = current
-        if runtimes[id] != nil {
-            await release(id)
-            // Stored as ended: Sevinda ended it, so no notification, and it can still be resumed where it was.
-            original = model.sessions.first(where: { $0.id == id }) ?? current
-            original.state = .exited
-            original.endedAt = Date()
-            original.agentSessionID = conversation
-            await model.upsert(original)
-        }
+        let original = await endForMove(current, conversation: conversation)
         do {
             _ = try await Task.detached { try transfer.run() }.value
         } catch {
             return .failed(ConversationMove.message(for: error, agent: current.agent))
         }
+        return await relaunch(original, onAccount: accountID, resume: conversation)
+    }
+
+    /// Ends `current`'s agent when it runs and stores the record as ended (Sevinda ended it, so no notification, and it
+    /// can still be resumed where it was). Returns the stored record.
+    private func endForMove(_ current: AgentSessionRecord, conversation: String?) async -> AgentSessionRecord {
+        guard runtimes[current.id] != nil else { return current }
+        await release(current.id)
+        var original = model.sessions.first(where: { $0.id == current.id }) ?? current
+        original.state = .exited
+        original.endedAt = Date()
+        if let conversation { original.agentSessionID = conversation }
+        await model.upsert(original)
+        return original
+    }
+
+    /// Runs the ended `original` again under `accountID`, reopening `resume` or (nil) starting a new conversation, in
+    /// the same tab or pane. On failure the record goes back to `original`.
+    private func relaunch(_ original: AgentSessionRecord, onAccount accountID: UUID?,
+                          resume conversation: String?) async -> ConversationMoveOutcome {
         var moved = original
         moved.accountID = accountID
         moved.agentSessionID = conversation
         if original.title == defaultTitle(agent: original.agent, accountID: original.accountID) {
             moved.title = defaultTitle(agent: moved.agent, accountID: accountID)
         }
-        if accountID != nil { launchLogins[id] = nil }
+        if accountID != nil { launchLogins[original.id] = nil }
         do {
             let launch = try await makeLaunch(record: moved, cwd: URL(fileURLWithPath: moved.cwd, isDirectory: true),
                                               accountID: accountID, prompt: nil, resume: conversation)
-            try await relaunch(moved, launch: launch, catchUp: true)
+            try await relaunch(moved, launch: launch, catchUp: conversation != nil)
             return .moved
         } catch {
             await model.upsert(original)

@@ -743,11 +743,13 @@ private struct EndedSessionView: View {
     private func lastOutput(_ output: String) -> some View {
         VStack(alignment: .leading, spacing: SevindaSpacing.xs) {
             Text("Last output").font(.caption.weight(.medium)).foregroundStyle(.secondary)
-            // At most `SessionRuntimeRegistry.endedOutputLines` lines; long ones wrap.
+            // At most `SessionRuntimeRegistry.endedOutputLines` lines; long ones wrap. Never `.fixedSize` vertically:
+            // asked for its smallest size, such a text wraps every character onto its own line (over 1,000 points for
+            // one line of output), the window's whole content grows taller than the window and slides under the title
+            // bar, sidebar and inspector included.
             Text(verbatim: output)
                 .font(.system(.caption, design: .monospaced))
                 .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityElement(children: .combine)

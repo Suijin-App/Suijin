@@ -68,7 +68,7 @@ struct PaneLayoutTests {
         // Dragging the split tab moves it like any tab.
         model.moveTab(.panes(layout.id), onto: .session(ids[3]), in: context)
         #expect(model.sessionTabs(in: context) == [.panes(layout.id), .session(ids[3]), .session(ids[2])])
-        #expect(DetailTab(dragPayload: DetailTab.panes(layout.id).dragPayload!) == .panes(layout.id))
+        #expect(DetailTab(dragPayload: DetailTab.panes(layout.id).dragPayload) == .panes(layout.id))
 
         // Closing a pane of two leaves a plain tab in the same place, still selected.
         await model.closeSession(ids[0])

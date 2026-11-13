@@ -24,7 +24,7 @@ extension AppModel {
         var tabs = sessionTabs(in: context)
         if let id = workspaceID(of: context), workspace(id)?.kind == .git { tabs.append(.changes) }
         tabs += (openFiles[context] ?? []).map { .file($0) }
-        return tabs
+        return Self.arrange(tabs, by: tabOrder[context] ?? [])
     }
 
     /// The tab shown for a context: the selected one while it still exists, else the last session tab.

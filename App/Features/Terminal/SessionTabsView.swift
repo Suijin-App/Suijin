@@ -227,8 +227,8 @@ struct ToolbarTabBar: View {
     }
 }
 
-/// Drag a session or file tab onto another of its kind to move it there; a bar on the target's leading edge shows
-/// where it lands. The order is kept by `AppModel.moveTab`.
+/// Drag any tab (session, split, Changes or file) onto another to move it there; a bar on the target's leading edge
+/// shows where it lands. The order is kept by `AppModel.moveTab`.
 private struct TabReordering: ViewModifier {
     @Environment(AppModel.self) private var model
     let tab: DetailTab
@@ -236,23 +236,19 @@ private struct TabReordering: ViewModifier {
     @State private var isTargeted = false
 
     func body(content: Content) -> some View {
-        if let payload = tab.dragPayload {
-            content
-                .draggable(payload)
-                .dropDestination(for: String.self) { items, _ in
-                    guard let dragged = items.first.flatMap(DetailTab.init(dragPayload:)) else { return false }
-                    withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
-                    return true
-                } isTargeted: { isTargeted = $0 }
-                .overlay(alignment: .leading) {
-                    if isTargeted {
-                        Capsule().fill(Color.accentColor).frame(width: 3).padding(.vertical, 4)
-                            .transition(.opacity)
-                    }
+        content
+            .draggable(tab.dragPayload)
+            .dropDestination(for: String.self) { items, _ in
+                guard let dragged = items.first.flatMap(DetailTab.init(dragPayload:)) else { return false }
+                withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
+                return true
+            } isTargeted: { isTargeted = $0 }
+            .overlay(alignment: .leading) {
+                if isTargeted {
+                    Capsule().fill(Color.accentColor).frame(width: 3).padding(.vertical, 4)
+                        .transition(.opacity)
                 }
-        } else {
-            content
-        }
+            }
     }
 }
 

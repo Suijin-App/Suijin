@@ -275,6 +275,11 @@ extension AppModel {
             sessionOrder[context] = order
             saveSessionOrder()
         }
+        if var order = tabOrder[context], let index = order.firstIndex(of: old.dragPayload) {
+            order[index] = new.dragPayload
+            tabOrder[context] = order
+            saveTabOrder()
+        }
     }
 
     private func removeFromOrder(_ session: UUID, in context: SessionContext) {

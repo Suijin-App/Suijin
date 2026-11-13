@@ -90,6 +90,9 @@ final class AppModel {
     /// The order the user dragged each context's session tabs into (`TabOrder.swift`); sessions not listed follow in
     /// the order they were created.
     var sessionOrder: [SessionContext: [UUID]] = AppModel.savedSessionOrder()
+    /// Every tab of each context (sessions, Changes, files) in the order the user dragged them into, as drag payloads
+    /// (`TabOrder.swift`). Tabs not listed keep their place after the tab they follow by default.
+    var tabOrder: [SessionContext: [String]] = AppModel.savedTabOrder()
     /// A path the inspector's file tree should show (expand its folders, select, scroll to it); a new request id
     /// each time, so asking twice for the same path works.
     var fileTreeReveal: (path: String, request: UUID)?

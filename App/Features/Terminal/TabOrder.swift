@@ -14,29 +14,54 @@ extension AppModel {
         return order
     }
 
-    /// Moves a dragged tab to the place of `target` in `context`: session and split tabs among themselves, files
-    /// among files (the Changes tab stays between them). Dropping a tab on itself or across kinds does nothing.
-    func moveTab(_ dragged: DetailTab, onto target: DetailTab, in context: SessionContext) {
-        guard dragged != target else { return }
-        switch (dragged, target) {
-        case (.session, .session), (.session, .panes), (.panes, .session), (.panes, .panes):
-            // Plain and split tabs order together, by their order keys.
-            var ids = sessionTabs(in: context).compactMap(\.orderKey)
-            guard let moving = dragged.orderKey, let destination = target.orderKey,
-                  let from = ids.firstIndex(of: moving), let to = ids.firstIndex(of: destination) else { return }
-            ids.remove(at: from)
-            ids.insert(moving, at: to)
-            sessionOrder[context] = ids
-            saveSessionOrder()
-        case let (.file(moving), .file(destination)):
-            var paths = openFiles[context] ?? []
-            guard let from = paths.firstIndex(of: moving), let to = paths.firstIndex(of: destination) else { return }
-            paths.remove(at: from)
-            paths.insert(moving, at: to)
-            openFiles[context] = paths
-        default:
-            break
+    private static let tabOrderKey = "tabs.order"
+
+    /// The saved order of every context's tabs, from user defaults.
+    static func savedTabOrder() -> [SessionContext: [String]] {
+        guard let saved = UserDefaults.standard.dictionary(forKey: tabOrderKey) as? [String: [String]] else { return [:] }
+        var order: [SessionContext: [String]] = [:]
+        for (key, payloads) in saved {
+            guard let context = SessionContext(storageValue: key) else { continue }
+            order[context] = payloads
         }
+        return order
+    }
+
+    /// `natural` (sessions, then Changes, then files) in the dragged `order`: listed tabs by their place in it, and
+    /// each tab not listed (a new session or file) right after the tab it follows in `natural`, so it opens beside
+    /// its kind.
+    static func arrange(_ natural: [DetailTab], by order: [String]) -> [DetailTab] {
+        guard !order.isEmpty else { return natural }
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        var result = natural.filter { rank[$0.dragPayload] != nil }
+            .sorted { rank[$0.dragPayload, default: 0] < rank[$1.dragPayload, default: 0] }
+        for (index, tab) in natural.enumerated() where rank[tab.dragPayload] == nil {
+            let after = index == 0 ? nil : result.firstIndex(of: natural[index - 1])
+            result.insert(tab, at: after.map { $0 + 1 } ?? 0)
+        }
+        return result
+    }
+
+    /// Moves a dragged tab to the place of `target` in `context`. Any tab can go anywhere (sessions, split tabs,
+    /// Changes and files mix); dropping a tab on itself does nothing.
+    func moveTab(_ dragged: DetailTab, onto target: DetailTab, in context: SessionContext) {
+        var tabs = tabList(in: context)
+        guard dragged != target, let from = tabs.firstIndex(of: dragged), let to = tabs.firstIndex(of: target) else { return }
+        tabs.remove(at: from)
+        tabs.insert(dragged, at: to)
+        // Each kind's own order follows, for what lists only that kind (sidebar, ⌘-number of sessions).
+        sessionOrder[context] = tabs.compactMap(\.orderKey)
+        saveSessionOrder()
+        openFiles[context] = tabs.compactMap { if case .file(let path) = $0 { path } else { nil } }
+        tabOrder[context] = tabs.map(\.dragPayload)
+        saveTabOrder()
+    }
+
+    /// Stores the tab order of every context.
+    func saveTabOrder() {
+        var saved: [String: [String]] = [:]
+        for (context, payloads) in tabOrder where !payloads.isEmpty { saved[context.storageValue] = payloads }
+        UserDefaults.standard.set(saved, forKey: Self.tabOrderKey)
     }
 
     /// Stores the tab order of every context; ids of sessions and split tabs that are gone are left out.
@@ -52,14 +77,13 @@ extension AppModel {
 }
 
 extension DetailTab {
-    /// The tab as a drag payload: "session:<uuid>", "panes:<uuid>" or "file:<path>"; the Changes tab is not
-    /// draggable.
-    var dragPayload: String? {
+    /// The tab as a drag payload: "session:<uuid>", "panes:<uuid>", "changes" or "file:<path>".
+    var dragPayload: String {
         switch self {
         case .session(let id): "session:\(id.uuidString)"
         case .panes(let id): "panes:\(id.uuidString)"
         case .file(let path): "file:\(path)"
-        case .changes: nil
+        case .changes: "changes"
         }
     }
 
@@ -68,6 +92,8 @@ extension DetailTab {
             self = .session(id)
         } else if dragPayload.hasPrefix("panes:"), let id = UUID(uuidString: String(dragPayload.dropFirst(6))) {
             self = .panes(id)
+        } else if dragPayload == "changes" {
+            self = .changes
         } else if dragPayload.hasPrefix("file:") {
             self = .file(String(dragPayload.dropFirst(5)))
         } else {

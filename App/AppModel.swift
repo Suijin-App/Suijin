@@ -437,8 +437,18 @@ final class AppModel {
     // MARK: Accounts
 
     func upsert(_ account: ManagedAccountRecord) async {
+        let previous = accounts.first { $0.id == account.id }?.displayName
         if let index = accounts.firstIndex(where: { $0.id == account.id }) { accounts[index] = account } else { accounts.append(account) }
         try? await io { [account] in try $0.save(account) }
+        guard let previous, previous != account.displayName else { return }
+        // A session titled with the account ("Claude · old@example.com") follows its new name.
+        for session in sessions where session.accountID == account.id {
+            let prefix = "\(session.agent.sessionTitle) · \(previous)"
+            guard session.title == prefix || session.title.hasPrefix(prefix + " · ") else { continue }
+            var renamed = session
+            renamed.title = "\(session.agent.sessionTitle) · \(account.displayName)" + session.title.dropFirst(prefix.count)
+            await upsert(renamed)
+        }
     }
 
     func deleteAccountRecord(_ id: UUID) async {

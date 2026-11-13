@@ -96,6 +96,8 @@ struct RootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             Task { for workspace in model.workspaces where workspace.kind == .git { await model.refreshWorktrees(workspaceID: workspace.id) } }
+            // A login changed in another app shows on the sessions that use it.
+            Task { await model.accountsController.refreshIdentities() }
         }
     }
 

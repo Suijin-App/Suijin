@@ -44,7 +44,7 @@ final class SessionRuntime {
 @Observable
 @MainActor
 final class SessionRuntimeRegistry {
-    @ObservationIgnored private unowned let model: AppModel
+    @ObservationIgnored unowned let model: AppModel
     /// Observed: a session restored or started after a view rendered must replace its placeholder.
     private var runtimes: [UUID: SessionRuntime] = [:]
     /// Observable mirror of each runtime's activity, so rows and badges update.
@@ -62,6 +62,9 @@ final class SessionRuntimeRegistry {
     private(set) var hostProblem: String?
     /// The last lines a session printed before it failed, for its ended view (memory only: it can hold anything).
     private(set) var endedOutput: [UUID: String] = [:]
+    /// The email of the user's own login when each own-login agent session started (memory only: unknown for sessions
+    /// started before the app launched), so a login changed since then can be told apart.
+    private(set) var launchLogins: [UUID: String] = [:]
     @ObservationIgnored private var usesHost = true
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var hooks: ClaudeHooks.Installation?
@@ -380,7 +383,12 @@ final class SessionRuntimeRegistry {
         }
         // The PATH the agent was found on (interactive login shell, so nvm and .zshrc additions count) also runs it:
         // npm-installed CLIs need `node` from that PATH.
-        let accountEnv = await model.accountsController.launchEnv(for: record.agent, accountID: accountID)
+        if let provider = record.agent.accountProvider, accountID == nil {
+            launchLogins[record.id] = await model.accountsController.refreshDefaultLoginEmail(provider)
+        }
+        // The account was settled when the session started: nil is the user's own login, not today's default account.
+        let accountEnv = await model.accountsController.launchEnv(for: record.agent, accountID: accountID,
+                                                                  fallsBackToDefault: false)
             .merging(EnvPatch(set: ["PATH": OrchestrationLaunch.path(prepending: path)]))
         if record.agent == .claude, let hooks { _ = try? hooks.prepareEventsFile(sessionID: record.id) }
         var spec = AgentLaunchSpecBuilder.make(kind: record.agent, binary: binary, cwd: cwd, env: accountEnv,
@@ -420,11 +428,7 @@ final class SessionRuntimeRegistry {
     }
 
     private func defaultTitle(agent: AgentKind, accountID: UUID?) -> String {
-        let name = switch agent {
-        case .claude: "Claude"
-        case .codex: "Codex"
-        case .shell: String(localized: "Shell")
-        }
+        let name = agent.sessionTitle
         guard let accountID, let account = model.accounts.first(where: { $0.id == accountID }) else { return name }
         return "\(name) · \(account.displayName)"
     }
@@ -584,6 +588,7 @@ final class SessionRuntimeRegistry {
         await release(id)
         endedOutput[id] = nil
         titles[id] = nil
+        launchLogins[id] = nil
     }
 
     /// Ends the session's process if it still runs (SIGHUP, then SIGKILL) and drops its runtime. The title stays, so

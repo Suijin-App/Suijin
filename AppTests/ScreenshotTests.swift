@@ -94,6 +94,24 @@ struct ScreenshotTests {
         }
     }
 
+    /// The usage popover of the own login while the focused session runs on a managed account.
+    @Test func usagePopoverNamesTheFocusedSessionsAccount() async throws {
+        let model = try await sampleModel(empty: false)
+        let now = Date()
+        let snapshot = UsageSnapshot(fiveHour: UsageWindow(usedFraction: 0.18, resetsAt: now.addingTimeInterval(2 * 3600)),
+                                     sevenDay: UsageWindow(usedFraction: 0.64, resetsAt: now.addingTimeInterval(4 * 86400)), fetchedAt: now)
+        let state = ProviderUsageState(snapshot: snapshot, failure: nil, accountName: "own-login@example.com", isManaged: false)
+        let session = SessionAccount(provider: .claude, managedID: UUID(), name: "work@example.com", signedInNow: nil, startedAs: nil)
+        let note = UsageDescription.sessionNote(session, state: state, usage: snapshot, now: now)
+        for dark in [false, true] {
+            try render("usage-popover-session", size: CGSize(width: 280, height: 330), dark: dark) {
+                UsageDetailsPopover(provider: .claude, state: state, sections: ProviderUsagePolicy.sections(snapshot, now: now),
+                                    sessionNote: note, now: now)
+                    .environment(model)
+            }
+        }
+    }
+
     @Test func shortcutsSettings() async throws {
         let model = try await sampleModel(empty: true)
         let sizes = [("narrow", CGSize(width: 1000, height: 640)), ("wide", CGSize(width: 1400, height: 880))]

@@ -346,7 +346,7 @@ private struct SidebarSessionRow: View {
         }
         // Under the context's title: past its chevron and icon; a pane one step further, under its tab's row.
         .padding(.leading, isPane ? 52 : 34)
-        .help(Text(verbatim: session.title))
+        .help(Text(verbatim: model.sessionTooltip(of: session)))
         .contextMenu { SessionMenuItems(session: session) }
     }
 

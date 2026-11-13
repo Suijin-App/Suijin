@@ -17,12 +17,20 @@ final class AccountsController {
     /// Usage of the user's own login for providers without a managed default account. No entry = that login is
     /// signed out (or uses an API key), so the status bar shows nothing for it.
     private(set) var defaultLoginUsage: [AccountProvider: ProviderUsageState] = [:]
+    /// The email the user's own login of each provider is signed in as, kept current for the labels of own-login
+    /// sessions (also while a managed account is the default). No entry = signed out, an API key, or not read yet.
+    private(set) var defaultLoginEmail: [AccountProvider: String] = [:]
     /// True while any usage refresh runs.
     var isRefreshingUsage: Bool { refreshesInFlight > 0 }
     private var refreshesInFlight = 0
-    /// Reads the default logins read-only; tokens never leave the request.
-    @ObservationIgnored private let defaultLoginReader = DefaultLoginUsageReader()
+    /// Reads the default logins read-only; tokens never leave the request. The test host reads an empty home instead of
+    /// the user's own logins; tests point it at a home they fill.
+    @ObservationIgnored var defaultLoginReader = UserNotifier.isTestHost
+        ? DefaultLoginUsageReader(realHome: FileManager.default.temporaryDirectory.appendingPathComponent("sevinda-no-login"),
+                                  environment: [:])
+        : DefaultLoginUsageReader()
     @ObservationIgnored private var pollTask: Task<Void, Never>?
+    @ObservationIgnored private var identityTask: Task<Void, Never>?
     @ObservationIgnored private var providers: [AccountProvider: any ManagedAccountProvider] = [:]
 
     init(model: AppModel) {
@@ -48,10 +56,12 @@ final class AccountsController {
 
     /// The environment changes for a session of `kind` with `accountID` (nil = the provider's default account),
     /// after re-provisioning the account home so it sees the latest `~/.claude` / `~/.codex` content.
-    func launchEnv(for kind: AgentKind, accountID: UUID?) async -> EnvPatch {
+    /// With `fallsBackToDefault` false, nil is the user's own login instead (a session record that already chose it).
+    func launchEnv(for kind: AgentKind, accountID: UUID?, fallsBackToDefault: Bool = true) async -> EnvPatch {
         guard let providerKind = kind.accountProvider else { return .empty }
         let provider = await provider(providerKind)
-        let account = accountID.flatMap { id in model.accounts.first { $0.id == id } } ?? model.defaultAccount(for: providerKind)
+        let chosen = accountID.flatMap { id in model.accounts.first { $0.id == id } }
+        let account = chosen ?? (fallsBackToDefault ? model.defaultAccount(for: providerKind) : nil)
         guard let account else { return provider.launchEnv(home: nil) }
         let home = URL(fileURLWithPath: account.homePath, isDirectory: true)
         try? await provider.prepareForLaunch(home: home)
@@ -110,6 +120,41 @@ final class AccountsController {
                 try? await Task.sleep(for: delay)
             }
         }
+        // Who each login is signed in as changes with a `/login` anywhere; reading it is a local file read, so labels
+        // follow within half a minute instead of waiting for the next usage request.
+        identityTask?.cancel()
+        identityTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refreshIdentities()
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+    }
+
+    // MARK: Identities
+
+    /// Re-reads who the own logins and the managed accounts are signed in as. A managed account signed in to another
+    /// account (a `/login` inside one of its sessions) gets its new email, and its sessions' titles with it.
+    func refreshIdentities() async {
+        for kind in AccountProvider.allCases { await refreshDefaultLoginEmail(kind) }
+        for account in model.accounts {
+            let identity = await provider(account.provider).identity(home: URL(fileURLWithPath: account.homePath, isDirectory: true))
+            // Still known after the read, which suspends.
+            guard let email = identity?.email, var record = model.accounts.first(where: { $0.id == account.id }) else { continue }
+            let current = record
+            record.email = email
+            record.organization = identity?.organization ?? record.organization
+            if record != current { await model.upsert(record) }
+        }
+    }
+
+    /// Re-reads the email of `kind`'s own login (off the main thread: `~/.claude.json` can be large) and returns it.
+    @discardableResult
+    func refreshDefaultLoginEmail(_ kind: AccountProvider) async -> String? {
+        let reader = defaultLoginReader
+        let email = await Task.detached { reader.identity(kind)?.email }.value
+        if defaultLoginEmail[kind] != email { defaultLoginEmail[kind] = email }
+        return email
     }
 
     /// What the status bar shows for `kind`: the managed default account's usage when one is selected, else the
@@ -117,7 +162,8 @@ final class AccountsController {
     func statusUsage(for kind: AccountProvider) -> ProviderUsageState? {
         guard let account = model.defaultAccount(for: kind) else { return defaultLoginUsage[kind] }
         return ProviderUsageState(
-            snapshot: usage[account.id], failure: usageFailures[account.id], accountName: account.displayName, isManaged: true)
+            snapshot: usage[account.id], failure: usageFailures[account.id], accountName: account.displayName, isManaged: true,
+            managedID: account.id)
     }
 
     /// The refresh button: fetches now, even while a server-requested wait is pending.
@@ -157,7 +203,7 @@ final class AccountsController {
     /// One provider's default login. A failure keeps recent usage on screen (Orca's stale policy).
     private func refreshDefaultLogin(_ kind: AccountProvider) async -> Bool {
         let reader = defaultLoginReader
-        let accountName = reader.identity(kind)?.email
+        let accountName = await refreshDefaultLoginEmail(kind)
         do {
             guard let snapshot = try await reader.usage(kind) else {
                 defaultLoginUsage[kind] = nil

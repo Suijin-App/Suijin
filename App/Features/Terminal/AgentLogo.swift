@@ -55,7 +55,9 @@ extension SessionRuntimeRegistry {
         if let shown = Self.shownTitle(titles[session.id]) { return shown }
         // A shell running an agent is named after that agent until the agent names its task.
         if session.agent == .shell, let agent = shellAgents[session.id] { return SessionNotice.name(of: agent) }
-        return session.title
+        // An own-login session names the login signed in now, which can change while it runs.
+        return model.sessionAccount(of: session)?.title(stored: session.title, agentName: session.agent.sessionTitle)
+            ?? session.title
     }
 
     /// The part of a terminal title a tab shows: without the spinner or symbols around it, `nil` when only the

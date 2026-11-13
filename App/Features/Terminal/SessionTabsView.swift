@@ -266,7 +266,7 @@ private struct SessionTab: View {
                 .accessibilityLabel(Text("\(paneCount) panes"))
             }
         }
-        .help(Text(verbatim: model.runtimes.displayTitle(of: session)))
+        .help(Text(verbatim: model.sessionTooltip(of: session)))
         .contextMenu { SessionMenuItems(session: session) }
     }
 }

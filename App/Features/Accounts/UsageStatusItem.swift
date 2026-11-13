@@ -16,18 +16,27 @@ struct UsageStatusItem: View {
             // Recompute the countdowns every minute; usage itself changes only on refresh.
             TimelineView(.periodic(from: .now, by: 60)) { context in
                 let sections = ProviderUsagePolicy.sections(state.snapshot, now: context.date)
+                let note = sessionNote(state: state, now: context.date)
                 Button { showsDetails.toggle() } label: {
                     UsageStatusLabel(provider: provider, state: state, sections: sections, now: context.date)
                 }
                 .buttonStyle(.plain)
-                .help(Text(verbatim: UsageDescription.tooltip(provider: provider, state: state, sections: sections, now: context.date)))
+                .help(Text(verbatim: UsageDescription.tooltip(provider: provider, state: state, sections: sections,
+                                                              sessionNote: note, now: context.date)))
                 .accessibilityLabel(Text(verbatim: UsageDescription.accessibility(provider: provider, state: state, sections: sections, now: context.date)))
                 .accessibilityHint(Text("Shows usage details"))
                 .popover(isPresented: $showsDetails, arrowEdge: .top) {
-                    UsageDetailsPopover(provider: provider, state: state, sections: sections, now: context.date)
+                    UsageDetailsPopover(provider: provider, state: state, sections: sections, sessionNote: note, now: context.date)
                 }
             }
         }
+    }
+
+    /// The focused session's account when it is not the one the bar shows, with its usage when Sevinda has it.
+    private func sessionNote(state: ProviderUsageState, now: Date) -> String? {
+        let account = model.focusedSessionAccount(for: provider)
+        let usage = account?.managedID.flatMap { model.accountsController.usage[$0] }
+        return UsageDescription.sessionNote(account, state: state, usage: usage, now: now)
     }
 }
 
@@ -90,6 +99,7 @@ struct UsageDetailsPopover: View {
     let provider: AccountProvider
     let state: ProviderUsageState
     let sections: [UsageSection]
+    var sessionNote: String?
     let now: Date
 
     var body: some View {
@@ -102,6 +112,14 @@ struct UsageDetailsPopover: View {
                         .font(.caption).foregroundStyle(.secondary)
                         .lineLimit(1).truncationMode(.middle)
                 }
+            }
+            if let sessionNote {
+                Label {
+                    Text(verbatim: sessionNote).fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "person.crop.circle.badge.exclamationmark")
+                }
+                .font(.caption).foregroundStyle(.secondary)
             }
             if sections.isEmpty, state.failure == nil {
                 Text("No usage limits reported yet.").font(.callout).foregroundStyle(.secondary)
@@ -167,7 +185,25 @@ enum UsageDescription {
         return String(localized: "Resets in \(duration) (\(when))")
     }
 
-    static func tooltip(provider: AccountProvider, state: ProviderUsageState, sections: [UsageSection], now: Date) -> String {
+    /// Set when the focused session of the provider runs on another account than the bar shows: which one (and its
+    /// most used window when known), and that the bar shows the account new sessions use. Nil when they match.
+    static func sessionNote(_ account: SessionAccount?, state: ProviderUsageState, usage: UsageSnapshot?, now: Date) -> String? {
+        guard let account else { return nil }
+        let matches = switch (account.managedID, state.managedID) {
+        case let (session?, shown?): session == shown
+        case (nil, nil): account.name == nil || state.accountName == nil || SessionAccount.same(account.name, state.accountName)
+        default: false
+        }
+        guard !matches else { return nil }
+        var uses = String(localized: "This session uses \(account.line)")
+        if let tightest = ProviderUsagePolicy.tightest(ProviderUsagePolicy.sections(usage, now: now)) {
+            uses += " (\(ProviderUsagePolicy.inlineText(tightest, now: now)))"
+        }
+        return uses + ". " + String(localized: "The bar shows the account new sessions use.")
+    }
+
+    static func tooltip(provider: AccountProvider, state: ProviderUsageState, sections: [UsageSection],
+                        sessionNote: String? = nil, now: Date) -> String {
         var lines = ["\(provider.displayName) — \(accountLine(state))"]
         for section in sections {
             var line = String(localized: "\(ProviderUsagePolicy.title(section)): \(section.percent)% used")
@@ -178,6 +214,7 @@ enum UsageDescription {
         if let fetched = state.snapshot?.fetchedAt {
             lines.append(String(localized: "Updated \(fetched.formatted(.relative(presentation: .named)))"))
         }
+        if let sessionNote { lines.append(sessionNote) }
         return lines.joined(separator: "\n")
     }
 

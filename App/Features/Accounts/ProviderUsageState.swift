@@ -65,6 +65,8 @@ struct ProviderUsageState: Equatable {
     var accountName: String?
     /// A Sevinda-managed default account rather than the user's own login.
     var isManaged: Bool
+    /// That managed account's id.
+    var managedID: UUID?
 }
 
 /// One window as the status bar lists it.

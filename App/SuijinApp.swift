@@ -58,6 +58,8 @@ struct SuijinApp: App {
                     model.accountsController.startPolling()
                 }
         }
+        // The size of the first launch, roomy enough for the welcome tour; later launches restore the saved frame.
+        .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified)
         .commands {
             SuijinCommands(model: model)

@@ -121,6 +121,10 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
   up outside the repository.
 - **What is sent.** A check requests the appcast with the app's name and version in the user agent; system profiling
   is off. The Privacy text in `App/Features/Settings/LegalDocuments.swift` says so and must stay true.
+- **What is counted.** The Worker counts each request for `/appcast.xml` under its day and the app version from the
+  user agent, in a Workers KV namespace, and keeps nothing else (no address, no identifier). An installed copy checks
+  about once a day, so a day's count approximates the copies in use; it is an estimate, not an install count.
+  `Tools/update-feed/checks.sh` prints the counts. The Privacy text names this too.
 
 ## 5. Updates and the PTY host helper
 

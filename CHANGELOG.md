@@ -4,7 +4,7 @@
 
 - Suijin checks for updates about once a day and from Suijin › Check for Updates…, and installs them in place. It
   asks `https://suijin.app/appcast.xml`, which forwards to the latest release on GitHub; Settings › General turns the
-  automatic check off.
+  automatic check off. `suijin.app` counts those requests per day and app version, and keeps nothing else.
 - "Don't ask again" in the question before closing a tab whose agent still works now does what it says; Settings ›
   General › Sessions turns the question back on. The checkbox used to belong to another question (starting an agent
   without permission checks), so ticking it had no effect on closing tabs.

@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import { site } from "../site";
+import { starCount, compact } from "../lib/github";
 
 interface Props {
   title: string;
@@ -14,6 +15,8 @@ interface Props {
 const { title, description, path, structuredData = [] } = Astro.props;
 const canonical = new URL(path, site.url).href;
 const image = new URL("/og.png", site.url).href;
+const stars = await starCount(site.repositoryName);
+const released = site.releasedVersion !== null;
 
 const organization = {
   "@context": "https://schema.org",
@@ -38,7 +41,8 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
     <link rel="icon" href="/icon-512.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icon-512.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#13305E" />
+    <meta name="theme-color" content="#f2efe7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
@@ -57,35 +61,109 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
     {[organization, website, ...structuredData].map((data) => (
       <script type="application/ld+json" set:html={JSON.stringify(data)} />
     ))}
+
+    <!-- Before the first paint: the chosen theme (or the system's), and a mark that scripts run, so nothing flashes. -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var saved = null;
+        try { saved = localStorage.getItem("theme"); } catch (error) {}
+        var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.dataset.theme = dark ? "dark" : "light";
+        root.classList.add("js");
+      })();
+    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <header class="top">
-      <a class="brand" href="/" aria-label="Suijin, home">
-        <img src="/icon-512.png" alt="" width="28" height="28" />
-        <span>Suijin</span>
-      </a>
-      <nav aria-label="Main">
-        <a href="/#features">Features</a>
-        <a href="/#faq">FAQ</a>
-        <a href="/privacy">Privacy</a>
-        <a href={site.repository}>GitHub</a>
-      </nav>
+    <header class="nav">
+      <div class="nav-inner" data-nav>
+        <a class="brand" href="/" aria-label="Suijin, home">
+          <img src="/icon-512.png" alt="" width="28" height="28" />
+          <span>Suijin</span>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/#agents">Agents</a>
+          <a href="/#faq">FAQ</a>
+          <a href="/releases">Release notes</a>
+          <a href="/privacy">Privacy</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="stars" href={site.repository} aria-label={stars ? `Star Suijin on GitHub, ${stars} stars` : "Star Suijin on GitHub"}>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            <span class="label">Star</span>
+            {stars !== null && stars > 0 && <span class="count">{compact(stars)}</span>}
+          </a>
+          <button class="icon-button" type="button" data-theme-toggle aria-label="Switch between light and dark">
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2Z"/></svg>
+          </button>
+          <a class="button primary small" href={released ? site.releases + "/latest" : site.repository}>{released ? "Download" : "Get Suijin"}</a>
+        </div>
+      </div>
     </header>
+
     <main id="main">
       <slot />
     </main>
-    <footer class="bottom">
-      <p>
-        © {new Date().getFullYear()} {site.publisher}. Suijin is not affiliated with Anthropic or OpenAI; Claude Code and
-        Codex are products of their owners.
-      </p>
-      <nav aria-label="Footer">
-        <a href={site.repository}>Source on GitHub</a>
-        <a href={site.changelog}>Changelog</a>
-        <a href="/privacy">Privacy</a>
-        <a href="/llms.txt">llms.txt</a>
-      </nav>
+
+    <footer class="footer">
+      <div class="wrap">
+        <p>
+          © {new Date().getFullYear()} {site.publisher}. Suijin is not affiliated with Anthropic or OpenAI; Claude Code
+          and Codex are products of their owners.
+        </p>
+        <nav aria-label="Footer">
+          <a href={site.repository}>GitHub</a>
+          <a href="/releases">Release notes</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/llms.txt">llms.txt</a>
+        </nav>
+      </div>
     </footer>
+
+    <script>
+      import { animate, stagger } from "animejs";
+
+      const root = document.documentElement;
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Theme: follow the system until the visitor picks one, then remember the pick.
+      document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+        const next = root.dataset.theme === "dark" ? "light" : "dark";
+        root.dataset.theme = next;
+        try { localStorage.setItem("theme", next); } catch {}
+      });
+
+      // The header gathers into a glass droplet once the page has scrolled, with a small wobble as it settles.
+      const bar = document.querySelector<HTMLElement>("[data-nav]");
+      let scrolled = false;
+      const onScroll = () => {
+        const now = window.scrollY > 24;
+        if (now === scrolled) return;
+        scrolled = now;
+        root.toggleAttribute("data-scrolled", now);
+        if (bar && !calm) {
+          animate(bar, { scaleX: [1, now ? 0.965 : 1.02, 1.012, 1], scaleY: [1, now ? 1.09 : 0.97, 0.985, 1], duration: 620, ease: "outQuad" });
+        }
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+
+      // Sections rise into place the first time they scroll into view.
+      const waiting = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+      if (calm || !("IntersectionObserver" in window)) {
+        waiting.forEach((element) => { element.style.opacity = "1"; element.style.transform = "none"; });
+      } else {
+        const observer = new IntersectionObserver((entries) => {
+          const shown = entries.filter((entry) => entry.isIntersecting).map((entry) => entry.target as HTMLElement);
+          if (!shown.length) return;
+          shown.forEach((element) => observer.unobserve(element));
+          animate(shown, { opacity: [0, 1], y: [18, 0], duration: 620, delay: stagger(70), ease: "outCubic" });
+        }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+        waiting.forEach((element) => observer.observe(element));
+      }
+    </script>
   </body>
 </html>

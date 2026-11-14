@@ -20,6 +20,7 @@ Key facts:
 
 - [Home](https://suijin.app/): what Suijin is, its features with screenshots, how it works and frequently asked questions
 - [Privacy](https://suijin.app/privacy): what the app and the website collect
+- [Release notes](https://suijin.app/releases): what changed in each version
 
 ## Source
 

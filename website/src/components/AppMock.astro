@@ -1,0 +1,308 @@
+---
+// The hero's playground: Suijin's window drawn in HTML, playing four short scenes. Each element with `data-step`
+// appears at that step; `data-set="<step>:<class>"` adds a class at a step (a status that changes); `data-text`
+// swaps a label at a step. Without the script, or with reduced motion, every scene shows its finished state.
+const scenes = [
+  { id: "side", label: "Side by side", tab: "usage-bar · 4" },
+  { id: "orchestrate", label: "Orchestrate", tab: "Claude · coordinator" },
+  { id: "review", label: "Review & ship", tab: "Changes" },
+  { id: "accounts", label: "Switch accounts", tab: "Claude · Work" },
+];
+---
+
+<div class="stage" data-stage>
+  <div class="scene-tabs" role="tablist" aria-label="What Suijin does">
+    {scenes.map((scene, index) => (
+      <button type="button" role="tab" id={`tab-${scene.id}`} aria-controls={`scene-${scene.id}`} aria-selected={index === 0 ? "true" : "false"} data-scene={scene.id}>
+        {scene.label}<i></i>
+      </button>
+    ))}
+  </div>
+
+  <div class="window" role="img" aria-label="An animated drawing of Suijin's window: a sidebar with a repository, its worktrees and sessions, and panes where agents work.">
+    <div class="titlebar" aria-hidden="true">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="tabstrip">
+        {scenes.map((scene, index) => <span class={index === 0 ? "on" : ""} data-tab={scene.id}>{scene.tab}</span>)}
+      </div>
+    </div>
+
+    <!-- Scene 1: four sessions in one tab -->
+    <div class="scene" id="scene-side" data-scene-body="side" aria-hidden="true">
+      <div class="side">
+        <div class="ws"><b>S</b><div>suijin-api<small>Git repository</small></div></div>
+        <div class="row tree"><span class="name">feature/usage-bar</span><span class="state">4</span></div>
+        <div class="row session on"><i class="dot busy" data-set="6:ok"></i><i class="agent"></i><span class="name">Claude · usage bar</span></div>
+        <div class="row session"><i class="dot busy" data-set="8:ok"></i><i class="agent codex"></i><span class="name">Codex · review</span></div>
+        <div class="row session"><i class="dot busy"></i><i class="agent gemini"></i><span class="name">gemini</span></div>
+        <div class="row session"><i class="dot idle"></i><i class="agent shell"></i><span class="name">zsh</span></div>
+        <div class="row tree"><span class="name">fix/login-timeout</span><span class="state">1</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · timeout</span></div>
+      </div>
+      <div class="panes four">
+        <div class="pane">
+          <header><i class="agent"></i><span class="name">Claude Code · feature/usage-bar</span></header>
+          <div class="term">
+            <p class="you" data-step="1" data-type>❯ Add a label to UsageBar that shows the percentage</p>
+            <p class="dim" data-step="2">Read UsageBar.swift</p>
+            <p class="tool" data-step="3">● Update(UsageBar.swift)</p>
+            <p class="add" data-step="4">+   var label: String &#123;</p>
+            <p class="add" data-step="4">+     "\(Int((fraction * 100).rounded()))%"</p>
+            <p class="add" data-step="4">+   &#125;</p>
+            <p class="ok" data-step="6">✓ Done. 0.42 now reads "42%".</p>
+          </div>
+        </div>
+        <div class="pane">
+          <header><i class="agent codex"></i><span class="name">Codex · feature/usage-bar</span></header>
+          <div class="term">
+            <p class="you" data-step="2" data-type>› Review the change in UsageBar.swift</p>
+            <p class="dim" data-step="3">Ran git diff --stat</p>
+            <p data-step="5">• label rounds instead of truncating.</p>
+            <p data-step="7">• No clamp above 100%: intended?</p>
+            <p class="ok" data-step="8">Worked for 9s</p>
+          </div>
+        </div>
+        <div class="pane">
+          <header><i class="agent gemini"></i><span class="name">gemini · shell</span></header>
+          <div class="term">
+            <p class="you" data-step="3" data-type>$ gemini "write tests for UsageBar"</p>
+            <p class="dim" data-step="5">Planning 3 test cases…</p>
+            <p class="tool" data-step="7">Created UsageBarTests.swift</p>
+            <p class="dim caret" data-step="8">Running swift test</p>
+          </div>
+        </div>
+        <div class="pane">
+          <header><i class="agent shell"></i><span class="name">zsh</span></header>
+          <div class="term">
+            <p class="you" data-step="1">$ git status --short</p>
+            <p data-step="5"> M UsageBar.swift</p>
+            <p data-step="8">?? UsageBarTests.swift</p>
+            <p class="caret" data-step="8">$ </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 2: one agent starts and collects workers -->
+    <div class="scene" id="scene-orchestrate" data-scene-body="orchestrate" aria-hidden="true" hidden>
+      <div class="side">
+        <div class="ws"><b>S</b><div>suijin-api<small>Git repository</small></div></div>
+        <div class="row tree"><span class="name">feature/usage-bar</span><span class="state">3</span></div>
+        <div class="row session on"><i class="dot busy" data-set="9:ok"></i><i class="agent"></i><span class="name">Claude · coordinator</span></div>
+        <div class="row worker" data-step="3"><i class="dot busy" data-set="6:ok"></i><i class="agent codex"></i><span class="name">write-tests</span><span class="state" data-text="6:Done">Working</span></div>
+        <div class="row worker" data-step="4"><i class="dot busy" data-set="8:ok"></i><i class="agent"></i><span class="name">add-docs</span><span class="state" data-text="8:Done">Working</span></div>
+        <div class="row tree"><span class="name">fix/login-timeout</span><span class="state">1</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · timeout</span></div>
+      </div>
+      <div class="panes split">
+        <div class="pane">
+          <header><i class="agent"></i><span class="name">Claude Code · coordinator</span></header>
+          <div class="term">
+            <p class="you" data-step="1" data-type>❯ Use Suijin workers: tests with Codex, docs with Claude</p>
+            <p class="tool" data-step="2">● Bash(suijin worker start --agent codex --name write-tests)</p>
+            <p class="dim" data-step="3">  ⎿ write-tests is running on Codex.</p>
+            <p class="tool" data-step="4">● Bash(suijin worker start --agent claude --name add-docs)</p>
+            <p class="dim" data-step="4">  ⎿ add-docs is running on Claude.</p>
+            <p class="note" data-step="6">[Suijin] Worker "write-tests" finished successfully.</p>
+            <p class="note" data-step="8">[Suijin] Worker "add-docs" finished successfully.</p>
+            <p class="ok" data-step="9">✓ Both workers are done: 2 tests added, README updated.</p>
+          </div>
+        </div>
+        <div class="pane" data-step="3">
+          <header><i class="agent codex"></i><span class="name">write-tests · Codex</span></header>
+          <div class="term">
+            <p class="dim" data-step="4">Task from coordinator: add two tests</p>
+            <p class="tool" data-step="5">Created UsageBarTests.swift</p>
+            <p class="ok" data-step="6">suijin done --status success</p>
+          </div>
+        </div>
+        <div class="pane" data-step="4">
+          <header><i class="agent"></i><span class="name">add-docs · Claude Code</span></header>
+          <div class="term">
+            <p class="dim" data-step="5">Task from coordinator: document UsageBar</p>
+            <p class="tool" data-step="7">● Update(README.md)</p>
+            <p class="ok" data-step="8">suijin done --status success</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 3: the Changes tab -->
+    <div class="scene" id="scene-review" data-scene-body="review" aria-hidden="true" hidden>
+      <div class="side">
+        <div class="ws"><b>S</b><div>suijin-api<small>Git repository</small></div></div>
+        <div class="row tree on"><span class="name">feature/usage-bar</span><span class="state">3</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent"></i><span class="name">Claude · usage bar</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · review</span></div>
+        <div class="row tree"><span class="name">fix/login-timeout</span><span class="state">1</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · timeout</span></div>
+      </div>
+      <div class="review">
+        <div>
+          <h4>Uncommitted</h4>
+          <div class="file on" data-step="1"><b class="badge">M</b>UsageBar.swift</div>
+          <div class="file" data-step="1"><b class="badge">M</b>README.md</div>
+          <div class="file" data-step="2"><b class="badge new">U</b>UsageBarTests.swift</div>
+        </div>
+        <div class="diff">
+          <h4>UsageBar.swift</h4>
+          <p class="dim" data-step="2">@@ -4,5 +4,10 @@</p>
+          <p data-step="2">struct UsageBar &#123;</p>
+          <p data-step="2">    var fraction: Double</p>
+          <p class="add" data-step="3">+   /// The fraction as a whole percentage.</p>
+          <p class="add" data-step="3">+   var label: String &#123;</p>
+          <p class="add" data-step="4">+       "\(Int((fraction * 100).rounded()))%"</p>
+          <p class="add" data-step="4">+   &#125;</p>
+          <p data-step="4">&#125;</p>
+          <p class="note" data-step="5">Note on line 8: clamp this to 100%? → sent to Claude</p>
+        </div>
+        <div>
+          <h4>Commit</h4>
+          <div class="field" data-step="6" data-type>Show usage as a percentage label</div>
+          <span class="mini" data-step="7">Commit ⌘↩</span>
+          <span class="mini plain" data-step="8">Create Pull Request</span>
+          <div class="checks">
+            <span data-step="9"><i class="dot"></i>Pull request #42 opened</span>
+            <span data-step="10"><i class="dot"></i>build · passed</span>
+            <span data-step="10"><i class="dot"></i>tests · passed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 4: an account runs out and the session moves -->
+    <div class="scene with-status" id="scene-accounts" data-scene-body="accounts" aria-hidden="true" hidden>
+      <div class="side">
+        <div class="ws"><b>S</b><div>suijin-api<small>Git repository</small></div></div>
+        <div class="row tree"><span class="name">feature/usage-bar</span><span class="state">2</span></div>
+        <div class="row session on"><i class="dot busy" data-set="7:ok"></i><i class="agent"></i><span class="name" data-text="5:Claude · Personal">Claude · Work</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · Team</span></div>
+        <div class="row tree"><span class="name">fix/login-timeout</span><span class="state">1</span></div>
+        <div class="row session"><i class="dot"></i><i class="agent codex"></i><span class="name">Codex · timeout</span></div>
+      </div>
+      <div class="panes">
+        <div class="pane">
+          <header><i class="agent"></i><span class="name">Claude Code · feature/usage-bar</span><span class="acct" data-text="5:Personal">Work</span></header>
+          <div class="banner" data-step="3">Work reached its 5-hour limit. Suijin is moving this session to the next account with room.</div>
+          <div class="banner moved" data-step="5">Moved to Personal. The conversation continues where it stopped.</div>
+          <div class="term">
+            <p class="you" data-step="1" data-type>❯ Refactor the usage polling into one actor</p>
+            <p class="tool" data-step="2">● Update(UsageController.swift)</p>
+            <p class="dim" data-step="2">  ⎿ 42 additions, 31 removals</p>
+            <p class="dim" data-step="6">Resumed conversation.</p>
+            <p class="tool" data-step="6">● Update(UsageStatusItem.swift)</p>
+            <p class="ok" data-step="7">✓ Polling runs in one actor; 14 tests pass.</p>
+          </div>
+        </div>
+      </div>
+      <div class="statusbar">
+        <span>Work <span class="meter" data-set="3:full"><i></i></span> <b data-text="3:100% · resets in 2h">34% used</b></span>
+        <span>Personal <span class="meter"><i style="width:18%"></i></span> 18% used</span>
+        <span style="margin-left:auto">3 running</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { animate } from "animejs";
+
+  const stage = document.querySelector<HTMLElement>("[data-stage]");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (stage) {
+    const tabs = Array.from(stage.querySelectorAll<HTMLButtonElement>("[data-scene]"));
+    const bodies = Array.from(stage.querySelectorAll<HTMLElement>("[data-scene-body]"));
+    const titles = Array.from(stage.querySelectorAll<HTMLElement>("[data-tab]"));
+    const stepTime = 620;
+    const restTime = 2600;
+    let timers: number[] = [];
+    let current = 0;
+    let visible = false;
+    let userPicked = false;
+    let progress: ReturnType<typeof animate> | null = null;
+
+    // Remember every label and class a scene changes, so a replay starts from the beginning.
+    const changes = new Map<HTMLElement, { text: string; classes: string }>();
+    stage.querySelectorAll<HTMLElement>("[data-text], [data-set]").forEach((element) => {
+      changes.set(element, { text: element.textContent ?? "", classes: element.className });
+    });
+
+    const clear = () => { timers.forEach(clearTimeout); timers = []; };
+    const later = (callback: () => void, delay: number) => { timers.push(window.setTimeout(callback, delay)); };
+
+    function finish(body: HTMLElement) {
+      body.querySelectorAll<HTMLElement>("[data-step]").forEach((element) => { element.style.opacity = "1"; element.style.transform = "none"; element.style.clipPath = "none"; });
+      body.querySelectorAll<HTMLElement>("[data-set]").forEach((element) => element.classList.add(element.dataset.set!.split(":")[1]));
+      body.querySelectorAll<HTMLElement>("[data-text]").forEach((element) => { element.textContent = element.dataset.text!.split(":").slice(1).join(":"); });
+    }
+
+    function play(index: number) {
+      clear();
+      current = index;
+      progress?.cancel();
+      tabs.forEach((tab, i) => {
+        tab.setAttribute("aria-selected", i === index ? "true" : "false");
+        const bar = tab.querySelector<HTMLElement>("i");
+        if (bar) bar.style.width = "0%";
+      });
+      titles.forEach((title, i) => title.classList.toggle("on", i === index));
+      bodies.forEach((body, i) => { body.hidden = i !== index; });
+      const body = bodies[index];
+      changes.forEach((start, element) => { if (body.contains(element)) { element.textContent = start.text; element.className = start.classes; } });
+      if (calm) { finish(body); return; }
+
+      const steps = Array.from(body.querySelectorAll<HTMLElement>("[data-step]"));
+      steps.forEach((element) => { element.style.opacity = "0"; });
+      const last = Math.max(
+        ...steps.map((element) => Number(element.dataset.step)),
+        ...Array.from(body.querySelectorAll<HTMLElement>("[data-set], [data-text]")).map((element) => Number((element.dataset.set ?? element.dataset.text)!.split(":")[0])),
+      );
+
+      steps.forEach((element) => {
+        later(() => {
+          if (element.hasAttribute("data-type")) {
+            element.style.opacity = "1";
+            animate(element, { clipPath: ["inset(0 100% 0 0)", "inset(0 0% 0 0)"], duration: 540, ease: "linear" });
+          } else {
+            animate(element, { opacity: [0, 1], y: [6, 0], duration: 360, ease: "outCubic" });
+          }
+        }, Number(element.dataset.step) * stepTime);
+      });
+      body.querySelectorAll<HTMLElement>("[data-set]").forEach((element) => {
+        const [step, name] = element.dataset.set!.split(":");
+        later(() => {
+          element.classList.add(name);
+          animate(element, { scale: [1, 1.5, 1], duration: 420, ease: "outQuad" });
+        }, Number(step) * stepTime);
+      });
+      body.querySelectorAll<HTMLElement>("[data-text]").forEach((element) => {
+        const [step, ...text] = element.dataset.text!.split(":");
+        later(() => { element.textContent = text.join(":"); animate(element, { opacity: [0.2, 1], duration: 360, ease: "outQuad" }); }, Number(step) * stepTime);
+      });
+
+      // A thin line under the tab shows how long the scene has left, then the next one starts.
+      const total = (last + 1) * stepTime + restTime;
+      const bar = tabs[index].querySelector<HTMLElement>("i");
+      if (bar) progress = animate(bar, { width: ["0%", "100%"], duration: total, ease: "linear" });
+      later(() => { if (visible && !userPicked) play((index + 1) % bodies.length); else if (visible) play(index); }, total);
+    }
+
+    tabs.forEach((tab, index) => tab.addEventListener("click", () => { userPicked = true; play(index); }));
+
+    // Play only while the window is on screen and the page is in front.
+    if (calm || !("IntersectionObserver" in window)) {
+      bodies.forEach(finish);
+    } else {
+      new IntersectionObserver(([entry]) => {
+        const now = entry.isIntersecting;
+        if (now === visible) return;
+        visible = now;
+        if (visible) play(current); else clear();
+      }, { threshold: 0.25 }).observe(stage);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) clear(); else if (visible) play(current);
+      });
+    }
+  }
+</script>

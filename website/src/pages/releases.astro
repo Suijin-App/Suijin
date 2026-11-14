@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+import { releases } from "../lib/changelog";
+
+const list = releases();
+const format = (date: string) =>
+  new Date(date + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+---
+
+<Base
+  title="Release notes · Suijin"
+  description="What changed in each version of Suijin, the macOS app that runs Claude Code, Codex and other AI coding agents side by side."
+  path="/releases"
+>
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Release notes</p>
+      <h1>What changed, version by version</h1>
+      <p>
+        Every entry comes from the project's changelog. Downloads for released versions are on
+        <a href={site.releases}>GitHub</a>, and installed copies update themselves.
+      </p>
+    </div>
+  </div>
+  <div class="wrap" style="padding-bottom:104px">
+    {list.map((release) => (
+      <section class="release" id={`v${release.version}`} style="padding-block:44px">
+        <div class="when">
+          <h2 class="version">{release.version}</h2>
+          {release.date ? <p class="date">{format(release.date)}</p> : <p class="date">Not released yet</p>}
+          <span class="tag">{release.date ? "Released" : "Coming next"}</span>
+        </div>
+        <ul>
+          {release.entries.map((entry) => <li data-reveal set:html={entry} />)}
+        </ul>
+      </section>
+    ))}
+  </div>
+</Base>

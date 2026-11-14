@@ -7,6 +7,7 @@ export const site = {
   description:
     "Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent side by side, each in its own git worktree. Review, commit and ship what they did without leaving the app.",
   repository: "https://github.com/Suijin-App/Suijin",
+  repositoryName: "Suijin-App/Suijin",
   releases: "https://github.com/Suijin-App/Suijin/releases",
   changelog: "https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md",
   publisher: "Tekmium Solutions",
@@ -57,3 +58,10 @@ export const faq = [
       "A Mac with macOS 15 or later; the Liquid Glass interface needs macOS 26 or later. For the built-in agents, Claude Code and/or Codex installed on your Mac. Suijin is signed with a Developer ID and notarized by Apple, and is distributed outside the Mac App Store.",
   },
 ];
+
+// Agents named on the site. The first two are integrated; the others are examples of command-line agents, which run
+// in a shell tab or pane like any terminal program.
+export const agents = {
+  builtIn: ["Claude Code", "Codex"],
+  inShell: ["Gemini CLI", "Aider", "OpenCode", "Goose", "Amp", "Cline", "Qwen Code", "Any CLI agent"],
+};

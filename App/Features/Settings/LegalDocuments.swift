@@ -98,7 +98,7 @@ struct LegalDocument: Identifiable {
     static var privacy: LegalDocument {
         LegalDocument(kind: .privacy, title: String(localized: "Privacy & Security"), sections: [
             Section(heading: nil, blocks: [
-                text(AttributedString(localized: "Suijin works on your Mac. There are no Suijin servers and no Suijin account, and Suijin collects no analytics, telemetry or crash reports. This policy lists what Suijin reads, what it stores and the few connections it makes.")),
+                text(AttributedString(localized: "Suijin works on your Mac. There is no Suijin account, your code and conversations never go to us, and Suijin sends no telemetry or crash reports. The one thing we count is how often the app asks for updates, by day and app version (see Updates below). This policy lists what Suijin reads, what it stores and the few connections it makes.")),
             ]),
             Section(heading: String(localized: "What Suijin reads"), blocks: [
                 .bullets([
@@ -121,7 +121,7 @@ struct LegalDocument: Identifiable {
             Section(heading: String(localized: "Connections Suijin makes"), blocks: [
                 .bullets([
                     AttributedString(localized: "**Usage limits.** For each Claude or Codex login whose limits Suijin shows, it asks Anthropic (`api.anthropic.com`) or OpenAI (`chatgpt.com`) with that login's own token, now and then and when you click refresh. Only the token (and the Codex account ID) is sent; the reply holds percentages and reset times."),
-                    AttributedString(localized: "**Updates.** Suijin asks `suijin.app` whether a newer version exists, about once a day and when you choose Check for Updates; that address forwards to the releases of Suijin on GitHub (`github.com`), where an update is downloaded from. The request carries the app's name and version, nothing about you or your work. Turn the automatic check off in Settings → General."),
+                    AttributedString(localized: "**Updates.** Suijin asks `suijin.app` whether a newer version exists, about once a day and when you choose Check for Updates; that address forwards to the releases of Suijin on GitHub (`github.com`), where an update is downloaded from. The request carries the app's name and version, nothing about you or your work. `suijin.app` counts these requests per day and app version to estimate how many copies are in use, and keeps nothing else: no address and no identifier. Turn the automatic check off in Settings → General."),
                     AttributedString(localized: "**GitHub.** If the GitHub CLI (`gh`) is installed, Suijin uses it with your own GitHub sign-in to show a branch's pull request and checks, and to create pull requests you ask for. When you ask for a workspace's GitHub avatar, Suijin downloads the repository owner's public picture from github.com."),
                     AttributedString(localized: "**Git.** Suijin pushes a branch only when you ask, using your own remotes and git credentials."),
                     AttributedString(localized: "**Markdown files.** When a Markdown file you open shows images from the web, they load from their addresses, as in a browser."),

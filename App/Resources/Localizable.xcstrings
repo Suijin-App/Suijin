@@ -454,7 +454,7 @@
     "%lldm" : {
 
     },
-    "**Updates.** Suijin asks `suijin.app` whether a newer version exists, about once a day and when you choose Check for Updates; that address forwards to the releases of Suijin on GitHub (`github.com`), where an update is downloaded from. The request carries the app's name and version, nothing about you or your work. Turn the automatic check off in Settings → General." : {
+    "**Updates.** Suijin asks `suijin.app` whether a newer version exists, about once a day and when you choose Check for Updates; that address forwards to the releases of Suijin on GitHub (`github.com`), where an update is downloaded from. The request carries the app's name and version, nothing about you or your work. `suijin.app` counts these requests per day and app version to estimate how many copies are in use, and keeps nothing else: no address and no identifier. Turn the automatic check off in Settings → General." : {
 
     },
     "`%@` was not found on your login shell's PATH. Install it, or check your shell profile." : {
@@ -3197,7 +3197,7 @@
     "Suijin starts programs you install yourself: Claude Code, Codex, git, the GitHub CLI and your shell. Your use of them, and of the accounts behind them, is governed by their providers' own terms (for example Anthropic, OpenAI and GitHub). Suijin does not provide those accounts or plans." : {
 
     },
-    "Suijin works on your Mac. There are no Suijin servers and no Suijin account, and Suijin collects no analytics, telemetry or crash reports. This policy lists what Suijin reads, what it stores and the few connections it makes." : {
+    "Suijin works on your Mac. There is no Suijin account, your code and conversations never go to us, and Suijin sends no telemetry or crash reports. The one thing we count is how often the app asks for updates, by day and app version (see Updates below). This policy lists what Suijin reads, what it stores and the few connections it makes." : {
 
     },
     "Suijin, its name and its icon belong to Tekmium Solutions." : {

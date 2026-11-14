@@ -5,5 +5,7 @@
   "main": "worker.js",
   "compatibility_date": "2026-11-01",
   "workers_dev": false,
-  "routes": [{ "pattern": "suijin.app", "custom_domain": true }]
+  "routes": [{ "pattern": "suijin.app", "custom_domain": true }],
+  // Update checks counted per day and app version (worker.js). Read them with ./checks.sh.
+  "kv_namespaces": [{ "binding": "CHECKS", "id": "a8098132bfcb4e8caf5c8f17756bee54" }]
 }

@@ -94,8 +94,8 @@ targets:
       base:
         PRODUCT_NAME: Suijin
         PRODUCT_BUNDLE_IDENTIFIER: com.tekmium.suijin
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.1.1"
+        CURRENT_PROJECT_VERSION: "2"
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_ENTITLEMENTS: App/Suijin.entitlements
         ENABLE_HARDENED_RUNTIME: YES

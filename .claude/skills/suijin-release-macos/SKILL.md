@@ -2,7 +2,7 @@
 name: suijin-release-macos
 description: "Release the Suijin macOS app from this repository: check the last released version, bump the version, write release notes with annotated screenshots, build, sign, notarize, publish the GitHub release, verify the update feed and announce the release on Discord. Use when asked to release, ship, publish or cut a version of Suijin, or to prepare its release notes. Not for building or testing the app during development, nor for changing how releases work (edit ./scripts/release-notarize.sh and docs/release-process.md instead)."
 metadata:
-  version: 1.2.0
+  version: 1.3.0
 ---
 
 # Suijin release (macOS)
@@ -109,9 +109,10 @@ from the merged commit on `main`, never from the branch.
 ./scripts/bootstrap.sh && ./scripts/ci-local.sh
 ```
 
-It must be green. Two suites are sensitive to machine load (`MediaViewerTests`, `FileWatchingTests`): if only they
-fail, close other heavy work, run `./scripts/ci-local.sh app` once more, and report both results. A second failure,
-or any other failure, stops the release.
+It must be green. Run nothing else heavy on the Mac meanwhile (no other build, no site build, no browser captures):
+four suites assert timings and fail under load (`MediaViewerTests`, `FileWatchingTests`, `TerminalCatchUpTests`,
+`TerminalFeedSchedulerTests`). If only they fail, stop the other work, run `./scripts/ci-local.sh` once more, and
+report both results. A second failure, or any other failure, stops the release.
 
 Then ask the owner whether the hands-on checks were done on this build: a terminal opens (the helper is registered),
 a pane can be dragged, an orchestration run finishes, a notification arrives, and the items in section 7 of
@@ -134,8 +135,21 @@ and section 8 of `docs/release-process.md`; do not edit the script to get past a
 .claude/skills/suijin-release-macos/scripts/verify-release-artifacts.sh
 ```
 
-It checks Gatekeeper and the stapled tickets, the version and feed inside the DMG, and that the appcast names this
-version, this build, the right download URL, the DMG's exact size and a signature. Every line must be `PASS`.
+It checks Gatekeeper and the stapled tickets, the version and feed inside the DMG, that the DMG opens as the
+installer window, and that the appcast names this version, this build, the right download URL, the DMG's exact size
+and a signature. Every line must be `PASS`.
+
+Then look at what was built and use it; the scripts cannot see either:
+
+- **Look at the DMG.** Mount `build/release/<version>/Suijin-<version>.dmg`, open its window, capture it and view the
+  image: the background picture, the app and the Applications shortcut in their places, and Suijin's icon in the
+  title and path bar. The window that flashes while the image is being made is a draft with a generic icon, not the
+  result; judge only the finished image. Unmount it afterwards.
+- **Use the release build.** Install the built app from that DMG to `/Applications` on this Mac (ask the owner
+  first: it replaces their copy) and, with the owner, open a shell tab and an agent tab, quit and reopen, and
+  confirm the sessions are still there. A Debug build run from Xcode shares the bundle identifier and the terminal
+  host's registration with the release build, so a Mac that ran Debug builds can hide or cause problems; say in the
+  report which builds ran on the Mac before this check.
 
 ### 9. Publish (after the owner's go-ahead)
 
@@ -164,13 +178,16 @@ was built, and that Gatekeeper accepts the download. Then:
 - Deploy the website so it names the new version: `npm run deploy` in `website/` (see `docs/release-process.md`,
   section 4), then confirm `curl -sI https://suijin.app/appcast.xml` still answers with the redirect and run this
   stage's script again.
-- If an older version is installed somewhere, choose Suijin › Check for Updates… there and confirm it offers and
-  installs this version and that running sessions survive (section 5 of `docs/release-process.md`). For the first
-  release there is nothing to update from; say that the update path stays unproven until the second release.
+- **Prove the update, when a version was released before.** On a Mac with the previous release installed and a
+  session running, choose Suijin › Check for Updates…. Confirm, with the owner clicking: the window shows this
+  version and its notes (not only a link); the update installs and the app comes back; a new shell tab opens, which
+  proves the terminal host answers after the update; the session from before is still there or can be resumed
+  (section 5 of `docs/release-process.md`). If any of these fails, go to stage 12 before anything is announced. For
+  the first release there is nothing to update from; say that the update path stays unproven until the second.
 
 ### 11. Announce on Discord
 
-Only after every line of stage 10 passed:
+Only after every line of stage 10 passed, the update check included:
 
 ```sh
 tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- \
@@ -187,8 +204,15 @@ session, ask the owner to run `tssc login`; do not ask for the token.
 A broken release reaches users through the feed, so act quickly and tell the owner first. With their go-ahead,
 `gh release delete v<version> --repo Suijin-App/Suijin --cleanup-tag --yes` makes the previous release the latest
 again; copies that already updated keep the broken version until a fixed one with a higher build number ships.
-Never reuse a version or build number that was published. If the release was announced, tell the owner so they can
-remove or correct the message in `#releases`.
+Never reuse a build number that was published, also when the owner has a withdrawn version released again under
+the same version number: the new build must be higher than every withdrawn one, or a copy of a withdrawn build is
+never offered it. Withdrawing also means: the website goes back to the unreleased wording (`releasedVersion` in
+`website/src/site.ts`, then deploy), so its Download button does not point at a deleted file, and the announcement
+in `#releases` is removed, with the owner's go-ahead.
+
+Replacing a published file in place (a DMG that opens wrong, an appcast with better notes) is possible with
+`gh release upload --clobber`, DMG first and then the appcast with the new length and signature; it needs the
+owner's go-ahead, and stage 8 and stage 10 are run again afterwards.
 
 ## Report
 

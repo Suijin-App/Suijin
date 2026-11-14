@@ -36,6 +36,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 <script>
   import { animate } from "animejs";
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
+  import { scenes, introductions, places, race, reactions, type TalkLine, type TalkMood } from "../lib/crew-talk";
   import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
@@ -282,6 +283,41 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         animate(mark, { y: [8, -14], opacity: [{ to: 1, duration: 220 }, { to: 1, duration: 900 }, { to: 0, duration: 480 }], duration: 1600, ease: "outQuad", onComplete: () => mark.remove() });
       };
 
+      // ── talk: a speech bubble over a sprite's head, in a layer above the page so it shows even over a swimmer, and
+      //    the sprite's voice with it
+      const bubbles = new Map<Member, HTMLElement>();
+      let following = 0, talking = false, chase = { left: 0, first: true, rushed: false };
+      const any1 = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
+      const inSight = (one: Member) => { const top = feet(one).y - window.scrollY; return one.state !== "gone" && top > 90 && top < window.innerHeight + 10; };
+      const follow = () => {
+        following = 0;
+        for (const [one, bubble] of bubbles) {
+          const here = feet(one), half = bubble.offsetWidth / 2, low = window.scrollX + 8 + half, high = window.scrollX + window.innerWidth - 8 - half;
+          const x = Math.min(Math.max(here.x, low), Math.max(low, high));
+          bubble.style.left = `${x}px`; bubble.style.top = `${here.y - 14 * one.size - (one.state === "swim" || one.floating ? 0 : 8)}px`;
+          bubble.style.setProperty("--tail", `${here.x - x}px`);
+        }
+        if (bubbles.size) following = requestAnimationFrame(follow);
+      };
+      const speak = (one: Member, words: string, mood: TalkMood = "chat", time = 0) => {
+        if (!inSight(one) || document.hidden) return;
+        bubbles.get(one)?.remove();
+        const bubble = document.createElement("span");
+        bubble.className = "crew-say"; bubble.textContent = words;
+        crew.append(bubble); bubbles.set(one, bubble);
+        if (!following) follow();
+        play(mood === "yay" ? "cheer" : mood, one);
+        if (!one.busy && one.state !== "swim") feel(one, { mouth: "open", eyes: mood === "yay" ? "happy" : mood === "oh" ? "wide" : undefined, arms: mood === "yay" || mood === "hi" ? "wave" : undefined }, 620);
+        window.setTimeout(() => { if (bubbles.get(one) !== bubble) return; bubbles.delete(one); bubble.classList.add("leaves"); window.setTimeout(() => bubble.remove(), 220); }, time || 1500 + words.length * 38);
+      };
+      // a scene: its lines one after another, each spoken by a member of the cast
+      const converse = (cast: Member[], lines: TalkLine[]) => {
+        talking = true;
+        let at = 0;
+        for (const [who, words, mood] of lines) { window.setTimeout(() => { if (!asleep) speak(cast[who % cast.length], words, mood); }, at); at += 1250 + words.length * 34; }
+        window.setTimeout(() => { talking = false; }, at + 600);
+      };
+
       // Coming down on an edge: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding).
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
@@ -292,7 +328,14 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         feel(one, { eyes: "shut", mouth: "smile" }, 520);
         window.setTimeout(() => {
           if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
-          else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); play("hi", one); leave(one); }
+          else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one);
+            if (chase.left > 0) {                               // the race to the reader: the first to arrive gloats, the last complains
+              chase.left--;
+              if (chase.first) { chase.first = false; speak(one, any1(race.first), "yay"); }
+              else if (!chase.left) speak(one, any1(chase.rushed ? race.rushed : race.last), chase.rushed ? "oh" : "hmm");
+              else play("hi", one);
+            } else play("hi", one);
+          }
         }, 640);
       };
       // The journey to a spot: off the edge, into the water, a swim behind the content, and out onto the new edge.
@@ -379,6 +422,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       };
 
       // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.
+      let lastRoam = window.scrollY;
       const roam = () => {
         if (document.hidden) return;
         const taken: { x: number; y: number }[] = [], movers: Member[] = [];
@@ -390,6 +434,17 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           if (one.state === "away" && onScreen(here.y) && !one.floating) taken.push(here); else movers.push(one);
         }
         if (!movers.length) return;
+        // several setting off together is a race: the one at the back calls out, the one in front teases
+        const racers = movers.filter((one) => one.state !== "gone");
+        if (racers.length > 1) {
+          chase = { left: racers.length, first: true, rushed: Math.abs(window.scrollY - lastRoam) > window.innerHeight * 2.2 };
+          // said once they have swum into view: whoever is furthest from where it is going is the one behind
+          const left = (one: Member) => (one.goal ? Math.hypot(one.goal.x - feet(one).x, one.goal.y - feet(one).y) : 0);
+          window.setTimeout(() => { const seen = racers.filter((one) => one.state === "swim" && inSight(one)).sort((p, q) => left(p) - left(q));
+            if (seen.length > 1) { speak(seen[seen.length - 1], any1(race.behind), "ask"); window.setTimeout(() => speak(seen[0], any1(race.ahead), "laugh"), 800); } }, 1000);
+          window.setTimeout(() => { chase.left = 0; }, 9000);
+        }
+        lastRoam = window.scrollY;
         const open = perches();
         movers.forEach((one, index) => {
           const spot = one.home?.() ?? null;
@@ -527,12 +582,33 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       };
       let pastime = 0;
       window.setInterval(() => {
-        if (asleep || document.hidden) return;
+        if (asleep || document.hidden || talking) return;
         const free = members.filter((one) => idle(one) && !one.busy && !one.up && !one.floating && !(one.state === "home" && (hiders.has(one) || one === codex)));
         if (!free.length) return;
         const one = free[pastime % free.length], turn = pastime++ % 3;
         if (turn === 0) sing(one); else if (turn === 1) fight(one); else if (!pace(one)) sing(one);
       }, 4600);
+
+      // ── conversation: now and then two of them have a word, or one tells the reader about the part of the page on screen
+      const deck: TalkLine[][] = [];
+      let chats = 0;
+      const section = (): string => {
+        let found = "";
+        for (const part of document.querySelectorAll<HTMLElement>("main [id]")) { const box = part.getBoundingClientRect(); if (box.top < window.innerHeight * 0.6 && box.bottom > window.innerHeight * 0.3 && places[part.id]) found = part.id; }
+        return found;
+      };
+      window.setInterval(() => {
+        if (talking || asleep || document.hidden || chase.left > 0) return;
+        const cast = members.filter((one) => idle(one) && !one.busy && inSight(one)).sort(() => Math.random() - 0.5);
+        if (!cast.length) return;
+        const here = section(), turn = chats++;
+        if (turn % 3 === 1 && here) { const [words, mood] = places[here][Math.floor(turn / 3) % places[here].length]; speak(cast[0], words, mood); return; }
+        if (cast.length < 2) return;
+        if (!deck.length) deck.push(...[...scenes].sort(() => Math.random() - 0.5));
+        converse(cast, deck.pop()!);
+      }, 9000);
+      // soon after the page opens, each says who it is
+      window.setTimeout(() => { if (!talking && !asleep) converse(members.filter(inSight), members.filter(inSight).map((one, index) => [index, ...introductions[one.color]] as TalkLine)); }, 3800);
 
       // ── habits
       // blinking, each at its own pace
@@ -549,10 +625,12 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       let snores = 0;
       const snore = () => members.filter(idle).forEach((one, index) => window.setTimeout(() => { if (asleep && idle(one)) leave(one, "zzz"); }, index * 520));
       const sleep = () => { asleep = true; crew.classList.add("asleep"); members.filter(idle).forEach((one) => { one.pose.eyes = "shut"; one.mood = null; draw(one); });
-        snore(); snores = window.setInterval(snore, 2600); };
+        const sleepy = members.filter(idle).find(inSight); if (sleepy) speak(sleepy, any1(reactions.nap), "hmm");
+        window.setTimeout(snore, 1800); snores = window.setInterval(snore, 2600); };
       function stir() {
         window.clearTimeout(rest); rest = window.setTimeout(sleep, 26000);
-        if (asleep) { asleep = false; window.clearInterval(snores); crew.classList.remove("asleep"); members.filter(idle).forEach((one, index) => { one.pose.eyes = "n"; feel(one, { eyes: "wide", mouth: "o" }, 600); hop(one, 10, index * 60); }); }
+        if (asleep) { asleep = false; window.clearInterval(snores); crew.classList.remove("asleep"); members.filter(idle).forEach((one, index) => { one.pose.eyes = "n"; feel(one, { eyes: "wide", mouth: "o" }, 600); hop(one, 10, index * 60); });
+          const awake = members.filter(idle).find(inSight); if (awake) window.setTimeout(() => speak(awake, any1(reactions.back), "hi"), 500); }
       }
       const look = () => {
         frame = 0;
@@ -569,11 +647,13 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 
       // ── events on the page
       // a press: the nearest sprite starts and hops; a press on a sprite delights it, and it leaves a heart
+      let presses = 0;
       document.addEventListener("pointerdown", (event) => {
         stir();
         const target = (event.target as Element | null)?.closest?.("[data-sprite]");
         const pressed = members.find((one) => one.element === target);
         if (pressed) {
+          speak(pressed, reactions.pressed[presses++ % reactions.pressed.length], "laugh");
           feel(pressed, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1200);
           if (hiders.has(pressed) && pressed.state === "home") { rise(pressed, true); window.setTimeout(() => rise(pressed, false), 1300); } else { hop(pressed, 30); leave(pressed, "heart"); }
           return;
@@ -585,7 +665,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       new MutationObserver((records) => {
         for (const record of records) {
           if (record.attributeName === "data-theater" && document.documentElement.hasAttribute("data-theater")) members.forEach((one, index) => { feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1600); hop(one, 22, index * 80); });
-          if (record.attributeName === "data-theme") dye();
+          if (record.attributeName === "data-theme") { dye(); const witness = members.find(inSight); if (witness) window.setTimeout(() => speak(witness, any1(document.documentElement.dataset.theme === "dark" ? reactions.dark : reactions.light), "oh"), 300); }
           if (record.attributeName === "data-theme") members.forEach((one, index) => { feel(one, { eyes: "wide", mouth: "o" }, 800); hop(one, 12, index * 70); });
         }
       }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theater", "data-theme"] });

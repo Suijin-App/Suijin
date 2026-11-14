@@ -6,7 +6,7 @@
 // sprite has its own voice, its own plop in the water and its own song.
 import clips from "./crew-sounds.json";
 
-export type CrewSound = "splash" | "paddle" | "leap" | "land" | "shake" | "hop" | "pop" | "hi" | "note" | "punch" | "kick" | "cheer" | "step" | "peek" | "snore";
+export type CrewSound = "splash" | "paddle" | "leap" | "land" | "shake" | "hop" | "pop" | "hi" | "note" | "punch" | "kick" | "cheer" | "step" | "peek" | "snore" | "chat" | "laugh" | "hmm" | "oh" | "ask";
 export type CrewVoice = "aqua" | "claude" | "codex" | "shell";
 
 const KEY = "crew-sound", where = clips as Record<string, number[]>;
@@ -70,6 +70,7 @@ export function crewSound(name: CrewSound, voice: CrewVoice = "aqua", step = 0):
     case "cheer": clip(audio, `${voice}.yay`); break;
     case "step": clip(audio, `${voice}.land`, 0.3, 0, 1.5); break;
     case "peek": clip(audio, `${voice}.ask`, 0.9); break;
+    case "chat": case "laugh": case "hmm": case "oh": case "ask": clip(audio, `${voice}.${name}`); break;
     case "snore": clip(audio, "snore", 1, 0, snores[voice]); break;
   }
 }

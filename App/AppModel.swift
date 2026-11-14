@@ -545,6 +545,8 @@ enum SettingKey: String, CaseIterable {
     case codexPermissionMode = "agents.codex.permissionMode"
     /// "true" once the user chose not to confirm starting an agent without permission checks again.
     case skipPermissionsConfirmed = "agents.skipPermissionsConfirmed"
+    /// "false" once the user chose not to confirm closing a tab whose agent still works; missing means ask.
+    case confirmClosingBusyAgents = "sessions.confirmClosingBusyAgents"
     /// `AppAppearance` raw value; missing means follow the system.
     case appearance = "ui.appearance"
     /// "true" once the welcome tour was finished or skipped, so it no longer opens at launch.

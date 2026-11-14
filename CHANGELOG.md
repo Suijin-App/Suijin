@@ -2,6 +2,9 @@
 
 ## 0.1.0 (unreleased)
 
+- "Don't ask again" in the question before closing a tab whose agent still works now does what it says; Settings ›
+  General › Sessions turns the question back on. The checkbox used to belong to another question (starting an agent
+  without permission checks), so ticking it had no effect on closing tabs.
 - Settings › General has a Permissions section: Notifications, the background helper and Full Disk Access each show
   whether macOS allows them, what is lost without them, and a button to allow them or to open the right pane of
   System Settings. The states update when you come back from System Settings. Full Disk Access is optional; it is

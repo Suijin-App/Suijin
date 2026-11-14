@@ -191,6 +191,7 @@ public struct SuijinCLI: Sendable {
         Coordinator:
           \(CommandSpec.all[0].usage)
           suijin worker list [--json]
+          suijin worker stop --to <dispatch-id|worker-name>   ends the worker and closes its tab
           suijin send --to <dispatch-id> --body <message>
           suijin reply --id <question-id> --body <answer>
         Worker:

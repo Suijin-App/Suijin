@@ -189,13 +189,17 @@ public struct OrchestrationDispatch: Codable, Sendable, Hashable, Identifiable {
     public var summary: String?
     /// Why the start failed, or how the process ended.
     public var lastError: String?
+    /// When its coordinator ended the worker with `suijin worker stop`; the app then closes the worker's tab. Optional,
+    /// so a helper and an app of different builds still decode each other's snapshots.
+    public var stoppedAt: Date?
     public var createdAt: Date
     public var updatedAt: Date
 
     public init(
         id: String, taskID: String, runID: String, coordinatorSessionID: String, workerSessionID: String? = nil,
         name: String, agent: OrchestrationAgent, worktree: WorktreeMode, accountID: String? = nil,
-        status: DispatchStatus, summary: String? = nil, lastError: String? = nil, createdAt: Date, updatedAt: Date
+        status: DispatchStatus, summary: String? = nil, lastError: String? = nil, stoppedAt: Date? = nil,
+        createdAt: Date, updatedAt: Date
     ) {
         self.id = id
         self.taskID = taskID
@@ -209,6 +213,7 @@ public struct OrchestrationDispatch: Codable, Sendable, Hashable, Identifiable {
         self.status = status
         self.summary = summary
         self.lastError = lastError
+        self.stoppedAt = stoppedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -303,7 +308,8 @@ public struct BrokerRequest: Codable, Sendable, Hashable {
     public var id: String
     /// The caller's `SUIJIN_SESSION_TOKEN`.
     public var token: String?
-    /// `worker.start`, `worker.list`, `send`, `ask`, `reply`, `done`, `inbox`, `hook.claude`, `hook.codex`, `whoami`.
+    /// `worker.start`, `worker.list`, `worker.stop`, `send`, `ask`, `reply`, `done`, `inbox`, `hook.claude`,
+    /// `hook.codex`, `whoami`.
     public var command: String
     public var options: [String: String]
 

@@ -7,6 +7,8 @@ public protocol OrchestrationSessionIO: AnyObject, Sendable {
     func injectInput(hostSessionID: String, data: Data)
     /// Bytes the session has produced so far, nil for an unknown session.
     func bytesRead(hostSessionID: String) -> UInt64?
+    /// Ends the session as closing its tab does (SIGHUP, then SIGKILL); its exit arrives as `sessionExited`.
+    func terminateSession(hostSessionID: String)
 }
 
 /// The app's side of the broker connection (the XPC proxy in the helper, a fake in tests).
@@ -221,6 +223,7 @@ public final class Broker: @unchecked Sendable {
         case "whoami": reply(whoami(caller))
         case "worker.start": workerStart(caller, options, reply: reply)
         case "worker.list": reply(workerList(caller))
+        case "worker.stop": reply(workerStop(caller, options))
         case "send": reply(send(caller, options))
         case "ask": reply(ask(caller, options))
         case "reply": reply(answer(caller, options))
@@ -398,6 +401,98 @@ public final class Broker: @unchecked Sendable {
             return line
         }
         return .success(views, text: lines.joined(separator: "\n"))
+    }
+
+    /// Ends a worker the caller started: its open dispatch settles as stopped, nothing more is typed into it, and its
+    /// terminal ends as closing its tab would. The app sees `stoppedAt` and closes the worker's tab.
+    private func workerStop(_ caller: SessionBinding, _ options: [String: String]) -> BrokerResponse {
+        let target = OrchestrationID.normalize(options["to"] ?? "")
+        guard !target.isEmpty else {
+            return .failure(BrokerFailure(code: "missing_target", message: "`worker stop` needs the worker to stop.",
+                                          hint: "suijin worker stop --to <dispatch-id or worker name>"))
+        }
+        let resolved: OrchestrationDispatch
+        switch resolveWorker(target, coordinator: caller.sessionID) {
+        case .success(let dispatch): resolved = dispatch
+        case .failure(let failure): return .failure(failure)
+        }
+        let ended = BrokerFailure(code: "worker_gone", message: "Worker \"\(resolved.name)\" (\(resolved.id)) already ended.",
+                                  hint: "Run `suijin worker list` to see your workers.")
+        guard resolved.status != .starting else {
+            return .failure(BrokerFailure(code: "worker_starting", message: "Suijin is still starting worker \"\(resolved.name)\".",
+                                          hint: "Run `suijin worker stop --to \(resolved.id)` again once it has started."))
+        }
+        let workerID = resolved.workerSessionID
+        let binding = workerID.flatMap { identity.binding(sessionID: $0) }
+        if let workerID {
+            // A worker whose terminal ended is gone even when a session with its id runs again: the user may have
+            // resumed that tab for their own work, and it is no longer the coordinator's to end. `send` draws the
+            // same line.
+            let last = store.state.dispatches.filter { $0.workerSessionID == workerID }.max { $0.createdAt < $1.createdAt } ?? resolved
+            guard binding?.isRunning == true, last.status != .exited, last.status != .startFailed else { return .failure(ended) }
+        } else {
+            guard resolved.status == .queued else { return .failure(ended) }
+        }
+        // The worker's dispatches (several after follow-ups) settle; `stoppedAt` goes on the newest, the one the
+        // sidebar shows. A worker that already reported keeps its status and summary.
+        let dispatches = workerID.map { id in store.state.dispatches.filter { $0.workerSessionID == id } } ?? [resolved]
+        let newest = dispatches.max { $0.createdAt < $1.createdAt } ?? resolved
+        let ids = Set(dispatches.map(\.id))
+        let note = "Stopped by its coordinator."
+        let at = now()
+        store.update { state in
+            for index in state.dispatches.indices where ids.contains(state.dispatches[index].id) {
+                if !state.dispatches[index].status.isSettled {
+                    // A queued worker never starts now; a started one ended without `done`.
+                    state.dispatches[index].status = workerID == nil ? .startFailed : .exited
+                    state.dispatches[index].summary = note
+                    state.dispatches[index].lastError = note
+                    state.dispatches[index].updatedAt = at
+                }
+                if state.dispatches[index].id == newest.id {
+                    state.dispatches[index].stoppedAt = at
+                    state.dispatches[index].updatedAt = at
+                }
+            }
+        }
+        if let workerID, let binding {
+            // Gone from here on: its token stops working and nothing pending is typed into it. Its exit, which follows,
+            // escalates nothing because its dispatches are settled.
+            _ = identity.markExited(hostSessionID: binding.hostSessionID)
+            turns.forget(workerID)
+            submitting.remove(workerID)
+            awaitingSubmit[workerID] = nil
+            store.update { state in
+                for index in state.messages.indices
+                where state.messages[index].toSessionID == workerID && state.messages[index].status == .pending {
+                    state.messages[index].status = .undeliverable
+                }
+            }
+            io?.terminateSession(hostSessionID: binding.hostSessionID)
+        }
+        notifyApp()
+        pumpLocked()
+        let stopped = dispatch(newest.id) ?? newest
+        let how = workerID == nil ? "it had not started and will not start" : "its terminal is closing"
+        return .success(view(stopped), text: "Stopped worker \"\(stopped.name)\" (dispatch \(stopped.id)): \(how). "
+                        + "Messages it had not received were dropped.")
+    }
+
+    /// A dispatch the coordinator started, by dispatch ID or by worker name (the newest dispatch of that name).
+    private func resolveWorker(_ target: String, coordinator: String) -> Result<OrchestrationDispatch, BrokerFailure> {
+        if let dispatch = dispatch(target) {
+            guard dispatch.coordinatorSessionID == coordinator else {
+                return .failure(BrokerFailure(code: "not_coordinator",
+                                              message: "Only the coordinator that started dispatch \(dispatch.id) can stop it."))
+            }
+            return .success(dispatch)
+        }
+        let named = store.state.dispatches.filter { $0.coordinatorSessionID == coordinator && $0.name == target }
+        guard let newest = named.max(by: { $0.createdAt < $1.createdAt }) else {
+            return .failure(BrokerFailure(code: "unknown_dispatch", message: "No worker `\(target)` of yours.",
+                                          hint: "Run `suijin worker list` for your workers' dispatch IDs and names."))
+        }
+        return .success(newest)
     }
 
     private struct Receipt: Encodable {

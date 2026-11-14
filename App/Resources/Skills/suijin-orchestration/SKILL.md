@@ -30,6 +30,7 @@ Your prompt starts with a preamble that names your Task ID and Dispatch ID. Foll
 ```sh
 suijin worker start --agent codex --spec "<self-contained task>"                  # in your folder or worktree
 suijin worker start --agent claude --worktree new --name fix-login --spec "<task>"   # in a new git worktree
+suijin worker stop --to <dispatch-id|worker-name>                                 # ends it and closes its tab
 ```
 
 - Start every independent worker, then **end your turn**. "Report back" and "tell me when it's done" also mean end
@@ -40,6 +41,8 @@ suijin worker start --agent claude --worktree new --name fix-login --spec "<task
 - `--account <id|label|email>` picks one of the user's Suijin accounts for the worker's agent; omit it for the
   default.
 - If `worker start` fails, read the error and fix the cause; do not start the same worker twice.
+- When the user asks to stop or cancel a worker, run `suijin worker stop --to <dispatch-id|worker-name>`; do not ask
+  the worker to quit with `send`. Its work is not reported; tell the user it was stopped.
 
 When Suijin wakes you:
 

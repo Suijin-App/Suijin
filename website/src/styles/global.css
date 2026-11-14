@@ -306,6 +306,8 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .m-seg svg { width: 14px; height: 14px; }
 .m-search { display: flex; align-items: center; justify-content: space-between; flex: none; height: 26px; margin-bottom: 6px; padding: 0 9px; border-radius: 7px; background: var(--win-chip); color: var(--win-muted); }
 .m-insp .m-file { gap: 5px; height: 23px; }
+/* A file an agent creates during a scene takes no room until it exists. */
+.js .m-file.m-new:not(.shown) { display: none; }
 .m-chev { display: grid; place-items: center; flex: none; width: 9px; height: 9px; color: var(--win-muted); }
 .m-chev svg { width: 100%; height: 100%; }
 .m-chev.closed { transform: rotate(-90deg); }

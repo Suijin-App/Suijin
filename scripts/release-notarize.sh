@@ -2,16 +2,17 @@
 # Produce a release of Suijin outside the Mac App Store (docs/release-process.md):
 #   archive (Release, hardened runtime) → export with Developer ID → check the nested PTY host helper is signed with
 #   Developer ID, hardened runtime and a timestamp (re-sign inside out if not) → verify the app → notarize and staple
-#   the app → DMG (scripts/make-dmg.sh) → notarize and staple the DMG → Gatekeeper checks.
+#   the app → DMG (scripts/make-dmg.sh) → notarize and staple the DMG → Gatekeeper checks → sign the DMG for Sparkle
+#   and write appcast.xml.
 #
-#   There is no update host yet, so nothing is uploaded, signed for Sparkle or written to an appcast; the app ships
-#   without SUFeedURL and its updater reports "not configured" (docs/release-process.md, "Turning updates on").
+#   Nothing is uploaded. The last lines print the `gh release create` command that publishes the DMG and the appcast
+#   as a GitHub release; installed copies find it through https://suijin.app/appcast.xml (docs/release-process.md).
 #
 # Usage:
 #   scripts/release-notarize.sh [--dry-run]
 #
 #   --dry-run  build, sign, verify and make the DMG for real, but skip everything that leaves this Mac or reads a
-#              release secret: notarization and stapling. Problems that would stop a real run (missing tools or
+#              release secret: notarization, stapling and the Sparkle signature. Problems that would stop a real run (missing tools or
 #              certificate) are listed at the end instead of stopping the run.
 #              Without a Developer ID certificate it signs with Apple Development and says so.
 #
@@ -22,6 +23,9 @@
 #   SUIJIN_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
 #                             the team found in the Keychain).
 #   SUIJIN_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).
+#   SUIJIN_SPARKLE_ACCOUNT    Keychain account of the Sparkle EdDSA key (default: suijin).
+#   SUIJIN_GITHUB_REPOSITORY  owner/name of the repository whose releases hold the downloads
+#                             (default: Suijin-App/Suijin).
 #
 # Nothing here writes or prints a private key or password: notarytool reads its profile from the login Keychain.
 set -euo pipefail
@@ -42,6 +46,11 @@ NOTARY_PROFILE="${SUIJIN_NOTARY_PROFILE:-suijin-notary}"
 TEAM_ID="${SUIJIN_TEAM_ID:-YWSHDN5Y3H}"
 APP_ID="com.tekmium.suijin"
 HELPER_ID="com.tekmium.suijin.ptyhost"
+SPARKLE_ACCOUNT="${SUIJIN_SPARKLE_ACCOUNT:-suijin}"
+GITHUB_REPOSITORY="${SUIJIN_GITHUB_REPOSITORY:-Suijin-App/Suijin}"
+# The feed every installed copy asks. It is part of shipped builds, so it never changes; the redirect behind it does
+# (Tools/update-feed).
+FEED_URL="https://suijin.app/appcast.xml"
 
 STEP=0
 BLOCKERS=()
@@ -86,6 +95,11 @@ DERIVED="$OUT/DerivedData"
 DMG="$OUT/Suijin-$VERSION.dmg"
 APP_ZIP="$OUT/Suijin-$VERSION-notarize.zip"
 EXPORT_OPTIONS="$OUT/ExportOptions.plist"
+APPCAST="$OUT/appcast.xml"
+TAG="v$VERSION"
+DOWNLOAD_URL="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Suijin-$VERSION.dmg"
+RELEASE_PAGE="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+SPARKLE_BIN="$DERIVED/SourcePackages/artifacts/sparkle/Sparkle/bin"
 
 printf 'Suijin release %s (%s)%s\n' "$VERSION" "$BUILD_NUMBER" \
   "$([ "$DRY_RUN" = 1 ] && echo ' — DRY RUN: builds and signs locally, nothing is notarized or published')"
@@ -94,15 +108,22 @@ note "notary profile:  $NOTARY_PROFILE"
 
 # ---------------------------------------------------------------------------------------------------------------------
 step "check the tools and the release inputs"
-for tool in xcodebuild xcodegen codesign spctl hdiutil ditto; do
+for tool in xcodebuild xcodegen codesign spctl hdiutil ditto xmllint; do
   command -v "$tool" >/dev/null || die "missing tool: $tool"
 done
 for tool in notarytool stapler; do
   xcrun --find "$tool" >/dev/null 2>&1 || block "missing tool: xcrun $tool"
 done
 note "tools found"
-# Updates stay off until there is an update host: the app must not point Sparkle anywhere yet.
-[ -z "$(plist_value App/Info.plist SUFeedURL)" ] || block "App/Info.plist has a SUFeedURL; updates are not set up for Suijin yet (docs/release-process.md)"
+# A release carries the feed and the public half of the key its updates are signed with; without both, installed
+# copies could never update.
+[ "$(plist_value App/Info.plist SUFeedURL)" = "$FEED_URL" ] || block "App/Info.plist: SUFeedURL is not $FEED_URL"
+PUBLIC_KEY="$(plist_value App/Info.plist SUPublicEDKey)"
+if [ "$(printf '%s' "$PUBLIC_KEY" | base64 -D 2>/dev/null | wc -c | tr -d ' ')" != 32 ]; then
+  block "App/Info.plist: SUPublicEDKey is not a Sparkle public key yet (docs/release-process.md, \"Sparkle EdDSA key\")"
+fi
+MINIMUM_SYSTEM="$(sed -n 's/^ *macOS: *"\{0,1\}\([0-9.]*\)"\{0,1\} *$/\1/p' project.yml | head -1)"
+[ -n "$MINIMUM_SYSTEM" ] || die "cannot read the macOS deployment target from project.yml"
 
 # Lists certificate names only; private keys never leave the Keychain.
 IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
@@ -290,6 +311,46 @@ printf '%s\n' "$dmg_assessment" | sed 's/^/      /'
 [ "$DRY_RUN" = 1 ] || grep -q "accepted" <<<"$dmg_assessment" || die "Gatekeeper rejects the DMG"
 
 # ---------------------------------------------------------------------------------------------------------------------
+step "sign the DMG for Sparkle and write the appcast"
+[ -x "$SPARKLE_BIN/sign_update" ] || die "Sparkle's sign_update is missing from $SPARKLE_BIN"
+run rm -f "$APPCAST"
+show "$SPARKLE_BIN/sign_update" --account "$SPARKLE_ACCOUNT" "$DMG"
+if [ "$DRY_RUN" = 1 ]; then
+  note "(skipped in a dry run: signing reads the private key; no appcast is written)"
+else
+  # Prints `sparkle:edSignature="…" length="…"`; the private key stays in the login Keychain.
+  SIGNATURE="$("$SPARKLE_BIN/sign_update" --account "$SPARKLE_ACCOUNT" "$DMG")" \
+    || die "sign_update failed (is the Sparkle key stored under the account \"$SPARKLE_ACCOUNT\"? see docs/release-process.md)"
+  grep -q 'sparkle:edSignature="[^"]\{1,\}" length="[0-9]\{1,\}"' <<<"$SIGNATURE" || die "unexpected sign_update output"
+  # The key that signed must be the one the app trusts, or no installed copy accepts the update.
+  KEYCHAIN_PUBLIC_KEY="$("$SPARKLE_BIN/generate_keys" --account "$SPARKLE_ACCOUNT" -p 2>/dev/null || true)"
+  [ "$KEYCHAIN_PUBLIC_KEY" = "$PUBLIC_KEY" ] \
+    || die "the Sparkle key in the Keychain is not the one in App/Info.plist (SUPublicEDKey)"
+  cat >"$APPCAST" <<XML
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Suijin</title>
+    <link>$FEED_URL</link>
+    <description>Updates of Suijin</description>
+    <language>en</language>
+    <item>
+      <title>$VERSION</title>
+      <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
+      <sparkle:version>$BUILD_NUMBER</sparkle:version>
+      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>$MINIMUM_SYSTEM</sparkle:minimumSystemVersion>
+      <description><![CDATA[<p>Suijin $VERSION. <a href="$RELEASE_PAGE">Release notes</a></p>]]></description>
+      <enclosure url="$DOWNLOAD_URL" $SIGNATURE type="application/octet-stream"/>
+    </item>
+  </channel>
+</rss>
+XML
+  run xmllint --noout "$APPCAST"
+  note "appcast: $APPCAST"
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
 printf '\n'
 if [ "$DRY_RUN" = 1 ]; then
   printf 'Dry run finished: %d steps. Built and signed:\n  %s\n  %s\n' "$STEP" "$APP" "$DMG"
@@ -304,5 +365,7 @@ if [ "$DRY_RUN" = 1 ]; then
     for blocker in "${BLOCKERS[@]}"; do printf '  - %s\n' "$blocker"; done
   fi
 else
-  printf 'Release %s ready:\n  %s\n  %s\nNothing was published.\n' "$VERSION" "$APP" "$DMG"
+  printf 'Release %s ready:\n  %s\n  %s\n  %s\nNothing was published. To publish (the DMG first, then the appcast):\n' "$VERSION" "$APP" "$DMG" "$APPCAST"
+  printf '  gh release create %s %s %s --repo %s --title "Suijin %s" --notes-file <release-notes.md>\n' \
+    "$TAG" "$DMG" "$APPCAST" "$GITHUB_REPOSITORY" "$VERSION"
 fi

@@ -1,9 +1,8 @@
 # Release process
 
-How Suijin ships outside the Mac App Store: Developer ID signing, notarization and a DMG. In-app updates through
-Sparkle 2 are built in but **not configured yet**: there is no update host, so the app ships without `SUFeedURL` and
-the release pipeline publishes nothing (section 4 says how to turn updates on). Every command runs from the repository
-root on the release Mac.
+How Suijin ships outside the Mac App Store: Developer ID signing, notarization, a DMG, and in-app updates through
+Sparkle 2. Releases are GitHub releases of this repository; installed copies find them through
+`https://suijin.app/appcast.xml` (section 4). Every command runs from the repository root on the release Mac.
 
 Never put in the repository: certificates (`.p12`, `.cer`), app-specific passwords, the Sparkle private key, App
 Store Connect API keys. They all live in the release Mac's login Keychain.
@@ -15,12 +14,13 @@ Store Connect API keys. They all live in the release Mac's login Keychain.
 | Sparkle 2 | Swift package in `project.yml`, pinned with `exactVersion`, linked to the `Suijin` target only. Its `sign_update` and `generate_keys` tools come with the package artifact (`<DerivedData>/SourcePackages/artifacts/sparkle/Sparkle/bin`). |
 | In-app updater | `App/Updates/UpdaterController.swift` wraps `SPUStandardUpdaterController`. `UpdateCommands` adds Suijin → "Check for Updates…"; `UpdateSettingsSection` is the Updates section of Settings → General. |
 | Helper handover | `App/Updates/HelperVersionCheck.swift` (section 5). |
-| Sparkle keys in `App/Info.plist` | `SUPublicEDKey` (still the placeholder), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). No `SUFeedURL` until there is an update host. |
+| Sparkle keys in `App/Info.plist` | `SUFeedURL` (`https://suijin.app/appcast.xml`), `SUPublicEDKey` (the public half of the signing key; the placeholder until section 2.3 is done), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). |
+| Update feed | `Tools/update-feed`: a Cloudflare Worker on `suijin.app` that redirects `/appcast.xml` to the `appcast.xml` asset of the latest GitHub release (section 4). |
 | Scripts | `scripts/release-notarize.sh` (the whole pipeline, with `--dry-run`), `scripts/make-dmg.sh` (DMG and its signature). |
 
-Without `SUFeedURL` or a real `SUPublicEDKey` the app never starts the updater: Settings → General → Updates says
-updates are not configured. `scripts/release-notarize.sh` refuses a build that has a `SUFeedURL`, so a feed cannot be
-switched on by accident.
+Without a real `SUPublicEDKey` the app never starts the updater: Settings → General → Updates says updates are not
+configured. `scripts/release-notarize.sh` refuses to release such a build, because copies installed from it could
+never update.
 
 ## 2. One-time setup (Tekmium account owner)
 
@@ -37,7 +37,7 @@ switched on by accident.
    It asks for an app-specific password (appleid.apple.com). Another profile name works with
    `SUIJIN_NOTARY_PROFILE=<name>`. The release script does not look the profile up in a dry run, because that
    contacts Apple; the first real run is the check.
-3. **Sparkle EdDSA key** (only when turning updates on, section 4), generated once by the owner for every Suijin
+3. **Sparkle EdDSA key**, generated once by the owner for every Suijin
    release, under its own Keychain account so it never mixes with another app's key (Capstio uses the default
    account):
    ```sh
@@ -68,7 +68,8 @@ switched on by accident.
    scripts/release-notarize.sh
    ```
    Steps:
-   1. Check the tools, that `App/Info.plist` has no `SUFeedURL`, and the team's Developer ID identity.
+   1. Check the tools, that `App/Info.plist` carries the feed `https://suijin.app/appcast.xml` and a real
+      `SUPublicEDKey`, and the team's Developer ID identity.
    2. `xcodegen generate`, `xcodebuild archive` of the Release configuration with hardened runtime
       (`-skipPackagePluginValidation -allowProvisioningUpdates`).
    3. Export with `method developer-id`.
@@ -85,26 +86,44 @@ switched on by accident.
    9. Gatekeeper: `spctl --assess --type execute -vv Suijin.app` must say `accepted`, `source=Notarized Developer
       ID`; the DMG is checked with `spctl --assess --type open --context context:primary-signature -vv`.
 
+   10. Sign the DMG for Sparkle (`sign_update --account suijin`; the key that signs must be the one in
+       `SUPublicEDKey`) and write `appcast.xml`: one item with the version, the build, the minimum macOS, a link to
+       the release notes and the download with its signature and length.
+
    Nothing is uploaded. Output stays in `build/release/<version>/` (ignored by git).
-5. Hand out the DMG, then run the checks in section 6.
+5. Publish: write the release notes from `CHANGELOG.md`, then create the GitHub release with the two files, the DMG
+   first (the script prints this command with the real paths):
+   ```sh
+   gh release create v<version> build/release/<version>/Suijin-<version>.dmg build/release/<version>/appcast.xml \
+     --repo Suijin-App/Suijin --title "Suijin <version>" --notes-file <release-notes.md>
+   ```
+   The release must be a normal one (not a draft or pre-release): `releases/latest` only follows those. Then check
+   the feed: `curl -sIL https://suijin.app/appcast.xml` must end in `200`, and the download URL in the appcast must
+   return the `length` it names.
+6. Run the checks in section 6.
 
 Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEAM_ID`, `SUIJIN_SIGNING_IDENTITY`,
-`SUIJIN_RELEASE_DIR`. See the header of `scripts/release-notarize.sh`.
+`SUIJIN_RELEASE_DIR`, `SUIJIN_SPARKLE_ACCOUNT`, `SUIJIN_GITHUB_REPOSITORY`. See the header of `scripts/release-notarize.sh`.
 
-## 4. Turning updates on (not done yet)
+## 4. How updates reach installed copies
 
-Updates need an HTTPS host for Suijin, which does not exist yet. Turning them on is its own piece of work:
+- **The feed address is permanent.** Every build asks `https://suijin.app/appcast.xml` for as long as it is installed.
+  Changing `SUFeedURL` strands every copy already out, so it stays; what can change is what answers there.
+- **suijin.app redirects.** `Tools/update-feed` is a Cloudflare Worker bound to `suijin.app`. `/appcast.xml` answers
+  with a 302 to `https://github.com/Suijin-App/Suijin/releases/latest/download/appcast.xml`; every other path goes to
+  the repository until there is a website. Deploy it with `npx wrangler deploy` from that folder (after
+  `npx wrangler login`, with `CLOUDFLARE_ACCOUNT_ID` set to the account that holds the `suijin.app` zone). Moving the
+  downloads elsewhere later means changing that redirect and nothing in the app.
+- **GitHub holds the files.** Each release has `Suijin-<version>.dmg` and `appcast.xml` as assets. The appcast names
+  only the newest version, which is all Sparkle needs.
+- **Signatures.** Sparkle installs a download only when its EdDSA signature matches `SUPublicEDKey`. The private key
+  is in the release Mac's login Keychain (section 2.3). Losing it means no installed copy can ever update, so back it
+  up outside the repository.
+- **What is sent.** A check requests the appcast with the app's name and version in the user agent; system profiling
+  is off. The Privacy text in `App/Features/Settings/LegalDocuments.swift` says so and must stay true.
 
-1. Pick the host and its paths: the appcast (`<host>/appcast.xml`), the DMGs (`<host>/downloads/Suijin-<version>.dmg`)
-   and the release notes (`<host>/downloads/release-notes/<version>.html`). Changing the feed URL after a release
-   strands every installed copy, so settle it before the first build that carries it.
-2. Do step 2.3 (Sparkle key) and paste the public key into `SUPublicEDKey`.
-3. Add `SUFeedURL` to `App/Info.plist`, mention the host in the Privacy text of `App/Features/Settings/LegalDocuments.swift`,
-   and give `scripts/release-notarize.sh` back a Sparkle step: `sign_update --account suijin` on the DMG and an
-   appcast `<item>` (title, `sparkle:version`, `sparkle:shortVersionString`, `sparkle:minimumSystemVersion`, release
-   notes link, an enclosure with the signature attributes). Drop its check that refuses a `SUFeedURL`.
-4. Publish the DMG first and the appcast second; an appcast that points at a missing file makes the app report a
-   download error. `curl -I` on the DMG must return 200 and the `length` given in the appcast.
+Still to do before the first release: generate the key (section 2.3) and put its public half into `SUPublicEDKey`.
+Until then the updater stays off and the release script stops.
 
 ## 5. Updates and the PTY host helper
 

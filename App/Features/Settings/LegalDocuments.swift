@@ -34,7 +34,7 @@ struct LegalDocument: Identifiable {
         components.calendar = Calendar(identifier: .gregorian)
         components.year = 2026
         components.month = 11
-        components.day = 13
+        components.day = 14
         // A fixed, valid Gregorian day always resolves to a date.
         return components.date!
     }()
@@ -121,7 +121,7 @@ struct LegalDocument: Identifiable {
             Section(heading: String(localized: "Connections Suijin makes"), blocks: [
                 .bullets([
                     AttributedString(localized: "**Usage limits.** For each Claude or Codex login whose limits Suijin shows, it asks Anthropic (`api.anthropic.com`) or OpenAI (`chatgpt.com`) with that login's own token, now and then and when you click refresh. Only the token (and the Codex account ID) is sent; the reply holds percentages and reset times."),
-                    AttributedString(localized: "**Updates.** This version of Suijin does not check for updates. When a later version does, this policy will name the address it asks and how to turn the check off."),
+                    AttributedString(localized: "**Updates.** Suijin asks `suijin.app` whether a newer version exists, about once a day and when you choose Check for Updates; that address forwards to the releases of Suijin on GitHub (`github.com`), where an update is downloaded from. The request carries the app's name and version, nothing about you or your work. Turn the automatic check off in Settings → General."),
                     AttributedString(localized: "**GitHub.** If the GitHub CLI (`gh`) is installed, Suijin uses it with your own GitHub sign-in to show a branch's pull request and checks, and to create pull requests you ask for. When you ask for a workspace's GitHub avatar, Suijin downloads the repository owner's public picture from github.com."),
                     AttributedString(localized: "**Git.** Suijin pushes a branch only when you ask, using your own remotes and git credentials."),
                     AttributedString(localized: "**Markdown files.** When a Markdown file you open shows images from the web, they load from their addresses, as in a browser."),

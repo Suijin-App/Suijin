@@ -24,11 +24,16 @@ struct UpdatesTests {
         #expect(key == UpdaterController.publicKeyPlaceholder || UpdaterController.isUsablePublicKey(key))
     }
 
-    /// There is no update host yet: the app ships without a feed, so the updater stays off and says so.
-    @Test func buildWithoutFeedIsNotConfigured() {
-        #expect(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") == nil)
-        #expect(!UpdaterController.hasFeedURL(in: .main))
-        #expect(!UpdaterController.isConfigured(in: .main))
+    /// The feed is part of every shipped build and can never change afterwards, so it is pinned here.
+    @Test func feedIsTheStableSuijinAddress() {
+        #expect(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String == "https://suijin.app/appcast.xml")
+        #expect(UpdaterController.hasFeedURL(in: .main))
+    }
+
+    /// The updater runs only with a real public key: with the placeholder it stays off, whatever the feed says.
+    @Test func updaterIsConfiguredOnlyWithARealKey() throws {
+        let key = try #require(Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String)
+        #expect(UpdaterController.isConfigured(in: .main) == UpdaterController.isUsablePublicKey(key))
     }
 
     @Test func hostBuildStringIsParsed() {

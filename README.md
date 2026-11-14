@@ -35,6 +35,9 @@ Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you 
 - Sessions run in a background helper, so quitting or updating Suijin does not stop your agents. Closing a tab ends
   its session.
 - When an agent exits, its tab shows a Session Ended view with **Resume Session** and **Start Again**.
+
+![The Session Ended view with Resume Session and Start Again](docs/screenshots/session-ended.png)
+
 - Clicking a file path in terminal output opens that file.
 
 ![A split tab with Claude Code, Codex and two shells](docs/screenshots/split-panes.png)
@@ -54,6 +57,8 @@ Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you 
 
 Files open in a tab next to your sessions: code with syntax highlighting, Markdown rendered, images with zoom and pan,
 and video and audio with a player, so you can look at what an agent produced without switching apps.
+
+![A Markdown file rendered in a tab](docs/screenshots/markdown.png)
 
 ![A video playing in a tab](docs/screenshots/media-video.png)
 
@@ -81,14 +86,35 @@ confirmed first.
 
 ### Agent orchestration
 
-An agent in a Suijin terminal can start worker agents with the bundled `suijin` command, message them and collect
-their results. The sidebar shows workers under the session that started them.
+One agent can hand work to others. A coordinator agent in a Suijin terminal starts worker agents with the bundled
+`suijin` command, each a Claude Code or Codex session of its own, in the same folder or in a new worktree.
+
+```sh
+suijin worker start --agent codex --name write-tests --spec "Add two tests for UsageBar"
+suijin worker start --agent claude --worktree new --name add-docs --spec "Document UsageBar in the README"
+```
+
+- Every worker gets its own tab, and the sidebar lists the workers under their coordinator with a live status
+  (Working, Asking, Done).
+- A worker can ask its coordinator a question and gets the answer typed into its terminal.
+- When a worker finishes, its result is delivered to the coordinator, which then reports the outcome of every task.
+- The guide that teaches agents these commands ships with the app; you only ask for "Suijin workers" in plain words.
+
+![While the workers run: the coordinator and its two workers in the sidebar, one done and one still working](docs/screenshots/orchestration-workers.png)
+
+![After they finish: each worker's result arrives in the coordinator's tab](docs/screenshots/orchestration.png)
 
 ### Stats and usage
 
 Settings › Stats & Usage shows tokens, estimated cost and activity per day, read from the local Claude Code and Codex
 logs (read-only). Costs are estimates at API list prices, not your subscription bill. Clicking the session count in
 the status bar opens the Resource Manager with the memory and CPU of running sessions.
+
+### Light and dark
+
+Suijin follows the system appearance or stays light or dark, and terminals with the Automatic theme switch along.
+
+![The main window in dark appearance](docs/screenshots/dark.png)
 
 ## Settings
 

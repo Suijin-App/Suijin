@@ -5,7 +5,7 @@ import Synchronization
 import Testing
 
 /// A helper that answers the handshake with a fixed protocol version and records what the client asks for.
-private final class FakeHost: NSObject, PTYHostXPC, @unchecked Sendable {
+final class FakeHost: NSObject, PTYHostXPC, @unchecked Sendable {
     let version: Int
     private let calls = Mutex<[String]>([])
 
@@ -35,7 +35,7 @@ private final class FakeHost: NSObject, PTYHostXPC, @unchecked Sendable {
     }
 }
 
-private final class FakeListener: NSObject, NSXPCListenerDelegate, @unchecked Sendable {
+final class FakeListener: NSObject, NSXPCListenerDelegate, @unchecked Sendable {
     let host: FakeHost
     let listener = NSXPCListener.anonymous()
 

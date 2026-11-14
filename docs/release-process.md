@@ -157,8 +157,18 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
     It exits by itself once its sessions end and Suijin disconnects; the next launch gets the new helper. The XPC
     protocol version guards compatibility in between (a protocol mismatch makes the client ask the helper to exit
     when idle and report the mismatch).
-  - The launchd registration (`SMAppService.agent`) points at a path inside the bundle, so it survives the update and
-    needs no re-registration.
+  - The launchd registration (`SMAppService.agent`) points at a path inside the bundle, but launchd also records a
+    launch constraint for the helper when an app registers it (signing identifier, team and signature kind:
+    development or Developer ID). A registration made by another copy or kind of build (a Debug build from Xcode, a
+    copy run from elsewhere) can make launchd refuse the helper (`Launch Constraint Violation`, the job ends in
+    `EX_CONFIG`) while `SMAppService` still reports it as enabled. So the app records which copy (bundle path) and
+    which kind of signature and team made the registration (`PTYHostRegistration`), and renews it (unregister, then
+    register) when another made it, and once per launch when the helper cannot be reached; both only while no helper
+    process runs, one renewal at a time, never from a translocated or read-only copy, and cut off after 15 s. An update
+    in place keeps path and signature, so it renews nothing. When the helper still cannot be reached, sessions run in
+    the app, Settings › General › Permissions shows the background helper as "Not working" with a Repair button, the
+    alert for a session that cannot start says so, and sessions the helper may still run are kept (shown as
+    reconnecting) and attached again once it answers.
 
 ## 6. Verification
 

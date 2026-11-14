@@ -25,8 +25,7 @@ struct PermissionsSection: View {
                     title: Text("Background helper"),
                     detail: Text("Keeps sessions running after you quit Suijin."),
                     status: permissions.backgroundHelper, isOptional: false,
-                    action: permissions.backgroundHelper == .allowed ? nil
-                        : PermissionRow.Action(title: Text("Open Login Items")) { permissions.openLoginItems() })
+                    action: helperAction(permissions))
                 PermissionRow(
                     title: Text("Full Disk Access"),
                     detail: Text("Optional. Lets agents read folders macOS protects without asking for each one."),
@@ -48,7 +47,8 @@ struct PermissionsSection: View {
         }
         .task {
             guard injected == nil else { return }
-            let live = PermissionsModel(sources: .live(usesHost: { [model] in model.runtimes.hostProblem == nil }))
+            let live = PermissionsModel(sources: .live(usesHost: { [model] in model.runtimes.hostProblem == nil },
+                                                       repairHelper: { [model] in await model.runtimes.repairHost() }))
             permissions = live
             await live.refresh()
         }
@@ -63,7 +63,21 @@ struct PermissionsSection: View {
         switch permissions.notifications {
         case .allowed: nil
         case .notDetermined: PermissionRow.Action(title: Text("Allow…")) { Task { await permissions.requestNotifications() } }
-        case .denied, .unknown: PermissionRow.Action(title: Text("Open System Settings")) { permissions.openNotificationSettings() }
+        case .denied, .unknown, .broken:
+            PermissionRow.Action(title: Text("Open System Settings")) { permissions.openNotificationSettings() }
+        }
+    }
+
+    /// A helper that is allowed but does not start is repaired here; one that is off is turned on in Login Items.
+    private func helperAction(_ permissions: PermissionsModel) -> PermissionRow.Action? {
+        switch permissions.backgroundHelper {
+        case .allowed: nil
+        case .broken:
+            PermissionRow.Action(title: Text("Repair"), isBusy: permissions.isRepairingHelper) {
+                Task { await permissions.repairBackgroundHelper() }
+            }
+        case .denied, .notDetermined, .unknown:
+            PermissionRow.Action(title: Text("Open Login Items")) { permissions.openLoginItems() }
         }
     }
 }
@@ -72,6 +86,8 @@ struct PermissionsSection: View {
 private struct PermissionRow: View {
     struct Action {
         let title: Text
+        /// The work runs: the button is disabled and shows progress.
+        var isBusy = false
         let perform: () -> Void
     }
 
@@ -93,6 +109,7 @@ private struct PermissionRow: View {
             title
             detail
             if case .unknown(let reason?) = status { Text(reason) }
+            if case .broken(let reason) = status { Text(reason) }
         }
         .accessibilityElement(children: .contain)
     }
@@ -112,7 +129,10 @@ private struct PermissionRow: View {
 
     @ViewBuilder private var button: some View {
         if let action {
-            Button(action: action.perform) { action.title }.fixedSize()
+            HStack(spacing: SuijinSpacing.s) {
+                if action.isBusy { ProgressView().controlSize(.small) }
+                Button(action: action.perform) { action.title }.fixedSize().disabled(action.isBusy)
+            }
         }
     }
 
@@ -122,6 +142,7 @@ private struct PermissionRow: View {
         case .denied: Text("Not allowed")
         case .notDetermined: Text("Not asked")
         case .unknown: Text("Unknown")
+        case .broken: Text("Not working")
         }
     }
 
@@ -130,6 +151,7 @@ private struct PermissionRow: View {
         case .allowed: "checkmark.circle.fill"
         case .denied: isOptional ? "minus.circle" : "xmark.circle.fill"
         case .notDetermined, .unknown: "questionmark.circle"
+        case .broken: "exclamationmark.triangle.fill"
         }
     }
 
@@ -138,6 +160,7 @@ private struct PermissionRow: View {
         case .allowed: .green
         case .denied: isOptional ? .secondary : SuijinColor.warning
         case .notDetermined, .unknown: .secondary
+        case .broken: SuijinColor.warning
         }
     }
 }

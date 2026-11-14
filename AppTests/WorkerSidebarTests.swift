@@ -49,6 +49,18 @@ struct WorkerSidebarTests {
 
     /// The tree and the inspector both read `workers(of:)`, which uses the app's sessions; a stopped worker's tab
     /// closes by itself and its row goes, while a worker that reported on its own keeps both.
+    @Test func aRefreshThatOutlivesItsModelDoesNothing() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-worker-outlive-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var model: AppModel? = AppModel(store: try SuijinStore.inMemory(), dataRoot: root)
+        let orchestration = try #require(model?.runtimes.orchestration)
+        orchestration.setSnapshotForPreview(OrchestrationSnapshot(dispatches: []))
+        model = nil
+        // A refresh scheduled earlier can run now; it must find no model and return, not stop the app.
+        await orchestration.closeStoppedWorkers()
+        await orchestration.refresh()
+    }
+
     @Test func stoppedWorkersCloseTheirTabAndLeaveTheList() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-workers-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }

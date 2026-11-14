@@ -11,6 +11,9 @@ enum PermissionStatus: Equatable {
     case notDetermined
     /// The state could not be read; `reason` says why when there is something to say. Never shown as allowed.
     case unknown(reason: String?)
+    /// macOS allows it, but it does not work (the background helper is registered and does not start); `reason` says
+    /// what is wrong and what to do.
+    case broken(reason: String)
 }
 
 /// The system permissions Suijin depends on, as Settings shows them: read on demand, never changed by Suijin itself.
@@ -26,6 +29,8 @@ final class PermissionsModel {
         /// Opens a System Settings pane; false when macOS did not take the URL.
         var open: @MainActor (URL) -> Bool
         var openLoginItems: @MainActor () -> Void
+        /// Renews the background helper's registration and connects to it again (the Repair button).
+        var repairBackgroundHelper: @MainActor () async -> Void = {}
     }
 
     private(set) var notifications: PermissionStatus = .unknown(reason: nil)
@@ -33,6 +38,8 @@ final class PermissionsModel {
     private(set) var fullDiskAccess: PermissionStatus = .unknown(reason: nil)
     /// False until the first read finished, so the section can show progress instead of "Unknown".
     private(set) var isLoaded = false
+    /// True while the Repair button's work runs.
+    private(set) var isRepairingHelper = false
     @ObservationIgnored private let sources: Sources
 
     init(sources: Sources) {
@@ -68,6 +75,15 @@ final class PermissionsModel {
         sources.openLoginItems()
     }
 
+    /// Repairs the background helper, then reads every state again. A second click while it runs does nothing.
+    func repairBackgroundHelper() async {
+        guard !isRepairingHelper else { return }
+        isRepairingHelper = true
+        defer { isRepairingHelper = false }
+        await sources.repairBackgroundHelper()
+        await refresh()
+    }
+
     /// Opens `url`, or System Settings itself when macOS does not know the pane (these URLs are not a public contract).
     private func open(_ url: URL?) {
         if let url, sources.open(url) { return }
@@ -95,6 +111,17 @@ final class PermissionsModel {
         }
     }
 
+    /// launchd's answer, unless the helper it reports as enabled cannot be reached: then it is broken, never allowed.
+    /// `runsInApp` tells what that costs: sessions run in the app since launch (and end when it quits), or the helper
+    /// stopped answering later (and new sessions cannot start).
+    static func status(for approval: HostApproval, reachable: Bool, runsInApp: Bool) -> PermissionStatus {
+        // Not registered for this copy while unreachable: another copy holds the registration, which Repair renews.
+        guard approval == .enabled || approval == .notRegistered, !reachable else { return status(for: approval) }
+        return .broken(reason: runsInApp
+            ? String(localized: "The helper is turned on but does not start, so sessions run inside Suijin and end when you quit it. Click Repair to register it again.")
+            : String(localized: "The helper stopped answering, so new sessions cannot start. Click Repair to register it again."))
+    }
+
     static func status(for approval: HostApproval) -> PermissionStatus {
         switch approval {
         case .enabled: .allowed
@@ -116,16 +143,21 @@ final class PermissionsModel {
 extension PermissionsModel.Sources {
     /// The real system. `usesHost` tells where sessions run: in the terminal host, or in the app when the host is
     /// unavailable; Full Disk Access is checked from that same place.
-    static func live(usesHost: @escaping @MainActor () -> Bool) -> Self {
+    /// `repairHelper` is the Repair button's work.
+    static func live(usesHost: @escaping @MainActor () -> Bool, repairHelper: @escaping @MainActor () async -> Void) -> Self {
         Self(
             notifications: { PermissionsModel.status(for: await UserNotifier.shared.authorizationStatus()) },
-            backgroundHelper: { PermissionsModel.status(for: PTYHostClient.shared.approval) },
+            backgroundHelper: {
+                PermissionsModel.status(for: PTYHostClient.shared.approval, reachable: !PTYHostClient.shared.isHelperUnreachable,
+                                        runsInApp: !usesHost())
+            },
             fullDiskAccess: {
                 PermissionsModel.status(for: usesHost() ? await FullDiskAccessProbe.inHost() : FullDiskAccessProbe.inProcess())
             },
             requestNotifications: { await UserNotifier.shared.requestPermission() },
             open: { NSWorkspace.shared.open($0) },
-            openLoginItems: { SMAppService.openSystemSettingsLoginItems() }
+            openLoginItems: { SMAppService.openSystemSettingsLoginItems() },
+            repairBackgroundHelper: repairHelper
         )
     }
 }

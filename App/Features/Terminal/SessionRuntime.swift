@@ -67,6 +67,15 @@ final class SessionRuntimeRegistry {
     /// started before the app launched), so a login changed since then can be told apart.
     private(set) var launchLogins: [UUID: String] = [:]
     @ObservationIgnored private var usesHost = true
+    /// The launch's attempt to reach the PTY host. Sessions started meanwhile wait for it, so they neither go to a host
+    /// that is still being repaired nor fail with its timeout.
+    @ObservationIgnored private var hostConnecting: Task<Void, Never>?
+    /// Why launch could not reach the PTY host, while sessions run in the app.
+    @ObservationIgnored private var hostFailure: (any Error)?
+    /// Stored running sessions the helper did not answer for (it may still run them): shown as reconnecting, not
+    /// resumable, attached again once the helper answers (`reattachNotConnected`).
+    private(set) var notConnected: Set<UUID> = []
+    @ObservationIgnored private var isReattaching = false
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var hooks: ClaudeHooks.Installation?
     /// The link to the orchestration broker in the PTY host (worker starts, the worker tree, notifications).
@@ -99,14 +108,9 @@ final class SessionRuntimeRegistry {
     /// Registers the PTY host, installs the shell integration and the Claude hooks, then attaches to the sessions
     /// that kept running while the app was closed.
     func bootstrap() async {
-        do {
-            try PTYHostClient.shared.register()
-            _ = try await PTYHostClient.shared.handshake()
-        } catch {
-            usesHost = false
-            hostProblem = error.localizedDescription
-            logger.error("PTY host unavailable, sessions run in-process: \(error.localizedDescription, privacy: .public)")
-        }
+        let connecting = Task { await self.connectHost() }
+        hostConnecting = connecting
+        await connecting.value
         hooks = try? ClaudeHooks.install(dataRoot: model.dataRoot)
         _ = try? ShellIntegration.install(in: model.dataRoot)
         claudePlugin = OrchestrationLaunch.installClaudePlugin(dataRoot: model.dataRoot)
@@ -120,30 +124,109 @@ final class SessionRuntimeRegistry {
         Task { await UserNotifier.shared.requestPermission() }
     }
 
+    /// Registers the PTY host and connects to it, repairing its registration once when it cannot be reached
+    /// (`PTYHostClient.connect`). When that fails, sessions run in the app instead and `hostProblem` says why.
+    private func connectHost() async {
+        do {
+            try await PTYHostClient.shared.connect()
+        } catch {
+            usesHost = false
+            hostFailure = error
+            hostProblem = error.localizedDescription
+            logger.error("PTY host unavailable, sessions run in-process: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Waits until launch found out whether sessions run in the PTY host.
+    private func hostSettled() async {
+        await hostConnecting?.value
+    }
+
+    /// The Repair button for the background helper in Settings: connects to the helper, renewing its registration when
+    /// it cannot be reached and no helper runs (`PTYHostClient.repair`). Once it answers, sessions started from now on
+    /// run in it again (and survive quitting), and sessions it kept running are shown again; sessions already running
+    /// in the app stay there.
+    func repairHost() async {
+        await hostSettled()
+        do {
+            try await PTYHostClient.shared.repair()
+        } catch {
+            logger.error("Repairing the PTY host failed: \(error.localizedDescription, privacy: .public)")
+            if !usesHost { hostProblem = error.localizedDescription }
+            return
+        }
+        if !usesHost {
+            usesHost = true
+            hostFailure = nil
+            hostProblem = nil
+            orchestration.start()
+            logger.notice("PTY host repaired; new sessions run in it again")
+        }
+        await reattachNotConnected()
+    }
+
+    /// What an alert says when a session could not start or resume: for a helper that cannot be reached or is turned
+    /// off, what the user can do about it rather than the bare error.
+    static func alertMessage(for error: any Error) -> String {
+        if PTYHostClient.isUnreachable(error) || (error as? PTYHostClientError) == .registeredElsewhere {
+            return String(localized: "Suijin's background helper does not start or does not answer, so the session cannot run. Open Suijin › Settings › General and click Repair next to Background helper under Permissions. If that does not help, restart your Mac.")
+        }
+        if (error as? PTYHostClientError) == .requiresApproval {
+            return String(localized: "Suijin's background helper is turned off. Turn Suijin on in System Settings › General › Login Items, or click Open Login Items next to Background helper in Suijin › Settings › General.")
+        }
+        return error.localizedDescription
+    }
+
+    /// What becomes of a stored running session that could not be attached.
+    enum UnattachedFate: Equatable {
+        /// Its process is gone (or the helper answered that it cannot be shown): it is ended.
+        case ended
+        /// The helper did not answer while a helper process runs (or that is unknown): the session may well be alive.
+        /// Its record keeps its state, it shows as reconnecting, cannot be resumed (that would start a second agent on
+        /// the same conversation), and is attached again once the helper answers.
+        case notConnected
+    }
+
+    /// The fate after `error`, given whether a helper process runs (nil: unknown).
+    static func fateOfUnattached(after error: (any Error)?, helperRunning: Bool?) -> UnattachedFate {
+        guard let error, PTYHostClient.isUnreachable(error) || (error as? PTYHostClientError) == .registeredElsewhere
+        else { return .ended }
+        return helperRunning == false ? .ended : .notConnected
+    }
+
     /// Attaches to host sessions that belong to stored records and marks the others as ended. Host sessions no
-    /// record knows about (the database was reset) are terminated so nothing runs unseen.
+    /// record knows about (the database was reset) are terminated so nothing runs unseen. When the helper did not
+    /// answer, sessions it may still run are kept as not connected instead (`UnattachedFate`).
     private func restore() async {
         defer { isRestoring = false }
+        let live = model.sessions.filter { $0.state != .exited && $0.state != .failed }
         guard usesHost else {
-            for session in model.sessions where session.state != .exited && session.state != .failed {
-                var ended = session
-                ended.state = .exited
-                ended.endedAt = ended.endedAt ?? Date()
-                await model.upsert(ended)
+            let fate = Self.fateOfUnattached(after: hostFailure, helperRunning: PTYHostClient.shared.registration.helperRunning())
+            for session in live {
+                if fate == .notConnected, session.hostSessionID != nil {
+                    notConnected.insert(session.id)
+                    continue
+                }
+                await markEnded(session)
             }
             return
         }
-        let hostSessions = (try? await PTYHostClient.shared.listSessions()) ?? []
+        let hostSessions: [PTYSessionInfo]
+        do {
+            hostSessions = try await PTYHostClient.shared.listSessions()
+        } catch {
+            // Without the list nothing is known about any of them.
+            let fate = Self.fateOfUnattached(after: error, helperRunning: PTYHostClient.shared.registration.helperRunning())
+            for session in live {
+                if fate == .notConnected, session.hostSessionID != nil { notConnected.insert(session.id) } else { await markEnded(session) }
+            }
+            return
+        }
         var restorable: [(AgentSessionRecord, PTYSessionInfo)] = []
         var exitedWhileAway: [(AgentSessionRecord, PTYSessionInfo)] = []
         for session in model.sessions {
             guard let hostID = session.hostSessionID, let info = hostSessions.first(where: { $0.id == hostID }) else {
-                if session.state != .exited && session.state != .failed {
-                    var ended = session
-                    ended.state = .exited
-                    ended.endedAt = ended.endedAt ?? Date()
-                    await model.upsert(ended)
-                }
+                if session.state != .exited && session.state != .failed { await markEnded(session) }
                 continue
             }
             // A process that is gone is never attached: the host keeps an exited session and its scrollback for a
@@ -182,9 +265,39 @@ final class SessionRuntimeRegistry {
         }
     }
 
+    private func markEnded(_ session: AgentSessionRecord) async {
+        var ended = session
+        ended.state = .exited
+        ended.endedAt = ended.endedAt ?? Date()
+        await model.upsert(ended)
+    }
+
+    /// Attaches the sessions kept as not connected, once the helper answers again (after Repair, or a later successful
+    /// connection): running ones come back on screen, ones that exited meanwhile end as usual, and ones the helper no
+    /// longer has are ended.
+    func reattachNotConnected() async {
+        guard usesHost, !notConnected.isEmpty, !isReattaching else { return }
+        isReattaching = true
+        defer { isReattaching = false }
+        guard let hostSessions = try? await PTYHostClient.shared.listSessions() else { return }
+        for id in notConnected {
+            notConnected.remove(id)
+            guard let record = model.sessions.first(where: { $0.id == id }), runtimes[id] == nil,
+                  record.state != .exited, record.state != .failed else { continue }
+            let info = record.hostSessionID.flatMap { hostID in hostSessions.first { $0.id == hostID } }
+            if let info, info.isRunning {
+                _ = await restore(record, info: info)
+            } else if let info {
+                await recordExitWhileAway(record, info: info)
+            } else {
+                await markEnded(record)
+            }
+        }
+    }
 
     /// Attaches one stored session to its host session and shows its scrollback. Returns the host session id when it
-    /// is shown, nil when it could not be (it is then terminated and marked ended).
+    /// is shown, or when it is kept as not connected (the helper did not answer; it keeps running and is attached
+    /// again later), nil when it could not be shown otherwise (it is then terminated and marked ended).
     private func restore(_ session: AgentSessionRecord, info: PTYSessionInfo) async -> String? {
         let hostID = info.id
         let engine = HostedTerminalEngine(client: .shared)
@@ -192,7 +305,13 @@ final class SessionRuntimeRegistry {
         runtime.agentSessionID = session.agentSessionID
         reconnecting.insert(session.id)
         do {
-            let scrollback = try await engine.attach(sessionID: hostID)
+            let scrollback: [UInt8]
+            do {
+                scrollback = try await engine.attach(sessionID: hostID)
+            } catch where PTYHostClient.isUnreachable(error) {
+                // A busy helper (many sessions attaching at once) gets a second chance before anything is given up.
+                scrollback = try await engine.attach(sessionID: hostID)
+            }
             runtime.terminal.attached(scrollback: scrollback)
             // Still listed while the scrollback replays; the view reports the end (`onReplayChange`).
             if !runtime.terminal.view.isReplayingScrollback { reconnecting.remove(session.id) }
@@ -205,18 +324,23 @@ final class SessionRuntimeRegistry {
             if session.agent != .codex, let hooks {
                 startWatching(runtime, file: hooks.eventsFile(sessionID: session.id), readExisting: false)
             }
+            return hostID
         } catch {
-            // A session that cannot be shown must not keep running unseen.
             reconnecting.remove(session.id)
             runtimes[session.id] = nil
             activities[session.id] = nil
+            // A session that cannot be shown must not keep running unseen; but one the helper merely did not answer
+            // for may be alive, and a slow helper is no reason to end the user's agent.
+            if Self.fateOfUnattached(after: error, helperRunning: PTYHostClient.shared.registration.helperRunning())
+                == .notConnected {
+                logger.error("Could not attach session \(hostID, privacy: .public): the helper did not answer; it keeps running")
+                notConnected.insert(session.id)
+                return hostID
+            }
             PTYHostClient.shared.terminate(hostID)
-            var ended = session
-            ended.state = .exited
-            ended.endedAt = ended.endedAt ?? Date()
-            await model.upsert(ended)
+            await markEnded(session)
+            return nil
         }
-        return runtimes[session.id] == nil ? nil : hostID
     }
 
     /// Records the end of a session whose process exited while Suijin was closed, without showing its terminal. Its
@@ -272,7 +396,7 @@ final class SessionRuntimeRegistry {
             return id
         } catch {
             model.presentedError = PresentedError(title: String(localized: "Could not start \(title)"),
-                                                  message: error.localizedDescription)
+                                                  message: Self.alertMessage(for: error))
             return nil
         }
     }
@@ -287,7 +411,7 @@ final class SessionRuntimeRegistry {
     /// session that still runs or whose conversation id is unknown.
     func resume(_ session: AgentSessionRecord) async {
         guard let ended = model.sessions.first(where: { $0.id == session.id }), ended.agent != .shell,
-              runtimes[ended.id] == nil, !resuming.contains(ended.id),
+              runtimes[ended.id] == nil, !resuming.contains(ended.id), !notConnected.contains(ended.id),
               let conversation = ended.agentSessionID.flatMap(AgentResume.validSessionID) else { return }
         resuming.insert(ended.id)
         defer { resuming.remove(ended.id) }
@@ -312,7 +436,7 @@ final class SessionRuntimeRegistry {
             try await relaunch(ended, launch: launch, catchUp: true)
         } catch {
             model.presentedError = PresentedError(title: String(localized: "Could not resume \(ended.title)"),
-                                                  message: error.localizedDescription)
+                                                  message: Self.alertMessage(for: error))
         }
     }
 
@@ -355,7 +479,7 @@ final class SessionRuntimeRegistry {
                           named targetName: String) async -> ConversationMoveOutcome {
         guard let current = model.sessions.first(where: { $0.id == session.id }),
               let provider = current.agent.accountProvider, current.accountID != accountID,
-              !resuming.contains(current.id), movingConversation[current.id] == nil,
+              !resuming.contains(current.id), movingConversation[current.id] == nil, !notConnected.contains(current.id),
               let conversation = continuableConversation(of: current) else { return .notStarted }
         let id = current.id
         movingConversation[id] = targetName
@@ -421,7 +545,7 @@ final class SessionRuntimeRegistry {
             return .moved
         } catch {
             await model.upsert(original)
-            return .failed(error.localizedDescription)
+            return .failed(Self.alertMessage(for: error))
         }
     }
 
@@ -454,6 +578,14 @@ final class SessionRuntimeRegistry {
     func run(_ record: AgentSessionRecord, launch: TerminalLaunch, catchUp: Bool = false) async throws {
         var record = record
         let id = record.id
+        await hostSettled()
+        // A helper that went away since launch is reached (and its registration repaired) before anything is spawned,
+        // so a failure here never leaves a process behind and never starts one twice.
+        if usesHost {
+            try await PTYHostClient.shared.reconnect()
+            // The helper answers: sessions it did not answer for before can be shown again.
+            if !notConnected.isEmpty { Task { await reattachNotConnected() } }
+        }
         let engine: any TerminalEngine = usesHost ? HostedTerminalEngine(client: .shared) : SwiftTermEngine()
         let runtime = makeRuntime(id: id, agent: record.agent, engine: engine)
         runtime.agentSessionID = record.agentSessionID
@@ -485,6 +617,8 @@ final class SessionRuntimeRegistry {
     /// a new one.
     func makeLaunch(record: AgentSessionRecord, cwd: URL, accountID: UUID?, prompt: String?,
                     resume: String? = nil) async throws -> TerminalLaunch {
+        // Whether the session runs in the host decides its environment.
+        await hostSettled()
         var base = ["SUIJIN_DATA_ROOT": model.dataRoot.path, "SUIJIN_SESSION_ID": record.id.uuidString]
         // Orchestration: the session token (only ever in this environment, never in arguments) and the broker's
         // addresses. Only hosted sessions get them: the broker lives in the PTY host.
@@ -738,16 +872,19 @@ final class SessionRuntimeRegistry {
     /// On quit: hosted sessions keep running unless the user turned that off; in-process ones always end.
     func prepareForQuit() async {
         let keep = usesHost && model.setting(.keepSessionsOnQuit) != "false"
+        // Sessions that ran in the app (started while the host was unavailable, before a repair) end with it either way.
+        var ending = Array(runtimes.keys)
         if keep {
             // The agents keep working in the host, but only time Suijin saw is counted; a relaunch that finds them
             // running opens a new interval.
             for runtime in runtimes.values {
+                guard let hosted = runtime.terminal.engine as? HostedTerminalEngine else { continue }
                 await finishWork(runtime)?.value
-                (runtime.terminal.engine as? HostedTerminalEngine)?.detach()
+                hosted.detach()
             }
-            return
+            ending = runtimes.filter { !($0.value.terminal.engine is HostedTerminalEngine) }.map(\.key)
         }
-        for id in Array(runtimes.keys) {
+        for id in ending {
             await terminate(id)
             if var record = model.sessions.first(where: { $0.id == id }), record.state != .exited, record.state != .failed {
                 record.state = .exited
@@ -755,7 +892,7 @@ final class SessionRuntimeRegistry {
                 await model.upsert(record)
             }
         }
-        if usesHost { PTYHostClient.shared.shutdownHostIfIdle() }
+        if usesHost, !keep { PTYHostClient.shared.shutdownHostIfIdle() }
     }
 
     // MARK: Stats

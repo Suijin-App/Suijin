@@ -62,6 +62,8 @@ extension AppModel {
         // Until launch has attached the sessions that kept running, a live record is not ended, only not back yet. A
         // record already ended shows the ended view at once: its process is never attached again.
         if runtimes.isRestoring, record.state != .exited, record.state != .failed { return .reconnecting }
+        // A session the helper did not answer for may still run there: it waits to be attached again, never ended.
+        if runtimes.notConnected.contains(session) { return .reconnecting }
         return .ended
     }
 }

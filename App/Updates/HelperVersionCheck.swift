@@ -11,7 +11,8 @@ import os
 /// the helper to exit, and launchd starts the new binary on the next connection. A helper that still runs sessions is
 /// left alone: it exits by itself once those sessions end and Suijin disconnects, and the next launch gets the new one.
 /// A helper that speaks an older but compatible protocol is handled the same way; until it is replaced the app uses
-/// only that protocol's features.
+/// only that protocol's features. A launchd registration another copy or kind of build made is renewed once no helper
+/// runs (`PTYHostClient.refreshRegistrationIfStale`).
 @MainActor
 enum HelperVersionCheck {
     enum Outcome: Equatable, Sendable {
@@ -62,9 +63,12 @@ enum HelperVersionCheck {
         logger.notice("PTY host \(reported, privacy: .public) is older than app build \(appBuild, privacy: .public); asking it to exit")
         client.shutdownHostIfIdle()
         // The client keeps reporting the old build until the helper's exit interrupts the connection; the next
-        // handshake after that reaches the helper launchd starts from the updated bundle.
+        // handshake after that reaches the helper launchd starts from the updated bundle. Once the old helper is gone,
+        // a registration another copy or kind of build made is renewed first, so launchd accepts this bundle's helper
+        // (nothing runs then, so renewing it ends no session; an update in place needs none).
         for _ in 0..<max(attempts, 1) {
             try? await Task.sleep(for: retryInterval)
+            await client.refreshRegistrationIfStale()
             guard let fresh = try? await client.handshake() else { continue }
             let current = (client.hostProtocolVersion ?? 0) >= PTYHostConstants.protocolVersion
             if current, !isStale(hostBuild: fresh, appBuild: appBuild) {

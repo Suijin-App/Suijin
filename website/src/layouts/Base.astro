@@ -136,19 +136,29 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
         try { localStorage.setItem("theme", next); } catch {}
       });
 
-      // The header gathers into a glass droplet once the page has scrolled, with a small wobble as it settles.
+      // The header gathers into a glass droplet once the page has scrolled. Its width is set in pixels for each state
+      // so it slides between two lengths, and the two thresholds are apart so a scroll position near the top does
+      // not flip it back and forth.
       const bar = document.querySelector<HTMLElement>("[data-nav]");
+      const gathered = 820;
       let scrolled = false;
+      const fit = () => {
+        if (!bar) return;
+        const room = bar.parentElement!.clientWidth - parseFloat(getComputedStyle(bar.parentElement!).paddingLeft) * 2;
+        const full = Math.min(room, parseFloat(getComputedStyle(root).getPropertyValue("--width")) || room);
+        bar.style.setProperty("--nav-width", `${Math.round(scrolled ? Math.min(gathered, room) : full)}px`);
+      };
       const onScroll = () => {
-        const now = window.scrollY > 24;
+        const y = window.scrollY;
+        const now = scrolled ? y > 12 : y > 56;
         if (now === scrolled) return;
         scrolled = now;
         root.toggleAttribute("data-scrolled", now);
-        if (bar && !calm) {
-          animate(bar, { scaleX: [1, now ? 0.965 : 1.02, 1.012, 1], scaleY: [1, now ? 1.09 : 0.97, 0.985, 1], duration: 620, ease: "outQuad" });
-        }
+        fit();
       };
+      fit();
       window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", fit, { passive: true });
       onScroll();
 
       // Sections rise into place the first time they scroll into view.

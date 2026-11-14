@@ -1,12 +1,17 @@
 # Suijin
 
-![Suijin: many agents, one calm window. Claude Code and Codex side by side on your Mac, each in a git worktree of its own](docs/screenshots/banner.png)
+![Suijin: many agents, one calm window. Claude Code, Codex and any other AI coding agent, side by side on your Mac](docs/screenshots/suijin-banner.png)
 
 > **Draft.** This README is a first pass and will change before the first release.
 
-Suijin is a native macOS app that runs Claude Code and Codex agents side by side. Each agent works in a git
-worktree of its own (or straight in a plain folder), so their changes never collide, and you review and ship what they
-did without leaving the app. Everything runs locally on your Mac: no servers, no remote hosts, no cloud.
+Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent at the same time, side by
+side. Each agent works in a git worktree of its own (or straight in a plain folder), so their changes never collide,
+and you review and ship what they did without leaving the app. Your code and your agents stay on your Mac: no remote
+hosts, no cloud. Suijin itself goes online only to check for updates.
+
+Claude Code and Codex are built in: Suijin shows their status, manages their accounts and permission modes, and lets
+them hand work to each other. Any other agent that runs in a terminal (Gemini CLI, Aider, OpenCode and the like) runs
+in a shell tab or pane next to them.
 
 Website: [suijin.app](https://suijin.app)
 
@@ -31,6 +36,8 @@ Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you 
 ### Sessions, tabs and split panes
 
 - Start Claude Code, Codex or a plain shell in a tab (⌘T for the default agent, ⌥⌘T for a shell).
+- A shell runs any other command-line agent. It gets a tab or pane, a worktree and a place in split layouts like the
+  built-in agents; the status badges, accounts, permission modes and orchestration are for Claude Code and Codex.
 - Split a tab to the right or down (⌘D, ⇧⌘D) and run two to ten sessions as panes in one tab.
 - Drag tabs to reorder them. Drag a pane's header onto an edge to place it there, or onto the center to swap.
 - Move focus between panes (⌥⌘←→) or zoom the focused one (⇧⌘↩).
@@ -147,8 +154,8 @@ Open Settings with ⌘,. It has seven pages.
 A short tour introduces workspaces, sessions, changes and accounts. It shows once and can be reopened from
 Settings › General.
 
-Suijin needs `claude` and/or `codex` installed and on the `PATH` of your login shell; Settings › Agents shows what it
-found.
+For the built-in agents, Suijin needs `claude` and/or `codex` installed and on the `PATH` of your login shell;
+Settings › Agents shows what it found.
 
 ## Requirements
 

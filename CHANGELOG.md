@@ -6,8 +6,6 @@
   tab closes by itself. Ask the coordinator to stop or cancel a worker and it uses this command.
 - A worker whose tab was closed no longer stays greyed out in the sidebar under its coordinator.
 - Worker rows in the sidebar have a menu with **Show Worker** and **Close Worker**.
-- The installer image opens as the installer window again, with its background and the icons in place; the 0.1.0
-  image opened as a plain window.
 
 ## 0.1.0 (2026-11-14)
 

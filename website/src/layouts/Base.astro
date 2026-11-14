@@ -118,7 +118,7 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
     <footer class="footer">
       <div class="wrap">
         <p>
-          © {new Date().getFullYear()} {site.publisher}. Built in Vietnam.
+          © {new Date().getFullYear()} {site.publisher}. Built in Vietnam by <a href={site.developer.url}>{site.developer.name}</a>.
         </p>
         <nav aria-label="Footer">
           <a href={site.repository}>GitHub</a>

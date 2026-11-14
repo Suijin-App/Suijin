@@ -11,7 +11,9 @@ export const site = {
   releases: "https://github.com/Suijin-App/Suijin/releases",
   discord: "https://discord.gg/sFEhaWAMvq",
   changelog: "https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md",
-  publisher: "Tekmium Solutions",
+  publisher: "The Suijin Authors",
+  // The independent developer who makes Suijin.
+  developer: { name: "vuvv-dev", url: "https://github.com/vuvv-dev" },
   license: "Apache-2.0",
   licenseUrl: "https://github.com/Suijin-App/Suijin/blob/main/LICENSE",
   minimumSystem: "macOS 15",

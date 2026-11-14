@@ -24,7 +24,8 @@ const application = {
   license: "https://www.apache.org/licenses/LICENSE-2.0",
   codeRepository: site.repository,
   ...(released ? { softwareVersion: site.releasedVersion, downloadUrl: site.releases } : {}),
-  author: { "@type": "Organization", name: site.publisher },
+  author: { "@type": "Person", name: site.developer.name, url: site.developer.url },
+  publisher: { "@type": "Organization", name: site.publisher },
   featureList: [
     "Runs Claude Code, Codex and any other command-line AI coding agent at the same time",
     "One git worktree per agent",

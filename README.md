@@ -1,6 +1,6 @@
 # Suijin
 
-![Suijin: many agents, one calm window. Claude Code and Codex side by side on your Mac, each in a git worktree of its own](docs/screenshots/hero.png)
+![Suijin: many agents, one calm window. Claude Code and Codex side by side on your Mac, each in a git worktree of its own](docs/screenshots/banner.png)
 
 > **Draft.** This README is a first pass and will change before the first release.
 

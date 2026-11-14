@@ -14,12 +14,12 @@ Store Connect API keys. They all live in the release Mac's login Keychain.
 | Sparkle 2 | Swift package in `project.yml`, pinned with `exactVersion`, linked to the `Suijin` target only. Its `sign_update` and `generate_keys` tools come with the package artifact (`<DerivedData>/SourcePackages/artifacts/sparkle/Sparkle/bin`). |
 | In-app updater | `App/Updates/UpdaterController.swift` wraps `SPUStandardUpdaterController`. `UpdateCommands` adds Suijin → "Check for Updates…"; `UpdateSettingsSection` is the Updates section of Settings → General. |
 | Helper handover | `App/Updates/HelperVersionCheck.swift` (section 5). |
-| Sparkle keys in `App/Info.plist` | `SUFeedURL` (`https://suijin.app/appcast.xml`), `SUPublicEDKey` (the public half of the signing key; the placeholder until section 2.3 is done), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). |
+| Sparkle keys in `App/Info.plist` | `SUFeedURL` (`https://suijin.app/appcast.xml`), `SUPublicEDKey` (the public half of the signing key, section 2.3), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). |
 | Update feed | `Tools/update-feed`: a Cloudflare Worker on `suijin.app` that redirects `/appcast.xml` to the `appcast.xml` asset of the latest GitHub release (section 4). |
 | Scripts | `scripts/release-notarize.sh` (the whole pipeline, with `--dry-run`), `scripts/make-dmg.sh` (DMG and its signature). |
 
-Without a real `SUPublicEDKey` the app never starts the updater: Settings → General → Updates says updates are not
-configured. `scripts/release-notarize.sh` refuses to release such a build, because copies installed from it could
+A build whose `SUPublicEDKey` is not a real key never starts the updater (Settings → General → Updates says updates
+are not configured), and `scripts/release-notarize.sh` refuses to release it, because copies installed from it could
 never update.
 
 ## 2. One-time setup (Tekmium account owner)
@@ -121,9 +121,6 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
   up outside the repository.
 - **What is sent.** A check requests the appcast with the app's name and version in the user agent; system profiling
   is off. The Privacy text in `App/Features/Settings/LegalDocuments.swift` says so and must stay true.
-
-Still to do before the first release: generate the key (section 2.3) and put its public half into `SUPublicEDKey`.
-Until then the updater stays off and the release script stops.
 
 ## 5. Updates and the PTY host helper
 

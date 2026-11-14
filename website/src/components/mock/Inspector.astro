@@ -24,13 +24,16 @@ const { mode, files = [] } = Astro.props;
   {mode === "files" ? (
     <>
       <div class="m-search"><span>Filter files</span><span class="m-ic faint small" set:html={icon("refresh")} /></div>
-      {files.map((file) => (
-        <div {...file.attrs} class:list={["m-file", { on: file.selected }, file.attrs?.class]} style={`padding-left:${6 + (file.depth ?? 0) * 13}px`}>
+      {files.map((file) => {
+        const { class: extra, ...attrs } = file.attrs ?? {};
+        return (
+        <div {...attrs} class:list={["m-file", { on: file.selected }, extra]} style={`padding-left:${6 + (file.depth ?? 0) * 13}px`}>
           <span class:list={["m-chev", file.folder]} set:html={file.folder ? icon("chevron") : ""} />
           <span class="m-fi" set:html={fileIcon(file.name, Boolean(file.folder))} />
           <span class="m-name">{file.name}</span>
         </div>
-      ))}
+        );
+      })}
     </>
   ) : (
     <slot />

@@ -28,6 +28,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
     </span>
   ))}
 </div>
+<button class="icon-button crew-shoo" type="button" data-crew-shoo aria-pressed="false" aria-label="Send the sprites away" title="Send the sprites away" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5c3 3.6 5.5 6.6 5.5 10a5.5 5.5 0 0 1-11 0c0-3.4 2.5-6.4 5.5-10z" /><path class="slash" d="m4 4 16 16" /></svg>
+</button>
 <button class="icon-button crew-sound" type="button" data-crew-sound aria-pressed="false" aria-label="Sprite sounds" title="Sprite sounds" hidden>
   <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>
   <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="m16 9 5 6" /><path d="m21 9-5 6" /></svg>
@@ -38,6 +41,15 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
   import { scenes, introductions, places, race, reactions, audience, pitches, type TalkLine, type TalkMood } from "../lib/crew-talk";
   import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
+
+  // Whether the reader sent the sprites away; remembered across pages and visits.
+  const AWAY = "suijin-crew-away";
+  const awayWanted = (): boolean => { try { return localStorage.getItem(AWAY) === "1"; } catch { return false; } };
+  const setAway = (next: boolean): void => { try { localStorage.setItem(AWAY, next ? "1" : "0"); } catch { /* private mode: the choice lasts for this page only */ } };
+  const markShoo = (button: HTMLButtonElement, away: boolean): void => {
+    const label = away ? "Call the sprites back" : "Send the sprites away";
+    button.setAttribute("aria-pressed", String(away)); button.setAttribute("aria-label", label); button.title = label;
+  };
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
   const water = document.querySelector<HTMLElement>("[data-touch]");
@@ -173,10 +185,19 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       for (const one of members) if (one.home) { one.state = "home"; one.post.classList.add("posted"); if (hiders.has(one)) one.post.classList.add("hides"); }
       place(); members.forEach(draw);
       new ResizeObserver(place).observe(document.body);
+      const shoo = document.querySelector<HTMLButtonElement>("[data-crew-shoo]");
+      if (shoo) {
+        shoo.hidden = false;
+        const show = () => { const away = awayWanted(); crew.style.display = away ? "none" : ""; markShoo(shoo, away); };
+        shoo.addEventListener("click", () => { setAway(!awayWanted()); show(); });
+        show();
+      }
     } else {
       crew.classList.add("alive");
       members.forEach((one) => { one.post.style.opacity = "0"; });
       let asleep = false;
+      // sent away with the button above the sound switch: nobody appears or sets off until they are called back
+      let away = awayWanted();
       // ── sound: each sprite has its own voice; what is out of sight is not heard
       const play = (name: CrewSound, one?: Member, step = 0) => {
         if (!soundOn() || document.hidden) return;
@@ -344,7 +365,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       let stroll: ReturnType<typeof animate> | null = null, stride = 0;
       const bobs = new Map<Member, number>();
       const acting = new Map<Member, number>();
-      const travel = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
+      const travel = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0, leaving = false) => {
+        if (away && !leaving) return;
         if (one === codex) { stroll?.pause(); window.clearInterval(stride); one.walking = false; }
         // a sprite arriving at a page with only open water starts in it, where it will stay
         const from = one.state === "gone" ? (spot.floats ? { x: spot.x, y: spot.y } : null) : feet(one), afloat = one.floating || one.state === "gone";
@@ -410,6 +432,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 
       // On arriving at a page nobody swims in from outside: each sprite leaps out of the water right beside its place.
       const appear = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
+        if (away) return;
         one.state = "swim"; one.goal = spot;
         window.setTimeout(() => {
           const side = Math.random() < 0.5 ? -1 : 1, from = { x: spot.x - side * 30, y: spot.y + 26 }, state = { p: 0 };
@@ -426,7 +449,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.
       let lastRoam = window.scrollY;
       const roam = () => {
-        if (document.hidden) return;
+        if (document.hidden || away) return;
         const taken: { x: number; y: number }[] = [], movers: Member[] = [];
         for (const one of members) {
           if (one.state === "swim") { if (one.goal) taken.push(one.goal); continue; }   // its place is spoken for
@@ -529,6 +552,41 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         appear(one, spot, true, null, 500 + index * 160);
       });
       members.forEach(draw);
+      // ── shooing: the button sends everyone swimming off the nearest side of the screen, out of sight; pressed again,
+      // they come back to the part on screen
+      const shoo = document.querySelector<HTMLButtonElement>("[data-crew-shoo]");
+      if (shoo) {
+        shoo.hidden = false;
+        markShoo(shoo, away);
+        let clearing = 0;
+        const vanish = (one: Member) => {
+          window.clearInterval(bobs.get(one)); one.floating = false; one.state = "gone"; one.goal = null; one.perch = null;
+          one.post.classList.remove("swims"); one.post.style.opacity = "0";
+        };
+        shoo.addEventListener("click", () => {
+          window.clearInterval(clearing);
+          if (away) {
+            away = false; setAway(false); markShoo(shoo, false);
+            roam();
+            window.setTimeout(() => { const back = members.find((one) => inSight(one)); if (back) speak(back, any1(["We're back!", "Miss us?", "Told you we'd be back."]), "yay"); }, 1800);
+            return;
+          }
+          const seen = members.filter((one) => inSight(one));
+          if (seen.length) speak(seen[Math.floor(Math.random() * seen.length)], any1(["Okay, okay. Leaving!", "Shoo? Rude.", "Back to the water.", "Call us if you need us."]), "oh");
+          away = true; setAway(true); markShoo(shoo, true);
+          members.forEach((one, index) => {
+            if (one.state === "gone") return;
+            const here = feet(one), left = here.x - window.scrollX < window.innerWidth / 2;
+            travel(one, { x: window.scrollX + (left ? -70 : window.innerWidth + 70), y: here.y + 30, rest: 0, floats: true }, false, null, 500 + index * 180, true);
+          });
+          // once a sprite treads water off the screen it is taken away; whoever is still about after a while goes too
+          const since = Date.now();
+          clearing = window.setInterval(() => {
+            for (const one of members) if (one.state !== "gone" && ((one.state === "away" && one.floating) || Date.now() - since > 9000)) vanish(one);
+            if (members.every((one) => one.state === "gone")) window.clearInterval(clearing);
+          }, 250);
+        });
+      }
       window.setTimeout(roam, 300);
       // whoever is left treading water keeps looking for an edge that has come free
       window.setInterval(() => { if (members.some((one) => one.floating)) roam(); }, 5000);

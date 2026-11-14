@@ -114,6 +114,11 @@ four suites assert timings and fail under load (`MediaViewerTests`, `FileWatchin
 `TerminalFeedSchedulerTests`). If only they fail, stop the other work, run `./scripts/ci-local.sh` once more, and
 report both results. A second failure, or any other failure, stops the release.
 
+A green last line is not enough for the app tests. When the app under test stops, the test tool starts it again and
+runs only what was left, and the summary then counts those few tests as passed. Compare the number of app tests
+with the previous run (it only grows), and check that no new report for Suijin appeared in
+`~/Library/Logs/DiagnosticReports` during the run; a new report is a crash to fix, not a flaky test.
+
 Then ask the owner whether the hands-on checks were done on this build: a terminal opens (the helper is registered),
 a pane can be dragged, an orchestration run finishes, a notification arrives, and the items in section 7 of
 `docs/release-process.md`. Tests cannot see these. If the owner skips them, record that in the report.

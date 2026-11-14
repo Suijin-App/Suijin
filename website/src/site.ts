@@ -23,6 +23,11 @@ export const site = {
   analyticsToken: "",
 };
 
+/** The released version's disk image itself, so a Download button starts the download and the visitor stays here. */
+export const downloadUrl = site.releasedVersion
+  ? `${site.releases}/download/v${site.releasedVersion}/Suijin-${site.releasedVersion}.dmg`
+  : null;
+
 export const faq = [
   {
     question: "What is Suijin?",

@@ -24,10 +24,13 @@
 	<string>public.app-category.developer-tools</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
-	<!-- Sparkle 2 (docs/release-process.md). There is no update host yet, so the build carries no SUFeedURL and the
-	     updater reports "not configured". Turning updates on means adding SUFeedURL here and the real public EdDSA key
-	     printed by `generate_keys --account suijin -p`; only the public half lives here, the private key stays in the
-	     release Mac's login Keychain. -->
+	<!-- Sparkle 2 (docs/release-process.md). Every installed copy asks SUFeedURL for as long as it is installed, so the
+	     address never changes: suijin.app redirects it to the appcast of the latest GitHub release (Tools/update-feed).
+	     SUPublicEDKey is the public half of the key updates are signed with, printed by
+	     `generate_keys --account suijin -p`; the private key stays in the release Mac's login Keychain. While it is
+	     still the placeholder the updater stays off and reports "not configured". -->
+	<key>SUFeedURL</key>
+	<string>https://suijin.app/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY</string>
 	<key>SUEnableAutomaticChecks</key>

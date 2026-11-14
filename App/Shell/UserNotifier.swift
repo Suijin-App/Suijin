@@ -35,6 +35,12 @@ final class UserNotifier {
         _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
     }
 
+    /// What the user decided about Suijin's notifications; nil in the test host, which never asks Notification Center.
+    func authorizationStatus() async -> UNAuthorizationStatus? {
+        guard postsToNotificationCenter else { return nil }
+        return await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
     /// Posts (or replaces, with the same `identifier`) a notification that opens `session` when clicked.
     func post(identifier: String, title: String, body: String, session: UUID) {
         let message = Message(identifier: identifier, title: title, body: body)

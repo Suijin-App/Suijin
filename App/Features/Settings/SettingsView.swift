@@ -80,7 +80,7 @@ struct GeneralSettings: View {
                 Toggle("Keep sessions running after quitting Suijin", isOn: toggleBinding(model, .keepSessionsOnQuit, default: true))
                 if let problem = model.runtimes.hostProblem {
                     Label {
-                        Text("Sessions end with the app: the terminal host is unavailable (\(problem)). Allow Suijin in System Settings → General → Login Items.")
+                        Text("Sessions end with the app: the terminal host is unavailable (\(problem)). See Permissions below.")
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill")
                     }
@@ -93,6 +93,7 @@ struct GeneralSettings: View {
                 Text("Sessions run in a background helper, so closing or updating Suijin does not stop your agents.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            PermissionsSection()
             UpdateSettingsSection()
             Section {
                 LabeledContent {

@@ -2,6 +2,10 @@
 
 ## 0.1.0 (unreleased)
 
+- Settings › General has a Permissions section: Notifications, the background helper and Full Disk Access each show
+  whether macOS allows them, what is lost without them, and a button to allow them or to open the right pane of
+  System Settings. The states update when you come back from System Settings. Full Disk Access is optional; it is
+  checked from a process the terminal host starts, which is how agents and shells run.
 - Settings › Accounts can switch accounts automatically, separately for Claude Code and Codex and off by default.
   "Move running sessions when the default account changes" moves every running session on another account to the new
   default. "Switch automatically when an account hits its limit" moves a session whose account used up a usage
@@ -26,5 +30,6 @@
 - Resume Session on the Session Ended view continues a Claude Code or Codex conversation in the same tab or pane.
 - Settings › Shortcuts lists every keyboard shortcut and mouse gesture, searchable by action or key. Help ›
   Keyboard Shortcuts (⌘/) opens it.
-- Sevinda is now Suijin. The bundle identifier changed with the name, so macOS treats Suijin as a new app: grant Full
-  Disk Access, Accessibility and Notifications again in System Settings. Suijin starts with an empty data folder.
+- Sevinda is now Suijin. The bundle identifier changed with the name, so macOS treats Suijin as a new app: allow
+  notifications and the background helper again (Settings › General › Permissions), and Full Disk Access if you had
+  granted it. Suijin starts with an empty data folder.

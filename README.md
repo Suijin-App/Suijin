@@ -122,7 +122,7 @@ Open Settings with ⌘,. It has seven pages.
 
 | Page | What it controls |
 |---|---|
-| General | Appearance (Automatic, Light, Dark), notifications when an agent waits for input or finishes, keeping sessions running after quitting, update checks, the welcome tour |
+| General | Appearance (Automatic, Light, Dark), notifications when an agent waits for input or finishes, keeping sessions running after quitting, system permissions (notifications, background helper, Full Disk Access), update checks, the welcome tour |
 | Agents | Default agent, what a new pane runs, the folder for new worktrees, default permission mode per agent, where `claude` and `codex` were found, Codex daemon option, orchestration |
 | Accounts | Managed Claude and Codex accounts, the default account per provider, automatic account switching |
 | Terminal | Theme (15 built in, or Automatic to follow the appearance), font family and size, how file paths open |

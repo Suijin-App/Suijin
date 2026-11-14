@@ -13,7 +13,7 @@ Claude Code and Codex are built in: Suijin shows their status, manages their acc
 them hand work to each other. Any other agent that runs in a terminal (Gemini CLI, Aider, OpenCode and the like) runs
 in a shell tab or pane next to them.
 
-Website: [suijin.app](https://suijin.app)
+Website: [suijin.app](https://suijin.app) · Community: [Discord](https://discord.gg/Hz8UBEKxuT)
 
 [![Support Suijin on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/vovanvu)
 

@@ -28,10 +28,15 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
     </span>
   ))}
 </div>
+<button class="icon-button crew-sound" type="button" data-crew-sound aria-pressed="false" aria-label="Sprite sounds" title="Sprite sounds" hidden>
+  <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M18.5 5.5a9 9 0 0 1 0 13" /></svg>
+  <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="m16 9 5 6" /><path d="m21 9-5 6" /></svg>
+</button>
 
 <script>
   import { animate } from "animejs";
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
+  import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
   const water = document.querySelector<HTMLElement>("[data-touch]");
@@ -128,7 +133,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
     // Open water on screen, for when there is nothing to stand on: points near the sides where a swimmer covers nothing.
     const pools = (): { x: number; y: number }[] => {
       const found: { x: number; y: number }[] = [];
-      for (const fy of [0.5, 0.72, 0.32, 0.86]) for (const fx of [0.06, 0.94, 0.14, 0.86, 0.24, 0.76]) {
+      for (const fy of [0.3, 0.44, 0.58, 0.72, 0.86]) for (let fx = 0.06; fx < 0.96; fx += 0.08) {
         const x = window.innerWidth * fx, y = window.innerHeight * fy;
         if (y - tall() > 86 && x - wide() / 2 > 8 && x + wide() / 2 < window.innerWidth - 8 && clear(x, y)) found.push({ x: x + window.scrollX, y: y + window.scrollY });
       }
@@ -169,6 +174,20 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       crew.classList.add("alive");
       members.forEach((one) => { one.post.style.opacity = "0"; });
       let asleep = false;
+      // ── sound: each sprite has its own voice; what is out of sight is not heard
+      const voices: Record<SpriteColor, number> = { aqua: 1, claude: 0.84, shell: 1.19, codex: 0.75 };
+      const play = (name: CrewSound, one?: Member, step = 0) => {
+        if (!soundOn() || document.hidden) return;
+        if (one) { const top = feet(one).y - window.scrollY; if (top < 0 || top > window.innerHeight + 40) return; }
+        crewSound(name, one ? voices[one.color] : 1, step);
+      };
+      const speaker = document.querySelector<HTMLButtonElement>("[data-crew-sound]");
+      if (speaker) {
+        speaker.hidden = false;
+        const show = () => speaker.setAttribute("aria-pressed", String(soundOn()));
+        speaker.addEventListener("click", () => { setSound(!soundOn()); show(); play("cheer"); });
+        if (soundWanted()) { setSound(true); show(); }
+      }
       // ── water
       // Water is drawn the way the sprites are, in square pixels, but it moves like water: every fleck is a particle
       // with a velocity. Foam on the surface is slowed by drag and fades; drops in the air fall under gravity and, back
@@ -216,6 +235,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       fit(); dye(); window.addEventListener("resize", fit, { passive: true });
       // Going in or coming out: a crown of drops thrown up and outwards, and a ring of foam pushed away on the surface.
       const splash = (x: number, y: number, force = 1) => {
+        if (y > window.scrollY && y < window.scrollY + window.innerHeight) play("splash");
         for (let drop = 0; drop < 16 * force; drop++) fleck(x + any(8), y - 2, any(150) * force, -(150 + Math.random() * 210) * force, 2, undefined, y + any(3));
         for (let wave = 0; wave < 14; wave++) { const turn = (wave / 14) * Math.PI * 2; fleck(x + Math.cos(turn) * 8, y + Math.sin(turn) * 3, Math.cos(turn) * 95 * force, Math.sin(turn) * 34 * force, 0.7 + Math.random() * 0.3); }
       };
@@ -236,6 +256,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const hop = (one: Member, height = 20, delay = 0) => {
         if (one.busy || one.up || one.floating || one.state === "swim" || one.state === "gone") return;
         one.busy = true;
+        window.setTimeout(() => play("hop", one), delay);
         const rest = one.rest;
         animate(one.element, {
           y: [{ to: rest, duration: 90 }, { to: rest - height, duration: 210, ease: "outQuad" }, { to: rest, duration: 230, ease: "inQuad" }],
@@ -248,7 +269,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // A hider comes all the way up from behind its button, or sinks back.
       const rise = (one: Member, up: boolean) => {
         if (one.up === up || one.state !== "home") return;
-        one.up = up;
+        one.up = up; if (up) play("peek", one);
         animate(one.element, { y: up ? 0 : one.rest, scaleY: up ? [0.9, 1.06, 1] : 1, duration: up ? 420 : 300, ease: up ? "outBack(2)" : "inOutQuad" });
       };
       // A small sign floats up from a sprite's head.
@@ -257,6 +278,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         const mark = document.createElement("span");
         mark.className = "crew-sign"; mark.innerHTML = signSvg(sign ?? (["heart", "star", "note", "check", "spark", "wave"] as SpriteSign[])[signs++ % 6], Math.max(2, pixel - 1));
         one.post.append(mark);
+        if (sign === "zzz") play("snore", one); else if (sign !== "note") play("pop", one);
         animate(mark, { y: [8, -14], opacity: [{ to: 1, duration: 220 }, { to: 1, duration: 900 }, { to: 0, duration: 480 }], duration: 1600, ease: "outQuad", onComplete: () => mark.remove() });
       };
 
@@ -264,7 +286,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
         if (home && spot.hides) resize(one, small());
-        stand(one, spot.x, spot.y);
+        stand(one, spot.x, spot.y); play("land", one);
         // landing: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding)
         animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
         feel(one, { eyes: "shut", mouth: "smile" }, 520);
@@ -299,7 +321,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             const far = Math.hypot(b.x - a.x, b.y - a.y), time = Math.min(3400, Math.max(520, far / 0.34));
             let bob = 0;
             const ux = (b.x - a.x) / (far || 1), uy = (b.y - a.y) / (far || 1);
-            const stroke = window.setInterval(() => { one.pose.arms = one.pose.arms === "swimA" ? "swimB" : "swimA"; bob = bob ? 0 : pixel; draw(one);
+            const stroke = window.setInterval(() => { one.pose.arms = one.pose.arms === "swimA" ? "swimB" : "swimA"; bob = bob ? 0 : pixel; draw(one); play("paddle", one);
               const here = feet(one); spray(here.x + side * 4 * pixel, here.y - line(), side); }, 170);
             let last = { x: a.x, y: a.y, at: performance.now() }, owed = 0;
             state.p = 0;
@@ -324,7 +346,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           };
           const climb = () => {
             one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8);
-            one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one);
+            one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one); play("leap", one);
             state.p = 0;
             animate(state, { p: 1, duration: 360, ease: "linear",
               onUpdate: () => stand(one, b.x + (spot.x - b.x) * state.p, b.y + (spot.y - b.y) * state.p - Math.sin(state.p * Math.PI) * 26),
@@ -334,7 +356,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           };
           if (!seen || afloat) { stand(one, a.x, a.y); swim(); return; }
           // off the edge
-          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "d" }; draw(one);
+          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "d" }; draw(one); play("leap", one);
           animate(state, { p: 1, duration: 300, ease: "linear",
             onUpdate: () => stand(one, start.x + (a.x - start.x) * state.p, start.y + (a.y - start.y) * state.p - Math.sin(state.p * Math.PI) * 18),
             onComplete: swim });
@@ -348,7 +370,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           const side = Math.random() < 0.5 ? -1 : 1, from = { x: spot.x - side * 30, y: spot.y + 26 }, state = { p: 0 };
           one.rest = 0; resize(one, pixel); stand(one, from.x, from.y); one.post.style.opacity = "1";
           animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
-          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one);
+          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one); play("leap", one);
           splash(from.x, from.y - line(), 0.9);
           animate(state, { p: 1, duration: 540, ease: "linear",
             onUpdate: () => stand(one, from.x + (spot.x - from.x) * state.p, from.y + (spot.y - from.y) * state.p - Math.sin(state.p * Math.PI) * 58),
@@ -379,7 +401,11 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             : free.sort((p, q) => Math.hypot(p.x - here.x, p.y - here.y) - Math.hypot(q.x - here.x, q.y - here.y))[0];
           if (!choice) {                                        // nowhere to stand here: open water will do
             if (one.floating && onScreen(here.y)) { taken.push(here); return; }
-            const pool = pools().filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))[0];
+            // the free water nearest to the others, so nobody is left alone at the far side of the screen
+            const middle = taken.length ? { x: taken.reduce((sum, other) => sum + other.x, 0) / taken.length, y: taken.reduce((sum, other) => sum + other.y, 0) / taken.length }
+              : { x: window.scrollX + window.innerWidth / 2, y: window.scrollY + window.innerHeight / 2 };
+            const pool = pools().filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))
+              .sort((p, q) => Math.hypot(p.x - middle.x, p.y - middle.y) - Math.hypot(q.x - middle.x, q.y - middle.y))[0];
             if (pool) { taken.push(pool); travel(one, { ...pool, rest: 0, floats: true }, false, null, index * 240); }
             return;
           }
@@ -396,7 +422,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (!spot || shell.state !== "home" || shell.busy) return;
         const here = feet(shell), far = Math.abs(spot.x - here.x);
         if (far < 2) return;
-        shell.busy = true;
+        shell.busy = true; play("leap", shell);
         const time = Math.min(620, 320 + far * 0.9), left = spot.x < here.x;
         feel(shell, { eyes: left ? "l" : "r", legs: "tuck", arms: "up" }, time);
         animate(shell.post, { left: `${spot.x - 9 * shell.size}px`, duration: time, ease: "inOutQuad" });
@@ -414,7 +440,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         let there = road.from + span * ((Math.sin(Date.now() / 3100) + 1) / 2);
         if (Math.abs(there - here) < span * 0.25) there = here < road.from + span / 2 ? road.to : road.from;
         codex.walking = true; codex.pose = { flip: there < here, eyes: "n", legs: "walkA" }; draw(codex);
-        stride = window.setInterval(() => { codex.pose.legs = codex.pose.legs === "walkA" ? "walkB" : "walkA"; draw(codex); }, 150);
+        stride = window.setInterval(() => { codex.pose.legs = codex.pose.legs === "walkA" ? "walkB" : "walkA"; draw(codex); play("step", codex); }, 150);
         stroll = animate(codex.post, { left: `${there - 9 * codex.size}px`, duration: Math.abs(there - here) * 26, ease: "linear",
           onComplete: () => { window.clearInterval(stride); codex.walking = false; codex.pose.legs = "stand"; draw(codex); window.setTimeout(walk, 2200 + (Date.now() % 2600)); } });
       };
@@ -468,19 +494,19 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       };
       const sing = (one: Member) => perform(one, [0, 1, 2, 3, 4, 5, 6, 7].map((beat) => [beat ? 300 : 0, () => {
         feel(one, { eyes: beat % 4 === 3 ? "happy" : "shut", mouth: beat % 2 ? "o" : "open", arms: beat % 2 ? "wave" : "up", blush: true }, 0);
-        shift(one, beat % 2 ? 1 : -1); if (beat % 3 === 0) leave(one, "note");
+        shift(one, beat % 2 ? 1 : -1); play("note", one, beat); if (beat % 3 === 0) leave(one, "note");
       }]));
       const fight = (one: Member) => {
         const guard: SpritePose = { legs: "stance", arms: "guard", eyes: "r" }, left = { flip: true };
         perform(one, [
           [0, () => feel(one, guard, 0)],
-          [320, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
-          [150, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
-          [220, () => { feel(one, { ...guard, legs: "kick", mouth: "open", eyes: "wide" }, 0); shift(one, 2); }], [260, () => { feel(one, guard, 0); shift(one, 0); }],
+          [320, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
+          [150, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
+          [220, () => { feel(one, { ...guard, legs: "kick", mouth: "open", eyes: "wide" }, 0); play("kick", one); shift(one, 2); }], [260, () => { feel(one, guard, 0); shift(one, 0); }],
           [260, () => feel(one, { ...guard, ...left }, 0)],
-          [220, () => { feel(one, { ...guard, ...left, arms: "punch", mouth: "open" }, 0); shift(one, -1); }], [170, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
-          [220, () => { feel(one, { ...guard, ...left, legs: "kick", mouth: "open", eyes: "wide" }, 0); shift(one, -2); }], [260, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
-          [300, () => { feel(one, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0); leave(one, "spark"); }], [700, () => {}],
+          [220, () => { feel(one, { ...guard, ...left, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, -1); }], [170, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
+          [220, () => { feel(one, { ...guard, ...left, legs: "kick", mouth: "open", eyes: "wide" }, 0); play("kick", one); shift(one, -2); }], [260, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
+          [300, () => { feel(one, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0); play("cheer", one); leave(one, "spark"); }], [700, () => {}],
         ]);
       };
       // a few steps along the edge it stands on and back, if the way is free
@@ -492,7 +518,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (steps < 3 || !clear(far - window.scrollX, edge.top) || !clear((here.x + far) / 2 - window.scrollX, edge.top)) return false;
         if (members.some((other) => other !== one && Math.hypot(feet(other).x - far, feet(other).y - here.y) < wide() * 1.8)) return false;
         const frames: [number, () => void][] = [];
-        const stride = (count: number, toward: number) => frames.push([150, () => { feel(one, { flip: toward < 0, eyes: "n", legs: count % 2 ? "walkA" : "walkB" }, 0); }]);
+        const stride = (count: number, toward: number) => frames.push([150, () => { feel(one, { flip: toward < 0, eyes: "n", legs: count % 2 ? "walkA" : "walkB" }, 0); play("step", one); }]);
         for (let step = 1; step <= steps; step++) { stride(step, way); frames.push([0, () => shift(one, way * step * 2)]); }
         frames.push([200, () => feel(one, { flip: way < 0, eyes: "u" }, 0)], [500, () => feel(one, { flip: way > 0, eyes: "n" }, 0)]);
         for (let step = steps - 1; step >= 0; step--) { stride(step, -way); frames.push([0, () => shift(one, way * step * 2)]); }

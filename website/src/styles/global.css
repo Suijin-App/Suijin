@@ -516,6 +516,13 @@ main .wrap { position: relative; z-index: 1; }
 @keyframes crew-doze { 50% { transform: scale(1.05, 0.92); } }
 /* the wake of a swimmer: a small ring on the water layer */
 html:not(.js) .crew { display: none; }
+/* the switch for the sprites' sounds, in the bottom right corner */
+.crew-sound { position: fixed; right: 20px; bottom: 20px; z-index: 40; width: 42px; height: 42px; box-shadow: var(--shadow); }
+.crew-sound[hidden] { display: none; }
+.crew-sound svg { width: 19px; height: 19px; }
+.crew-sound[aria-pressed="true"] .off, .crew-sound[aria-pressed="false"] .on { display: none; }
+.crew-sound[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+html[data-theater] .crew-sound { display: none; }
 
 /* Water under the page: rings spread from wherever a press lands. The layer is behind all content (a negative
    z-index paints above the page background and below everything else), so only bare background shows them. */

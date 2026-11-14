@@ -106,6 +106,8 @@ suijin worker start --agent claude --worktree new --name add-docs --spec "Docume
   (Working, Asking, Done).
 - A worker can ask its coordinator a question and gets the answer typed into its terminal.
 - When a worker finishes, its result is delivered to the coordinator, which then reports the outcome of every task.
+- Ask the coordinator to stop a worker (`suijin worker stop`) and that worker's tab closes. You can also close a
+  worker from its row in the sidebar.
 - The guide that teaches agents these commands ships with the app; you only ask for "Suijin workers" in plain words.
 
 ![While the workers run: the coordinator and its two workers in the sidebar, one done and one still working](docs/screenshots/orchestration-workers.png)

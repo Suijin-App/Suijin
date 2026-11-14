@@ -67,10 +67,7 @@ private struct WorkerRow: View {
     var body: some View {
         let session = dispatch.workerSessionID.flatMap(UUID.init(uuidString:)).flatMap { id in model.sessions.first { $0.id == id } }
         Button {
-            guard let session else { return }
-            let context = model.context(of: session)
-            model.selection = context
-            model.selectedTab[context] = .session(session.id)
+            if let session { show(session) }
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.turn.down.right")
@@ -102,5 +99,19 @@ private struct WorkerRow: View {
         .accessibilityLabel(Text("Worker \(dispatch.name)"))
         .accessibilityValue(dispatch.status.label)
         .accessibilityAddTraits(.isButton)
+        .contextMenu {
+            if let session {
+                Button("Show Worker") { show(session) }
+                Divider()
+                // Closes it as its tab's close button does, confirming first while the agent still works.
+                Button("Close Worker", role: .destructive) { model.requestClose(session.id) }
+            }
+        }
+    }
+
+    private func show(_ session: AgentSessionRecord) {
+        let context = model.context(of: session)
+        model.selection = context
+        model.selectedTab[context] = .session(session.id)
     }
 }

@@ -150,6 +150,33 @@ struct OrchestrationHubLifecycleTests {
         #expect(!FileManager.default.fileExists(atPath: root.path))
     }
 
+    @Test func stoppingAWorkerEndsItsTerminalSession() async throws {
+        let fixture = try Fixture()
+        defer { fixture.cleanUp() }
+        let root = try fixture.dataRoot("d")
+        let coordinator = try fixture.spawnSession(dataRoot: root, session: "C-1")
+        let worker = try fixture.spawnSession(dataRoot: root, session: "W-1")
+        let broker = fixture.hub.broker(dataRoot: root)
+        let app = RecordingAppLink()
+        broker.attachApp(app, id: UUID())
+
+        let started = ReplyBox()
+        broker.handle(BrokerRequest(token: coordinator.token, command: "worker.start",
+                                    options: ["agent": "codex", "spec": "Wait", "name": "waiter"])) { started.set($0) }
+        #expect(await eventually { !app.started.isEmpty })
+        let dispatchID = try #require(app.started.first?.dispatchID)
+        broker.workerStartFinished(WorkerLaunchResult(dispatchID: dispatchID, workerSessionID: "W-1"))
+        #expect(await started.wait()?.ok == true)
+
+        let stopped = ReplyBox()
+        broker.handle(BrokerRequest(token: coordinator.token, command: "worker.stop", options: ["to": "waiter"])) { stopped.set($0) }
+        #expect(await stopped.wait()?.ok == true)
+        #expect(await eventually { fixture.manager.session(worker.id)?.isRunning == false }, "the worker's PTY session ends")
+        #expect(fixture.manager.session(coordinator.id)?.isRunning == true)
+        #expect(await eventually { broker.snapshot().dispatches.first?.stoppedAt != nil })
+        #expect(!broker.snapshot().messages.contains { $0.kind == .escalation })
+    }
+
     @Test func endpointHandOffGetsAGracePeriod() async throws {
         let fixture = try Fixture(idleGrace: 30)
         defer { fixture.cleanUp() }

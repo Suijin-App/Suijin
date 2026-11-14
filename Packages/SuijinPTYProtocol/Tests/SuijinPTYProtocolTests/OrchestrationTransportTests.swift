@@ -163,6 +163,7 @@ struct CLIParsingTests {
         #expect(try parser.parse(["worker", "start", "--agent", "codex", "--spec", "Fix it", "--worktree", "new", "--name", "fix", "--json"])
                 == .broker(command: "worker.start", options: ["agent": "codex", "spec": "Fix it", "worktree": "new", "name": "fix"], json: true))
         #expect(try parser.parse(["worker", "list"]) == .broker(command: "worker.list", options: [:], json: false))
+        #expect(try parser.parse(["worker", "stop", "--to", "d-1", "--json"]) == .broker(command: "worker.stop", options: ["to": "d-1"], json: true))
         #expect(try parser.parse(["send", "--to=d-1", "--body", "hi"]) == .broker(command: "send", options: ["to": "d-1", "body": "hi"], json: false))
         #expect(try parser.parse(["ask", "--body", "why?"]) == .broker(command: "ask", options: ["body": "why?"], json: false))
         #expect(try parser.parse(["reply", "--id", "m-1", "--body", "because"]) == .broker(command: "reply", options: ["id": "m-1", "body": "because"], json: false))
@@ -177,6 +178,7 @@ struct CLIParsingTests {
     @Test func acceptsOrcaSpellingsAndAliases() throws {
         #expect(try parser.parse(["worker-start", "--agent", "claude", "--task", "x"]) == .broker(command: "worker.start", options: ["agent": "claude", "spec": "x"], json: false))
         #expect(try parser.parse(["orchestration", "worker-list"]) == .broker(command: "worker.list", options: [:], json: false))
+        #expect(try parser.parse(["worker-stop", "--name", "fix-login"]) == .broker(command: "worker.stop", options: ["to": "fix-login"], json: false))
         #expect(try parser.parse(["ask", "--question", "q"]) == .broker(command: "ask", options: ["body": "q"], json: false))
         #expect(try parser.parse(["worker_done", "--outcome", "failed", "--body", "no"]) == .broker(command: "done", options: ["status": "failed", "summary": "no"], json: false))
     }
@@ -200,6 +202,9 @@ struct CLIParsingTests {
         #expect(failure(["worker", "start", "--agent", "codex", "--spec", "x", "--worktree", "new-child"])?.suggestion == "--worktree new")
         #expect(failure(["done", "--status", "maybe", "--summary", "x"]) != nil)
         #expect(failure(["send", "--to"])?.message == "`--to` needs a value.")
+        #expect(failure(["worker", "stop"])?.message == "Missing `--to`.")
+        #expect(failure(["worker", "stpo", "--to", "d-1"])?.suggestion == "suijin worker stop")
+        #expect(SuijinCLI(environment: [:], skillsDirectory: nil, version: "t").run(["help"]).stdout.contains("suijin worker stop --to"))
         #expect(failure(["inbox", "--limit", "0"]) != nil)
         #expect(failure(["ask", "stray"])?.message.contains("Unexpected argument") == true)
     }

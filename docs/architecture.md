@@ -54,6 +54,9 @@ while the app is closed:
 - Turn ends come from Claude's hooks (`suijin hook claude`) and Codex's `notify` (`-c notify=[…]` per launch, chained
   to the user's own). A message is typed once (bracketed paste, then Return) when the recipient is idle and the user
   has not typed there for 3 s. A worker that ends its turn or exits without `suijin done` is escalated.
+- `worker stop` (coordinator only) settles the worker's dispatch, drops messages it has not received, and ends its
+  session in the helper as closing a tab does. The app sees the dispatch's optional `stoppedAt` and closes the tab.
+  The sidebar hides a settled worker once its session is gone.
 - The guide (`App/Resources/Skills/suijin-orchestration/SKILL.md`) reaches Claude as a `--plugin-dir` plugin and
   managed Codex homes whose `skills` folder is their own; `~/.claude/skills` only through the Settings toggle.
 

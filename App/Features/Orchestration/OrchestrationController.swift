@@ -31,6 +31,8 @@ final class OrchestrationController {
     @ObservationIgnored private let launcher: WorkerLauncher
     /// Prompts of workers being launched right now, so the launch can tell a worker from a user's session.
     @ObservationIgnored var launchingWorkerPrompts: Set<String> = []
+    /// Stopped workers whose tabs are being closed, so overlapping refreshes close each one once.
+    @ObservationIgnored private var closingWorkers: Set<UUID> = []
 
     init(model: AppModel) {
         self.model = model
@@ -179,7 +181,21 @@ final class OrchestrationController {
             snapshot = try OrchestrationCoding.decoder.decode(OrchestrationSnapshot.self, from: data)
         } catch {
             logger.debug("snapshot failed: \(error.localizedDescription, privacy: .public)")
+            return
         }
+        await closeStoppedWorkers()
+    }
+
+    /// Closes the tabs of workers their coordinator stopped. The helper already ended their processes, so there is
+    /// nothing to confirm; a worker that finished on its own keeps its tab. Runs after every snapshot refresh.
+    func closeStoppedWorkers() async {
+        let stopped = Self.stoppedWorkerSessions(in: snapshot.dispatches, liveSessions: Set(model.sessions.map(\.id)))
+            .subtracting(closingWorkers)
+        guard !stopped.isEmpty else { return }
+        closingWorkers.formUnion(stopped)
+        defer { closingWorkers.subtract(stopped) }
+        logger.info("closing \(stopped.count) worker(s) stopped by their coordinator")
+        await model.closeSessions(Array(stopped))
     }
 
     private func startWorker(_ request: WorkerLaunchRequest) async {
@@ -197,17 +213,36 @@ final class OrchestrationController {
 
     // MARK: Queries for the sidebar and inspector
 
-    /// The newest dispatch of each worker `coordinator` started, oldest worker first.
+    /// The newest dispatch of each worker `coordinator` started, oldest worker first, without the workers that are
+    /// over and have no session left (their tab was closed, or they never started).
     func workers(of coordinator: UUID) -> [OrchestrationDispatch] {
+        Self.visibleWorkers(in: snapshot.dispatches, coordinator: coordinator, liveSessions: Set(model.sessions.map(\.id)))
+    }
+
+    /// `workers(of:)` over explicit inputs. A worker stays listed while its session exists in the app, or while its
+    /// dispatch can still run (queued or starting, before it has a session); a settled one without a session goes.
+    static func visibleWorkers(in dispatches: [OrchestrationDispatch], coordinator: UUID,
+                               liveSessions: Set<UUID>) -> [OrchestrationDispatch] {
         let id = coordinator.uuidString
-        let led = snapshot.dispatches.filter { $0.coordinatorSessionID == id }
         var newest: [String: OrchestrationDispatch] = [:]
-        for dispatch in led {
+        for dispatch in dispatches where dispatch.coordinatorSessionID == id {
             let key = dispatch.workerSessionID ?? dispatch.id
             if let existing = newest[key], existing.createdAt >= dispatch.createdAt { continue }
             newest[key] = dispatch
         }
-        return newest.values.sorted { $0.createdAt < $1.createdAt }
+        return newest.values
+            .filter { dispatch in
+                let hasSession = dispatch.workerSessionID.flatMap(UUID.init(uuidString:)).map(liveSessions.contains) ?? false
+                return hasSession || !dispatch.status.isSettled
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// Worker sessions still open in the app whose coordinator stopped them (`suijin worker stop`).
+    static func stoppedWorkerSessions(in dispatches: [OrchestrationDispatch], liveSessions: Set<UUID>) -> Set<UUID> {
+        Set(dispatches.lazy.filter { $0.stoppedAt != nil }
+            .compactMap { $0.workerSessionID.flatMap(UUID.init(uuidString:)) }
+            .filter(liveSessions.contains))
     }
 
     /// The dispatches a worker session ran, newest first.

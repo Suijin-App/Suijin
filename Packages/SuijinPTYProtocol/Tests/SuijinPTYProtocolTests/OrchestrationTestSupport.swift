@@ -18,6 +18,7 @@ final class TestClock: Sendable {
 final class RecordingSessionIO: OrchestrationSessionIO, Sendable {
     private let writes = Mutex<[String: [Data]]>([:])
     private let counters = Mutex<[String: UInt64]>([:])
+    private let terminations = Mutex<[String]>([])
 
     func injectInput(hostSessionID: String, data: Data) {
         writes.withLock { $0[hostSessionID, default: []].append(data) }
@@ -26,6 +27,13 @@ final class RecordingSessionIO: OrchestrationSessionIO, Sendable {
     func bytesRead(hostSessionID: String) -> UInt64? {
         counters.withLock { $0[hostSessionID] ?? 0 }
     }
+
+    func terminateSession(hostSessionID: String) {
+        terminations.withLock { $0.append(hostSessionID) }
+    }
+
+    /// Sessions the broker asked to end, in order.
+    var terminated: [String] { terminations.withLock { $0 } }
 
     func setBytesRead(_ value: UInt64, for hostSessionID: String) {
         counters.withLock { $0[hostSessionID] = value }

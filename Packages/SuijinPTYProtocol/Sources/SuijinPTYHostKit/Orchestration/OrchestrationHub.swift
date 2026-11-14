@@ -278,6 +278,10 @@ public final class OrchestrationHub: SessionLifecycleObserver, OrchestrationSess
     public func bytesRead(hostSessionID: String) -> UInt64? {
         manager?.session(hostSessionID)?.bytesRead
     }
+
+    public func terminateSession(hostSessionID: String) {
+        manager?.terminate(sessionID: hostSessionID)
+    }
 }
 
 /// Accepts app connections to one data root's endpoint and tells the hub while each one lasts.

@@ -209,6 +209,93 @@ struct OrchestrationBrokerTests {
         #expect(!harness.snapshot.messages.contains { $0.kind == .escalation })
     }
 
+    @Test func coordinatorStopsItsWorkerAndNothingMoreIsDelivered() async throws {
+        let harness = BrokerHarness()
+        let (_, request) = await harness.startWorker()
+        let dispatchID = try #require(request?.dispatchID)
+        // A message waits for the worker's turn to end.
+        let send = await harness.call("send", ["to": dispatchID, "body": "Also check the logout path."])
+        #expect(send?.ok == true)
+
+        let stop = try #require(await harness.call("worker.stop", ["to": "fix-login"]))
+        #expect(stop.ok, "\(String(describing: stop.error))")
+        #expect(stop.text?.contains("Stopped worker \"fix-login\"") == true)
+        #expect(stop.result?["status"]?.stringValue == "exited")
+        #expect(harness.io.terminated == ["host-worker"])
+        let dispatch = try #require(harness.snapshot.dispatches.first { $0.id == dispatchID })
+        #expect(dispatch.status == .exited)
+        #expect(dispatch.stoppedAt != nil)
+        #expect(dispatch.summary == "Stopped by its coordinator.")
+        #expect(harness.snapshot.messages.filter { $0.kind == .send }.allSatisfy { $0.status == .undeliverable })
+
+        // Its turn ending afterwards types nothing, and its token no longer works.
+        await harness.codexTurnEnded()
+        await harness.settle()
+        #expect(harness.io.pastes("host-worker").isEmpty)
+        let whoami = await harness.call("whoami", token: BrokerHarness.workerToken)
+        #expect(whoami?.error?.code == "unknown_session")
+
+        // The exit that follows escalates nothing; a second stop is refused.
+        harness.broker.sessionExited(hostSessionID: "host-worker", status: 128 + 1)
+        _ = harness.broker.sync { 0 }
+        #expect(!harness.snapshot.messages.contains { $0.kind == .escalation })
+        #expect(harness.snapshot.dispatches.first { $0.id == dispatchID }?.status == .exited)
+        let again = await harness.call("worker.stop", ["to": dispatchID])
+        #expect(again?.error?.code == "worker_gone")
+        #expect(harness.io.terminated == ["host-worker"])
+    }
+
+    @Test func stopIsRefusedForUnknownAndOtherCoordinatorsWorkers() async throws {
+        let harness = BrokerHarness()
+        let (_, request) = await harness.startWorker()
+        let dispatchID = try #require(request?.dispatchID)
+        harness.broker.sessionSpawned(hostSessionID: "host-other", sessionID: "other", agent: .claude, token: BrokerHarness.shellToken)
+        let unknown = await harness.call("worker.stop", ["to": "d-00000000"])
+        #expect(unknown?.error?.code == "unknown_dispatch")
+        let foreign = await harness.call("worker.stop", token: BrokerHarness.shellToken, ["to": dispatchID])
+        #expect(foreign?.error?.code == "not_coordinator")
+        let foreignByName = await harness.call("worker.stop", token: BrokerHarness.shellToken, ["to": "fix-login"])
+        #expect(foreignByName?.error?.code == "unknown_dispatch")
+        let missing = await harness.call("worker.stop")
+        #expect(missing?.error?.code == "missing_target")
+        #expect(harness.io.terminated.isEmpty)
+        #expect(harness.snapshot.dispatches.first?.status == .running)
+    }
+
+    @Test func stoppingAFinishedWorkerKeepsItsReport() async throws {
+        let harness = BrokerHarness()
+        let (_, request) = await harness.startWorker()
+        let dispatchID = try #require(request?.dispatchID)
+        _ = await harness.call("done", token: BrokerHarness.workerToken, ["status": "success", "summary": "fixed"])
+        let stop = try #require(await harness.call("worker.stop", ["to": "dispatch:\(dispatchID)"]))
+        #expect(stop.ok)
+        let dispatch = try #require(harness.snapshot.dispatches.first)
+        #expect(dispatch.status == .succeeded)
+        #expect(dispatch.summary == "fixed")
+        #expect(dispatch.stoppedAt != nil)
+        #expect(harness.io.terminated == ["host-worker"])
+    }
+
+    @Test func stoppingAQueuedWorkerKeepsItFromStarting() async throws {
+        let harness = BrokerHarness(attachApp: false)
+        let queued = try #require(await harness.call("worker.start", ["agent": "codex", "spec": "Later", "name": "later"]))
+        let dispatchID = try #require(queued.result?["dispatchID"]?.stringValue)
+        let stop = try #require(await harness.call("worker.stop", ["to": dispatchID]))
+        #expect(stop.ok)
+        #expect(harness.snapshot.dispatches.first?.status == .startFailed)
+        harness.broker.attachApp(harness.app, id: UUID())
+        _ = harness.broker.sync { 0 }
+        #expect(harness.app.started.isEmpty, "a stopped worker is never started")
+        #expect(harness.io.terminated.isEmpty)
+    }
+
+    @Test func dispatchesWithoutTheStopFieldStillDecode() throws {
+        // A snapshot written by a build without `stoppedAt`.
+        let json = #"{"id":"d-1","taskID":"t-1","runID":"r-1","coordinatorSessionID":"c","name":"n","agent":"codex","worktree":"new","status":"running","createdAt":"2026-01-01T00:00:00Z","updatedAt":"2026-01-01T00:00:00Z"}"#
+        let dispatch = try OrchestrationCoding.decoder.decode(OrchestrationDispatch.self, from: Data(json.utf8))
+        #expect(dispatch.stoppedAt == nil)
+    }
+
     @Test func sendToAFinishedWorkerBecomesAFollowUpTask() async throws {
         let harness = BrokerHarness()
         let (_, request) = await harness.startWorker()

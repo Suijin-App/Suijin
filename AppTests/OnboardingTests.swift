@@ -171,4 +171,45 @@ struct OnboardingTests {
         #expect(ShortcutSpeech.label(for: "⇧⌘O") == "Shift Command O")
         #expect(ShortcutSpeech.label(for: "⌥⌘←→") == "Option Command Left Arrow Right Arrow")
     }
+
+    // MARK: Sprites and notes
+
+    @Test func everySpritePoseStaysOnItsGrid() {
+        for tint in WaterSprite.Tint.allCases {
+            for mood in [LivelySprite.Mood.idle, .cheering, .sitting] {
+                for time in [nil, 0.05, 0.2, 1.3, 3.39] as [Double?] {
+                    let pose = LivelySprite.pose(tint: tint, mood: mood, time: time)
+                    #expect(pose.lift >= 0)
+                    #expect(pose.sprite.cells.count > 80)
+                    for cell in pose.sprite.cells.keys {
+                        #expect((0..<WaterSprite.columns).contains(cell.column))
+                        #expect((0..<WaterSprite.rows).contains(cell.row))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func aStillSpriteStandsOnTheGround() {
+        // Reduce Motion: no hop, both boots down.
+        #expect(LivelySprite.pose(tint: .aqua, mood: .idle, time: nil).lift == 0)
+        #expect(LivelySprite.pose(tint: .aqua, mood: .cheering, time: nil).lift == 0)
+        #expect(LivelySprite.pose(tint: .aqua, mood: .idle, time: nil).sprite.legs == .stand)
+    }
+
+    @Test func featureStepsCarryANoteInsideTheirCapture() {
+        for step in OnboardingStep.allCases {
+            guard let annotation = step.annotation else {
+                #expect(step.screenshot == nil)
+                continue
+            }
+            #expect(step.screenshot != nil)
+            for fraction in annotation.fractions {
+                #expect((0...1).contains(fraction))
+            }
+            // The arrow ends in the upper half, which stays visible when a short window cuts the capture off.
+            #expect(annotation.arrowEnd.y < 0.5)
+        }
+        #expect(Set(OnboardingStep.allCases.compactMap(\.annotation?.sprite)).count == WaterSprite.Tint.allCases.count)
+    }
 }

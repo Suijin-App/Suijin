@@ -139,7 +139,7 @@ struct OnboardingMetrics: Equatable {
 
 // MARK: Steps
 
-/// The first step: the app icon, what Suijin is, and its three ideas.
+/// The first step: the app icon, what Suijin is, the four sprites with what each stands for, and its three ideas.
 private struct OnboardingWelcomeStep: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let metrics: OnboardingMetrics
@@ -150,7 +150,7 @@ private struct OnboardingWelcomeStep: View {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
-                .frame(width: metrics.isCompact ? 88 : 128, height: metrics.isCompact ? 88 : 128)
+                .frame(width: metrics.isCompact ? 64 : 96, height: metrics.isCompact ? 64 : 96)
                 .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
                 .scaleEffect(isShown || reduceMotion ? 1 : 0.55)
                 .rotationEffect(.degrees(isShown || reduceMotion ? 0 : -12))
@@ -170,10 +170,12 @@ private struct OnboardingWelcomeStep: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .staggered(isShown, order: 1)
+            OnboardingCast(isCompact: metrics.isCompact, isShown: isShown)
+                .padding(.top, metrics.isCompact ? 0 : 6)
             HStack(alignment: .top, spacing: metrics.isCompact ? 10 : 14) {
-                highlight("rectangle.split.3x1", "Side by Side", "Claude Code and Codex agents run together, each in its own tab or pane.", order: 2)
-                highlight("arrow.triangle.branch", "One Worktree Each", "Every agent gets a branch and a folder of its own.", order: 3)
-                highlight("lock.laptopcomputer", "Local Only", "No servers, no remote hosts. Your code stays on your Mac.", order: 4)
+                highlight("rectangle.split.3x1", "Side by Side", "Claude Code and Codex agents run together, each in its own tab or pane.", order: 7)
+                highlight("arrow.triangle.branch", "One Worktree Each", "Every agent gets a branch and a folder of its own.", order: 8)
+                highlight("lock.laptopcomputer", "Local Only", "No servers, no remote hosts. Your code stays on your Mac.", order: 9)
             }
             // Cards as tall as the tallest one, however their text wraps.
             .fixedSize(horizontal: false, vertical: true)
@@ -197,8 +199,7 @@ private struct OnboardingWelcomeStep: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(metrics.isCompact ? 12 : 16)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, metrics.isCompact ? 8 : 14)
         .accessibilityElement(children: .combine)
         .staggered(isShown, order: order)
     }
@@ -240,7 +241,7 @@ private struct OnboardingFeatureStep: View {
             }
             .frame(width: metrics.textColumnWidth, alignment: .leading)
             if let screenshot = step.screenshot {
-                OnboardingScreenshot(name: screenshot)
+                OnboardingScreenshot(name: screenshot, annotation: step.annotation, isCompact: metrics.isCompact, isShown: isShown)
                     .scaleEffect(isShown || reduceMotion ? 1 : 0.94)
                     .opacity(isShown ? 1 : 0)
                     .animation(reduceMotion ? .easeOut(duration: 0.25) : .spring(response: 0.6, dampingFraction: 0.82).delay(0.1),
@@ -256,15 +257,25 @@ private struct OnboardingFeatureStep: View {
 
 /// A feature capture that always spans the column up to the tour's trailing margin (where Continue ends): it fills the
 /// width, and when the column is too short for the whole capture, the bottom is cut off instead of the capture
-/// shrinking away from that margin. Captures show the window's top (toolbar, sidebar) where the feature is.
+/// shrinking away from that margin. Captures show the window's top (toolbar, sidebar) where the feature is. A red
+/// hand-written note and its arrow lie over the capture, and a sprite sits on its top edge.
 private struct OnboardingScreenshot: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let name: String
+    let annotation: OnboardingAnnotation?
+    let isCompact: Bool
+    let isShown: Bool
 
     var body: some View {
         GeometryReader { proxy in
             let size = NSImage(named: name)?.size ?? CGSize(width: 4, height: 3)
             let width = proxy.size.width
-            let height = min(proxy.size.height, width * size.height / max(size.width, 1))
+            let fullHeight = width * size.height / max(size.width, 1)
+            let pixel: CGFloat = isCompact ? 3 : 5
+            let noteSize = max(width / 30, 12)
+            // Room above the capture for the sitting sprite and the two-line note.
+            let band = annotation == nil ? 0 : max(pixel * 12, noteSize * 2.7)
+            let height = min(proxy.size.height - band, fullHeight)
             Image(name)
                 .resizable()
                 .interpolation(.high)
@@ -276,8 +287,74 @@ private struct OnboardingScreenshot: View {
                         .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
                 }
                 .shadow(color: .black.opacity(0.22), radius: 18, y: 10)
+                .overlay(alignment: .topLeading) {
+                    if let annotation {
+                        notes(annotation, width: width, fullHeight: fullHeight, noteSize: noteSize, pixel: pixel)
+                    }
+                }
+                .padding(.top, band)
                 .frame(width: proxy.size.width, height: proxy.size.height)
         }
+    }
+
+    /// The note above the top edge, its arrow down into the capture and the sprite seated on the edge. The arrow's
+    /// points are fractions of the whole capture, so it stays on what it points at when the bottom is cut off.
+    private func notes(_ annotation: OnboardingAnnotation, width: CGFloat, fullHeight: CGFloat, noteSize: CGFloat,
+                       pixel: CGFloat) -> some View {
+        let lift = 6 / max(fullHeight, 1)
+        return ZStack(alignment: .topLeading) {
+            HandArrow(start: UnitPoint(x: annotation.arrowStartX, y: -lift), control: annotation.arrowControl,
+                      end: annotation.arrowEnd, head: max(width / 60, 7))
+                .inked(isShown: isShown, lineWidth: max(width / 300, 1.6))
+                .animation(reduceMotion ? .easeOut(duration: 0.2) : .easeInOut(duration: 0.55).delay(0.75), value: isShown)
+                .frame(width: width, height: fullHeight)
+            // A zero-size frame anchored at its bottom-left: the note grows up and to the right of a point on the edge.
+            HandNote(text: annotation.note, size: noteSize, rotation: annotation.rotation)
+                .frame(width: 0, height: 0, alignment: .bottomLeading)
+                .offset(x: width * annotation.noteX, y: -10)
+                .opacity(isShown ? 1 : 0)
+                .animation(.easeOut(duration: 0.3).delay(reduceMotion ? 0 : 0.5), value: isShown)
+            // Seated on the edge: the boots hang two pixels below it.
+            LivelySprite(tint: annotation.sprite, pixel: pixel, mood: .sitting)
+                .offset(x: width * annotation.seat - pixel * 6, y: -pixel * 12)
+                .opacity(isShown ? 1 : 0)
+                .animation(.easeOut(duration: 0.3).delay(0.5), value: isShown)
+        }
+        .frame(width: width, height: 1, alignment: .topLeading)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The four sprites in a row, each with a hand-written note of what it stands for.
+private struct OnboardingCast: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let isCompact: Bool
+    let isShown: Bool
+
+    var body: some View {
+        let pixel: CGFloat = isCompact ? 3 : 5
+        HStack(alignment: .bottom, spacing: isCompact ? 34 : 64) {
+            member(.claude, "Claude Code", order: 2, pixel: pixel, tilt: -5)
+            member(.codex, "Codex", order: 3, pixel: pixel, tilt: 3)
+            member(.shell, "a shell", order: 4, pixel: pixel, tilt: -3)
+            member(.aqua, "any other agent", order: 5, pixel: pixel, tilt: 4)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Claude Code, Codex, a shell and any other agent"))
+    }
+
+    private func member(_ tint: WaterSprite.Tint, _ name: LocalizedStringKey, order: Int, pixel: CGFloat, tilt: Double) -> some View {
+        VStack(spacing: isCompact ? 2 : 4) {
+            HandNote(text: name, size: isCompact ? 14 : 19, rotation: tilt, alignment: .center)
+            HandArrow(start: UnitPoint(x: 0.35, y: 0), control: UnitPoint(x: 0.2, y: 0.6), end: UnitPoint(x: 0.5, y: 1), head: 6)
+                .inked(isShown: isShown, lineWidth: 1.8)
+                .frame(width: 22, height: isCompact ? 10 : 16)
+                .animation(reduceMotion ? .easeOut(duration: 0.2) : .easeInOut(duration: 0.4).delay(0.5 + Double(order) * 0.08), value: isShown)
+            // Room for the hop above the sprite, so the note does not move.
+            LivelySprite(tint: tint, pixel: pixel, phase: Double(order) * 0.9)
+                .padding(.top, pixel * 3)
+        }
+        .staggered(isShown, order: order)
     }
 }
 
@@ -309,7 +386,6 @@ private struct OnboardingPointRow: View {
 
 /// The last step: add a workspace or open Settings.
 private struct OnboardingGetStartedStep: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppModel.self) private var model
     let metrics: OnboardingMetrics
     let perform: (OnboardingCommand) -> Void
@@ -317,12 +393,14 @@ private struct OnboardingGetStartedStep: View {
 
     var body: some View {
         VStack(spacing: metrics.isCompact ? 12 : 18) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: metrics.isCompact ? 44 : 60))
-                .foregroundStyle(.tint)
-                .symbolEffect(.bounce, value: reduceMotion ? false : isShown)
-                .staggered(isShown, order: 0)
-                .accessibilityHidden(true)
+            HStack(alignment: .bottom, spacing: metrics.isCompact ? 14 : 22) {
+                ForEach(Array(WaterSprite.Tint.allCases.enumerated()), id: \.element) { offset, tint in
+                    LivelySprite(tint: tint, pixel: metrics.isCompact ? 4 : 6, mood: .cheering, phase: Double(offset) * 0.23)
+                }
+            }
+            // Room for the jump above the sprites.
+            .padding(.top, 28)
+            .staggered(isShown, order: 0)
             VStack(spacing: 8) {
                 Text(OnboardingStep.getStarted.title)
                     .font(metrics.isCompact ? .title.bold() : .largeTitle.bold())

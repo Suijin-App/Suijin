@@ -67,6 +67,30 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The hand-written note drawn over the capture; nil for the welcome and last steps.
+    var annotation: OnboardingAnnotation? {
+        switch self {
+        case .welcome, .getStarted:
+            nil
+        case .workspaces:
+            OnboardingAnnotation(note: "every agent in a\nworktree of its own", noteX: 0.2, rotation: -3, arrowStartX: 0.3,
+                                 arrowControl: UnitPoint(x: 0.44, y: 0.12), arrowEnd: UnitPoint(x: 0.325, y: 0.2),
+                                 sprite: .aqua, seat: 0.84)
+        case .sessions:
+            OnboardingAnnotation(note: "drag a pane by its header\nto move it", noteX: 0.16, rotation: -3, arrowStartX: 0.3,
+                                 arrowControl: UnitPoint(x: 0.34, y: 0.06), arrowEnd: UnitPoint(x: 0.2, y: 0.095),
+                                 sprite: .claude, seat: 0.84)
+        case .changes:
+            OnboardingAnnotation(note: "what the agent changed,\nline by line", noteX: 0.3, rotation: -3, arrowStartX: 0.52,
+                                 arrowControl: UnitPoint(x: 0.6, y: 0.12), arrowEnd: UnitPoint(x: 0.56, y: 0.27),
+                                 sprite: .codex, seat: 0.88)
+        case .accounts:
+            OnboardingAnnotation(note: "tokens, cost and activity\nfrom your local logs", noteX: 0.26, rotation: -3, arrowStartX: 0.5,
+                                 arrowControl: UnitPoint(x: 0.56, y: 0.2), arrowEnd: UnitPoint(x: 0.44, y: 0.4),
+                                 sprite: .shell, seat: 0.88)
+        }
+    }
+
     /// The short "how to use" points of a feature step; empty for the welcome and last steps.
     var points: [OnboardingPoint] {
         switch self {
@@ -94,6 +118,25 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
              OnboardingPoint(symbol: "memorychip", text: "Click the session count in the status bar for the Resource Manager.")]
         }
     }
+}
+
+/// A hand-written note above a step's capture with an arrow down to what it is about, and the sprite sitting on the
+/// capture's top edge beside it. Fractions are of the whole capture, from its top-left corner.
+struct OnboardingAnnotation {
+    let note: LocalizedStringKey
+    /// Where the note starts along the top edge.
+    let noteX: CGFloat
+    /// Degrees; negative leans the note up to the right.
+    let rotation: Double
+    /// Where the arrow leaves the top edge, under the note.
+    let arrowStartX: CGFloat
+    let arrowControl: UnitPoint
+    let arrowEnd: UnitPoint
+    let sprite: WaterSprite.Tint
+    /// Where along the top edge the sprite sits.
+    let seat: CGFloat
+
+    var fractions: [CGFloat] { [noteX, arrowStartX, arrowControl.x, arrowControl.y, arrowEnd.x, arrowEnd.y, seat] }
 }
 
 /// One "how to use" line of a step: a symbol, a sentence, and the keyboard shortcuts it mentions.

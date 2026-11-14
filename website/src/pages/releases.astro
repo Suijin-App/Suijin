@@ -31,9 +31,12 @@ const format = (date: string) =>
           {release.date ? <p class="date">{format(release.date)}</p> : <p class="date">Not released yet</p>}
           <span class="tag">{release.date ? "Released" : "Coming next"}</span>
         </div>
-        <ul>
-          {release.entries.map((entry) => <li data-reveal set:html={entry} />)}
-        </ul>
+        <div>
+          {release.intro && <p class="release-intro" data-reveal set:html={release.intro} />}
+          <ul>
+            {release.entries.map((entry) => <li data-reveal set:html={entry} />)}
+          </ul>
+        </div>
       </section>
     ))}
   </div>

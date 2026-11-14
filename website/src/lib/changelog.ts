@@ -7,6 +7,8 @@ export interface Release {
   version: string;
   /** "2026-11-20", or null while the version is not released yet. */
   date: string | null;
+  /** The paragraph under the heading, as safe HTML; empty when the section starts with its bullets. */
+  intro: string;
   /** One entry per bullet, as safe HTML. */
   entries: string[];
 }
@@ -35,7 +37,7 @@ export function releases(): Release[] {
     if (heading) {
       flush();
       const date = heading[2] && /^\d{4}-\d{2}-\d{2}$/.test(heading[2]) ? heading[2] : null;
-      current = { version: heading[1], date, entries: [] };
+      current = { version: heading[1], date, intro: "", entries: [] };
       result.push(current);
     } else if (line.startsWith("- ")) {
       flush();
@@ -44,6 +46,8 @@ export function releases(): Release[] {
       entry.push(line.trim());
     } else if (!line.trim()) {
       flush();
+    } else if (current && !current.entries.length && !line.startsWith("#")) {
+      current.intro += (current.intro ? " " : "") + inline(line.trim());
     }
   }
   flush();

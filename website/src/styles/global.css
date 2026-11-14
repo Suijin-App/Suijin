@@ -161,6 +161,9 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
   font-weight: 600; font-size: 15.5px; text-decoration: none; border: 1px solid transparent; cursor: pointer;
   transition: transform var(--fast) var(--ease), background-color var(--fast) var(--ease), border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
 .button svg { width: 17px; height: 17px; }
+/* The Apple mark sits a little above the text's centre, where its body is. */
+.button svg.apple { margin-top: -2px; }
+.button.small svg.apple { width: 14px; height: 14px; margin-right: -2px; }
 .button.primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow); }
 .button.primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .button.secondary { background: var(--surface); border-color: var(--line-strong); color: var(--text); }

@@ -18,6 +18,10 @@ private let logger = Logger(subsystem: "com.tekmium.suijin", category: "orchestr
 @MainActor
 final class OrchestrationController {
     @ObservationIgnored private unowned let model: AppModel
+    /// The same model, held weakly for the work that runs later (a scheduled refresh, a broker callback, a
+    /// reconnect): the task running it keeps this controller alive past its model, and reading the unowned
+    /// reference then would stop the app.
+    @ObservationIgnored private weak var owner: AppModel?
     private(set) var snapshot = OrchestrationSnapshot()
     /// Why orchestration is unavailable (an older terminal host, no host at all), nil while connected or connecting.
     private(set) var problem: String?
@@ -36,6 +40,7 @@ final class OrchestrationController {
 
     init(model: AppModel) {
         self.model = model
+        self.owner = model
         self.launcher = WorkerLauncher(model: model)
     }
 
@@ -57,7 +62,7 @@ final class OrchestrationController {
     // MARK: Connection
 
     private func connect() async {
-        guard started, connection == nil else { return }
+        guard started, connection == nil, let model = owner else { return }
         do {
             let endpoint = try await Self.fetchEndpoint(dataRoot: model.dataRoot.path)
             let connection = NSXPCConnection(listenerEndpoint: endpoint)
@@ -189,6 +194,7 @@ final class OrchestrationController {
     /// Closes the tabs of workers their coordinator stopped. The helper already ended their processes, so there is
     /// nothing to confirm; a worker that finished on its own keeps its tab. Runs after every snapshot refresh.
     func closeStoppedWorkers() async {
+        guard let model = owner else { return }
         let stopped = Self.stoppedWorkerSessions(in: snapshot.dispatches, liveSessions: Set(model.sessions.map(\.id)))
             .subtracting(closingWorkers)
         guard !stopped.isEmpty else { return }
@@ -199,6 +205,7 @@ final class OrchestrationController {
     }
 
     private func startWorker(_ request: WorkerLaunchRequest) async {
+        guard owner != nil else { return }
         let result = await launcher.launch(request)
         guard let data = try? OrchestrationCoding.encoder.encode(result) else { return }
         broker?.workerStartFinished(data)
@@ -278,6 +285,7 @@ final class OrchestrationController {
     // MARK: Notifications
 
     private func notify(_ event: OrchestrationAttention) {
+        guard let model = owner else { return }
         guard model.setting(.notifyWhenWaiting) != "false", model.notifiesUser,
               let id = UUID(uuidString: event.sessionID),
               let record = model.sessions.first(where: { $0.id == id }) else { return }

@@ -2,8 +2,6 @@
 
 ![Suijin: many agents, one calm window. Claude Code, Codex and any other AI coding agent, side by side on your Mac](docs/screenshots/suijin-banner.png)
 
-> **Draft.** This README is a first pass and will change before the first release.
-
 Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent at the same time, side by
 side. Each agent works in a git worktree of its own (or straight in a plain folder), so their changes never collide,
 and you review and ship what they did without leaving the app. Your code and your agents stay on your Mac: no remote
@@ -21,8 +19,9 @@ Website: [suijin.app](https://suijin.app) · Community: [Discord](https://discor
 
 ## Status
 
-Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you build it from source (see
-[Build from source](#build-from-source)). In-app updates are built in but turned off until the update feed exists.
+Suijin `0.1.0` is the first release. Download the signed and notarized DMG from the
+[latest release](https://github.com/Suijin-App/Suijin/releases/latest); installed copies check for new versions
+themselves. You can also build it from source (see [Build from source](#build-from-source)).
 
 ## Features
 

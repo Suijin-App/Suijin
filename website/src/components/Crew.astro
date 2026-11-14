@@ -36,7 +36,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 <script>
   import { animate } from "animejs";
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
-  import { scenes, introductions, places, race, reactions, type TalkLine, type TalkMood } from "../lib/crew-talk";
+  import { scenes, introductions, places, race, reactions, audience, type TalkLine, type TalkMood } from "../lib/crew-talk";
   import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
@@ -586,7 +586,11 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         const free = members.filter((one) => idle(one) && !one.busy && !one.up && !one.floating && !(one.state === "home" && (hiders.has(one) || one === codex)));
         if (!free.length) return;
         const one = free[pastime % free.length], turn = pastime++ % 3;
-        if (turn === 0) sing(one); else if (turn === 1) fight(one); else if (!pace(one)) sing(one);
+        const act = turn === 0 ? "sing" : turn === 1 ? "fight" : pace(one) ? "pace" : "sing";
+        if (act === "sing") sing(one); else if (act === "fight") fight(one);
+        // somebody nearby has an opinion about it
+        const watcher = members.filter((other) => other !== one && idle(other) && !other.busy && inSight(other))[0];
+        if (watcher && pastime % 2) window.setTimeout(() => speak(watcher, any1(audience[act]), act === "sing" ? "laugh" : "ask"), 1300);
       }, 4600);
 
       // ── conversation: now and then two of them have a word, or one tells the reader about the part of the page on screen
@@ -595,7 +599,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const section = (): string => {
         let found = "";
         for (const part of document.querySelectorAll<HTMLElement>("main [id]")) { const box = part.getBoundingClientRect(); if (box.top < window.innerHeight * 0.6 && box.bottom > window.innerHeight * 0.3 && places[part.id]) found = part.id; }
-        return found;
+        return found || (places[location.pathname.replace(/\/$/, "")] ? location.pathname.replace(/\/$/, "") : "");
       };
       window.setInterval(() => {
         if (talking || asleep || document.hidden || chase.left > 0) return;
@@ -664,6 +668,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // the film opens or the theme changes: everyone reacts
       new MutationObserver((records) => {
         for (const record of records) {
+          if (record.attributeName === "data-theater" && !document.documentElement.hasAttribute("data-theater")) { const critic = members.find(inSight); if (critic) window.setTimeout(() => speak(critic, any1(reactions.film), "yay"), 500); }
           if (record.attributeName === "data-theater" && document.documentElement.hasAttribute("data-theater")) members.forEach((one, index) => { feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1600); hop(one, 22, index * 80); });
           if (record.attributeName === "data-theme") { dye(); const witness = members.find(inSight); if (witness) window.setTimeout(() => speak(witness, any1(document.documentElement.dataset.theme === "dark" ? reactions.dark : reactions.light), "oh"), 300); }
           if (record.attributeName === "data-theme") members.forEach((one, index) => { feel(one, { eyes: "wide", mouth: "o" }, 800); hop(one, 12, index * 70); });

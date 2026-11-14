@@ -167,6 +167,21 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
         }, { passive: true });
       }
 
+      // A double press on empty space would select the nearest word. Pressing the water is a thing to do on this page,
+      // so the selection starts only when the press is really on a piece of text.
+      document.addEventListener("mousedown", (event) => {
+        if (event.detail < 2 || (event.target as Element | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
+        const x = event.clientX, y = event.clientY;
+        const caret = (document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node } | null }).caretPositionFromPoint?.(x, y)?.offsetNode
+          ?? document.caretRangeFromPoint?.(x, y)?.startContainer;
+        let onText = false;
+        if (caret?.nodeType === Node.TEXT_NODE) {
+          const range = document.createRange(); range.selectNodeContents(caret);
+          onText = [...range.getClientRects()].some((box) => x >= box.left - 2 && x <= box.right + 2 && y >= box.top && y <= box.bottom);
+        }
+        if (!onText) event.preventDefault();
+      });
+
       // Theme: follow the system until the visitor picks one, then remember the pick.
       document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
         const next = root.dataset.theme === "dark" ? "light" : "dark";

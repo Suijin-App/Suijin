@@ -481,7 +481,7 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 /* The crew: four pixel water sprites that live on the page. --sprite is the side of one pixel. The layer spans the
    document and makes no stacking context, so a post can sit above the content (standing somewhere) or below it
    (swimming in the water of the background). A post is a box whose bottom is the edge its sprite stands on. */
-.crew { position: absolute; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; --sprite: 4px; }
+.crew { position: absolute; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; --sprite: 4px; user-select: none; -webkit-user-select: none; }
 .crew-post { position: absolute; z-index: 3; width: calc(18 * var(--sprite)); height: calc(42 * var(--sprite)); visibility: hidden; }
 .crew.alive .crew-post, .crew.still .crew-post.posted { visibility: visible; }
 /* hiding behind a button: whatever sinks below the button's top edge is cut off */

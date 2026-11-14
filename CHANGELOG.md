@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-15)
 
 The first release of Suijin: a native macOS app that runs Claude Code, Codex and any other command-line AI coding
 agent side by side, each in a git worktree of its own.
@@ -32,7 +32,8 @@ agent side by side, each in a git worktree of its own.
   Claude Code and Codex logs, and the Resource Manager shows the memory and CPU of running sessions.
 - **Settings.** Light, dark or automatic appearance, 15 terminal themes, a searchable list of every keyboard
   shortcut (⌘/), and a Permissions section that shows whether macOS allows notifications, the background helper and
-  Full Disk Access, with a button to allow each.
+  Full Disk Access, with a button to allow each and a **Repair** button when the background helper is not working.
+  Settings › About links to the website, the source code, the community and the sponsor page.
 - **Updates.** Suijin checks for a new version about once a day and installs it in place; Settings › General turns
   the automatic check off. `suijin.app` counts those checks per day and app version, and keeps nothing else.
 - **Private by design.** No account, no telemetry and no crash reports. Your code and your agents stay on your Mac.

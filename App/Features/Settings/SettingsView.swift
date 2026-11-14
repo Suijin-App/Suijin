@@ -78,6 +78,7 @@ struct GeneralSettings: View {
             }
             Section {
                 Toggle("Keep sessions running after quitting Suijin", isOn: toggleBinding(model, .keepSessionsOnQuit, default: true))
+                Toggle("Ask before closing a tab whose agent is still working", isOn: toggleBinding(model, .confirmClosingBusyAgents, default: true))
                 if let problem = model.runtimes.hostProblem {
                     Label {
                         Text("Sessions end with the app: the terminal host is unavailable (\(problem)). See Permissions below.")

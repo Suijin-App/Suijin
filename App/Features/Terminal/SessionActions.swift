@@ -1,6 +1,7 @@
 import AppKit
 import SuijinCore
 import SuijinTerminal
+import SwiftUI
 
 /// Tab actions shared by the menus, the tab strip and the terminal's own shortcuts; panes are in `PaneLayouts.swift`.
 extension AppModel {
@@ -77,11 +78,20 @@ extension AppModel {
         let busyStates: Set<SessionActivityDisplay> = [.starting, .running, .waitingForInput, .idle]
         let records = ids.compactMap { id in sessions.first { $0.id == id } }
         let busy = records.filter { runtimes.displayAgent(of: $0) != .shell && runtimes.runtime(for: $0.id) != nil && busyStates.contains(runtimes.activity(of: $0)) }
-        if busy.isEmpty {
+        if busy.isEmpty || setting(.confirmClosingBusyAgents) == "false" {
             Task { await closeSessions(records.map(\.id)) }
         } else {
             pendingClose = PendingClose(sessions: records.map(\.id), busy: busy)
         }
+    }
+
+    /// The user confirmed the pending close; with `dontAskAgain` later ones close without asking (Settings → General
+    /// turns the question back on).
+    func confirmPendingClose(dontAskAgain: Bool) {
+        guard let pending = pendingClose else { return }
+        pendingClose = nil
+        if dontAskAgain { setSetting(.confirmClosingBusyAgents, "false") }
+        Task { await closeSessions(pending.sessions) }
     }
 
     /// Adds a pane beside the selected tab's focused pane: on its right (`.sideBySide`, ⌘D) or below it (`.stacked`,
@@ -149,5 +159,43 @@ extension PaneEdge {
         case .up: self = .top
         case .down: self = .bottom
         }
+    }
+}
+
+/// Asks before closing a tab whose agents still work, with "Don't ask again". It is attached to a view of its own (as
+/// `PermissionConfirmationAlert` is): `dialogSuppressionToggle` reaches every dialog of the view it modifies, so two
+/// dialogs on one view would share one checkbox, and ticking it in one dialog would count for the other.
+struct CloseConfirmationDialog: ViewModifier {
+    @Environment(AppModel.self) private var model
+    @State private var dontAskAgain = false
+
+    /// "End Claude?" for one working agent, "End 2 sessions?" for several.
+    private var title: Text {
+        guard let pending = model.pendingClose else { return Text(verbatim: "") }
+        if pending.busy.count == 1, let record = pending.busy.first { return Text("End \(record.title)?") }
+        return Text("End \(pending.busy.count) sessions?")
+    }
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(
+            title,
+            isPresented: Binding(get: { model.pendingClose != nil },
+                                 set: { if !$0 { model.pendingClose = nil; dontAskAgain = false } }),
+            presenting: model.pendingClose
+        ) { pending in
+            Button(pending.busy.count == 1 ? "End Session" : "End Sessions", role: .destructive) {
+                let suppress = dontAskAgain
+                dontAskAgain = false
+                model.confirmPendingClose(dontAskAgain: suppress)
+            }
+            Button("Cancel", role: .cancel) { dontAskAgain = false }
+        } message: { pending in
+            if pending.busy.count == 1 {
+                Text("The agent is still working. Closing the tab stops it.")
+            } else {
+                Text("\(pending.busy.count) agents are still working. Closing the tab stops them.")
+            }
+        }
+        .dialogSuppressionToggle("Don’t ask again", isSuppressed: $dontAskAgain)
     }
 }

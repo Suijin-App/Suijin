@@ -136,7 +136,8 @@ struct PermissionsSkippedBadge: View {
     }
 }
 
-/// Asks before an agent starts without permission checks, with "Don't ask again". Attached to the main window.
+/// Asks before an agent starts without permission checks, with "Don't ask again". Attached to a view of its own in
+/// the main window, so its checkbox does not show up in other dialogs (see `CloseConfirmationDialog`).
 struct PermissionConfirmationAlert: ViewModifier {
     @Environment(AppModel.self) private var model
     @State private var dontAskAgain = false

@@ -20,6 +20,9 @@ export const site = {
   minimumSystem: "macOS 15",
   // Set to the version string once the first release is published; the download wording follows it.
   releasedVersion: null as string | null,
+  // The introduction film, played in the theater the hero opens: its Mux playback ID, its length as ISO 8601, and
+  // the day it was published.
+  video: { muxPlaybackId: "4V019K88RfQyloISX02ygzHg7hmqoCQLKwJk00sK1S01Z88", duration: "PT2M2S", published: "2026-11-15" },
   // The site token of Cloudflare Web Analytics (dashboard: Analytics & Logs, Web Analytics). Empty turns it off.
   analyticsToken: "",
 };

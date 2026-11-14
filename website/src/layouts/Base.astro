@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Crew from "../components/Crew.astro";
 import { site, downloadUrl } from "../site";
 import { starCount, compact } from "../lib/github";
 
@@ -79,6 +80,10 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
     </script>
   </head>
   <body>
+    <!-- Where a press lands, rings spread as on water. The layer lies behind everything on the page, so the rings
+         show on the bare background only and never over a card, an image or the app window. -->
+    <div class="touch" data-touch aria-hidden="true"></div>
+    <Crew />
     <a class="skip" href="#main">Skip to content</a>
     <header class="nav">
       <div class="nav-inner" data-nav>
@@ -144,6 +149,38 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
 
       const root = document.documentElement;
       const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // A press anywhere sends rings out from that point, drawn on the layer behind the page.
+      const water = document.querySelector<HTMLElement>("[data-touch]");
+      if (water && !calm) {
+        document.addEventListener("pointerdown", (event) => {
+          if (!event.isPrimary || event.button > 0) return;
+          const drop = document.createElement("span");
+          drop.className = "touch-drop";
+          drop.style.left = `${event.clientX}px`;
+          drop.style.top = `${event.clientY}px`;
+          drop.append(document.createElement("i"), document.createElement("i"), document.createElement("i"), document.createElement("b"));
+          water.append(drop);
+          // The last ring to finish removes the whole drop; a press storm cannot pile them up.
+          drop.lastElementChild?.previousElementSibling?.addEventListener("animationend", () => drop.remove(), { once: true });
+          while (water.childElementCount > 12) water.firstElementChild?.remove();
+        }, { passive: true });
+      }
+
+      // A double press on empty space would select the nearest word. Pressing the water is a thing to do on this page,
+      // so the selection starts only when the press is really on a piece of text.
+      document.addEventListener("mousedown", (event) => {
+        if (event.detail < 2 || (event.target as Element | null)?.closest?.("input, textarea, select, [contenteditable]")) return;
+        const x = event.clientX, y = event.clientY;
+        const caret = (document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node } | null }).caretPositionFromPoint?.(x, y)?.offsetNode
+          ?? document.caretRangeFromPoint?.(x, y)?.startContainer;
+        let onText = false;
+        if (caret?.nodeType === Node.TEXT_NODE) {
+          const range = document.createRange(); range.selectNodeContents(caret);
+          onText = [...range.getClientRects()].some((box) => x >= box.left - 2 && x <= box.right + 2 && y >= box.top && y <= box.bottom);
+        }
+        if (!onText) event.preventDefault();
+      });
 
       // Theme: follow the system until the visitor picks one, then remember the pick.
       document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {

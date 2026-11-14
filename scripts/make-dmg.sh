@@ -78,4 +78,10 @@ else
   run codesign --force --sign "$IDENTITY" --timestamp "$OUT"
   run codesign --verify --strict --verbose=2 "$OUT"
 fi
+step "give the disk image file the volume's icon"
+# Kept in the file's extended attributes, so the image's data and its signature do not change. It shows on this Mac
+# and on copies made with Finder; a download over the web does not carry it.
+ICON="$ART/VolumeIcon.icns" FILE="$OUT" osascript -l JavaScript -e 'ObjC.import("AppKit"); ObjC.import("stdlib");
+  $.NSWorkspace.sharedWorkspace.setIconForFileOptions($.NSImage.alloc.initWithContentsOfFile($.getenv("ICON")), $.getenv("FILE"), 0)' >/dev/null \
+  || die "could not set the icon of $OUT"
 step "created $OUT"

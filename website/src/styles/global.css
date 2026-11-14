@@ -274,8 +274,7 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 
 /* ---- Sections ---- */
 section { padding: 112px 0; }
-.eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
-.eyebrow::before { content: ""; width: 18px; height: 1.5px; background: currentColor; }
+.eyebrow { font: 600 15px/1.2 var(--sans); letter-spacing: -0.005em; color: var(--accent); margin-bottom: 14px; }
 h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 .sub { max-width: 640px; margin-top: 18px; color: var(--muted); font-size: 18.5px; line-height: 1.55; }
 .center { text-align: center; }

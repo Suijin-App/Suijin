@@ -284,7 +284,7 @@ private struct OnboardingScreenshot: View {
             let pixel: CGFloat = isCompact ? 3 : 5
             let noteSize = max(width / 30, 12)
             // Room above the capture for the sitting sprite and the two-line note.
-            let band = annotation == nil ? 0 : max(pixel * 12, noteSize * 2.7)
+            let band = annotation == nil ? 0 : max(pixel * 14, noteSize * 2.7)
             let height = min(proxy.size.height - band, fullHeight)
             Image(name)
                 .resizable()
@@ -324,10 +324,9 @@ private struct OnboardingScreenshot: View {
                 .offset(x: width * annotation.noteX, y: -10)
                 .opacity(isShown ? 1 : 0)
                 .animation(.easeOut(duration: 0.3).delay(reduceMotion ? 0 : 0.5), value: isShown)
-            // Seated on the edge: the boots hang two pixels below it.
-            // It drops in from above and settles with a bounce.
+            // On the edge, wholly above the capture so it covers nothing; it drops in and settles with a bounce.
             LivelySprite(tint: annotation.sprite, pixel: pixel, mood: .sitting)
-                .offset(x: width * annotation.seat - pixel * 6, y: -pixel * 12 - (isShown || reduceMotion ? 0 : 46))
+                .offset(x: width * annotation.seat - pixel * 6, y: -pixel * 14 - (isShown || reduceMotion ? 0 : 46))
                 .opacity(isShown ? 1 : 0)
                 .animation(reduceMotion ? .easeOut(duration: 0.3) : .spring(response: 0.5, dampingFraction: 0.5).delay(0.45),
                            value: isShown)

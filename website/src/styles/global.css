@@ -271,7 +271,14 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .m-term .you { font-weight: 600; }
 .m-term .caret::after { content: ""; display: inline-block; width: 6px; height: 12px; margin-left: 3px; vertical-align: -2px; background: var(--win-muted); animation: m-blink 1s steps(1) infinite; }
 .m-banner { flex: none; margin: 8px 10px 0; padding: 7px 10px; border-radius: 8px; background: rgba(255, 159, 10, 0.16); font-size: 11.5px; }
-.m-banner.gone { display: none; }
+.m-banners { display: grid; flex: none; grid-template-rows: 0fr; transition: grid-template-rows 0.35s var(--ease); }
+.m-banners.open { grid-template-rows: 1fr; }
+.m-banners > div { display: grid; min-height: 0; overflow: hidden; }
+.m-banners .m-banner { grid-area: 1 / 1; align-self: start; }
+.js .m-banner.gone { opacity: 0 !important; transition: opacity 0.3s; }
+/* Without the script the scene shows its end: the place is open and only the second note is there. */
+html:not(.js) .m-banners { grid-template-rows: 1fr; }
+html:not(.js) .m-banners .m-banner:not(.moved) { display: none; }
 .m-banner.moved { background: rgba(48, 192, 72, 0.16); }
 .m-status { display: flex; align-items: center; gap: 7px; flex: none; height: 28px; padding: 0 12px; overflow: hidden; border-top: 1px solid var(--win-line); color: var(--win-muted); font-size: 10.5px; white-space: nowrap; }
 .m-meter { flex: none; width: 54px; height: 5px; border-radius: 3px; overflow: hidden; background: var(--win-chip); }
@@ -406,6 +413,12 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 .card.wide { grid-column: span 3; }
 .card.full { grid-column: span 4; }
 .card .body { padding: 26px 26px 22px; }
+.card.native { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: center; column-gap: 24px; }
+.card.native .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 26px 26px 22px 0; }
+.card.native .facts div { padding: 18px 16px; border-radius: var(--r-m); background: var(--bg-raised); }
+.card.native dt { font: 700 34px/1 var(--sans); letter-spacing: -0.03em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.card.native dd { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.card.native .note { grid-column: 1 / -1; padding: 0 26px 20px; font-size: 13px; }
 .card h3 { font-size: 21px; letter-spacing: -0.02em; margin-bottom: 8px; }
 .card p { color: var(--muted); font-size: 15.5px; line-height: 1.55; }
 .card .shot { margin: auto 0 0 26px; border-radius: 12px 0 0 0; border: 1px solid var(--line); border-right: 0; border-bottom: 0; overflow: hidden; background: var(--win); }
@@ -503,6 +516,8 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
   .nav-actions, .nav-links + .nav-actions { margin-left: auto; }
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card, .card.wide, .card.full { grid-column: span 2; }
+  .card.native { grid-template-columns: minmax(0, 1fr); }
+  .card.native .facts { padding: 0 26px 18px; }
   .steps { grid-template-columns: 1fr; }
   .local .grid, .faq-grid, .community .wrap { grid-template-columns: 1fr; gap: 32px; }
   .faq-head, .release .when { position: static; }
@@ -511,6 +526,10 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 
 @media (max-width: 720px) {
   :root { --gutter: 18px; }
+  .card.native .facts { grid-template-columns: minmax(0, 1fr); }
+  .card.native .facts div { display: flex; align-items: baseline; gap: 12px; }
+  .card.native dt { flex: none; font-size: 28px; }
+  .card.native dd { margin: 0; }
   section { padding: 76px 0; }
   .hero { padding-top: 120px; }
   .stars .label { display: none; }

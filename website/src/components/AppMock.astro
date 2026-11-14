@@ -311,8 +311,11 @@ bar.label   <span class="dim">// "42%"</span></pre>
         <Toolbar tabs={accounts.tabs} />
         <div class="m-panes">
           <div class="m-pane">
-            <div class="m-banner" data-step="3" data-set="5:gone"><b>Work reached its 5-hour limit.</b> Moving this session to the next account with room…</div>
-            <div class="m-banner moved" data-step="5"><b>Moved to Personal.</b> The conversation continues where it stopped.</div>
+            <!-- The two notes share one place: the room for it opens once, then the second note fades in over the first. -->
+            <div class="m-banners" data-set="3:open"><div>
+              <div class="m-banner" data-step="3" data-set="5:gone"><b>Work reached its 5-hour limit.</b> Moving this session to the next account with room…</div>
+              <div class="m-banner moved" data-step="5"><b>Moved to Personal.</b> The conversation continues where it stopped.</div>
+            </div></div>
             <div class="m-term roomy">
               <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
               <p class="m-prompt" data-step="1" data-type>❯ Refactor the usage polling into one actor</p>

@@ -101,6 +101,14 @@ never update.
    the feed: `curl -sIL https://suijin.app/appcast.xml` must end in `200`, and the download URL in the appcast must
    return the `length` it names.
 6. Run the checks in section 6.
+7. Announce the release in `#releases` of the Suijin Discord server, as Suijin Bot. The bot's token is in TSSC
+   (project Suijin, environment `prod`, secret `DISCORD_BOT_TOKEN`) and is never written anywhere else:
+   ```sh
+   tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- \
+     .claude/skills/suijin-release-macos/scripts/announce-release-discord.py
+   ```
+   The script posts the opening paragraph of the release notes and the link to the release page. It stops when the
+   release is not the latest published one and does not post a version twice; `--dry-run` prints the message.
 
 Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEAM_ID`, `SUIJIN_SIGNING_IDENTITY`,
 `SUIJIN_RELEASE_DIR`, `SUIJIN_SPARKLE_ACCOUNT`, `SUIJIN_GITHUB_REPOSITORY`. See the header of `scripts/release-notarize.sh`.

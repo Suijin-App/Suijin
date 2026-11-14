@@ -23,11 +23,14 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          # Maintainers plan their work in the repository itself and are exempt.
-          case "$AUTHOR_ASSOCIATION" in
-            OWNER|MEMBER|COLLABORATOR)
+          # Maintainers plan their work in the repository itself and are exempt. The author's permission on the
+          # repository decides it: the event's author association reports a private organization member as an
+          # outside contributor. A failed lookup counts as no permission.
+          permission=$(gh api "repos/$REPO_OWNER/$REPO_NAME/collaborators/$PR_AUTHOR/permission" --jq '.permission' || true)
+          case "$permission" in
+            admin|write)
               echo "Opened by a maintainer; no linked issue required."
               exit 0
               ;;

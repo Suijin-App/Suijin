@@ -22,7 +22,7 @@ A build whose `SUPublicEDKey` is not a real key never starts the updater (Settin
 are not configured), and `scripts/release-notarize.sh` refuses to release it, because copies installed from it could
 never update.
 
-## 2. One-time setup (Tekmium account owner)
+## 2. One-time setup (Apple Developer account owner)
 
 1. **Developer ID Application certificate** of team `YWSHDN5Y3H` in the login Keychain. Check (lists names only):
    ```sh

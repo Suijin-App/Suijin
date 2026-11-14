@@ -2,7 +2,7 @@ import AppKit
 import SuijinUI
 import SwiftUI
 
-/// Where people reach Tekmium Solutions about Suijin. Fill these in once the real addresses exist; each link stays
+/// Where people reach the Suijin Authors about Suijin. Fill these in once the real addresses exist; each link stays
 /// hidden while its value is nil, and the Contact section disappears while both are.
 enum AboutLinks {
     /// The support mailbox, e.g. "support@example.com".
@@ -82,7 +82,7 @@ struct AboutSettings: View {
             }
             Section {
                 LabeledContent("Created by") { Text(verbatim: "Vo Van Vu") }
-                LabeledContent("Developed by") { Text(verbatim: "Tekmium Solutions") }
+                LabeledContent("Developed by") { Text(verbatim: "The Suijin Authors") }
             } header: {
                 Text("Credits")
             } footer: {

@@ -185,5 +185,5 @@ machine and again after a SwiftTerm upgrade. Command-line builds skip the prompt
 
 ## License
 
-Suijin is licensed under the [Apache License 2.0](LICENSE). Copyright 2026 Tekmium Solutions. The license covers the
+Suijin is licensed under the [Apache License 2.0](LICENSE). Copyright 2026 The Suijin Authors. The license covers the
 code; it does not grant the use of the Suijin name or icon.

@@ -65,11 +65,20 @@ import { site } from "../site";
       {site.analyticsToken ? (
         <li>
           This website sets no cookies. Page views are counted with Cloudflare Web Analytics, which uses no cookies and
-          does not identify visitors; its script is the only thing loaded from a third party.
+          does not identify visitors; its script is the only thing loaded from a third party before you open the
+          introduction video.
         </li>
       ) : (
-        <li>This website sets no cookies, loads nothing from third parties and runs no analytics.</li>
+        <li>
+          This website sets no cookies, runs no analytics and loads nothing from third parties, with one exception
+          that you start yourself: the introduction video.
+        </li>
       )}
+      <li>
+        The introduction video is hosted by Mux. Nothing is requested from Mux until you open the video. From then on
+        your browser loads the player and the video from Mux, which receives your IP address and browser details to
+        deliver them and measures playback. See the <a href="https://www.mux.com/privacy">Mux privacy policy</a>.
+      </li>
       <li>
         The site is served by Cloudflare, which processes requests, including IP addresses, to deliver pages and
         protect the service.

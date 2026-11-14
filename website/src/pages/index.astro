@@ -2,6 +2,7 @@
 import { Image } from "astro:assets";
 import Base from "../layouts/Base.astro";
 import AppMock from "../components/AppMock.astro";
+import FilmTheater from "../components/FilmTheater.astro";
 import { site, faq, agents, downloadUrl } from "../site";
 import splitPanes from "../../../docs/screenshots/split-panes.png";
 import orchestration from "../../../docs/screenshots/orchestration.png";
@@ -36,6 +37,16 @@ const application = {
     "Sessions keep running after the app quits",
   ],
 };
+const film = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  name: "Suijin: many agents, one calm window",
+  description: "A two-minute introduction to Suijin: workspaces and worktrees, agents side by side, orchestration, review and pull requests.",
+  thumbnailUrl: new URL("/og.png", site.url).href,
+  uploadDate: site.video.published,
+  duration: site.video.duration,
+  embedUrl: `https://player.mux.com/${site.video.muxPlaybackId}`,
+};
 const questions = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -51,7 +62,7 @@ const download = downloadUrl ?? site.repository;
 const logos = import.meta.glob<string>("../assets/agents/*.svg", { query: "?raw", import: "default", eager: true });
 ---
 
-<Base title={title} description={site.description} path="/" structuredData={[application, questions]}>
+<Base title={title} description={site.description} path="/" structuredData={[application, questions, film]}>
   <div class="hero">
     <svg class="ripples" viewBox="0 0 1600 1600" aria-hidden="true">
       <circle cx="800" cy="800" r="780"></circle><circle cx="800" cy="800" r="780"></circle>
@@ -75,13 +86,18 @@ const logos = import.meta.glob<string>("../assets/agents/*.svg", { query: "?raw"
           )}
           {released ? "Download for macOS" : "Get Suijin on GitHub"}
         </a>
-        <a class="button secondary" href="#features">See what it does</a>
+        <a class="button secondary" href={`https://player.mux.com/${site.video.muxPlaybackId}`} data-film-open>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.86l11.14-6.86a1 1 0 0 0 0-1.72L9.52 4.28A1 1 0 0 0 8 5.14Z"/></svg>
+          Watch the introduction
+        </a>
       </div>
       <p class="meta">{site.minimumSystem} or later · open source, {site.license} · your code stays on your Mac</p>
 
       <AppMock />
     </div>
   </div>
+
+  <FilmTheater />
 
   <div class="agents" id="agents">
     <div class="wrap center">

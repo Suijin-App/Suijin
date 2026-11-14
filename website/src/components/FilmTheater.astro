@@ -1,0 +1,44 @@
+---
+// The introduction film in a modal theater. Mux hosts the film; its player is put on the page only while the theater
+// is open, so nothing reaches a third party before the visitor chooses to watch (see /privacy). Anything with
+// `data-film-open` opens the theater; without scripts those links go to the player.
+import { site } from "../site";
+
+const player = `https://player.mux.com/${site.video.muxPlaybackId}`;
+---
+
+<dialog class="theater" id="film" aria-label="Suijin introduction film" data-player={`${player}?autoplay=true`}>
+  <div class="theater-bar">
+    <span class="theater-title"><i></i>{site.name} · the introduction film</span>
+    <button class="theater-close" type="button" aria-label="Close the film" data-film-close>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="theater-screen" data-film-screen></div>
+  <p class="theater-note">Hosted by Mux · press Esc to close</p>
+</dialog>
+
+<script>
+  const theater = document.querySelector<HTMLDialogElement>("#film");
+  const screen = theater?.querySelector<HTMLElement>("[data-film-screen]");
+  if (theater && screen) {
+    // The player exists only while the theater is open: closing removes it, which also stops the film.
+    const open = () => {
+      const frame = document.createElement("iframe");
+      frame.src = theater.dataset.player ?? "";
+      frame.title = "Suijin introduction film";
+      frame.allow = "accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen";
+      frame.allowFullscreen = true;
+      screen.replaceChildren(frame);
+      document.documentElement.dataset.theater = "";
+      theater.showModal();
+    };
+    theater.addEventListener("close", () => { screen.replaceChildren(); delete document.documentElement.dataset.theater; });
+    // A press on the dimmed area around the screen closes it, as the close button and Esc do.
+    theater.addEventListener("click", (event) => { if (event.target === theater) theater.close(); });
+    theater.querySelector("[data-film-close]")?.addEventListener("click", () => theater.close());
+    for (const trigger of document.querySelectorAll("[data-film-open]")) {
+      trigger.addEventListener("click", (event) => { event.preventDefault(); open(); });
+    }
+  }
+</script>

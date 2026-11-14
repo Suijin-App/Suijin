@@ -5,7 +5,7 @@ import { site } from "../site";
 
 <Base
   title="Privacy: what Suijin and suijin.app collect"
-  description="Suijin has no account and no server that sees your code. This page lists the few connections the app makes and what this website keeps: update checks counted per day and app version, and nothing about you."
+  description="Suijin has no account and no server that sees your code. This page lists the few connections the app makes and what suijin.app keeps."
   path="/privacy"
 >
   <div class="page-head">
@@ -62,7 +62,14 @@ import { site } from "../site";
         Update checks are counted per day and app version, to estimate how many copies are in use. Nothing else is kept
         about them: no address and no identifier.
       </li>
-      <li>This website sets no cookies, loads nothing from third parties and runs no analytics.</li>
+      {site.analyticsToken ? (
+        <li>
+          This website sets no cookies. Page views are counted with Cloudflare Web Analytics, which uses no cookies and
+          does not identify visitors; its script is the only thing loaded from a third party.
+        </li>
+      ) : (
+        <li>This website sets no cookies, loads nothing from third parties and runs no analytics.</li>
+      )}
       <li>
         The site is served by Cloudflare, which processes requests, including IP addresses, to deliver pages and
         protect the service.

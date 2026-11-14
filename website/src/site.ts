@@ -5,7 +5,7 @@ export const site = {
   url: "https://suijin.app",
   tagline: "Many agents, one calm window.",
   description:
-    "Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent side by side, each in its own git worktree. Review, commit and ship what they did without leaving the app.",
+    "Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent side by side, each in its own git worktree.",
   repository: "https://github.com/Suijin-App/Suijin",
   repositoryName: "Suijin-App/Suijin",
   releases: "https://github.com/Suijin-App/Suijin/releases",
@@ -15,6 +15,8 @@ export const site = {
   minimumSystem: "macOS 15",
   // Set to the version string once the first release is published; the download wording follows it.
   releasedVersion: null as string | null,
+  // The site token of Cloudflare Web Analytics (dashboard: Analytics & Logs, Web Analytics). Empty turns it off.
+  analyticsToken: "",
 };
 
 export const faq = [

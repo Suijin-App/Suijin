@@ -10,7 +10,7 @@ export default defineConfig({
   build: { format: "file" },
   // Keep the spaces between words and inline elements that sit on separate lines of a template.
   compressHTML: false,
-  integrations: [sitemap()],
+  integrations: [sitemap({ lastmod: new Date() })],
   // Screenshots are imported from docs/screenshots at the repository root, so the site and the README share them.
   vite: { server: { fs: { allow: [".."] } } },
 });

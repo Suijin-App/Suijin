@@ -175,12 +175,12 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       members.forEach((one) => { one.post.style.opacity = "0"; });
       let asleep = false;
       // ── sound: each sprite has its own voice; what is out of sight is not heard
-      const voices: Record<SpriteColor, number> = { aqua: 1, claude: 0.84, shell: 1.19, codex: 0.75 };
       const play = (name: CrewSound, one?: Member, step = 0) => {
         if (!soundOn() || document.hidden) return;
         if (one) { const top = feet(one).y - window.scrollY; if (top < 0 || top > window.innerHeight + 40) return; }
-        crewSound(name, one ? voices[one.color] : 1, step);
+        crewSound(name, one?.color ?? "aqua", step);
       };
+      const crewSoundAt = (name: CrewSound, one?: Member) => { if (soundOn() && !document.hidden) crewSound(name, one?.color ?? "aqua"); };
       const speaker = document.querySelector<HTMLButtonElement>("[data-crew-sound]");
       if (speaker) {
         speaker.hidden = false;
@@ -234,8 +234,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       }
       fit(); dye(); window.addEventListener("resize", fit, { passive: true });
       // Going in or coming out: a crown of drops thrown up and outwards, and a ring of foam pushed away on the surface.
-      const splash = (x: number, y: number, force = 1) => {
-        if (y > window.scrollY && y < window.scrollY + window.innerHeight) play("splash");
+      const splash = (x: number, y: number, force = 1, one?: Member) => {
+        if (y > window.scrollY && y < window.scrollY + window.innerHeight) crewSoundAt("splash", one);
         for (let drop = 0; drop < 16 * force; drop++) fleck(x + any(8), y - 2, any(150) * force, -(150 + Math.random() * 210) * force, 2, undefined, y + any(3));
         for (let wave = 0; wave < 14; wave++) { const turn = (wave / 14) * Math.PI * 2; fleck(x + Math.cos(turn) * 8, y + Math.sin(turn) * 3, Math.cos(turn) * 95 * force, Math.sin(turn) * 34 * force, 0.7 + Math.random() * 0.3); }
       };
@@ -286,13 +286,13 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
         if (home && spot.hides) resize(one, small());
-        stand(one, spot.x, spot.y); play("land", one);
+        stand(one, spot.x, spot.y); play("land", one); play("shake", one);
         // landing: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding)
         animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
         feel(one, { eyes: "shut", mouth: "smile" }, 520);
         window.setTimeout(() => {
           if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
-          else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one); }
+          else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); play("hi", one); leave(one); }
         }, 640);
       };
       // The journey to a spot: off the edge, into the water, a swim behind the content, and out onto the new edge.
@@ -316,7 +316,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
           const state = { p: 0 };
           const swim = () => {
-            one.post.classList.add("swims"); if (!afloat) splash(a.x, a.y - line());
+            one.post.classList.add("swims"); if (!afloat) splash(a.x, a.y - line(), 1, one);
             one.pose = { flip: side < 0, legs: "none", arms: "swimA", eyes: side < 0 ? "l" : "r" }; draw(one);
             const far = Math.hypot(b.x - a.x, b.y - a.y), time = Math.min(3400, Math.max(520, far / 0.34));
             let bob = 0;
@@ -345,7 +345,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             feel(one, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100);
           };
           const climb = () => {
-            one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8);
+            one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8, one);
             one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one); play("leap", one);
             state.p = 0;
             animate(state, { p: 1, duration: 360, ease: "linear",
@@ -371,7 +371,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           one.rest = 0; resize(one, pixel); stand(one, from.x, from.y); one.post.style.opacity = "1";
           animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
           one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one); play("leap", one);
-          splash(from.x, from.y - line(), 0.9);
+          splash(from.x, from.y - line(), 0.9, one);
           animate(state, { p: 1, duration: 540, ease: "linear",
             onUpdate: () => stand(one, from.x + (spot.x - from.x) * state.p, from.y + (spot.y - from.y) * state.p - Math.sin(state.p * Math.PI) * 58),
             onComplete: () => land(one, spot, home, perch) });

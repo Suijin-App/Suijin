@@ -61,9 +61,9 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
         switch self {
         case .welcome, .getStarted: ""
         case .workspaces: "The sidebar with repositories, their worktrees and the sessions running in them"
-        case .sessions: "A split tab with Claude, Codex and a shell, while a pane is dragged to a new place"
+        case .sessions: "A split tab with Claude, Codex and two shells side by side"
         case .changes: "The Changes tab with the changed files, the commits and a diff"
-        case .accounts: "Settings, Stats & Usage, with tokens, cost and activity per day"
+        case .accounts: "Settings, Accounts, with several accounts for each agent"
         }
     }
 
@@ -74,19 +74,19 @@ enum OnboardingStep: String, CaseIterable, Identifiable {
             nil
         case .workspaces:
             OnboardingAnnotation(note: "every agent in a\nworktree of its own", noteX: 0.2, rotation: -3, arrowStartX: 0.3,
-                                 arrowControl: UnitPoint(x: 0.44, y: 0.12), arrowEnd: UnitPoint(x: 0.325, y: 0.2),
-                                 sprite: .aqua, seat: 0.84)
+                                 arrowControl: UnitPoint(x: 0.3, y: 0.13), arrowEnd: UnitPoint(x: 0.15, y: 0.165),
+                                 sprite: .aqua, seat: 0.86)
         case .sessions:
-            OnboardingAnnotation(note: "drag a pane by its header\nto move it", noteX: 0.16, rotation: -3, arrowStartX: 0.3,
-                                 arrowControl: UnitPoint(x: 0.34, y: 0.06), arrowEnd: UnitPoint(x: 0.2, y: 0.095),
-                                 sprite: .claude, seat: 0.84)
+            OnboardingAnnotation(note: "drag a pane by its header\nto move it", noteX: 0.26, rotation: -3, arrowStartX: 0.4,
+                                 arrowControl: UnitPoint(x: 0.42, y: 0.06), arrowEnd: UnitPoint(x: 0.3, y: 0.078),
+                                 sprite: .claude, seat: 0.86)
         case .changes:
-            OnboardingAnnotation(note: "what the agent changed,\nline by line", noteX: 0.3, rotation: -3, arrowStartX: 0.52,
-                                 arrowControl: UnitPoint(x: 0.6, y: 0.12), arrowEnd: UnitPoint(x: 0.56, y: 0.27),
+            OnboardingAnnotation(note: "what the agent changed,\nline by line", noteX: 0.32, rotation: -3, arrowStartX: 0.52,
+                                 arrowControl: UnitPoint(x: 0.6, y: 0.1), arrowEnd: UnitPoint(x: 0.56, y: 0.24),
                                  sprite: .codex, seat: 0.88)
         case .accounts:
-            OnboardingAnnotation(note: "tokens, cost and activity\nfrom your local logs", noteX: 0.26, rotation: -3, arrowStartX: 0.5,
-                                 arrowControl: UnitPoint(x: 0.56, y: 0.2), arrowEnd: UnitPoint(x: 0.44, y: 0.4),
+            OnboardingAnnotation(note: "several accounts\nfor each agent", noteX: 0.4, rotation: -3, arrowStartX: 0.52,
+                                 arrowControl: UnitPoint(x: 0.58, y: 0.14), arrowEnd: UnitPoint(x: 0.47, y: 0.25),
                                  sprite: .shell, seat: 0.88)
         }
     }

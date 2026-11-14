@@ -76,6 +76,7 @@ struct SettingsScreenshotTests {
         for dark in [false, true] {
             model.setSetting(.appearance, dark ? "dark" : nil)
             try render("general", height: 600, dark: dark) { GeneralSettings().environment(model) }
+            try render("about", height: 900, dark: dark) { AboutSettings() }
             try render("agents", height: 640, dark: dark) { AgentSettings().environment(model) }
             try render("accounts-empty", height: 520, dark: dark) { AccountsSettingsView().environment(model) }
             try render("terminal", height: 680, dark: dark) { TerminalSettings().environment(model) }

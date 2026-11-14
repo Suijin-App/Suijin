@@ -108,7 +108,7 @@ note "notary profile:  $NOTARY_PROFILE"
 
 # ---------------------------------------------------------------------------------------------------------------------
 step "check the tools and the release inputs"
-for tool in xcodebuild xcodegen codesign spctl hdiutil ditto xmllint; do
+for tool in xcodebuild xcodegen codesign spctl hdiutil ditto xmllint create-dmg; do
   command -v "$tool" >/dev/null || die "missing tool: $tool"
 done
 for tool in notarytool stapler; do

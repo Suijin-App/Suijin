@@ -6,8 +6,8 @@
 
 Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent at the same time, side by
 side. Each agent works in a git worktree of its own (or straight in a plain folder), so their changes never collide,
-and you review and ship what they did without leaving the app. Everything runs locally on your Mac: no servers, no
-remote hosts, no cloud.
+and you review and ship what they did without leaving the app. Your code and your agents stay on your Mac: no remote
+hosts, no cloud. Suijin itself goes online only to check for updates.
 
 Claude Code and Codex are built in: Suijin shows their status, manages their accounts and permission modes, and lets
 them hand work to each other. Any other agent that runs in a terminal (Gemini CLI, Aider, OpenCode and the like) runs

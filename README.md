@@ -171,6 +171,7 @@ machine and again after a SwiftTerm upgrade. Command-line builds skip the prompt
 ## Documentation
 
 - [`CLAUDE.md`](CLAUDE.md): repository rules for people and AI agents.
+- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md): how to contribute: issue first, then a pull request for it.
 - [`docs/architecture.md`](docs/architecture.md): package layout, processes, sessions, accounts and tests.
 - [`docs/release-process.md`](docs/release-process.md): signing, notarization and Sparkle updates.
 - [`CHANGELOG.md`](CHANGELOG.md): what changed.

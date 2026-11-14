@@ -150,6 +150,23 @@ Agent launches go through a plain login shell (`-l -c`), with the `PATH` that `A
 from an interactive login shell, passed through `/usr/bin/env` after the profile ran together with the account's
 environment changes. Interactive shells get the full integration (`ZDOTDIR` wrapper, bash rcfile).
 
+## System permissions
+
+Suijin depends on three things macOS controls, shown in Settings › General › Permissions (`App/Features/Settings/Permissions`).
+It only reads them; the user grants and revokes them in System Settings, and the states are read again whenever the app
+becomes active.
+
+- **Notifications** (`UNUserNotificationCenter`): banners when an agent waits or finishes.
+- **Background helper** (`SMAppService.agent` status): without it the PTY host cannot run and sessions end with the app.
+- **Full Disk Access** (optional): agents and shells are children of the PTY host, and macOS decides file access by the
+  process responsible for them, so the check runs there: `FullDiskAccessProbe` (SuijinTerminal) starts a short `sh`
+  through the host that lists `~/Library/Safari`, `Mail` or `Messages` and reads its exit status (0 listed, 1 exists but
+  not listable, 2 none exists). When the host is unavailable, sessions run in the app and the same check runs in
+  process. There is no public API for this permission; an inconclusive check is shown as Unknown, never as allowed.
+  Reading `com.apple.TCC/TCC.db` is no use: without the permission that folder looks missing.
+
+Suijin uses no Accessibility, Automation, Screen Recording, camera or microphone API.
+
 ## Tests
 
 - `swift test --package-path Packages/<name>` for each package.

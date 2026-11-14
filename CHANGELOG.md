@@ -1,13 +1,6 @@
 # Changelog
 
-## 0.1.1 (2026-11-15)
-
-- A coordinator can stop a worker it started: `suijin worker stop --to <worker>`. The worker's terminal ends and its
-  tab closes by itself. Ask the coordinator to stop or cancel a worker and it uses this command.
-- A worker whose tab was closed no longer stays greyed out in the sidebar under its coordinator.
-- Worker rows in the sidebar have a menu with **Show Worker** and **Close Worker**.
-
-## 0.1.0 (2026-11-14)
+## 0.1.0 (unreleased)
 
 The first release of Suijin: a native macOS app that runs Claude Code, Codex and any other command-line AI coding
 agent side by side, each in a git worktree of its own.
@@ -31,7 +24,9 @@ agent side by side, each in a git worktree of its own.
   when one runs out, and optional automatic switching moves a session to the next account with room when its account
   hits a limit.
 - **Agent orchestration.** Ask an agent for "Suijin workers" and it starts other Claude Code or Codex agents with the
-  bundled `suijin` command, each in a tab of its own, answers their questions and collects their results.
+  bundled `suijin` command, each in a tab of its own, answers their questions and collects their results. Ask it to
+  stop a worker and it does (`suijin worker stop`): the worker's terminal ends and its tab closes by itself. Worker
+  rows in the sidebar have a menu with **Show Worker** and **Close Worker**.
 - **Stats and usage.** Settings › Stats & Usage shows tokens, estimated cost and activity per day from the local
   Claude Code and Codex logs, and the Resource Manager shows the memory and CPU of running sessions.
 - **Settings.** Light, dark or automatic appearance, 15 terminal themes, a searchable list of every keyboard

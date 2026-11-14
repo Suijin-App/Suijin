@@ -19,9 +19,8 @@ Website: [suijin.app](https://suijin.app) · Community: [Discord](https://discor
 
 ## Status
 
-Suijin `0.1.1` is the current release. Download the signed and notarized DMG from the
-[latest release](https://github.com/Suijin-App/Suijin/releases/latest); installed copies check for new versions
-themselves. You can also build it from source (see [Build from source](#build-from-source)).
+Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you build it from source (see
+[Build from source](#build-from-source)).
 
 ## Features
 

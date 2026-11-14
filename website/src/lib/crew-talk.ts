@@ -86,6 +86,11 @@ export const places: Record<string, [string, TalkMood][]> = {
   "/privacy": [["Short version: your code stays on your Mac.", "chat"], ["Nobody reads this page. You do. Respect.", "hi"], ["No account. No server of ours.", "chat"]],
   "/404": [["This page fell in the water.", "oh"], ["Nothing here. Swim back home?", "ask"], ["We looked. It's gone.", "hmm"]],
 };
+/** What the two sprites behind the buttons of the first screen say when they come up: one sells the download, one the film. */
+export const pitches = {
+  download: ["Download the app!", "It's free. Press it!", "Psst. This button.", "Get Suijin! Go on.", "One click. I'll wait."],
+  film: ["Watch the film!", "Two minutes. We're in it.", "Press play!", "Want to see us on screen?"],
+};
 /** The race when several sprites follow the reader. */
 export const race = {
   behind: ["Hey, wait for me!", "Wait up!", "Not so fast!", "My arms are short!", "Where are we going?", "I just got comfortable!"],

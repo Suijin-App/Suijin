@@ -36,7 +36,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 <script>
   import { animate } from "animejs";
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
-  import { scenes, introductions, places, race, reactions, audience, type TalkLine, type TalkMood } from "../lib/crew-talk";
+  import { scenes, introductions, places, race, reactions, audience, pitches, type TalkLine, type TalkMood } from "../lib/crew-talk";
   import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
@@ -502,16 +502,20 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           onComplete: () => { window.clearInterval(stride); codex.walking = false; codex.pose.legs = "stand"; draw(codex); window.setTimeout(walk, 2200 + (Date.now() % 2600)); } });
       };
       // the two hiders come up for a look now and then; the guide waves at its button
-      const peek = (one: Member, every: number, mood: SpritePose) => {
+      const peek = (one: Member, every: number, mood: SpritePose, lines: string[]) => {
+        let turns = 0;
         const turn = () => {
-          if (one.state === "home" && !asleep && !one.up && !one.busy && !document.hidden) { rise(one, true); feel(one, mood, 1250); window.setTimeout(() => { if (!hiders.get(one)?.matches(":hover, :focus-visible")) rise(one, false); }, 1350); }
+          if (one.state === "home" && !asleep && !one.up && !one.busy && !document.hidden) {
+            rise(one, true); feel(one, mood, 2300); speak(one, lines[turns++ % lines.length], "yay", 2100);    // up it comes, with its pitch
+            window.setTimeout(() => { if (!hiders.get(one)?.matches(":hover, :focus-visible")) rise(one, false); }, 2400);
+          }
           window.setTimeout(turn, every + (Date.now() % 3000));
         };
         window.setTimeout(turn, every * 0.7);
       };
       // a pointer on a button brings its sprite up, delighted, for as long as it stays
       hiders.forEach((button, one) => {
-        const come = () => { if (one.state !== "home") return; stir(); rise(one, true); feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 0); };
+        const come = () => { if (one.state !== "home") return; stir(); if (!one.up) speak(one, any1(one === claude ? pitches.download : pitches.film), "yay"); rise(one, true); feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 0); };
         const go = () => { if (one.state !== "home") return; one.mood = null; draw(one); rise(one, false); };
         button.addEventListener("pointerenter", come); button.addEventListener("focus", come);
         button.addEventListener("pointerleave", go); button.addEventListener("blur", go);
@@ -529,8 +533,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // whoever is left treading water keeps looking for an edge that has come free
       window.setInterval(() => { if (members.some((one) => one.floating)) roam(); }, 5000);
       window.setTimeout(walk, 3200);
-      peek(aqua, 8000, { eyes: "happy", mouth: "smile", arms: "wave" });
-      peek(claude, 13000, { eyes: "n", mouth: "smile" });
+      peek(aqua, 11000, { eyes: "happy", mouth: "smile", arms: "wave" }, pitches.film);
+      peek(claude, 8000, { eyes: "happy", mouth: "smile", arms: "wave" }, pitches.download);
       if (tabsRow) new MutationObserver(ride).observe(tabsRow, { attributes: true, attributeFilter: ["aria-selected"], subtree: true });
       new ResizeObserver(place).observe(document.body);
       document.fonts?.ready.then(place);

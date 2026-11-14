@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 (unreleased)
+## 0.1.1 (2026-11-15)
 
 - A coordinator can stop a worker it started: `suijin worker stop --to <worker>`. The worker's terminal ends and its
   tab closes by itself. Ask the coordinator to stop or cancel a worker and it uses this command.

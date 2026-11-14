@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-14)
 
 The first release of Suijin: a native macOS app that runs Claude Code, Codex and any other command-line AI coding
 agent side by side, each in a git worktree of its own.

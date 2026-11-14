@@ -37,6 +37,10 @@ Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you 
 - When an agent exits, its tab shows a Session Ended view with **Resume Session** and **Start Again**.
 - Clicking a file path in terminal output opens that file.
 
+![A split tab with Claude Code, Codex and two shells](docs/screenshots/split-panes.png)
+
+![Dragging a pane by its header onto the edge of another pane](docs/screenshots/pane-drag.png)
+
 ### Changes, diff and pull requests
 
 ![The Changes tab: the changed files of a worktree and a native diff](docs/screenshots/changes.png)
@@ -45,6 +49,15 @@ Suijin is at `0.1.0 (unreleased)`. There is no signed download yet; for now you 
 - Leave notes on a file or a line and send them to an agent.
 - Commit, push and create a pull request from the same tab (⌘↩).
 - Browse the worktree's files in the inspector (⌥⌘I) and open them in a viewer tab.
+
+### Files and media
+
+Files open in a tab next to your sessions: code with syntax highlighting, Markdown rendered, images with zoom and pan,
+and video and audio with a player, so you can look at what an agent produced without switching apps.
+
+![A video playing in a tab](docs/screenshots/media-video.png)
+
+![An audio file in a tab with its player](docs/screenshots/media-audio.png)
 
 ### Permission modes
 
@@ -61,7 +74,10 @@ confirmed first.
 - The status bar shows each plan's usage.
 - **Continue With Another Account** carries a conversation to another account when one runs out, in the same tab,
   folder and permission mode.
-- Optional automatic switching moves a session to the next account with room when its account hits a limit.
+- Optional automatic switching moves a session to the next account with room when its account hits a limit, in an
+  order you set.
+
+![Settings, Accounts: several accounts per agent and automatic switching](docs/screenshots/accounts.png)
 
 ### Agent orchestration
 

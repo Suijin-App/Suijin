@@ -245,6 +245,37 @@ struct OrchestrationBrokerTests {
         #expect(harness.io.terminated == ["host-worker"])
     }
 
+    @Test func stopLeavesASessionResumedAfterItsWorkerEnded() async throws {
+        let harness = BrokerHarness()
+        let (_, request) = await harness.startWorker()
+        let dispatchID = try #require(request?.dispatchID)
+        // The worker's terminal ends without a report, then the user resumes that tab: the same session id runs again.
+        harness.broker.sessionExited(hostSessionID: "host-worker", status: 1)
+        _ = harness.broker.sync { 0 }
+        #expect(harness.snapshot.dispatches.first { $0.id == dispatchID }?.status == .exited)
+        harness.broker.sessionSpawned(hostSessionID: "host-resumed", sessionID: "worker", agent: .codex, token: String(repeating: "r", count: 64))
+        _ = harness.broker.sync { 0 }
+
+        for target in ["fix-login", dispatchID] {
+            let stop = await harness.call("worker.stop", ["to": target])
+            #expect(stop?.error?.code == "worker_gone")
+        }
+        #expect(harness.io.terminated.isEmpty)
+        #expect(harness.snapshot.dispatches.first { $0.id == dispatchID }?.stoppedAt == nil)
+    }
+
+    @Test func aWorkerCannotStopItsCoordinatorOrItself() async throws {
+        let harness = BrokerHarness()
+        let (_, request) = await harness.startWorker()
+        let dispatchID = try #require(request?.dispatchID)
+        let own = await harness.call("worker.stop", token: BrokerHarness.workerToken, ["to": dispatchID])
+        #expect(own?.error?.code == "not_coordinator")
+        let byName = await harness.call("worker.stop", token: BrokerHarness.workerToken, ["to": "fix-login"])
+        #expect(byName?.error?.code == "unknown_dispatch")
+        #expect(harness.io.terminated.isEmpty)
+        #expect(harness.snapshot.dispatches.first { $0.id == dispatchID }?.status == .running)
+    }
+
     @Test func stopIsRefusedForUnknownAndOtherCoordinatorsWorkers() async throws {
         let harness = BrokerHarness()
         let (_, request) = await harness.startWorker()

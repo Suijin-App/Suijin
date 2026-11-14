@@ -424,10 +424,14 @@ public final class Broker: @unchecked Sendable {
         }
         let workerID = resolved.workerSessionID
         let binding = workerID.flatMap { identity.binding(sessionID: $0) }
-        if workerID == nil {
-            guard resolved.status == .queued else { return .failure(ended) }
+        if let workerID {
+            // A worker whose terminal ended is gone even when a session with its id runs again: the user may have
+            // resumed that tab for their own work, and it is no longer the coordinator's to end. `send` draws the
+            // same line.
+            let last = store.state.dispatches.filter { $0.workerSessionID == workerID }.max { $0.createdAt < $1.createdAt } ?? resolved
+            guard binding?.isRunning == true, last.status != .exited, last.status != .startFailed else { return .failure(ended) }
         } else {
-            guard binding?.isRunning == true else { return .failure(ended) }
+            guard resolved.status == .queued else { return .failure(ended) }
         }
         // The worker's dispatches (several after follow-ups) settle; `stoppedAt` goes on the newest, the one the
         // sidebar shows. A worker that already reported keeps its status and summary.

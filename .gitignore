@@ -38,3 +38,9 @@ plans/reports/**/*.png
 # Local agent state; the project skills under .claude/skills are tracked.
 .claude/agent-memory/
 .claude/worktrees/
+
+# The website (website/): dependencies, build output and local Worker state.
+website/node_modules/
+website/dist/
+website/.astro/
+website/.wrangler/

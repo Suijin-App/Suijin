@@ -1,0 +1,19 @@
+{
+  // suijin.app: the website (static files built by Astro into dist/) and the app's update feed (worker/index.js).
+  // Deploy with `npm run deploy` from this folder, after `npx wrangler login` and with CLOUDFLARE_ACCOUNT_ID set to
+  // the account that holds the suijin.app zone. See docs/release-process.md, section 4.
+  "name": "suijin-site",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "suijin.app", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // Only the update feed runs the Worker; every other request is answered straight from the static files.
+    "run_worker_first": ["/appcast.xml"]
+  },
+  // Update checks counted per day and app version (worker/index.js). Read them with ./checks.sh.
+  "kv_namespaces": [{ "binding": "CHECKS", "id": "a8098132bfcb4e8caf5c8f17756bee54" }]
+}

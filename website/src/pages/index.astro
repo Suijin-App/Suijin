@@ -1,0 +1,268 @@
+---
+import { Image } from "astro:assets";
+import Base from "../layouts/Base.astro";
+import { site, faq } from "../site";
+import main from "../../../docs/screenshots/main.png";
+import splitPanes from "../../../docs/screenshots/split-panes.png";
+import changes from "../../../docs/screenshots/changes.png";
+import orchestration from "../../../docs/screenshots/orchestration.png";
+import accounts from "../../../docs/screenshots/accounts.png";
+import markdown from "../../../docs/screenshots/markdown.png";
+
+const title = "Suijin: run Claude Code, Codex and other AI coding agents side by side on your Mac";
+const released = site.releasedVersion !== null;
+
+const application = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: site.name,
+  description: site.description,
+  url: site.url,
+  image: new URL("/og.png", site.url).href,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "macOS 15 or later",
+  ...(released ? { softwareVersion: site.releasedVersion, downloadUrl: site.releases } : {}),
+  author: { "@type": "Organization", name: site.publisher },
+  featureList: [
+    "Runs Claude Code, Codex and any other command-line AI coding agent at the same time",
+    "One git worktree per agent",
+    "Split tabs with up to ten sessions",
+    "Native diff viewer, commit, push and pull requests",
+    "Agent orchestration: one agent starts and coordinates others",
+    "Several managed accounts per agent with automatic switching",
+    "Sessions keep running after the app quits",
+  ],
+};
+const questions = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faq.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
+const shots = { widths: [640, 960, 1280, 1800], sizes: "(max-width: 820px) 100vw, 640px", format: "webp" as const, quality: 82 };
+---
+
+<Base title={title} description={site.description} path="/" structuredData={[application, questions]}>
+  <div class="hero">
+    <svg class="rings" viewBox="0 0 2000 2000" fill="none" stroke="#a9c4ec" stroke-linecap="round" aria-hidden="true">
+      <circle cx="1000" cy="1000" r="360" stroke-width="3.5" opacity=".2" stroke-dasharray="1660 602" transform="rotate(-120 1000 1000)"></circle>
+      <circle cx="1000" cy="1000" r="560" stroke-width="3.5" opacity=".15" stroke-dasharray="2580 938" transform="rotate(40 1000 1000)"></circle>
+      <circle cx="1000" cy="1000" r="760" stroke-width="3.5" opacity=".11" stroke-dasharray="3500 1275" transform="rotate(-200 1000 1000)"></circle>
+      <circle cx="1000" cy="1000" r="960" stroke-width="3.5" opacity=".08" stroke-dasharray="4420 1612" transform="rotate(100 1000 1000)"></circle>
+    </svg>
+    <div class="wrap">
+      <h1>Many agents,<br /><em>one calm</em> window.</h1>
+      <p class="lead">
+        Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent side by side, each in a
+        git worktree of its own.
+      </p>
+      <div class="actions">
+        {released ? (
+          <a class="button primary" href={site.releases + "/latest"}>Download for macOS</a>
+        ) : (
+          <a class="button primary" href={site.repository}>Get Suijin on GitHub</a>
+        )}
+        <a class="button ghost" href="#features">See what it does</a>
+      </div>
+      <p class="note">
+        {released
+          ? `Version ${site.releasedVersion} · ${site.minimumSystem} or later · signed and notarized`
+          : `The first public release is on its way · ${site.minimumSystem} or later · source on GitHub`}
+      </p>
+    </div>
+    <div class="shot">
+      <Image
+        src={main}
+        alt="Suijin's main window: a sidebar with a repository, its worktrees and their sessions, a Claude Code session in the middle, and a file inspector on the right."
+        widths={[800, 1280, 1800, 2200]}
+        sizes="(max-width: 1100px) 100vw, 1060px"
+        format="webp"
+        quality={84}
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">What Suijin is</p>
+      <h2>A place to run a team of coding agents on your own Mac</h2>
+      <p class="intro">
+        AI coding agents work best in parallel, but several of them in one folder overwrite each other, and a wall of
+        terminal windows is hard to follow. Suijin gives every agent its own branch and folder, shows all of them in one
+        window, and lets you review and ship their work from there.
+      </p>
+      <div class="facts">
+        <div class="fact">
+          <h3>Any agent that runs in a terminal</h3>
+          <p>Claude Code and Codex are built in. Gemini CLI, Aider, OpenCode and the like run in a shell tab next to them.</p>
+        </div>
+        <div class="fact">
+          <h3>One worktree each</h3>
+          <p>Every agent gets a git worktree: its own folder on its own branch, so parallel changes never collide.</p>
+        </div>
+        <div class="fact">
+          <h3>Your code stays on your Mac</h3>
+          <p>No Suijin account and no Suijin server that sees your code. The app goes online only to check for updates.</p>
+        </div>
+        <div class="fact">
+          <h3>Native, not a web view</h3>
+          <p>Written in Swift for macOS, with the Liquid Glass interface on macOS 26 and full light and dark support.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tint" id="features">
+    <div class="wrap">
+      <p class="eyebrow">Features</p>
+      <h2>Everything between "start an agent" and "merge the pull request"</h2>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Run agents side by side</h3>
+          <p>
+            Start Claude Code, Codex or a shell in a tab, then split the tab to the right or down. A tab holds up to ten
+            sessions as panes, and you drag a pane by its header to rearrange them.
+          </p>
+          <ul>
+            <li>New session <kbd>⌘T</kbd>, new shell <kbd>⌥⌘T</kbd>, split <kbd>⌘D</kbd> and <kbd>⇧⌘D</kbd>.</li>
+            <li>The sidebar shows every workspace, worktree and session with its status.</li>
+            <li>A notification tells you when an agent finishes or waits for you.</li>
+          </ul>
+        </div>
+        <figure>
+          <Image src={splitPanes} alt="A tab split into four panes: Claude Code, Codex and two shells working in the same worktree." {...shots} />
+        </figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Let one agent run the others</h3>
+          <p>
+            Ask an agent for "Suijin workers" and it starts other agents with the bundled <code>suijin</code> command,
+            in the same folder or in new worktrees. Each worker gets a tab of its own, can ask its coordinator a
+            question, and reports back when it is done.
+          </p>
+          <ul>
+            <li>The sidebar lists workers under their coordinator: Working, Asking, Done.</li>
+            <li>Results are delivered to the coordinator, which sums up every task.</li>
+          </ul>
+        </div>
+        <figure>
+          <Image src={orchestration} alt="A coordinator agent's tab receiving the result of a worker named write-tests, with both workers marked Done in the sidebar." {...shots} />
+        </figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Review and ship without leaving</h3>
+          <p>
+            The Changes tab shows what an agent changed in a native diff viewer with syntax highlighting. Leave notes on
+            a line and send them back to the agent, then commit, push and create the pull request from the same tab.
+          </p>
+          <ul>
+            <li>Image changes are shown before and after.</li>
+            <li>Pull request checks appear next to the branch.</li>
+          </ul>
+        </div>
+        <figure>
+          <Image src={changes} alt="The Changes tab listing a changed Swift file next to a diff with added lines highlighted." {...shots} />
+        </figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Several accounts, switched for you</h3>
+          <p>
+            Add more than one Claude or Codex account and choose which one a session uses. When an account hits its
+            usage limit, Suijin can move the session, with its conversation, to the next account that has room.
+          </p>
+          <ul>
+            <li>The status bar shows each plan's usage.</li>
+            <li>Your own logins in <code>~/.claude</code> and <code>~/.codex</code> are never changed.</li>
+          </ul>
+        </div>
+        <figure>
+          <Image src={accounts} alt="Settings, Accounts: two Claude accounts, automatic switching turned on, and the order accounts are tried in." {...shots} />
+        </figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Look at what they made</h3>
+          <p>
+            Files open in a tab beside your sessions: code with syntax highlighting, Markdown rendered, images you can
+            zoom, and video and audio with a player. Click a file path in an agent's output and it opens.
+          </p>
+          <ul>
+            <li>Browse a worktree's files in the inspector <kbd>⌥⌘I</kbd>.</li>
+            <li>Sessions keep running in a background helper when you quit the app.</li>
+          </ul>
+        </div>
+        <figure>
+          <Image src={markdown} alt="A Markdown file rendered in a tab, with headings, a table and code blocks." {...shots} />
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps from a repository to parallel work</h2>
+      <div class="steps">
+        <div class="step">
+          <h3>Add a workspace</h3>
+          <p>Point Suijin at a git repository, or at a plain folder if you do not need branches and diffs.</p>
+        </div>
+        <div class="step">
+          <h3>Give each agent a worktree</h3>
+          <p>Create a worktree on a new branch and start an agent in it. Repeat for as many agents as the job needs.</p>
+        </div>
+        <div class="step">
+          <h3>Review, commit, open the pull request</h3>
+          <p>Read each branch's diff in the Changes tab, send notes back, then ship it without switching apps.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tint" id="faq">
+    <div class="wrap">
+      <p class="eyebrow">Questions</p>
+      <h2>Frequently asked</h2>
+      <div class="faq">
+        {faq.map((item, index) => (
+          <details open={index === 0}>
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="get">
+    <div class="wrap">
+      <h2>{released ? "Download Suijin" : "Follow Suijin on GitHub"}</h2>
+      <p>
+        {released
+          ? `Suijin ${site.releasedVersion} needs ${site.minimumSystem} or later. It is signed with a Developer ID, notarized by Apple, and updates itself.`
+          : `The first public release is being prepared. Suijin needs ${site.minimumSystem} or later; until the download is up, the source and build instructions are on GitHub.`}
+      </p>
+      <div class="actions">
+        {released ? (
+          <a class="button primary" href={site.releases + "/latest"}>Download for macOS</a>
+        ) : (
+          <a class="button primary" href={site.repository}>Open the repository</a>
+        )}
+        <a class="button ghost" href={site.changelog}>Read the changelog</a>
+      </div>
+    </div>
+  </section>
+</Base>

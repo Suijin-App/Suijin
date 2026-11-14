@@ -49,7 +49,7 @@ HELPER_ID="com.tekmium.suijin.ptyhost"
 SPARKLE_ACCOUNT="${SUIJIN_SPARKLE_ACCOUNT:-suijin}"
 GITHUB_REPOSITORY="${SUIJIN_GITHUB_REPOSITORY:-Suijin-App/Suijin}"
 # The feed every installed copy asks. It is part of shipped builds, so it never changes; the redirect behind it does
-# (Tools/update-feed).
+# (website/worker).
 FEED_URL="https://suijin.app/appcast.xml"
 
 STEP=0

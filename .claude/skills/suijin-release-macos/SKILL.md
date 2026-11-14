@@ -2,7 +2,7 @@
 name: suijin-release-macos
 description: "Release the Suijin macOS app from this repository: check the last released version, bump the version, write release notes with annotated screenshots, build, sign, notarize, publish the GitHub release and verify the update feed. Use when asked to release, ship, publish or cut a version of Suijin, or to prepare its release notes. Not for building or testing the app during development, nor for changing how releases work (edit ./scripts/release-notarize.sh and docs/release-process.md instead)."
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Suijin release (macOS)
@@ -91,6 +91,8 @@ images are linked). Then, on a branch `release/<version>`:
 - `CHANGELOG.md`: the section heading becomes `## <version> (<YYYY-MM-DD>)`; start a new `## <next> (unreleased)`
   section only if work for it already exists.
 - `README.md`: the Status section names the released version and links to the latest release.
+- `website/src/site.ts`: `releasedVersion` becomes the new version, which switches the site to its download
+  wording.
 - The notes and images from stages 4 and 5.
 
 Commit as `chore: release <version>`, open a pull request, and merge it once the owner agrees. The release is built
@@ -154,6 +156,9 @@ It follows the feed as an installed copy does and checks that the appcast and th
 was built, and that Gatekeeper accepts the download. Then:
 
 - Open the release page and look at the rendered notes: every image loads.
+- Deploy the website so it names the new version: `npm run deploy` in `website/` (see `docs/release-process.md`,
+  section 4), then confirm `curl -sI https://suijin.app/appcast.xml` still answers with the redirect and run this
+  stage's script again.
 - If an older version is installed somewhere, choose Suijin › Check for Updates… there and confirm it offers and
   installs this version and that running sessions survive (section 5 of `docs/release-process.md`). For the first
   release there is nothing to update from; say that the update path stays unproven until the second release.

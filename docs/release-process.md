@@ -15,7 +15,7 @@ Store Connect API keys. They all live in the release Mac's login Keychain.
 | In-app updater | `App/Updates/UpdaterController.swift` wraps `SPUStandardUpdaterController`. `UpdateCommands` adds Suijin → "Check for Updates…"; `UpdateSettingsSection` is the Updates section of Settings → General. |
 | Helper handover | `App/Updates/HelperVersionCheck.swift` (section 5). |
 | Sparkle keys in `App/Info.plist` | `SUFeedURL` (`https://suijin.app/appcast.xml`), `SUPublicEDKey` (the public half of the signing key, section 2.3), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). |
-| Update feed | `Tools/update-feed`: a Cloudflare Worker on `suijin.app` that redirects `/appcast.xml` to the `appcast.xml` asset of the latest GitHub release (section 4). |
+| Update feed and website | `website/`: the Cloudflare Worker on `suijin.app`. It serves the website and redirects `/appcast.xml` to the `appcast.xml` asset of the latest GitHub release (section 4). |
 | Scripts | `scripts/release-notarize.sh` (the whole pipeline, with `--dry-run`), `scripts/make-dmg.sh` (DMG and its signature). |
 
 A build whose `SUPublicEDKey` is not a real key never starts the updater (Settings → General → Updates says updates
@@ -109,11 +109,13 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
 
 - **The feed address is permanent.** Every build asks `https://suijin.app/appcast.xml` for as long as it is installed.
   Changing `SUFeedURL` strands every copy already out, so it stays; what can change is what answers there.
-- **suijin.app redirects.** `Tools/update-feed` is a Cloudflare Worker bound to `suijin.app`. `/appcast.xml` answers
-  with a 302 to `https://github.com/Suijin-App/Suijin/releases/latest/download/appcast.xml`; every other path goes to
-  the repository until there is a website. Deploy it with `npx wrangler deploy` from that folder (after
-  `npx wrangler login`, with `CLOUDFLARE_ACCOUNT_ID` set to the account that holds the `suijin.app` zone). Moving the
-  downloads elsewhere later means changing that redirect and nothing in the app.
+- **suijin.app redirects.** `website/` is the Cloudflare Worker bound to `suijin.app`: an Astro site built to static
+  files, plus `website/worker/index.js`, which answers `/appcast.xml` with a 302 to
+  `https://github.com/Suijin-App/Suijin/releases/latest/download/appcast.xml`. Only that path runs the Worker; every
+  other request is a static file. Deploy with `npm run deploy` in `website/` (Node 24, after `npx wrangler login`,
+  with `CLOUDFLARE_ACCOUNT_ID` set to the account that holds the `suijin.app` zone). After every deploy, check that
+  `curl -sI https://suijin.app/appcast.xml` still answers with that redirect: a broken feed stops every installed
+  copy from updating. Moving the downloads elsewhere later means changing that redirect and nothing in the app.
 - **GitHub holds the files.** Each release has `Suijin-<version>.dmg` and `appcast.xml` as assets. The appcast names
   only the newest version, which is all Sparkle needs.
 - **Signatures.** Sparkle installs a download only when its EdDSA signature matches `SUPublicEDKey`. The private key
@@ -124,7 +126,7 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
 - **What is counted.** The Worker counts each request for `/appcast.xml` under its day and the app version from the
   user agent, in a Workers KV namespace, and keeps nothing else (no address, no identifier). An installed copy checks
   about once a day, so a day's count approximates the copies in use; it is an estimate, not an install count.
-  `Tools/update-feed/checks.sh` prints the counts. The Privacy text names this too.
+  `website/checks.sh` prints the counts. The Privacy text names this too.
 
 ## 5. Updates and the PTY host helper
 

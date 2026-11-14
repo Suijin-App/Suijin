@@ -1,0 +1,91 @@
+---
+import "../styles/global.css";
+import { site } from "../site";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path of this page, starting with a slash; used for the canonical address. */
+  path: string;
+  /** Extra structured data for this page. */
+  structuredData?: object[];
+}
+
+const { title, description, path, structuredData = [] } = Astro.props;
+const canonical = new URL(path, site.url).href;
+const image = new URL("/og.png", site.url).href;
+
+const organization = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: site.publisher,
+  url: site.url,
+  logo: new URL("/icon-512.png", site.url).href,
+  sameAs: [site.repository],
+};
+const website = { "@context": "https://schema.org", "@type": "WebSite", name: site.name, url: site.url };
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-512.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#13305E" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="675" />
+    <meta property="og:image:alt" content="Suijin: many agents, one calm window." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    {[organization, website, ...structuredData].map((data) => (
+      <script type="application/ld+json" set:html={JSON.stringify(data)} />
+    ))}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="brand" href="/" aria-label="Suijin, home">
+        <img src="/icon-512.png" alt="" width="28" height="28" />
+        <span>Suijin</span>
+      </a>
+      <nav aria-label="Main">
+        <a href="/#features">Features</a>
+        <a href="/#faq">FAQ</a>
+        <a href="/privacy">Privacy</a>
+        <a href={site.repository}>GitHub</a>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="bottom">
+      <p>
+        © {new Date().getFullYear()} {site.publisher}. Suijin is not affiliated with Anthropic or OpenAI; Claude Code and
+        Codex are products of their owners.
+      </p>
+      <nav aria-label="Footer">
+        <a href={site.repository}>Source on GitHub</a>
+        <a href={site.changelog}>Changelog</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/llms.txt">llms.txt</a>
+      </nav>
+    </footer>
+  </body>
+</html>

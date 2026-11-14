@@ -2,7 +2,7 @@
 # Prints the update checks the suijin.app Worker counted, one line per day and app version, newest day first.
 # A day's count approximates the copies of that version in use; "other" is everything that is not Suijin's updater.
 #
-# Usage: Tools/update-feed/checks.sh [day prefix, e.g. 2026-11]
+# Usage: website/checks.sh [day prefix, e.g. 2026-11]
 # Needs `npx wrangler login` and CLOUDFLARE_ACCOUNT_ID set to the account that holds the suijin.app zone.
 set -euo pipefail
 cd "$(dirname "$0")"

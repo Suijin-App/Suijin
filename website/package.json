@@ -1,0 +1,17 @@
+{
+  "name": "suijin-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "deploy": "astro build && wrangler deploy"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.7.5",
+    "astro": "^7.4.12",
+    "sharp": "^0.35.5",
+    "wrangler": "^4.162.0"
+  }
+}

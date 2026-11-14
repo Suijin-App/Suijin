@@ -182,6 +182,21 @@ const logos = import.meta.glob<string>("../assets/agents/*.svg", { query: "?raw"
             <p>Each plan's limits in the status bar, and tokens, estimated cost and activity per day in Settings.</p>
           </div>
         </article>
+        <article class="card native" data-reveal>
+          <div class="body">
+            <h3>Native, so it stays light</h3>
+            <p>
+              Suijin is written in Swift with SwiftUI and AppKit. There is no web browser bundled inside it, so the
+              window that holds your agents costs little next to the agents themselves.
+            </p>
+          </div>
+          <dl class="facts">
+            <div><dt>68 MB</dt><dd>of memory with the app open and no sessions</dd></div>
+            <div><dt>20 MB</dt><dd>to download</dd></div>
+            <div><dt>0</dt><dd>bundled browser engines</dd></div>
+          </dl>
+          <p class="note">Measured on Suijin 0.1.0 on an Apple silicon Mac. Every agent and shell you start uses memory of its own.</p>
+        </article>
       </div>
     </div>
   </section>

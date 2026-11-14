@@ -260,6 +260,19 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         animate(mark, { y: [8, -14], opacity: [{ to: 1, duration: 220 }, { to: 1, duration: 900 }, { to: 0, duration: 480 }], duration: 1600, ease: "outQuad", onComplete: () => mark.remove() });
       };
 
+      // Coming down on an edge: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding).
+      const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
+        one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
+        if (home && spot.hides) resize(one, small());
+        stand(one, spot.x, spot.y);
+        // landing: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding)
+        animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
+        feel(one, { eyes: "shut", mouth: "smile" }, 520);
+        window.setTimeout(() => {
+          if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
+          else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one); }
+        }, 640);
+      };
       // The journey to a spot: off the edge, into the water, a swim behind the content, and out onto the new edge.
       let stroll: ReturnType<typeof animate> | null = null, stride = 0;
       const bobs = new Map<Member, number>();
@@ -316,16 +329,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             animate(state, { p: 1, duration: 360, ease: "linear",
               onUpdate: () => stand(one, b.x + (spot.x - b.x) * state.p, b.y + (spot.y - b.y) * state.p - Math.sin(state.p * Math.PI) * 26),
               onComplete: () => {
-                one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
-                if (home && spot.hides) resize(one, small());
-                stand(one, spot.x, spot.y);
-                // landing: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding)
-                animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
-                feel(one, { eyes: "shut", mouth: "smile" }, 520);
-                window.setTimeout(() => {
-                  if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
-                  else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one); }
-                }, 640);
+                land(one, spot, home, perch);
               } });
           };
           if (!seen || afloat) { stand(one, a.x, a.y); swim(); return; }
@@ -337,14 +341,19 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         }, delay);
       };
 
-      // On arriving at a page a sprite is simply there, rising into place on its edge: nobody swims in from outside.
+      // On arriving at a page nobody swims in from outside: each sprite leaps out of the water right beside its place.
       const appear = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
-        one.state = home ? "home" : "away"; one.perch = perch; one.rest = spot.rest;
-        resize(one, home && spot.hides ? small() : pixel); stand(one, spot.x, spot.y);
-        if (spot.hides) one.post.classList.add("hides");
-        one.post.style.opacity = "1";
-        animate(one.element, { y: [tall() + 4, one.rest], opacity: [0, 1], duration: 560, delay, ease: "outBack(1.8)" });
-        window.setTimeout(() => feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1000), delay + 400);
+        one.state = "swim"; one.goal = spot;
+        window.setTimeout(() => {
+          const side = Math.random() < 0.5 ? -1 : 1, from = { x: spot.x - side * 30, y: spot.y + 26 }, state = { p: 0 };
+          one.rest = 0; resize(one, pixel); stand(one, from.x, from.y); one.post.style.opacity = "1";
+          animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
+          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one);
+          splash(from.x, from.y - line(), 0.9);
+          animate(state, { p: 1, duration: 540, ease: "linear",
+            onUpdate: () => stand(one, from.x + (spot.x - from.x) * state.p, from.y + (spot.y - from.y) * state.p - Math.sin(state.p * Math.PI) * 58),
+            onComplete: () => land(one, spot, home, perch) });
+        }, delay);
       };
 
       // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.

@@ -150,6 +150,12 @@ Then look at what was built and use it; the scripts cannot see either:
   confirm the sessions are still there. A Debug build run from Xcode shares the bundle identifier and the terminal
   host's registration with the release build, so a Mac that ran Debug builds can hide or cause problems; say in the
   report which builds ran on the Mac before this check.
+- **Accounts, with the owner's real accounts.** With at least two managed accounts of one provider: Settings ›
+  Accounts lists them and marks the default; a session started on one account answers; **Continue With Another
+  Account** moves it to the other in the same tab and the agent still knows the conversation; changing the default
+  with "Move running sessions when the default account changes" on moves a running session and leaves a note in its
+  pane. Switching at a usage limit cannot be forced on demand: say that it rests on the automated tests unless a
+  limit was really reached. A provider with fewer than two managed accounts is reported as not checked.
 
 ### 9. Publish (after the owner's go-ahead)
 

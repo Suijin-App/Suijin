@@ -19,7 +19,7 @@
 # Environment (all optional; none of them holds a secret):
 #   SUIJIN_NOTARY_PROFILE     notarytool keychain profile name (default: suijin-notary). The owner creates it once
 #                             with `xcrun notarytool store-credentials`; the password stays in the Keychain.
-#   SUIJIN_TEAM_ID            Apple team (default: YWSHDN5Y3H, Tekmium Solutions).
+#   SUIJIN_TEAM_ID            Apple team (default: YWSHDN5Y3H).
 #   SUIJIN_SIGNING_IDENTITY   identity for re-signing and the DMG (default: the Developer ID Application identity of
 #                             the team found in the Keychain).
 #   SUIJIN_RELEASE_DIR        output folder (default: <repo>/build/release/<version>).

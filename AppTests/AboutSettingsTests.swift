@@ -11,15 +11,15 @@ struct AboutSettingsTests {
     @Test func identityComesFromTheBundleInfo() {
         let identity = AppIdentity(info: [
             "CFBundleDisplayName": "Suijin", "CFBundleShortVersionString": "1.2.3", "CFBundleVersion": "45",
-            "NSHumanReadableCopyright": "© 2026 Tekmium Solutions",
+            "NSHumanReadableCopyright": "© 2026 The Suijin Authors",
         ])
         #expect(identity == AppIdentity(info: [
             "CFBundleName": "Suijin", "CFBundleShortVersionString": " 1.2.3 ", "CFBundleVersion": "45",
-            "NSHumanReadableCopyright": "© 2026 Tekmium Solutions",
+            "NSHumanReadableCopyright": "© 2026 The Suijin Authors",
         ]))
         #expect(identity.version == "1.2.3")
         #expect(identity.build == "45")
-        #expect(identity.copyright == "© 2026 Tekmium Solutions")
+        #expect(identity.copyright == "© 2026 The Suijin Authors")
     }
 
     @Test func missingBundleValuesFallBackInsteadOfShowingBlanks() {
@@ -31,7 +31,7 @@ struct AboutSettingsTests {
     }
 
     @Test func theAppBundleCarriesTheCopyrightLine() {
-        #expect(AppIdentity.current.copyright == "© 2026 Tekmium Solutions")
+        #expect(AppIdentity.current.copyright == "© 2026 The Suijin Authors")
     }
 
     @Test func supportMailLinkAcceptsOnlyPlainAddresses() {

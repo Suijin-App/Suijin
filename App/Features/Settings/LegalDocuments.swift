@@ -53,13 +53,12 @@ struct LegalDocument: Identifiable {
     static var terms: LegalDocument {
         LegalDocument(kind: .terms, title: String(localized: "Terms of Service"), sections: [
             Section(heading: nil, blocks: [
-                text(AttributedString(localized: "These terms apply to your use of Suijin, a Mac app made by Tekmium Solutions. By installing or using Suijin, you agree to them. If you do not agree, do not use Suijin.")),
+                text(AttributedString(localized: "These terms apply to your use of Suijin, a Mac app made by the Suijin Authors. Suijin is developed by vuvv-dev, an independent developer. By installing or using Suijin, you agree to them. If you do not agree, do not use Suijin.")),
             ]),
             Section(heading: String(localized: "Using Suijin"), blocks: [
-                text(AttributedString(localized: "Tekmium Solutions grants you a personal, non-exclusive, non-transferable license to install and use Suijin on Macs you own or control.")),
+                text(AttributedString(localized: "Suijin is open-source software under the Apache License 2.0. That license sets out how you may use, copy, change and redistribute it, and it comes first where these terms say something different.")),
                 .bullets([
-                    AttributedString(localized: "Do not sell, rent, sublicense or redistribute Suijin, or remove its copyright notices, without written permission from Tekmium Solutions."),
-                    AttributedString(localized: "Suijin, its name and its icon belong to Tekmium Solutions."),
+                    AttributedString(localized: "The license covers the code. It does not grant the use of the Suijin name or icon, which belong to the Suijin Authors."),
                     AttributedString(localized: "The open-source components inside Suijin stay under their own licenses, listed under Acknowledgements in Settings → About."),
                 ]),
             ]),
@@ -72,14 +71,14 @@ struct LegalDocument: Identifiable {
                 .bullets([
                     AttributedString(localized: "You choose the folders, accounts and permissions each agent gets."),
                     AttributedString(localized: "Review an agent's changes before you rely on them, and keep backups of work that matters."),
-                    AttributedString(localized: "Tekmium Solutions is not responsible for what an agent does in your repositories, on your Mac or in your accounts."),
+                    AttributedString(localized: "The Suijin Authors are not responsible for what an agent does in your repositories, on your Mac or in your accounts."),
                 ]),
             ]),
             Section(heading: String(localized: "No warranty"), blocks: [
                 text(AttributedString(localized: "Suijin is provided “as is” and “as available”, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We do not promise that Suijin is free of errors, runs without interruption or works with every future version of the agents it starts.")),
             ]),
             Section(heading: String(localized: "Limitation of liability"), blocks: [
-                text(AttributedString(localized: "As far as the law allows, Tekmium Solutions is not liable for indirect, incidental, special or consequential damages, or for lost data, code, work or profits, that arise from your use of Suijin. Nothing in these terms limits rights you have under laws that cannot be waived.")),
+                text(AttributedString(localized: "As far as the law allows, the Suijin Authors are not liable for indirect, incidental, special or consequential damages, or for lost data, code, work or profits, that arise from your use of Suijin. Nothing in these terms limits rights you have under laws that cannot be waived.")),
             ]),
             Section(heading: String(localized: "Updates"), blocks: [
                 text(AttributedString(localized: "Suijin can offer updates through its built-in updater. An update may add, change or remove features, and these terms apply to it too.")),
@@ -88,7 +87,7 @@ struct LegalDocument: Identifiable {
                 text(AttributedString(localized: "We may update these terms. The effective date at the top shows the current version. Using Suijin after a change means you accept the updated terms.")),
             ]),
             Section(heading: String(localized: "Contact"), blocks: [
-                text(AttributedString(localized: "For questions about these terms, contact Tekmium Solutions through the details in Settings → About.")),
+                text(AttributedString(localized: "For questions about these terms, contact the Suijin Authors through the details in Settings → About.")),
             ]),
         ])
     }
@@ -128,7 +127,7 @@ struct LegalDocument: Identifiable {
                 ]),
             ]),
             Section(heading: String(localized: "Agents are third-party programs"), blocks: [
-                text(AttributedString(localized: "Claude Code (by Anthropic) and Codex (by OpenAI) are separate programs you install. Suijin starts them on your Mac, in the folders you choose. What they send to their providers, such as your prompts, code and files, is governed by those providers' terms and privacy policies. None of it passes through Tekmium Solutions.")),
+                text(AttributedString(localized: "Claude Code (by Anthropic) and Codex (by OpenAI) are separate programs you install. Suijin starts them on your Mac, in the folders you choose. What they send to their providers, such as your prompts, code and files, is governed by those providers' terms and privacy policies. None of it passes through the Suijin Authors.")),
                 text(AttributedString(localized: "When you ask Suijin to write a commit message or a pull request description, it runs your agent with the changes as the prompt, so those changes go to that agent's provider as well.")),
             ]),
             Section(heading: String(localized: "Security"), blocks: [
@@ -150,7 +149,7 @@ struct LegalDocument: Identifiable {
                 text(AttributedString(localized: "When Suijin's handling of data changes, we update this policy and the effective date at the top.")),
             ]),
             Section(heading: String(localized: "Contact"), blocks: [
-                text(AttributedString(localized: "For questions about privacy or security, contact Tekmium Solutions through the details in Settings → About.")),
+                text(AttributedString(localized: "For questions about privacy or security, contact the Suijin Authors through the details in Settings → About.")),
             ]),
         ])
     }

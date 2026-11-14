@@ -15,6 +15,7 @@ const scenes = [
   { id: "side", label: "Side by side" },
   { id: "orchestrate", label: "Orchestrate" },
   { id: "review", label: "Review & ship" },
+  { id: "files", label: "Files & media" },
   { id: "accounts", label: "Switch accounts" },
 ];
 
@@ -69,6 +70,20 @@ const review: { rows: Row[]; tabs: Tab[] } = {
     { icon: "claude", title: "Claude · usage bar" },
     { icon: "codex", title: "Codex · review" },
     { icon: "changes", title: "Changes", selected: true },
+  ],
+};
+
+const files: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "ok", right: "1", selected: true },
+    { kind: "session", name: "Claude · usage bar", agent: "claude", right: "8m" },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "claude", title: "Claude · usage bar" },
+    { icon: "doc", title: "README.md", selected: true, attrs: { "data-set": "6:off" } },
+    { icon: "doc", title: "demo.mov", attrs: { "data-step": "5", "data-set": "6:on" } },
   ],
 };
 
@@ -231,6 +246,49 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
         <h4>Pull Request</h4>
         <div class="m-pr" data-step="10"><i class="m-dot ok"></i>#42 Show usage as a percentage label<small>Open · 2 checks passed</small></div>
       </Inspector>
+    </div>
+
+    <!-- Scene: files open in a tab next to the sessions: Markdown rendered, then a video in the system player -->
+    <div class="m-scene" id="scene-files" data-scene-body="files" aria-hidden="true" hidden>
+      <Sidebar rows={files.rows} />
+      <div class="m-main">
+        <Toolbar tabs={files.tabs} />
+        <div class="m-doc" data-set="6:gone">
+          <h3 data-step="1">UsageBar</h3>
+          <p data-step="1">A small bar that shows how much of a plan's limit is used, with a label such as <code>42%</code>.</p>
+          <h5 data-step="2">Usage</h5>
+          <pre data-step="2"><span class="kw">let</span> bar = <span class="ty">UsageBar</span>(fraction: <span class="nu">0.42</span>)
+bar.label   <span class="dim">// "42%"</span></pre>
+          <h5 data-step="3">What changed</h5>
+          <ul data-step="3">
+            <li>The label rounds to a whole percentage.</li>
+            <li>Values above the limit stop at <code>100%</code>.</li>
+          </ul>
+          <p class="dim" data-step="4">See <u>demo.mov</u> for the bar filling up.</p>
+        </div>
+        <div class="m-media" data-step="6">
+          <figure>
+            <img src="/og.png" alt="" width="1200" height="675" loading="lazy" />
+            <div class="m-player" data-set="7:play">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+              <span data-text="7:0:04">0:00</span>
+              <span class="m-scrub"><i></i></span>
+              <span>0:12</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6h2.5L8 3v10L4.5 10H2zM10 5.2a4 4 0 0 1 0 5.6l.9.9a5.2 5.2 0 0 0 0-7.4z"/></svg>
+            </div>
+          </figure>
+          <p data-step="8">Video, audio and images play in a tab with the system player.</p>
+        </div>
+        <Status running="3 running" memory="118,4 MB" />
+      </div>
+      <Inspector mode="files" files={[
+        { name: "README.md", attrs: { class: "m-file on", "data-set": "6:off" } },
+        { name: "UsageBar.swift" },
+        { name: "UsageBarTests.swift" },
+        { name: "chime.m4a" },
+        { name: "demo.mov", attrs: { "data-set": "6:on" } },
+        { name: "preview.png" },
+      ]} />
     </div>
 
     <!-- Scene 4: an account runs out and the session moves to the next one -->

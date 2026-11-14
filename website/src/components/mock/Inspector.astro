@@ -17,7 +17,7 @@ const { mode, files = [] } = Astro.props;
       <div class="m-search"><span>Filter files</span><span class="m-ic faint small" set:html={icon("refresh")} /></div>
       {files.map((file) => (
         <div class="m-file" {...file.attrs}>
-          <b class:list={["m-type", file.name.endsWith(".md") ? "md" : "swift"]}>{file.name.endsWith(".md") ? "MD" : ""}</b>{file.name}
+          <b class:list={["m-type", file.name.split(".").pop()]}>{file.name.endsWith(".md") ? "MD" : ""}</b>{file.name}
         </div>
       ))}
     </>

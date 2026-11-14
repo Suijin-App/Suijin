@@ -16,7 +16,7 @@ const scenes = [
   { id: "orchestrate", label: "Orchestrate" },
   { id: "review", label: "Review & ship" },
   { id: "files", label: "Files & media" },
-  { id: "accounts", label: "Switch accounts" },
+  { id: "accounts", label: "Accounts" },
 ];
 
 // The worktree's files as the inspector lists them: folders first, then files.
@@ -110,12 +110,12 @@ const files: { rows: Row[]; tabs: Tab[] } = {
 const accounts: { rows: Row[]; tabs: Tab[] } = {
   rows: [
     { kind: "checkout", name: "Main checkout" },
-    { kind: "tree", name: "feature/usage-bar", dot: "busy", right: "1", dotAttrs: { "data-set": "8:ok" } },
-    { kind: "session", name: "Claude · Work", agent: "claude", selected: true, right: "9m", nameAttrs: { "data-text": "5:Claude · Personal" } },
+    { kind: "tree", name: "feature/usage-bar", dot: "busy", right: "1", dotAttrs: { "data-set": "9:ok" } },
+    { kind: "session", name: "Claude · Work", agent: "claude", selected: true, right: "9m", nameAttrs: { "data-text": "6:Claude · Personal" } },
     ...tail,
   ],
   tabs: [
-    { icon: "claude", title: "Claude · Work", selected: true, titleAttrs: { "data-text": "5:Claude · Personal" } },
+    { icon: "claude", title: "Claude · Work", selected: true, titleAttrs: { "data-text": "6:Claude · Personal" } },
     { icon: "changes", title: "Changes" },
   ],
 };
@@ -304,7 +304,8 @@ bar.label   <span class="dim">// "42%"</span></pre>
       <Inspector mode="files" files={tree({ docs: true, pick: "README.md", attrs: { "README.md": { "data-set": "6:off" }, "demo.mov": { "data-set": "6:on" } } })} />
     </div>
 
-    <!-- Scene 4: an account runs out and the session moves to the next one -->
+    <!-- Scene: two accounts with their usage; when the session's account runs out, the user continues the conversation
+         on the other one, in the same tab -->
     <div class="m-scene" id="scene-accounts" data-scene-body="accounts" aria-hidden="true" hidden>
       <Sidebar rows={accounts.rows} />
       <div class="m-main">
@@ -313,17 +314,17 @@ bar.label   <span class="dim">// "42%"</span></pre>
           <div class="m-pane">
             <!-- The two notes share one place: the room for it opens once, then the second note fades in over the first. -->
             <div class="m-banners" data-set="3:open"><div>
-              <div class="m-banner" data-step="3" data-set="5:gone"><b>Work reached its 5-hour limit.</b> Moving this session to the next account with room…</div>
-              <div class="m-banner moved" data-step="5"><b>Moved to Personal.</b> The conversation continues where it stopped.</div>
+              <div class="m-banner choice" data-step="3" data-set="6:gone"><span><b>5-hour limit reached on Work.</b> Resets in 2h 48m.</span><span class="m-btn" data-set="5:primary">Continue With Another Account ▸ Personal</span></div>
+              <div class="m-banner moved" data-step="6"><b>Continued on Personal.</b> The conversation goes on where it stopped, in this tab.</div>
             </div></div>
             <div class="m-term roomy">
               <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
               <p class="m-prompt" data-step="1" data-type>❯ Refactor the usage polling into one actor</p>
               <p data-step="2"><span class="ok">●</span> <b>Update</b>(UsageController.swift)</p>
               <p class="dim" data-step="2">  ⎿ 42 additions, 31 removals</p>
-              <p class="dim" data-step="6">Resumed conversation.</p>
-              <p data-step="7"><span class="ok">●</span> <b>Update</b>(UsageStatusItem.swift)</p>
-              <p data-step="8"><span class="ok">●</span> Polling runs in one actor now. The build passes.</p>
+              <p class="dim" data-step="7">Resumed conversation.</p>
+              <p data-step="8"><span class="ok">●</span> <b>Update</b>(UsageStatusItem.swift)</p>
+              <p data-step="9"><span class="ok">●</span> Polling runs in one actor now. The build passes.</p>
             </div>
           </div>
         </div>
@@ -332,12 +333,11 @@ bar.label   <span class="dim">// "42%"</span></pre>
       <Inspector mode="info">
         <h4>Session</h4>
         <div class="m-kv"><span>Agent</span><b>Claude Code</b></div>
-        <div class="m-kv"><span>Account</span><b data-text="5:Personal">Work</b></div>
+        <div class="m-kv"><span>Account</span><b data-text="6:Personal">Work</b></div>
         <h4>Claude accounts</h4>
-        <div class="m-kv"><span><i class="m-dot busy" data-set="3:stop"></i>Work</span><b data-text="3:At its limit">34%</b></div>
-        <div class="m-kv"><span><i class="m-dot ok"></i>Personal</span><b>18%</b></div>
-        <h4>Automatic switching</h4>
-        <div class="m-kv"><span>When an account hits its limit</span><b>On</b></div>
+        <div class="m-kv"><span><i class="m-dot busy" data-set="3:stop"></i>Work</span><b data-text="3:100% used">34% used</b></div>
+        <div class="m-kv"><span><i class="m-dot ok"></i>Personal</span><b>18% used</b></div>
+        <div class="m-kv"><span>New sessions use</span><b>Work</b></div>
       </Inspector>
     </div>
   </div>

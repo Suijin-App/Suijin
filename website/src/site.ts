@@ -58,7 +58,7 @@ export const faq = [
   {
     question: "Can I use more than one Claude or Codex account?",
     answer:
-      "Yes. You can add several managed accounts per agent, choose which one a session uses, and let Suijin move a session to the next account with room when one hits its usage limit. Your own existing logins are never changed.",
+      "Yes. You can add several managed accounts per agent, choose which one a session uses, and continue a conversation on another account yourself, in the same tab. Moving sessions at a usage limit is an option and is off by default. Your own existing logins are never changed. Using several accounts, and switching between them at a usage limit, may be against the terms of Anthropic or OpenAI; check them, because you are responsible for how you use your accounts.",
   },
   {
     question: "What does Suijin send over the network?",

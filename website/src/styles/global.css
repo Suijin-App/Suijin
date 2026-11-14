@@ -290,6 +290,9 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 html:not(.js) .m-banners { grid-template-rows: 1fr; }
 html:not(.js) .m-banners .m-banner:not(.moved) { display: none; }
 .m-banner.moved { background: rgba(48, 192, 72, 0.16); }
+/* A note that offers a choice: its text, then the button the user presses, wrapping below the text when the pane is narrow. */
+.m-banner.choice { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-block: 5px; }
+.m-banner.choice .m-btn { margin-left: auto; transition: background-color 0.2s, color 0.2s; }
 .m-status { display: flex; align-items: center; gap: 7px; flex: none; height: 28px; padding: 0 12px; overflow: hidden; border-top: 1px solid var(--win-line); color: var(--win-muted); font-size: 10.5px; white-space: nowrap; }
 .m-meter { flex: none; width: 54px; height: 5px; border-radius: 3px; overflow: hidden; background: var(--win-chip); }
 .m-meter i { display: block; height: 100%; border-radius: 3px; background: var(--win-blue); transition: width 0.5s var(--settle, ease), background 0.3s; }

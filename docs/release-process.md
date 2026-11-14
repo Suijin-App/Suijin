@@ -16,7 +16,7 @@ Store Connect API keys. They all live in the release Mac's login Keychain.
 | Helper handover | `App/Updates/HelperVersionCheck.swift` (section 5). |
 | Sparkle keys in `App/Info.plist` | `SUFeedURL` (`https://suijin.app/appcast.xml`), `SUPublicEDKey` (the public half of the signing key, section 2.3), `SUEnableAutomaticChecks` (on), `SUScheduledCheckInterval` (86400, daily). |
 | Update feed and website | `website/`: the Cloudflare Worker on `suijin.app`. It serves the website and redirects `/appcast.xml` to the `appcast.xml` asset of the latest GitHub release (section 4). |
-| Scripts | `scripts/release-notarize.sh` (the whole pipeline, with `--dry-run`), `scripts/make-dmg.sh` (DMG and its signature). |
+| Scripts | `scripts/release-notarize.sh` (the whole pipeline, with `--dry-run`), `scripts/make-dmg.sh` (DMG and its signature), `scripts/dmg/` (the installer window's background and the volume icon, with `render.sh` to redraw them). |
 
 A build whose `SUPublicEDKey` is not a real key never starts the updater (Settings → General → Updates says updates
 are not configured), and `scripts/release-notarize.sh` refuses to release it, because copies installed from it could
@@ -81,7 +81,7 @@ never update.
       LaunchAgent plist and Sparkle.framework present, version and build match `project.yml`.
    6. Notarize the app (`xcrun notarytool submit --keychain-profile suijin-notary --wait`) and staple it, so the app
       inside the DMG carries its ticket. A rejection prints Apple's log.
-   7. Build and sign the DMG (`scripts/make-dmg.sh`: the app plus an Applications shortcut, UDZO).
+   7. Build and sign the DMG (`scripts/make-dmg.sh`: the app beside an Applications shortcut on a background picture, with a volume icon, UDZO; needs `brew install create-dmg`).
    8. Notarize and staple the DMG.
    9. Gatekeeper: `spctl --assess --type execute -vv Suijin.app` must say `accepted`, `source=Notarized Developer
       ID`; the DMG is checked with `spctl --assess --type open --context context:primary-signature -vv`.

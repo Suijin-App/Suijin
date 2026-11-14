@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8">
+<!-- The icon of the mounted installer volume: a removable disk carrying Suijin's icon. 1024 × 1024, transparent
+     around the disk. The app icon is passed in by scripts/dmg/render.sh as ?icon=<file URL>. -->
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1024px; height: 1024px; background: transparent; overflow: hidden; }
+  .disk { position: absolute; left: 112px; top: 196px; width: 800px; height: 632px; border-radius: 96px;
+    background: linear-gradient(#fbfaf6, #e4e0d5); box-shadow: inset 0 0 0 5px rgba(19, 48, 94, 0.14), inset 0 -26px 40px -20px rgba(19, 48, 94, 0.22), 0 26px 44px -18px rgba(0, 0, 0, 0.45); }
+  .slot { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; border-radius: 0 0 96px 96px; background: linear-gradient(#d9d5c9, #c6c1b3);
+    box-shadow: inset 0 5px 0 rgba(255, 255, 255, 0.6), inset 0 0 0 5px rgba(19, 48, 94, 0.10); }
+  .slot i { position: absolute; left: 80px; top: 62px; width: 440px; height: 26px; border-radius: 13px; background: rgba(19, 48, 94, 0.22); box-shadow: inset 0 3px 4px rgba(0,0,0,.25); }
+  .slot b { position: absolute; right: 86px; top: 56px; width: 38px; height: 38px; border-radius: 50%; background: #5fd38a; box-shadow: 0 0 0 6px rgba(95, 211, 138, 0.25); }
+  img { position: absolute; left: 50%; top: 22px; width: 440px; height: 440px; transform: translateX(-50%); filter: drop-shadow(0 12px 16px rgba(19, 48, 94, 0.3)); }
+</style>
+<div class="disk"><img id="icon" alt=""><div class="slot"><i></i><b></b></div></div>
+<script>document.getElementById("icon").src = new URLSearchParams(location.search).get("icon");</script>

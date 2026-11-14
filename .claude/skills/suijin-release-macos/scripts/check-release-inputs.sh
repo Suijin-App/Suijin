@@ -78,7 +78,7 @@ xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1 \
 location="$(curl -sI -m 20 "$FEED" | tr -d '\r' | sed -n 's/^[Ll]ocation: //p' | head -1)"
 [ "$location" = "https://github.com/$REPO/releases/latest/download/appcast.xml" ] \
   && pass "$FEED redirects to the latest release's appcast" || fail "$FEED does not redirect to the latest release's appcast (got: ${location:-no redirect})"
-for tool in xcodegen xmllint; do command -v "$tool" >/dev/null && pass "$tool found" || fail "missing tool: $tool"; done
+for tool in xcodegen xmllint create-dmg; do command -v "$tool" >/dev/null && pass "$tool found" || fail "missing tool: $tool"; done
 
 echo
 [ "$FAILED" = 0 ] && echo "All checks passed." || echo "Some checks failed: fix them before releasing."

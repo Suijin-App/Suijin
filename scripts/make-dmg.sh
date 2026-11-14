@@ -1,6 +1,8 @@
 #!/bin/bash
-# Package a signed (normally notarized and stapled) Suijin.app into a compressed DMG with an Applications shortcut
-# to drag it onto, then sign the DMG. Called by scripts/release-notarize.sh; can also run alone.
+# Package a signed (normally notarized and stapled) Suijin.app into a compressed DMG, then sign the DMG. The DMG opens
+# as an installer window: the app beside an Applications shortcut on the picture scripts/dmg/background.tiff, and the
+# mounted volume carries scripts/dmg/VolumeIcon.icns. `create-dmg` (brew install create-dmg) lays the window out; it
+# asks Finder to arrange the icons, so the first run may ask to let the terminal control Finder. Called by scripts/release-notarize.sh; can also run alone.
 #
 # Usage:
 #   scripts/make-dmg.sh --app <path/to/Suijin.app> --out <path/to/Suijin-0.1.0.dmg> [--sign <identity>]
@@ -45,6 +47,9 @@ APP="${APP%/}"
 [ "$(basename "$APP")" = "Suijin.app" ] || die "--app must point at Suijin.app (got $APP)"
 [ -d "$APP" ] || die "app not found: $APP"
 command -v hdiutil >/dev/null || die "hdiutil not found"
+command -v create-dmg >/dev/null || die "create-dmg not found (brew install create-dmg)"
+ART="$(cd "$(dirname "$0")" && pwd)/dmg"
+[ -f "$ART/background.tiff" ] && [ -f "$ART/VolumeIcon.icns" ] || die "installer pictures missing in $ART (run scripts/dmg/render.sh)"
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" 2>/dev/null || echo unknown)"
 VOLUME="Suijin $VERSION"
@@ -52,14 +57,19 @@ VOLUME="Suijin $VERSION"
 STAGING="$(mktemp -d -t suijin-dmg)"
 trap 'rm -rf "$STAGING"' EXIT
 
-step "stage the app with an Applications shortcut"
+step "stage the app"
 # `ditto` keeps the code signature, extended attributes and a stapled ticket intact.
 run ditto "$APP" "$STAGING/Suijin.app"
-run ln -s /Applications "$STAGING/Applications"
 
-step "create the compressed disk image"
+step "create the compressed disk image with its installer window"
 run mkdir -p "$(dirname "$OUT")"
-run hdiutil create -quiet -volname "$VOLUME" -srcfolder "$STAGING" -fs HFS+ -format UDZO -ov "$OUT"
+rm -f "$OUT"
+# The icon positions match the picture: the app at (180, 185), the Applications shortcut at (480, 185).
+run create-dmg --volname "$VOLUME" --volicon "$ART/VolumeIcon.icns" --background "$ART/background.tiff" \
+  --window-pos 200 120 --window-size 660 400 --icon-size 112 --text-size 13 \
+  --icon Suijin.app 180 185 --hide-extension Suijin.app --app-drop-link 480 185 \
+  --filesystem HFS+ --format UDZO --no-internet-enable "$OUT" "$STAGING"
+[ -f "$OUT" ] || die "create-dmg did not write $OUT"
 
 if [ "$IDENTITY" = "-" ]; then
   step "leave the disk image unsigned (--sign -)"

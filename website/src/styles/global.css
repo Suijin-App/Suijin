@@ -267,7 +267,31 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .m-pill.wide { gap: 11px; padding: 0 11px; }
 .m-sep { width: 1px; height: 14px; background: var(--win-line); }
 .m-main > .m-panes { display: grid; flex: 1; gap: 1px; min-width: 0; min-height: 0; background: var(--win-line); }
-.m-main > .m-panes.four { grid-template: minmax(0, 1fr) minmax(0, 1fr) / minmax(0, 1fr) minmax(0, 1fr); }
+.m-main > .m-panes.four { position: relative; grid-template: minmax(0, 1fr) minmax(0, 1fr) / repeat(6, minmax(0, 1fr)); }
+.m-panes.four > .p1 { grid-area: 1 / 1 / 2 / 4; }
+.m-panes.four > .p2 { grid-area: 1 / 4 / 2 / 7; }
+.m-panes.four > .p3 { grid-area: 2 / 1 / 3 / 4; }
+.m-panes.four > .p4 { grid-area: 2 / 4 / 3 / 7; position: relative; }
+/* Dropped on the right edge of the last pane: the first pane leaves its row and lands beside it. */
+.m-panes.four.moved > .p1 { grid-area: 2 / 5 / 3 / 7; }
+.m-panes.four.moved > .p2 { grid-area: 1 / 1 / 2 / 7; }
+.m-panes.four.moved > .p3 { grid-area: 2 / 1 / 3 / 3; }
+.m-panes.four.moved > .p4 { grid-area: 2 / 3 / 3 / 5; }
+/* While it is dragged, a pane dims; its header travels with the pointer. */
+.m-pane.dragging > * { opacity: 0.4; transition: opacity 0.25s; }
+.m-panes.moved > .m-pane.dragging > * { opacity: 1; }
+.m-drag-ghost { position: absolute; left: 1.5%; top: 2px; z-index: 3; opacity: 0; pointer-events: none; }
+.m-drag-ghost.go { opacity: 1; transform: translate(min(46vw, 560px), 250px); transition: transform 1.1s var(--ease), opacity 0.2s; }
+.m-drag-ghost > span { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px; background: var(--win); color: var(--win-text);
+  font-size: 11px; white-space: nowrap; box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--win-line); transition: opacity 0.2s; }
+.m-drag-ghost > span.gone { opacity: 0; }
+/* The target pane is outlined and the half the drop will take is shown with its name, as the app does. */
+.m-outline { position: absolute; inset: 0; z-index: 2; border: 1.5px solid var(--win-blue); pointer-events: none; }
+.m-dropzone { position: absolute; top: 5px; right: 5px; bottom: 5px; width: calc(50% - 8px); z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border-radius: 10px; background: color-mix(in srgb, var(--win-blue) 34%, transparent); color: var(--win-text); font-size: 11px; font-weight: 650;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.m-outline.gone, .m-dropzone.gone { opacity: 0 !important; transition: opacity 0.2s; }
+html:not(.js) .m-outline, html:not(.js) .m-dropzone, html:not(.js) .m-drag-ghost { display: none; }
 .m-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--win); }
 .m-pane header { display: flex; align-items: center; gap: 6px; flex: none; height: 26px; padding: 0 10px; border-bottom: 1px solid var(--win-line); color: var(--win-muted); font-size: 11px; white-space: nowrap; }
 .m-pane.focus header { color: var(--win-text); }
@@ -561,6 +585,8 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
   .m-main > *, .m-main > .m-toolbar, .m-main > .m-status { grid-column: 1 / -1; }
   .m-side, .m-insp, .m-tools, .m-list { display: none; }
   .m-main > .m-panes.four { grid-template: minmax(0, 1fr) minmax(0, 1fr) / minmax(0, 1fr); }
+  .m-panes.four > .m-pane, .m-panes.four.moved > .m-pane { grid-area: auto; }
+  .m-outline, .m-dropzone, .m-drag-ghost { display: none; }
   .m-status > :nth-child(n + 4) { display: none; }
   .m-main > .m-panes.four .m-pane:nth-child(n + 3) { display: none; }
   .m-review { grid-template-columns: minmax(0, 1fr); }

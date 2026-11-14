@@ -63,13 +63,22 @@ run ditto "$APP" "$STAGING/Suijin.app"
 
 step "create the compressed disk image with its installer window"
 run mkdir -p "$(dirname "$OUT")"
-rm -f "$OUT"
-# The icon positions match the picture: the app at (180, 185), the Applications shortcut at (480, 185).
-run create-dmg --volname "$VOLUME" --volicon "$ART/VolumeIcon.icns" --background "$ART/background.tiff" \
-  --window-pos 200 120 --window-size 660 400 --icon-size 112 --text-size 13 \
-  --icon Suijin.app 180 185 --hide-extension Suijin.app --app-drop-link 480 185 \
-  --filesystem HFS+ --format UDZO --no-internet-enable "$OUT" "$STAGING"
-[ -f "$OUT" ] || die "create-dmg did not write $OUT"
+# Finder arranges the window, and sometimes its settings are not written before the image is closed. The image is
+# then read back and made again; an image that still opens as a plain window is an error, not a release.
+attempt=1
+while :; do
+  rm -f "$OUT"
+  # The icon positions match the picture: the app at (180, 185), the Applications shortcut at (480, 185).
+  run create-dmg --volname "$VOLUME" --volicon "$ART/VolumeIcon.icns" --background "$ART/background.tiff" \
+    --window-pos 200 120 --window-size 660 400 --icon-size 112 --text-size 13 \
+    --icon Suijin.app 180 185 --hide-extension Suijin.app --app-drop-link 480 185 \
+    --filesystem HFS+ --format UDZO --no-internet-enable "$OUT" "$STAGING"
+  [ -f "$OUT" ] || die "create-dmg did not write $OUT"
+  if "$ART/check-layout.sh" "$OUT"; then break; fi
+  [ "$attempt" -lt 3 ] || die "the disk image has no installer window after $attempt attempts"
+  attempt=$((attempt + 1))
+  step "the installer window was not written; making the image again (attempt $attempt)"
+done
 
 if [ "$IDENTITY" = "-" ]; then
   step "leave the disk image unsigned (--sign -)"

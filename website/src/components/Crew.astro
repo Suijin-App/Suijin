@@ -1,135 +1,547 @@
 ---
-// The four water sprites of the introduction film, living on the top edge of the app window on the home page. They
-// blink and breathe, watch the pointer, greet a pointer that comes close, hop when the page is pressed or the scene
-// changes, cheer when the film opens, and doze off when nothing moves. With reduced motion they simply stand there.
+// The four water sprites of the introduction film, living on every page.
+//
+// On the home page each has a post of its own in the hero:
+//   aqua    hides behind the "Watch the introduction" button and pops up to wave at it;
+//   claude  hides behind the download button and comes up when the pointer nears it;
+//   shell   stands on the scene tab that is playing and jumps to the next one when the scene changes;
+//   codex   walks back and forth along the top edge of the app window.
+//
+// They follow the reader. When scrolling leaves a sprite out of sight, it drops into the water (the page's
+// background), swims behind the content to the part now on screen, climbs onto the top edge of something real there
+// (a card, a button, a picture, a heading's first line) where it covers nothing, and leaves a small sign. Scrolling
+// back to the hero sends them home; on the other pages they swim in and find a place the same way.
+//
+// All of them blink and breathe, watch the pointer, start at a press on the page, cheer when the film opens and doze
+// off when nothing moves. With reduced motion they stand still at their posts and do not travel.
 import { spritePixels, type SpriteColor } from "../lib/sprite";
 
-const crew: SpriteColor[] = ["aqua", "claude", "codex", "shell"];
+const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 ---
 
 <div class="crew" data-crew aria-hidden="true">
   {crew.map((color) => (
-    <span class="crew-sprite" data-sprite={color}>
-      <svg viewBox="0 0 12 14" shape-rendering="crispEdges" set:html={spritePixels(color)} />
+    <span class="crew-post" data-post={color}>
+      <span class="crew-sprite" data-sprite={color}>
+        <svg viewBox="0 0 12 14" shape-rendering="crispEdges" set:html={spritePixels(color)} />
+      </span>
     </span>
   ))}
 </div>
 
 <script>
-  import { animate, stagger } from "animejs";
-  import { spritePixels, type SpriteColor, type SpritePose } from "../lib/sprite";
+  import { animate } from "animejs";
+  import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
 
   const crew = document.querySelector<HTMLElement>("[data-crew]");
-  const stage = document.querySelector<HTMLElement>("[data-stage]");
-  const windowEdge = stage?.querySelector<HTMLElement>(".mac");
+  const water = document.querySelector<HTMLElement>("[data-touch]");
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  if (crew && stage && windowEdge) {
-    type Member = { element: HTMLElement; svg: SVGElement; color: SpriteColor; pose: SpritePose; mood: SpritePose | null; busy: boolean };
-    const members: Member[] = Array.from(crew.querySelectorAll<HTMLElement>("[data-sprite]")).map((element) => ({
-      element, svg: element.querySelector("svg") as SVGElement, color: element.dataset.sprite as SpriteColor, pose: {}, mood: null, busy: false,
-    }));
+  if (crew) {
+    // A spot is a point on an edge, in document coordinates: where the feet go. `rest` is how far the sprite sinks
+    // below the edge there (behind a button); a perch remembers the element the spot was measured on.
+    type Spot = { x: number; y: number; rest: number; hides?: boolean; floats?: boolean };
+    type Perch = { element: Element; at: number; line: boolean };
+    type Member = { color: SpriteColor; post: HTMLElement; element: HTMLElement; svg: SVGElement; pose: SpritePose; mood: SpritePose | null;
+      home: (() => Spot | null) | null; perch: Perch | null; state: "home" | "away" | "swim" | "gone"; size: number; rest: number; busy: boolean; up: boolean; walking: boolean; goal: Spot | null; floating: boolean };
+    const member = (color: SpriteColor): Member => {
+      const post = crew.querySelector<HTMLElement>(`[data-post="${color}"]`)!, element = post.querySelector<HTMLElement>("[data-sprite]")!;
+      return { color, post, element, svg: element.querySelector("svg") as SVGElement, pose: {}, mood: null, home: null, perch: null, state: "gone", size: 4, rest: 0, busy: false, up: false, walking: false, goal: null, floating: false };
+    };
+    const aqua = member("aqua"), claude = member("claude"), shell = member("shell"), codex = member("codex");
+    const members = [aqua, claude, shell, codex];
 
-    // Stand the sprites in a row at the right end of the window's top edge, sized for the window's width. Where the
-    // row of scene tabs reaches that far (narrow screens), they stand on the tabs' top edge instead.
-    const tabsRow = stage.querySelector<HTMLElement>(".scene-tabs");
+    // ── measures
+    let pixel = 4;
+    const tall = () => 14 * pixel, wide = () => 12 * pixel;
+    const page = (rect: DOMRect, at: number, rest = 0, hides = false): Spot => ({ x: rect.left + rect.width * at + window.scrollX, y: rect.top + 1 + window.scrollY, rest, hides });
+    // each sprite has its own pixel size: the two that hide behind the buttons are a size smaller there, to fit the gap above them
+    const resize = (one: Member, size: number) => { one.size = size; one.post.style.setProperty("--sprite", `${size}px`); };
+    const stand = (one: Member, x: number, y: number) => { one.post.style.left = `${x - 9 * one.size}px`; one.post.style.top = `${y - 42 * one.size}px`; };
+    const feet = (one: Member) => ({ x: one.post.offsetLeft + 9 * one.size, y: one.post.offsetTop + 42 * one.size });
+    const small = () => Math.min(3, pixel);
+    const line = () => Math.round(14 * pixel * 0.34);           // how far above its feet the water reaches on a swimmer
+    const onScreen = (y: number) => { const top = y - window.scrollY; return top - tall() > 84 && top < window.innerHeight - 6; };
+
+    // ── the posts in the hero (home page only)
+    const hero = document.querySelector<HTMLElement>(".hero");
+    const stage = hero?.querySelector<HTMLElement>("[data-stage]");
+    const appWindow = stage?.querySelector<HTMLElement>(".mac");
+    const tabsRow = stage?.querySelector<HTMLElement>(".scene-tabs");
+    const filmButton = hero?.querySelector<HTMLElement>(".actions [data-film-open]");
+    const downloadButton = hero?.querySelector<HTMLElement>(".actions .button.primary");
+    const activeTab = () => tabsRow?.querySelector<HTMLElement>('[aria-selected="true"]') ?? tabsRow?.querySelector<HTMLElement>("[data-scene]") ?? null;
+    const hiders = new Map<Member, HTMLElement>();
+    // the stretch of the window's top edge the walker may use: to the right of the row of tabs
+    const patrol = () => {
+      if (!appWindow || !tabsRow) return null;
+      const frame = appWindow.getBoundingClientRect(), tabs = tabsRow.getBoundingClientRect();
+      const from = Math.max(tabs.right + 10 * pixel, frame.left + frame.width * 0.5), to = frame.right - 12 * pixel;
+      return { from: from + window.scrollX, to: to + window.scrollX, y: frame.top + 1 + window.scrollY, room: to - from > 16 * pixel, end: frame.right - 14 * pixel + window.scrollX };
+    };
+    if (hero && appWindow && tabsRow && filmButton && downloadButton) {
+      // under a third of a hider stays below the button's edge: the eyes are always above it
+      aqua.home = () => page(filmButton.getBoundingClientRect(), 0.84, Math.round(14 * small() * 0.3), true);
+      claude.home = () => page(downloadButton.getBoundingClientRect(), 0.16, Math.round(14 * small() * 0.3), true);
+      shell.home = () => { const tab = activeTab(); return tab ? { ...page(tab.getBoundingClientRect(), 0.5), y: tabsRow.getBoundingClientRect().top + 1 + window.scrollY } : null; };
+      codex.home = () => { const road = patrol(); if (!road) return null;
+        return { x: road.room ? Math.min(Math.max(codex.state === "home" ? feet(codex).x : road.to, road.from), road.to) : road.end, y: road.y, rest: 0 }; };
+      hiders.set(aqua, filmButton); hiders.set(claude, downloadButton);
+    }
+
+    // ── places to stand elsewhere: the top edge of something real, where the sprite covers nothing
+    const structural = new Set(["HTML", "BODY", "MAIN", "SECTION", "ARTICLE", "FOOTER", "DIV"]);
+    const backdrop = (node: Element | null): boolean => {
+      if (!node || node.closest("[data-crew]")) return true;
+      if (!structural.has(node.tagName)) return false;
+      for (const child of node.childNodes) if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) return false;
+      if (node.tagName !== "DIV" && node.tagName !== "ARTICLE") return true;
+      if (node.getBoundingClientRect().width >= window.innerWidth * 0.9) return true;   // a band across the page is still water
+      const paint = getComputedStyle(node);
+      return paint.backgroundImage === "none" && /rgba?\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)|transparent/.test(paint.backgroundColor);
+    };
+    const clear = (x: number, top: number): boolean => {
+      for (const dx of [-0.42, 0, 0.42]) for (const dy of [-16, 4, tall() / 2, tall() - 5]) if (!backdrop(document.elementFromPoint(x + dx * wide(), top - tall() + dy))) return false;
+      return true;
+    };
+    const edgeOf = (perch: Perch): DOMRect | null => {
+      if (!perch.element.isConnected) return null;
+      if (!perch.line) return perch.element.getBoundingClientRect();
+      const range = document.createRange(); range.selectNodeContents(perch.element);
+      return range.getClientRects()[0] ?? null;                 // a heading's first line, not its whole block
+    };
+    const perches = (): { perch: Perch; x: number; y: number }[] => {
+      const found: { perch: Perch; x: number; y: number }[] = [];
+      for (const element of document.querySelectorAll("main :is(h1, h2, h3, .card, .link-card, .button, .chip, img, pre, table, details, figure, blockquote, p, li)")) {
+        if (element.closest(".hero, .crew, [hidden]")) continue;
+        const line = /^(H\d|P|LI)$/.test(element.tagName), edge = edgeOf({ element, at: 0, line });
+        if (!edge || edge.width < 70 || edge.height < 14 || edge.top - tall() < 86 || edge.top > window.innerHeight - 10) continue;
+        for (const at of [0.88, 0.12, 0.7, 0.3, 0.5]) {
+          const x = edge.left + edge.width * at;
+          if (x - wide() / 2 < 8 || x + wide() / 2 > window.innerWidth - 8 || !clear(x, edge.top)) continue;
+          found.push({ perch: { element, at, line }, x: x + window.scrollX, y: edge.top + 1 + window.scrollY });   // one edge can hold several
+        }
+      }
+      return found;
+    };
+
+    // Open water on screen, for when there is nothing to stand on: points near the sides where a swimmer covers nothing.
+    const pools = (): { x: number; y: number }[] => {
+      const found: { x: number; y: number }[] = [];
+      for (const fy of [0.5, 0.72, 0.32, 0.86]) for (const fx of [0.06, 0.94, 0.14, 0.86, 0.24, 0.76]) {
+        const x = window.innerWidth * fx, y = window.innerHeight * fy;
+        if (y - tall() > 86 && x - wide() / 2 > 8 && x + wide() / 2 < window.innerWidth - 8 && clear(x, y)) found.push({ x: x + window.scrollX, y: y + window.scrollY });
+      }
+      return found;
+    };
+
+    // ── looks: where the eyes point, overlaid by a mood that lasts a while
+    const draw = (one: Member) => {
+      const pose = { ...one.pose, ...(one.mood ?? {}) }, key = JSON.stringify(pose);
+      if (one.element.dataset.pose !== key) { one.element.dataset.pose = key; one.svg.innerHTML = spritePixels(one.color, pose); }
+    };
+    const moods = new Map<Member, number>();
+    const feel = (one: Member, mood: SpritePose, time = 900) => {
+      one.mood = mood; draw(one);
+      window.clearTimeout(moods.get(one));
+      if (time > 0) moods.set(one, window.setTimeout(() => { one.mood = null; draw(one); }, time));
+    };
+
+    // ── keeping everyone where they belong when the layout changes
+    const settle = (one: Member) => { if (!one.busy && !one.up && one.state !== "swim") one.element.style.transform = `translateY(${one.rest}px)`; };
     const place = () => {
-      const edge = windowEdge.getBoundingClientRect(), box = stage.getBoundingClientRect(), tabs = tabsRow?.getBoundingClientRect();
-      const pixel = edge.width < 520 ? 3 : edge.width < 900 ? 4 : 5, width = 12 * pixel, gap = width * 1.18, inset = Math.max(14, edge.width * 0.022);
-      const rowLeft = edge.right - inset - width - (members.length - 1) * gap;
-      const perch = tabs && tabs.right > rowLeft - 10 ? tabs.top : edge.top;
-      crew.style.top = `${perch - box.top}px`;
-      crew.style.left = `${edge.left - box.left}px`;
-      crew.style.width = `${edge.width}px`;
-      crew.style.setProperty("--sprite", `${pixel}px`);
-      members.forEach((member, index) => { member.element.style.left = `${edge.width - inset - width - (members.length - 1 - index) * gap}px`; });
-    };
-    place();
-    new ResizeObserver(place).observe(stage);
-
-    // A pose is the look of the moment (where the eyes point) overlaid by a mood that lasts a while.
-    const draw = (member: Member) => {
-      const pose = { ...member.pose, ...(member.mood ?? {}) }, key = JSON.stringify(pose);
-      if (member.element.dataset.pose !== key) { member.element.dataset.pose = key; member.svg.innerHTML = spritePixels(member.color, pose); }
-    };
-    const moods = new WeakMap<Member, number>();
-    const feel = (member: Member, mood: SpritePose, time = 900) => {
-      member.mood = mood; draw(member);
-      window.clearTimeout(moods.get(member));
-      moods.set(member, window.setTimeout(() => { member.mood = null; draw(member); }, time));
+      pixel = window.innerWidth < 560 ? 3 : 4;
+      for (const one of members) {
+        if (one.state !== "swim") resize(one, one.state === "home" && hiders.has(one) ? small() : pixel);
+        if (one.state === "home" && one.home) { const spot = one.home(); if (spot && !(one === codex && one.walking) && !(one === shell && one.busy)) { stand(one, spot.x, spot.y); one.rest = spot.rest; } }
+        if (one.state === "away" && one.perch) { const edge = edgeOf(one.perch); if (edge) stand(one, edge.left + edge.width * one.perch.at + window.scrollX, edge.top + 1 + window.scrollY); }
+        settle(one);
+      }
     };
 
-    if (!calm) {
+    if (calm) {
+      // no motion: the sprites that have a post on this page stand at it
+      crew.classList.add("still");
+      for (const one of members) if (one.home) { one.state = "home"; one.post.classList.add("posted"); if (hiders.has(one)) one.post.classList.add("hides"); }
+      place(); members.forEach(draw);
+      new ResizeObserver(place).observe(document.body);
+    } else {
       crew.classList.add("alive");
+      members.forEach((one) => { one.post.style.opacity = "0"; });
+      let asleep = false;
+      // ── water
+      // Water is drawn the way the sprites are, in square pixels, but it moves like water: every fleck is a particle
+      // with a velocity. Foam on the surface is slowed by drag and fades; drops in the air fall under gravity and, back
+      // on the surface, leave a small ripple. One canvas over the screen, above the page's bands and below its content.
+      type Fleck = { x: number; y: number; vx: number; vy: number; age: number; life: number; light: boolean; floor: number | null };
+      const sea = document.createElement("canvas"), ink = sea.getContext("2d");
+      const flecks: Fleck[] = [], gravity = 900, drag = 3.2;
+      // the blues of the rings in the app icon, as the stylesheet gives them for the theme in use
+      let tints = ["", ""];
+      const dye = () => { const paint = getComputedStyle(crew); tints = [paint.getPropertyValue("--foam").trim(), paint.getPropertyValue("--foam-light").trim()]; };
+      let running = 0, ticked = 0;
+      sea.className = "crew-sea"; crew.append(sea);
+      const fit = () => { const ratio = window.devicePixelRatio || 1; sea.width = window.innerWidth * ratio; sea.height = window.innerHeight * ratio; ink?.setTransform(ratio, 0, 0, ratio, 0, 0); };
+      const any = (spread: number) => (Math.random() - 0.5) * 2 * spread;
+      const fleck = (x: number, y: number, vx: number, vy: number, life: number, light = Math.random() < 0.4, floor: number | null = null) => {
+        if (flecks.length > 420) flecks.shift();
+        flecks.push({ x, y, vx, vy, age: 0, life, light, floor });
+        if (!running) { ticked = performance.now(); running = requestAnimationFrame(flow); }
+      };
+      function flow(now: number) {
+        const dt = Math.min(0.05, (now - ticked) / 1000), slow = Math.exp(-drag * dt); ticked = now;
+        if (!ink) return;
+        ink.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        for (let index = flecks.length - 1; index >= 0; index--) {
+          const one = flecks[index];
+          one.age += dt; one.x += one.vx * dt; one.y += one.vy * dt;
+          if (one.floor === null) { one.vx *= slow; one.vy *= slow; }
+          else {
+            one.vy += gravity * dt;
+            if (one.vy > 0 && one.y >= one.floor) {              // a drop lands: a ripple runs off to both sides
+              flecks.splice(index, 1);
+              for (const way of [-1, 1]) fleck(one.x, one.floor, way * (26 + Math.random() * 22), any(4), 0.45 + Math.random() * 0.3, one.light);
+              continue;
+            }
+          }
+          if (one.age >= one.life) { flecks.splice(index, 1); continue; }
+          // four steps of fading, and whole pixels only
+          ink.globalAlpha = one.floor === null ? 1 - Math.floor((one.age / one.life) * 4) / 4 : 1;
+          ink.fillStyle = tints[one.light ? 1 : 0];
+          ink.fillRect(Math.round(one.x / pixel) * pixel - window.scrollX, Math.round(one.y / pixel) * pixel - window.scrollY, pixel, pixel);
+        }
+        running = flecks.length ? requestAnimationFrame(flow) : 0;
+        if (!running) ink.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+      fit(); dye(); window.addEventListener("resize", fit, { passive: true });
+      // Going in or coming out: a crown of drops thrown up and outwards, and a ring of foam pushed away on the surface.
+      const splash = (x: number, y: number, force = 1) => {
+        for (let drop = 0; drop < 16 * force; drop++) fleck(x + any(8), y - 2, any(150) * force, -(150 + Math.random() * 210) * force, 2, undefined, y + any(3));
+        for (let wave = 0; wave < 14; wave++) { const turn = (wave / 14) * Math.PI * 2; fleck(x + Math.cos(turn) * 8, y + Math.sin(turn) * 3, Math.cos(turn) * 95 * force, Math.sin(turn) * 34 * force, 0.7 + Math.random() * 0.3); }
+      };
+      // The wake of a swimmer moving at `speed` along (ux, uy): the water it parts is thrown to both sides and drag
+      // slows it, so the two arms open into a V behind; churned foam is left in between, and a small bow wave runs ahead.
+      const wake = (x: number, y: number, ux: number, uy: number, speed: number) => {
+        // the faster it swims, the sooner its foam is gone: the trail stays about as long as two sprites, never a streak
+        const push = 70 + speed * 0.3, lasts = Math.min(0.6, Math.max(0.16, 90 / (speed || 1)));
+        for (const way of [-1, 1]) fleck(x - uy * way * pixel, y + ux * way * pixel, -uy * way * push - ux * speed * 0.1 + any(5), ux * way * push - uy * speed * 0.1 + any(5), lasts * (0.8 + Math.random() * 0.4));
+        fleck(x - ux * pixel + any(3), y - uy * pixel + any(3), any(9) - ux * 12, any(9) - uy * 12, lasts * (0.5 + Math.random() * 0.3), true);
+        if (Math.random() < 0.5) { const way = Math.random() < 0.5 ? -1 : 1; fleck(x + ux * 7 * pixel, y + uy * 7 * pixel, ux * speed * 0.45 - uy * way * 18, uy * speed * 0.45 + ux * way * 18, 0.3); }
+      };
+      // An arm coming out of the water flicks a few drops backwards.
+      const spray = (x: number, y: number, ux: number) => { for (let drop = 0; drop < 3; drop++) fleck(x, y - 2, -ux * (40 + Math.random() * 70), -(90 + Math.random() * 90), 2, undefined, y + any(2)); };
 
-      // A hop: crouch, leap, land with a squash. Feet stay on the edge (the transform's origin is the bottom).
-      const hop = (member: Member, height = 22, delay = 0) => {
-        if (member.busy) return;
-        member.busy = true;
-        animate(member.element, {
-          y: [{ to: 0, duration: 90 }, { to: -height, duration: 210, ease: "outQuad" }, { to: 0, duration: 230, ease: "inQuad" }],
-          scaleY: [{ to: 0.82, duration: 90, ease: "outQuad" }, { to: 1.1, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 0.86, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
-          scaleX: [{ to: 1.12, duration: 90, ease: "outQuad" }, { to: 0.94, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 1.1, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
+      // ── moves
+      // A hop from wherever the sprite rests: crouch, leap, land with a squash.
+      const hop = (one: Member, height = 20, delay = 0) => {
+        if (one.busy || one.up || one.floating || one.state === "swim" || one.state === "gone") return;
+        one.busy = true;
+        const rest = one.rest;
+        animate(one.element, {
+          y: [{ to: rest, duration: 90 }, { to: rest - height, duration: 210, ease: "outQuad" }, { to: rest, duration: 230, ease: "inQuad" }],
+          scaleY: [{ to: 0.84, duration: 90, ease: "outQuad" }, { to: 1.1, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 0.87, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
+          scaleX: [{ to: 1.1, duration: 90, ease: "outQuad" }, { to: 0.95, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 1.09, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
           delay,
-          onComplete: () => { member.busy = false; },
+          onComplete: () => { one.busy = false; },
+        });
+      };
+      // A hider comes all the way up from behind its button, or sinks back.
+      const rise = (one: Member, up: boolean) => {
+        if (one.up === up || one.state !== "home") return;
+        one.up = up;
+        animate(one.element, { y: up ? 0 : one.rest, scaleY: up ? [0.9, 1.06, 1] : 1, duration: up ? 420 : 300, ease: up ? "outBack(2)" : "inOutQuad" });
+      };
+      // A small sign floats up from a sprite's head.
+      let signs = 0;
+      const leave = (one: Member, sign?: SpriteSign) => {
+        const mark = document.createElement("span");
+        mark.className = "crew-sign"; mark.innerHTML = signSvg(sign ?? (["heart", "star", "note", "check", "spark", "wave"] as SpriteSign[])[signs++ % 6], Math.max(2, pixel - 1));
+        one.post.append(mark);
+        animate(mark, { y: [8, -14], opacity: [{ to: 1, duration: 220 }, { to: 1, duration: 900 }, { to: 0, duration: 480 }], duration: 1600, ease: "outQuad", onComplete: () => mark.remove() });
+      };
+
+      // The journey to a spot: off the edge, into the water, a swim behind the content, and out onto the new edge.
+      let stroll: ReturnType<typeof animate> | null = null, stride = 0;
+      const bobs = new Map<Member, number>();
+      const acting = new Map<Member, number>();
+      const travel = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
+        if (one === codex) { stroll?.pause(); window.clearInterval(stride); one.walking = false; }
+        const from = one.state === "gone" ? null : feet(one), afloat = one.floating;
+        window.clearInterval(bobs.get(one)); one.floating = false; acting.delete(one); one.post.style.marginLeft = "";
+        one.state = "swim"; one.goal = spot; one.perch = null; one.up = false; one.busy = false; one.mood = null;
+        window.setTimeout(() => {
+          const view = { top: window.scrollY, bottom: window.scrollY + window.innerHeight };
+          // start where it stands if that is on screen; otherwise enter from the nearest side of the screen
+          const seen = from && from.y > view.top - 40 && from.y < view.bottom + 60;
+          const start = seen ? from! : { x: from ? from.x : spot.x < window.innerWidth / 2 ? -40 : window.innerWidth + 40, y: from ? (from.y < view.top ? view.top - 30 : view.bottom + 30) : spot.y + 24 };
+          const side = spot.x >= start.x ? 1 : -1, dip = 24;
+          const a = seen && !afloat ? { x: start.x + side * 26, y: start.y + dip } : start, b = spot.floats ? { x: spot.x, y: spot.y } : { x: spot.x - side * 26, y: spot.y + dip };
+          one.post.classList.remove("hides"); one.rest = 0; resize(one, pixel); one.post.style.opacity = "1";
+          animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
+          const state = { p: 0 };
+          const swim = () => {
+            one.post.classList.add("swims"); if (!afloat) splash(a.x, a.y - line());
+            one.pose = { flip: side < 0, legs: "none", arms: "swimA", eyes: side < 0 ? "l" : "r" }; draw(one);
+            const far = Math.hypot(b.x - a.x, b.y - a.y), time = Math.min(3400, Math.max(520, far / 0.34));
+            let bob = 0;
+            const ux = (b.x - a.x) / (far || 1), uy = (b.y - a.y) / (far || 1);
+            const stroke = window.setInterval(() => { one.pose.arms = one.pose.arms === "swimA" ? "swimB" : "swimA"; bob = bob ? 0 : pixel; draw(one);
+              const here = feet(one); spray(here.x + side * 4 * pixel, here.y - line(), side); }, 170);
+            let last = { x: a.x, y: a.y, at: performance.now() }, owed = 0;
+            state.p = 0;
+            animate(state, { p: 1, duration: time, ease: "inOutSine",
+              onUpdate: () => {
+                const x = a.x + (b.x - a.x) * state.p, y = a.y + (b.y - a.y) * state.p, now = performance.now();
+                stand(one, x, y + bob);
+                const gone = Math.hypot(x - last.x, y - last.y), speed = gone / Math.max(0.004, (now - last.at) / 1000);
+                for (owed += gone; owed >= 5; owed -= 5) wake(x - ux * 2 * pixel, y - line(), ux, uy, speed);
+                last = { x, y, at: now };
+              },
+              onComplete: () => { window.clearInterval(stroke); if (spot.floats) tread(); else climb(); } });
+          };
+          // nothing to climb onto here: it stays in the water, treading, and watches the reader
+          const tread = () => {
+            one.state = "away"; one.goal = null; one.floating = true;
+            one.pose = { legs: "none", arms: "swimA" }; draw(one);
+            let high = false;
+            bobs.set(one, window.setInterval(() => { high = !high; one.element.style.transform = `translateY(${high ? -pixel : 0}px)`;
+              const here = feet(one); for (const way of [-1, 1]) fleck(here.x + way * 5 * pixel, here.y - line(), way * 42, any(5), 0.8); }, 700));
+            feel(one, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100);
+          };
+          const climb = () => {
+            one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8);
+            one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one);
+            state.p = 0;
+            animate(state, { p: 1, duration: 360, ease: "linear",
+              onUpdate: () => stand(one, b.x + (spot.x - b.x) * state.p, b.y + (spot.y - b.y) * state.p - Math.sin(state.p * Math.PI) * 26),
+              onComplete: () => {
+                one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
+                if (home && spot.hides) resize(one, small());
+                stand(one, spot.x, spot.y);
+                // landing: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding)
+                animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
+                feel(one, { eyes: "shut", mouth: "smile" }, 520);
+                window.setTimeout(() => {
+                  if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
+                  else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one); }
+                }, 640);
+              } });
+          };
+          if (!seen || afloat) { stand(one, a.x, a.y); swim(); return; }
+          // off the edge
+          one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "d" }; draw(one);
+          animate(state, { p: 1, duration: 300, ease: "linear",
+            onUpdate: () => stand(one, start.x + (a.x - start.x) * state.p, start.y + (a.y - start.y) * state.p - Math.sin(state.p * Math.PI) * 18),
+            onComplete: swim });
+        }, delay);
+      };
+
+      // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.
+      const roam = () => {
+        if (document.hidden) return;
+        const taken: { x: number; y: number }[] = [], movers: Member[] = [];
+        for (const one of members) {
+          if (one.state === "swim") { if (one.goal) taken.push(one.goal); continue; }   // its place is spoken for
+          const spot = one.home?.() ?? null;
+          if (spot && onScreen(spot.y)) { if (one.state === "home") taken.push(spot); else movers.push(one); continue; }
+          const here = feet(one);
+          if (one.state === "away" && onScreen(here.y) && !one.floating) taken.push(here); else movers.push(one);
+        }
+        if (!movers.length) return;
+        const open = perches();
+        movers.forEach((one, index) => {
+          const spot = one.home?.() ?? null;
+          if (spot && onScreen(spot.y)) { taken.push(spot); travel(one, spot, true, null, index * 240); return; }
+          const here = one.state === "gone" ? { x: window.scrollX + window.innerWidth / 2, y: window.scrollY + window.innerHeight / 2 } : feet(one);
+          const choice = open.filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))
+            .sort((p, q) => Math.hypot(p.x - here.x, p.y - here.y) - Math.hypot(q.x - here.x, q.y - here.y))[0];
+          if (!choice) {                                        // nowhere to stand here: open water will do
+            if (one.floating && onScreen(here.y)) { taken.push(here); return; }
+            const pool = pools().filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))[0];
+            if (pool) { taken.push(pool); travel(one, { ...pool, rest: 0, floats: true }, false, null, index * 240); }
+            return;
+          }
+          taken.push(choice);
+          travel(one, { x: choice.x, y: choice.y, rest: 0 }, false, choice.perch, index * 240);
         });
       };
 
-      // They arrive one after another, rising from behind the window's edge, and wave.
-      animate(members.map((member) => member.element), { y: ["120%", "0%"], opacity: [0, 1], duration: 620, delay: stagger(130, { start: 500 }), ease: "outBack(1.6)" });
-      members.forEach((member, index) => window.setTimeout(() => feel(member, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100), 900 + index * 130));
-
-      // Blinking, each at its own pace.
-      members.forEach((member, index) => {
-        const blink = () => {
-          if (!member.mood && !asleep) { const eyes = member.pose.eyes; member.pose.eyes = "blink"; draw(member); window.setTimeout(() => { member.pose.eyes = eyes; draw(member); }, 110); }
-          window.setTimeout(blink, 2300 + ((index * 977 + Date.now()) % 2900));
+      // ── life at the posts in the hero
+      // the shell sprite jumps to the tab that is now playing
+      const ride = () => {
+        const spot = shell.home?.();
+        if (!spot || shell.state !== "home" || shell.busy) return;
+        const here = feet(shell), far = Math.abs(spot.x - here.x);
+        if (far < 2) return;
+        shell.busy = true;
+        const time = Math.min(620, 320 + far * 0.9), left = spot.x < here.x;
+        feel(shell, { eyes: left ? "l" : "r", legs: "tuck", arms: "up" }, time);
+        animate(shell.post, { left: `${spot.x - 9 * shell.size}px`, duration: time, ease: "inOutQuad" });
+        animate(shell.element, {
+          y: [{ to: -Math.min(46, 18 + far * 0.12), duration: time * 0.5, ease: "outQuad" }, { to: 0, duration: time * 0.5, ease: "inQuad" }],
+          scaleY: [{ to: 1.1, duration: time * 0.5 }, { to: 1, duration: time * 0.4 }, { to: 0.86, duration: 80 }, { to: 1, duration: 240, ease: "outElastic(1, .5)" }],
+          onComplete: () => { shell.busy = false; feel(shell, { eyes: "happy", mouth: "smile" }, 700); },
+        });
+      };
+      // the codex sprite walks to a point on the window's edge, stops to look around, and sets off again
+      const walk = () => {
+        const road = patrol();
+        if (!road || !road.room || codex.state !== "home" || asleep || codex.busy || document.hidden) { window.setTimeout(walk, 2400); return; }
+        const here = feet(codex).x, span = road.to - road.from;
+        let there = road.from + span * ((Math.sin(Date.now() / 3100) + 1) / 2);
+        if (Math.abs(there - here) < span * 0.25) there = here < road.from + span / 2 ? road.to : road.from;
+        codex.walking = true; codex.pose = { flip: there < here, eyes: "n", legs: "walkA" }; draw(codex);
+        stride = window.setInterval(() => { codex.pose.legs = codex.pose.legs === "walkA" ? "walkB" : "walkA"; draw(codex); }, 150);
+        stroll = animate(codex.post, { left: `${there - 9 * codex.size}px`, duration: Math.abs(there - here) * 26, ease: "linear",
+          onComplete: () => { window.clearInterval(stride); codex.walking = false; codex.pose.legs = "stand"; draw(codex); window.setTimeout(walk, 2200 + (Date.now() % 2600)); } });
+      };
+      // the two hiders come up for a look now and then; the guide waves at its button
+      const peek = (one: Member, every: number, mood: SpritePose) => {
+        const turn = () => {
+          if (one.state === "home" && !asleep && !one.up && !one.busy && !document.hidden) { rise(one, true); feel(one, mood, 1250); window.setTimeout(() => { if (!hiders.get(one)?.matches(":hover, :focus-visible")) rise(one, false); }, 1350); }
+          window.setTimeout(turn, every + (Date.now() % 3000));
         };
-        window.setTimeout(blink, 1800 + index * 610);
+        window.setTimeout(turn, every * 0.7);
+      };
+      // a pointer on a button brings its sprite up, delighted, for as long as it stays
+      hiders.forEach((button, one) => {
+        const come = () => { if (one.state !== "home") return; stir(); rise(one, true); feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 0); };
+        const go = () => { if (one.state !== "home") return; one.mood = null; draw(one); rise(one, false); };
+        button.addEventListener("pointerenter", come); button.addEventListener("focus", come);
+        button.addEventListener("pointerleave", go); button.addEventListener("blur", go);
       });
 
-      // Watching the pointer; a pointer that comes close gets a happy face. Nothing moving for a while sends them to sleep.
-      let asleep = false, rest = 0, frame = 0, pointer = { x: 0, y: 0 };
-      const sleep = () => { asleep = true; crew.classList.add("asleep"); members.forEach((member) => { member.pose = { eyes: "shut" }; member.mood = null; draw(member); }); };
-      const stir = () => {
-        window.clearTimeout(rest); rest = window.setTimeout(sleep, 26000);
-        if (asleep) { asleep = false; crew.classList.remove("asleep"); members.forEach((member, index) => { feel(member, { eyes: "wide", mouth: "o" }, 600); hop(member, 10, index * 60); }); }
+      // ── arrival: at their posts if those are on screen, otherwise swimming in
+      place();
+      members.forEach((one, index) => {
+        const spot = one.home?.() ?? null;
+        if (!spot || !onScreen(spot.y)) return;
+        one.state = "home"; one.rest = spot.rest; resize(one, hiders.has(one) ? small() : pixel); stand(one, spot.x, spot.y);
+        if (spot.hides) one.post.classList.add("hides");
+        one.post.style.opacity = "1";
+        animate(one.element, { y: [tall() + 4, one.rest], opacity: [0, 1], duration: 560, delay: 500 + index * 160, ease: "outBack(1.8)" });
+        window.setTimeout(() => feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1000), 900 + index * 160);
+      });
+      members.forEach(draw);
+      window.setTimeout(roam, 900);
+      // whoever is left treading water keeps looking for an edge that has come free
+      window.setInterval(() => { if (members.some((one) => one.floating)) roam(); }, 5000);
+      window.setTimeout(walk, 3200);
+      peek(aqua, 8000, { eyes: "happy", mouth: "smile", arms: "wave" });
+      peek(claude, 13000, { eyes: "n", mouth: "smile" });
+      if (tabsRow) new MutationObserver(ride).observe(tabsRow, { attributes: true, attributeFilter: ["aria-selected"], subtree: true });
+      new ResizeObserver(place).observe(document.body);
+      document.fonts?.ready.then(place);
+      // scrolling: once it stops, whoever was left behind follows
+      let scrolled = 0;
+      window.addEventListener("scroll", () => { window.clearTimeout(scrolled); scrolled = window.setTimeout(roam, 420); }, { passive: true });
+      window.addEventListener("resize", () => { window.clearTimeout(scrolled); scrolled = window.setTimeout(roam, 600); }, { passive: true });
+
+      // ── pastimes: standing in one place for a while, a sprite sings, practises its kung fu or paces along its edge
+      // A pastime is a list of frames, each shown a while after the one before; a journey that starts meanwhile ends it.
+      let turns = 0;
+      const shift = (one: Member, pixels: number) => { one.post.style.marginLeft = `${pixels * one.size}px`; };
+      const perform = (one: Member, frames: [number, () => void][]) => {
+        const id = ++turns; let at = 0;
+        acting.set(one, id); one.busy = true;
+        for (const [wait, show] of frames) { at += wait; window.setTimeout(() => { if (acting.get(one) === id) show(); }, at); }
+        window.setTimeout(() => { if (acting.get(one) !== id) return; acting.delete(one); one.busy = false; one.mood = null; shift(one, 0); draw(one); if (one === shell) ride(); }, at + 260);
       };
+      const sing = (one: Member) => perform(one, [0, 1, 2, 3, 4, 5, 6, 7].map((beat) => [beat ? 300 : 0, () => {
+        feel(one, { eyes: beat % 4 === 3 ? "happy" : "shut", mouth: beat % 2 ? "o" : "open", arms: beat % 2 ? "wave" : "up", blush: true }, 0);
+        shift(one, beat % 2 ? 1 : -1); if (beat % 3 === 0) leave(one, "note");
+      }]));
+      const fight = (one: Member) => {
+        const guard: SpritePose = { legs: "stance", arms: "guard", eyes: "r" }, left = { flip: true };
+        perform(one, [
+          [0, () => feel(one, guard, 0)],
+          [320, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
+          [150, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
+          [220, () => { feel(one, { ...guard, legs: "kick", mouth: "open", eyes: "wide" }, 0); shift(one, 2); }], [260, () => { feel(one, guard, 0); shift(one, 0); }],
+          [260, () => feel(one, { ...guard, ...left }, 0)],
+          [220, () => { feel(one, { ...guard, ...left, arms: "punch", mouth: "open" }, 0); shift(one, -1); }], [170, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
+          [220, () => { feel(one, { ...guard, ...left, legs: "kick", mouth: "open", eyes: "wide" }, 0); shift(one, -2); }], [260, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
+          [300, () => { feel(one, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0); leave(one, "spark"); }], [700, () => {}],
+        ]);
+      };
+      // a few steps along the edge it stands on and back, if the way is free
+      const pace = (one: Member): boolean => {
+        const edge = one.perch && edgeOf(one.perch);
+        if (!edge || one.state !== "away") return false;
+        const here = feet(one), way = one.perch!.at < 0.5 ? 1 : -1, steps = Math.min(8, Math.floor(edge.width * 0.3 / (2 * one.size)));
+        const far = here.x + way * steps * 2 * one.size;
+        if (steps < 3 || !clear(far - window.scrollX, edge.top) || !clear((here.x + far) / 2 - window.scrollX, edge.top)) return false;
+        if (members.some((other) => other !== one && Math.hypot(feet(other).x - far, feet(other).y - here.y) < wide() * 1.8)) return false;
+        const frames: [number, () => void][] = [];
+        const stride = (count: number, toward: number) => frames.push([150, () => { feel(one, { flip: toward < 0, eyes: "n", legs: count % 2 ? "walkA" : "walkB" }, 0); }]);
+        for (let step = 1; step <= steps; step++) { stride(step, way); frames.push([0, () => shift(one, way * step * 2)]); }
+        frames.push([200, () => feel(one, { flip: way < 0, eyes: "u" }, 0)], [500, () => feel(one, { flip: way > 0, eyes: "n" }, 0)]);
+        for (let step = steps - 1; step >= 0; step--) { stride(step, -way); frames.push([0, () => shift(one, way * step * 2)]); }
+        perform(one, frames);
+        return true;
+      };
+      let pastime = 0;
+      window.setInterval(() => {
+        if (asleep || document.hidden) return;
+        const free = members.filter((one) => idle(one) && !one.busy && !one.up && !one.floating && !(one.state === "home" && (hiders.has(one) || one === codex)));
+        if (!free.length) return;
+        const one = free[pastime % free.length], turn = pastime++ % 3;
+        if (turn === 0) sing(one); else if (turn === 1) fight(one); else if (!pace(one)) sing(one);
+      }, 4600);
+
+      // ── habits
+      // blinking, each at its own pace
+      members.forEach((one, index) => {
+        const blink = () => {
+          if (!one.mood && !asleep && one.state !== "swim") { const eyes = one.pose.eyes; one.pose.eyes = "blink"; draw(one); window.setTimeout(() => { if (one.pose.eyes === "blink") one.pose.eyes = eyes; draw(one); }, 110); }
+          window.setTimeout(blink, 2300 + ((index * 977 + Date.now()) % 2900));
+        };
+        window.setTimeout(blink, 1900 + index * 610);
+      });
+      // watching the pointer; nothing moving for a while sends them to sleep
+      let rest = 0, frame = 0, pointer = { x: 0, y: 0 };
+      const idle = (one: Member) => (one.state === "home" || one.state === "away") && !one.walking;
+      let snores = 0;
+      const snore = () => members.filter(idle).forEach((one, index) => window.setTimeout(() => { if (asleep && idle(one)) leave(one, "zzz"); }, index * 520));
+      const sleep = () => { asleep = true; crew.classList.add("asleep"); members.filter(idle).forEach((one) => { one.pose.eyes = "shut"; one.mood = null; draw(one); });
+        snore(); snores = window.setInterval(snore, 2600); };
+      function stir() {
+        window.clearTimeout(rest); rest = window.setTimeout(sleep, 26000);
+        if (asleep) { asleep = false; window.clearInterval(snores); crew.classList.remove("asleep"); members.filter(idle).forEach((one, index) => { one.pose.eyes = "n"; feel(one, { eyes: "wide", mouth: "o" }, 600); hop(one, 10, index * 60); }); }
+      }
       const look = () => {
         frame = 0;
-        for (const member of members) {
-          const box = member.element.getBoundingClientRect(), dx = pointer.x - (box.left + box.width / 2), dy = pointer.y - (box.top + box.height * 0.55), far = Math.hypot(dx, dy);
-          member.pose.eyes = far < box.width * 0.9 ? "happy" : Math.abs(dx) > Math.abs(dy) * 1.2 ? (dx < 0 ? "l" : "r") : dy < 0 ? "u" : "d";
-          member.pose.mouth = far < box.width * 0.9 ? "smile" : "none";
-          draw(member);
+        for (const one of members.filter(idle)) {
+          const box = one.element.getBoundingClientRect(), dx = pointer.x - (box.left + box.width / 2), dy = pointer.y - (box.top + box.height * 0.55), far = Math.hypot(dx, dy);
+          const side = dx < 0 ? "l" : "r", turned = one.pose.flip ? (side === "l" ? "r" : "l") : side;
+          one.pose.eyes = far < box.width * 0.9 ? "happy" : Math.abs(dx) > Math.abs(dy) * 1.2 ? turned : dy < 0 ? "u" : "d";
+          one.pose.mouth = far < box.width * 0.9 ? "smile" : "none";
+          draw(one);
         }
       };
       document.addEventListener("pointermove", (event) => { pointer = { x: event.clientX, y: event.clientY }; stir(); if (!frame) frame = requestAnimationFrame(look); }, { passive: true });
       stir();
 
-      // A press on the page: the nearest sprite starts and hops, the others glance over. A press on a sprite delights it.
+      // ── events on the page
+      // a press: the nearest sprite starts and hops; a press on a sprite delights it, and it leaves a heart
       document.addEventListener("pointerdown", (event) => {
         stir();
         const target = (event.target as Element | null)?.closest?.("[data-sprite]");
-        const ranked = members.map((member) => { const box = member.element.getBoundingClientRect(); return { member, far: Math.hypot(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height / 2) }; }).sort((a, b) => a.far - b.far);
-        if (target) { const member = members.find((one) => one.element === target); if (member) { feel(member, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1200); hop(member, 34); } return; }
-        if (ranked[0].far < 900) { feel(ranked[0].member, { eyes: "wide", mouth: "o" }, 520); hop(ranked[0].member, 16); }
+        const pressed = members.find((one) => one.element === target);
+        if (pressed) {
+          feel(pressed, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1200);
+          if (hiders.has(pressed) && pressed.state === "home") { rise(pressed, true); window.setTimeout(() => rise(pressed, false), 1300); } else { hop(pressed, 30); leave(pressed, "heart"); }
+          return;
+        }
+        const near = members.filter(idle).map((one) => { const box = one.element.getBoundingClientRect(); return { one, far: Math.hypot(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height / 2) }; }).sort((a, b) => a.far - b.far)[0];
+        if (near && near.far < 700) { feel(near.one, { eyes: "wide", mouth: "o" }, 520); hop(near.one, 14); }
       }, { passive: true });
-
-      // The scene of the window changes: a wave of hops runs along the row, starting with a different sprite each time.
-      let scene = 0;
-      new MutationObserver(() => {
-        const now = Array.from(stage.querySelectorAll("[data-scene]")).findIndex((tab) => tab.getAttribute("aria-selected") === "true");
-        if (now < 0 || now === scene) return;
-        scene = now;
-        members.forEach((member, index) => { const turn = (index - (now % members.length) + members.length) % members.length; hop(member, turn === 0 ? 26 : 14, turn * 90); if (turn === 0) feel(member, { eyes: "happy", mouth: "smile", arms: "up" }, 900); });
-      }).observe(stage, { attributes: true, attributeFilter: ["aria-selected"], subtree: true });
-
-      // The film opens or the theme changes: everyone reacts.
+      // the film opens or the theme changes: everyone reacts
       new MutationObserver((records) => {
         for (const record of records) {
-          if (record.attributeName === "data-theater" && document.documentElement.hasAttribute("data-theater")) members.forEach((member, index) => { feel(member, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1600); hop(member, 24, index * 80); });
-          if (record.attributeName === "data-theme") members.forEach((member, index) => { feel(member, { eyes: "wide", mouth: "o" }, 800); hop(member, 12, index * 70); });
+          if (record.attributeName === "data-theater" && document.documentElement.hasAttribute("data-theater")) members.forEach((one, index) => { feel(one, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1600); hop(one, 22, index * 80); });
+          if (record.attributeName === "data-theme") dye();
+          if (record.attributeName === "data-theme") members.forEach((one, index) => { feel(one, { eyes: "wide", mouth: "o" }, 800); hop(one, 12, index * 70); });
         }
       }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theater", "data-theme"] });
     }

@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Crew from "../components/Crew.astro";
 import { site, downloadUrl } from "../site";
 import { starCount, compact } from "../lib/github";
 
@@ -82,6 +83,7 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
     <!-- Where a press lands, rings spread as on water. The layer lies behind everything on the page, so the rings
          show on the bare background only and never over a card, an image or the app window. -->
     <div class="touch" data-touch aria-hidden="true"></div>
+    <Crew />
     <a class="skip" href="#main">Skip to content</a>
     <header class="nav">
       <div class="nav-inner" data-nav>

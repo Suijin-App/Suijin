@@ -3,9 +3,9 @@
 export type SpriteColor = "aqua" | "claude" | "codex" | "shell";
 export type SpriteEyes = "n" | "l" | "r" | "u" | "d" | "wide" | "happy" | "shut" | "blink" | "sleepy" | "star";
 export type SpriteMouth = "none" | "open" | "o" | "smile";
-export type SpriteArms = "down" | "up" | "wave";
-export type SpriteLegs = "stand" | "tuck";
-export interface SpritePose { eyes?: SpriteEyes; mouth?: SpriteMouth; arms?: SpriteArms; legs?: SpriteLegs; blush?: boolean }
+export type SpriteArms = "down" | "up" | "wave" | "swimA" | "swimB" | "guard" | "punch";
+export type SpriteLegs = "stand" | "tuck" | "walkA" | "walkB" | "sit" | "none" | "stance" | "kick";
+export interface SpritePose { eyes?: SpriteEyes; mouth?: SpriteMouth; arms?: SpriteArms; legs?: SpriteLegs; blush?: boolean; flip?: boolean }
 
 export const SPRITE_SIZE = { width: 12, height: 14 };
 // body, shade, highlight, eye, blush: aqua is the guide, coral Claude Code, indigo Codex, green the shell.
@@ -33,12 +33,41 @@ const mouth: Record<SpriteMouth, number[][]> = {
 };
 const legs: Record<SpriteLegs, number[][]> = {
   stand: [[4, 12], [3, 13], [4, 13], [7, 12], [7, 13], [8, 13]], tuck: [[3, 12], [4, 12], [7, 12], [8, 12]],
+  // a step: one boot lifted, then the other
+  walkA: [[3, 12], [4, 12], [7, 12], [7, 13], [8, 13]], walkB: [[4, 12], [3, 13], [4, 13], [7, 12], [8, 12]],
+  // sitting on an edge, legs hanging; and no legs at all (under water)
+  sit: [[4, 12], [4, 13], [7, 12], [7, 13]], none: [],
+  // a fighting stance, feet wide apart; and a kick, the front leg straight out
+  stance: [[3, 12], [2, 13], [3, 13], [8, 12], [9, 13], [8, 13]], kick: [[4, 12], [3, 13], [4, 13], [8, 12], [9, 12], [10, 12], [11, 12]],
 };
 const arms: Record<SpriteArms, number[][]> = {
   down: [], up: [[0, 7], [0, 6], [0, 5], [11, 7], [11, 6], [11, 5]], wave: [[11, 7], [11, 6], [11, 5]],
+  // a swimming stroke: one arm reaching forward on the surface, then the other pulling back
+  swimA: [[11, 7], [12, 7], [0, 8]], swimB: [[11, 8], [0, 7], [-1, 7]],
+  // fists up; and a straight punch with the front arm
+  guard: [[0, 6], [11, 6]], punch: [[0, 6], [11, 7], [12, 7], [13, 7]],
 };
 
-/** The rectangles of one sprite in the given pose, for an `<svg viewBox="0 0 12 14" shape-rendering="crispEdges">`. */
+/** Small pixel signs a sprite leaves above its head. Each is rows of characters; "." is empty. */
+export type SpriteSign = "heart" | "star" | "note" | "check" | "wave" | "spark" | "zzz";
+const signs: Record<SpriteSign, { rows: string[]; colors: Record<string, string> }> = {
+  heart: { rows: [".rr.rr.", "rrrrrrr", "rrrrrrr", ".rrrrr.", "..rrr..", "...r..."], colors: { r: "#F0567A" } },
+  star: { rows: ["...y...", "...y...", "yyyyyyy", ".yyyyy.", ".yy.yy.", "yy...yy"], colors: { y: "#F2B92E" } },
+  note: { rows: ["..bbbb", "..b..b", "..b..b", "bbb.bb", "bbb.bb"], colors: { b: "#5B6CF0" } },
+  check: { rows: [".....g", "....gg", "g..gg.", "gggg..", ".gg..."], colors: { g: "#30B552" } },
+  wave: { rows: [".aa...aa", "a..a.a..", "....a..."], colors: { a: "#19B8D8" } },
+  zzz: { rows: ["....zzzz", "......z.", "zzz..z..", ".z..zzzz", "zzz....."], colors: { z: "#8A93A6" } },
+  spark: { rows: ["..y..", "..y..", "yy.yy", "..y..", "..y.."], colors: { y: "#F2B92E" } },
+};
+/** An `<svg>` of one sign, `pixel` CSS pixels to the square. */
+export function signSvg(sign: SpriteSign, pixel: number): string {
+  const { rows, colors } = signs[sign], width = Math.max(...rows.map((row) => row.length));
+  let rects = "";
+  rows.forEach((row, y) => [...row].forEach((cell, x) => { if (colors[cell]) rects += `<rect x="${x}" y="${y}" width="1.03" height="1.03" fill="${colors[cell]}"/>`; }));
+  return `<svg viewBox="0 0 ${width} ${rows.length}" width="${width * pixel}" height="${rows.length * pixel}" shape-rendering="crispEdges">${rects}</svg>`;
+}
+
+/** The rectangles of one sprite in the given pose, for an `<svg viewBox="0 0 12 14" shape-rendering="crispEdges">`. `flip` makes it face left. */
 export function spritePixels(color: SpriteColor, pose: SpritePose = {}): string {
   const [bodyFill, shade, highlight, eye, blush] = palette[color];
   const cells = new Map<string, string>();
@@ -52,6 +81,6 @@ export function spritePixels(color: SpriteColor, pose: SpritePose = {}): string 
   for (const [column, row] of mouth[pose.mouth ?? "none"]) put(column, row, eye);
   for (const [column, row, sparkle] of eyes[pose.eyes ?? "n"]) put(column, row, sparkle ? highlight : eye);
   let rects = "";
-  for (const [key, fill] of cells) { const [column, row] = key.split(","); rects += `<rect x="${column}" y="${row}" width="1.03" height="1.03" fill="${fill}"/>`; }
+  for (const [key, fill] of cells) { const [column, row] = key.split(","); rects += `<rect x="${pose.flip ? 11 - Number(column) : column}" y="${row}" width="1.03" height="1.03" fill="${fill}"/>`; }
   return rects;
 }

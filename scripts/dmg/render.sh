@@ -1,8 +1,8 @@
 #!/bin/bash
 # Render the installer's pictures from their HTML sources with headless Chrome:
 #   scripts/dmg/background.tiff    the window background, at 1x and 2x in one file
-#   scripts/dmg/VolumeIcon.icns    the icon of the mounted volume
-# Run it after changing background.html or volume-icon.html, or when the app icon changed, and commit the results.
+#   scripts/dmg/VolumeIcon.icns    the icon of the mounted volume and of the image file: the app's icon
+# Run it after changing background.html, or when the app icon changed, and commit the results.
 #
 # Usage: scripts/dmg/render.sh <path/to/app-icon.png>     (a 1024 × 1024 PNG of Suijin's icon)
 set -euo pipefail
@@ -26,7 +26,8 @@ shot 2 660 400 "file://$HERE/background.html" "$WORK/background@2x.png"
 sips -s dpiWidth 144 -s dpiHeight 144 "$WORK/background@2x.png" >/dev/null
 tiffutil -cathidpicheck "$WORK/background.png" "$WORK/background@2x.png" -out "$HERE/background.tiff" >/dev/null 2>&1
 
-shot 1 1024 1024 "file://$HERE/volume-icon.html?icon=file://$ICON" "$WORK/volume.png"
+# The volume carries the app's own icon: a drawn disk never looks as good as the real thing.
+cp "$ICON" "$WORK/volume.png"
 SET="$WORK/VolumeIcon.iconset"; mkdir "$SET"
 for size in 16 32 128 256 512; do
   sips -z "$size" "$size" "$WORK/volume.png" --out "$SET/icon_${size}x${size}.png" >/dev/null

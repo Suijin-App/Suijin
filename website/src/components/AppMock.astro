@@ -5,7 +5,7 @@
 // label. Without the script, or with reduced motion, every scene shows its finished state.
 import Sidebar, { type Row } from "./mock/Sidebar.astro";
 import Toolbar, { type Tab } from "./mock/Toolbar.astro";
-import Inspector from "./mock/Inspector.astro";
+import Inspector, { type Entry } from "./mock/Inspector.astro";
 import Status from "./mock/Status.astro";
 import { icon } from "./mock-icons";
 import claude from "../assets/agents/claude-color.svg?raw";
@@ -18,6 +18,26 @@ const scenes = [
   { id: "files", label: "Files & media" },
   { id: "accounts", label: "Switch accounts" },
 ];
+
+// The worktree's files as the inspector lists them: folders first, then files.
+const tree = (options: { docs?: boolean; tests?: Record<string, string>; pick?: string; attrs?: Record<string, Record<string, string>> } = {}): Entry[] => {
+  const entries: Entry[] = [
+    { name: "Sources", folder: "open" },
+    { name: "UsageBar", folder: "open", depth: 1 },
+    { name: "UsageBar.swift", depth: 2 },
+    { name: "UsageController.swift", depth: 2 },
+    { name: "UsageStatusItem.swift", depth: 2 },
+    { name: "Tests", folder: "open" },
+    { name: "UsageBarTests.swift", depth: 1, attrs: options.tests },
+    { name: "docs", folder: options.docs ? "open" : "closed" },
+    ...(options.docs ? [{ name: "chime.m4a", depth: 1 }, { name: "demo.mov", depth: 1 }, { name: "preview.png", depth: 1 }] : []),
+    { name: "scripts", folder: "closed" },
+    { name: "Package.swift" },
+    { name: "package.json" },
+    { name: "README.md" },
+  ];
+  return entries.map((entry) => ({ ...entry, selected: entry.name === options.pick, attrs: options.attrs?.[entry.name] ?? entry.attrs }));
+};
 
 const tail: Row[] = [
   { kind: "tree", name: "fix/login-timeout", dot: "ok", right: "1" },
@@ -164,7 +184,7 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
         </div>
         <Status running="6 running" memory="192,7 MB" />
       </div>
-      <Inspector mode="files" files={[{ name: "README.md" }, { name: "UsageBar.swift" }, { name: "UsageBarTests.swift", attrs: { "data-step": "7" } }]} />
+      <Inspector mode="files" files={tree({ pick: "UsageBar.swift", tests: { "data-step": "7" } })} />
     </div>
 
     <!-- Scene 2: one agent starts workers and collects their results; each worker gets a tab of its own -->
@@ -281,14 +301,7 @@ bar.label   <span class="dim">// "42%"</span></pre>
         </div>
         <Status running="3 running" memory="118,4 MB" />
       </div>
-      <Inspector mode="files" files={[
-        { name: "README.md", attrs: { class: "m-file on", "data-set": "6:off" } },
-        { name: "UsageBar.swift" },
-        { name: "UsageBarTests.swift" },
-        { name: "chime.m4a" },
-        { name: "demo.mov", attrs: { "data-set": "6:on" } },
-        { name: "preview.png" },
-      ]} />
+      <Inspector mode="files" files={tree({ docs: true, pick: "README.md", attrs: { "README.md": { "data-set": "6:off" }, "demo.mov": { "data-set": "6:on" } } })} />
     </div>
 
     <!-- Scene 4: an account runs out and the session moves to the next one -->

@@ -1,11 +1,20 @@
 ---
-// The inspector column: the worktree's files, or its details (branch, source control, pull request, commit, changes).
-// In "info" mode the body is the default slot, so a scene can animate what it shows there.
-import { icon } from "../mock-icons";
+// The inspector column: the worktree's file tree, or its details (branch, source control, pull request, commit,
+// changes). In "info" mode the body is the default slot, so a scene can animate what it shows there.
+import { icon, fileIcon } from "../mock-icons";
 
+export interface Entry {
+  name: string;
+  /** Nesting level, 0 at the root. */
+  depth?: number;
+  /** A folder, shown open or closed. */
+  folder?: "open" | "closed";
+  selected?: boolean;
+  attrs?: Record<string, string>;
+}
 interface Props {
   mode: "files" | "info";
-  files?: { name: string; attrs?: Record<string, string> }[];
+  files?: Entry[];
 }
 const { mode, files = [] } = Astro.props;
 ---
@@ -16,8 +25,10 @@ const { mode, files = [] } = Astro.props;
     <>
       <div class="m-search"><span>Filter files</span><span class="m-ic faint small" set:html={icon("refresh")} /></div>
       {files.map((file) => (
-        <div class="m-file" {...file.attrs}>
-          <b class:list={["m-type", file.name.split(".").pop()]}>{file.name.endsWith(".md") ? "MD" : ""}</b>{file.name}
+        <div class:list={["m-file", { on: file.selected }]} style={`padding-left:${6 + (file.depth ?? 0) * 13}px`} {...file.attrs}>
+          <span class:list={["m-chev", file.folder]} set:html={file.folder ? icon("chevron") : ""} />
+          <span class="m-fi" set:html={fileIcon(file.name, Boolean(file.folder))} />
+          <span class="m-name">{file.name}</span>
         </div>
       ))}
     </>

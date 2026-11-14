@@ -26,3 +26,24 @@ const paths: Record<string, string> = {
 export function icon(name: string): string {
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] ?? ""}</svg>`;
 }
+
+const page = '<path d="M3.5 1.5h6l3 3V14a.5.5 0 0 1-.5.5H3.5A.5.5 0 0 1 3 14V2a.5.5 0 0 1 .5-.5z" fill="#fff" stroke="#bdbdc2" stroke-width=".7"/><path d="M9.5 1.5v3h3" fill="#ececee" stroke="#bdbdc2" stroke-width=".7" stroke-linejoin="round"/>';
+const badge = (text: string, color: string) =>
+  `<rect x="1.5" y="2.5" width="13" height="11" rx="2.6" fill="${color}"/><text x="8" y="10.1" text-anchor="middle" font-size="${text.length > 2 ? 4.6 : 5.6}" font-weight="700" fill="#fff" font-family="system-ui, sans-serif">${text}</text>`;
+const marks: Record<string, string> = {
+  swift: page + '<path d="M5 7.4c1.4 1.5 2.8 2.300 4.100 2.700-1.200-1-2.100-2.100-2.700-3.300 1.500 1.200 2.800 2 3.800 2.500.4-.8.200-1.900-.6-2.800 1.400.9 2.200 2.500 1.700 4 .4.500.5 1 .3 1.400-.3-.4-.7-.6-1.300-.4-1.700.700-4-.100-5.300-4.100z" fill="#f05138"/>',
+  mov: page + '<rect x="4.800" y="7" width="6.400" height="4.800" rx=".9" fill="#5b5bd6"/><path d="M7.300 8.300v2.200l2-1.100z" fill="#fff"/>',
+  m4a: page + '<path d="M7.100 11.500V7.500l3.200-.8v4" fill="none" stroke="#f0459a" stroke-width=".9" stroke-linejoin="round"/><circle cx="6.300" cy="11.500" r=".95" fill="#f0459a"/><circle cx="9.500" cy="10.700" r=".95" fill="#f0459a"/>',
+  png: page + '<rect x="4.800" y="7" width="6.400" height="4.800" rx=".7" fill="#bfe3ff"/><path d="M4.900 11.800l2.100-2.400 1.400 1.400 1-1 1.700 2z" fill="#30a46c"/><circle cx="9.700" cy="8.300" r=".65" fill="#f5b400"/>',
+  md: badge("MD", "#59667a"),
+  json: badge("{}", "#cc801a"),
+  yml: badge("YML", "#993340"),
+  sh: badge("SH", "#408c4d"),
+};
+const folder = '<path d="M1 4.200C1 3.500 1.500 3 2.200 3h3.200c.4 0 .8.200 1 .4l.9.900h6.500c.7 0 1.200.5 1.200 1.200V12c0 .7-.5 1.200-1.200 1.200H2.200C1.500 13.200 1 12.700 1 12z" fill="#3a9be6"/><path d="M1 6.400c0-.7.5-1.200 1.200-1.200h11.600c.7 0 1.200.5 1.200 1.200V12c0 .7-.5 1.200-1.200 1.200H2.200C1.500 13.200 1 12.700 1 12z" fill="#6ec1f7"/>';
+
+/** A file's icon as the app's tree shows it: the system folder, a document page marked by type, or a labelled badge. */
+export function fileIcon(name: string, isFolder = false): string {
+  const body = isFolder ? folder : marks[name.split(".").pop() ?? ""] ?? page;
+  return `<svg viewBox="0 0 16 16" aria-hidden="true">${body}</svg>`;
+}

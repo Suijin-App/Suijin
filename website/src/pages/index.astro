@@ -21,6 +21,8 @@ const application = {
   image: new URL("/og.png", site.url).href,
   applicationCategory: "DeveloperApplication",
   operatingSystem: "macOS 15 or later",
+  license: "https://www.apache.org/licenses/LICENSE-2.0",
+  codeRepository: site.repository,
   ...(released ? { softwareVersion: site.releasedVersion, downloadUrl: site.releases } : {}),
   author: { "@type": "Organization", name: site.publisher },
   featureList: [
@@ -70,7 +72,7 @@ const logos = import.meta.glob<string>("../assets/agents/*.svg", { query: "?raw"
         </a>
         <a class="button secondary" href="#features">See what it does</a>
       </div>
-      <p class="meta">{site.minimumSystem} or later · signed and notarized · your code stays on your Mac</p>
+      <p class="meta">{site.minimumSystem} or later · open source, {site.license} · your code stays on your Mac</p>
 
       <AppMock />
     </div>

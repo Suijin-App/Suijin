@@ -12,6 +12,8 @@ export const site = {
   discord: "https://discord.gg/sFEhaWAMvq",
   changelog: "https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md",
   publisher: "Tekmium Solutions",
+  license: "Apache-2.0",
+  licenseUrl: "https://github.com/Suijin-App/Suijin/blob/main/LICENSE",
   minimumSystem: "macOS 15",
   // Set to the version string once the first release is published; the download wording follows it.
   releasedVersion: null as string | null,
@@ -54,6 +56,11 @@ export const faq = [
     question: "What does Suijin send over the network?",
     answer:
       "About once a day it asks suijin.app whether a newer version exists; that request carries only the app's name and version, and is counted per day and version with nothing about you kept. To show usage limits it asks Anthropic or OpenAI with your own login. Everything else is the agents and tools you run yourself.",
+  },
+  {
+    question: "Is Suijin open source?",
+    answer:
+      "Yes. The source is on GitHub under the Apache License 2.0, so you may read, build, change and redistribute it. The license covers the code, not the Suijin name or icon.",
   },
   {
     question: "What do I need to run Suijin?",

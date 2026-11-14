@@ -4,13 +4,28 @@
     "" : {
 
     },
+    "A split tab with Claude, Codex and two shells side by side" : {
+
+    },
+    "any other agent" : {
+
+    },
     "As far as the law allows, the Suijin Authors are not liable for indirect, incidental, special or consequential damages, or for lost data, code, work or profits, that arise from your use of Suijin. Nothing in these terms limits rights you have under laws that cannot be waived." : {
 
     },
     "Claude Code (by Anthropic) and Codex (by OpenAI) are separate programs you install. Suijin starts them on your Mac, in the folders you choose. What they send to their providers, such as your prompts, code and files, is governed by those providers' terms and privacy policies. None of it passes through the Suijin Authors." : {
 
     },
+    "Claude Code, Codex, a shell and any other agent" : {
+
+    },
     "Community" : {
+
+    },
+    "drag a pane by its header\nto move it" : {
+
+    },
+    "every agent in a\nworktree of its own" : {
 
     },
     "For questions about privacy or security, contact the Suijin Authors through the details in Settings → About." : {
@@ -20,6 +35,12 @@
 
     },
     "Links" : {
+
+    },
+    "Settings, Accounts, with several accounts for each agent" : {
+
+    },
+    "several accounts\nfor each agent" : {
 
     },
     "Source Code" : {
@@ -47,6 +68,9 @@
 
     },
     "Website" : {
+
+    },
+    "what the agent changed,\nline by line" : {
 
     },
     "“%@” (#%lld) is already open for this branch. New commits you push appear in it." : {
@@ -562,9 +586,6 @@
 
     },
     "A short tour of workspaces, sessions, split panes, changes and accounts." : {
-
-    },
-    "A split tab with Claude, Codex and a shell, while a pane is dragged to a new place" : {
 
     },
     "A tab holds up to %lld panes" : {
@@ -2898,9 +2919,6 @@
 
     },
     "Settings page" : {
-
-    },
-    "Settings, Stats & Usage, with tokens, cost and activity per day" : {
 
     },
     "Settings…" : {

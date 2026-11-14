@@ -171,4 +171,72 @@ struct OnboardingTests {
         #expect(ShortcutSpeech.label(for: "⇧⌘O") == "Shift Command O")
         #expect(ShortcutSpeech.label(for: "⌥⌘←→") == "Option Command Left Arrow Right Arrow")
     }
+
+    // MARK: Sprites and notes
+
+    @Test func everySpritePoseStaysOnItsGrid() {
+        for tint in WaterSprite.Tint.allCases {
+            for mood in [LivelySprite.Mood.idle, .cheering, .sitting] {
+                for time in [nil, 0.05, 0.2, 1.3, 3.39] as [Double?] {
+                    let pose = LivelySprite.pose(tint: tint, mood: mood, time: time, gaze: .right, sinceTap: time.map { $0 / 4 })
+                    #expect(pose.lift >= 0)
+                    #expect(pose.sprite.cells.count > 80)
+                    for cell in pose.sprite.cells.keys {
+                        #expect((0..<WaterSprite.columns).contains(cell.column))
+                        #expect((0..<WaterSprite.rows).contains(cell.row))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func aStillSpriteStandsOnTheGround() {
+        // Reduce Motion: no hop, both boots down.
+        #expect(LivelySprite.pose(tint: .aqua, mood: .idle, time: nil).lift == 0)
+        #expect(LivelySprite.pose(tint: .aqua, mood: .cheering, time: nil).lift == 0)
+        #expect(LivelySprite.pose(tint: .aqua, mood: .idle, time: nil).sprite.legs == .stand)
+    }
+
+    @Test func aSpriteLooksAtThePointer() {
+        let center = CGPoint(x: 100, y: 100)
+        #expect(LivelySprite.gaze(from: center, to: nil, reach: 40) == nil)
+        #expect(LivelySprite.gaze(from: center, to: CGPoint(x: 110, y: 95), reach: 40) == .happy)
+        #expect(LivelySprite.gaze(from: center, to: CGPoint(x: 10, y: 120), reach: 40) == .left)
+        #expect(LivelySprite.gaze(from: center, to: CGPoint(x: 400, y: 60), reach: 40) == .right)
+        #expect(LivelySprite.gaze(from: center, to: CGPoint(x: 110, y: 0), reach: 40) == .up)
+        #expect(LivelySprite.gaze(from: center, to: CGPoint(x: 90, y: 400), reach: 40) == .down)
+        // The eyes follow the gaze unless it blinks.
+        #expect(LivelySprite.pose(tint: .codex, mood: .sitting, time: 1, gaze: .left).sprite.eyes == .left)
+        #expect(LivelySprite.pose(tint: .codex, mood: .sitting, time: 0.05, gaze: .left).sprite.eyes == .blink)
+    }
+
+    @Test func aClickedSpriteJumpsForJoyAndThenSettles() {
+        let jumping = LivelySprite.pose(tint: .shell, mood: .sitting, time: 1, sinceTap: LivelySprite.joy / 2)
+        #expect(jumping.lift > 3)
+        #expect(jumping.sprite.eyes == .happy)
+        #expect(jumping.sprite.legs == .tuck)
+        let after = LivelySprite.pose(tint: .shell, mood: .sitting, time: 1, sinceTap: LivelySprite.joy + 0.1)
+        #expect(after.lift == 0)
+        #expect(after.sprite.eyes == .open)
+        // Reduce Motion: the face answers, the sprite stays put.
+        let still = LivelySprite.pose(tint: .shell, mood: .sitting, time: nil, sinceTap: 0)
+        #expect(still.lift == 0)
+        #expect(still.sprite.eyes == .happy)
+    }
+
+    @Test func featureStepsCarryANoteInsideTheirCapture() {
+        for step in OnboardingStep.allCases {
+            guard let annotation = step.annotation else {
+                #expect(step.screenshot == nil)
+                continue
+            }
+            #expect(step.screenshot != nil)
+            for fraction in annotation.fractions {
+                #expect((0...1).contains(fraction))
+            }
+            // The arrow ends in the upper half, which stays visible when a short window cuts the capture off.
+            #expect(annotation.arrowEnd.y < 0.5)
+        }
+        #expect(Set(OnboardingStep.allCases.compactMap(\.annotation?.sprite)).count == WaterSprite.Tint.allCases.count)
+    }
 }

@@ -279,7 +279,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         const mark = document.createElement("span");
         mark.className = "crew-sign"; mark.innerHTML = signSvg(sign ?? (["heart", "star", "note", "check", "spark", "wave"] as SpriteSign[])[signs++ % 6], Math.max(2, pixel - 1));
         one.post.append(mark);
-        if (sign === "zzz") play("snore", one); else if (sign !== "note") play("pop", one);
+        if (sign !== "zzz" && sign !== "note") play("pop", one);   // sleep is silent, and a song has its own notes
         animate(mark, { y: [8, -14], opacity: [{ to: 1, duration: 220 }, { to: 1, duration: 900 }, { to: 0, duration: 480 }], duration: 1600, ease: "outQuad", onComplete: () => mark.remove() });
       };
 

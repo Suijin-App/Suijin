@@ -1,8 +1,8 @@
 ---
 name: suijin-release-macos
-description: "Release the Suijin macOS app from this repository: check the last released version, bump the version, write release notes with annotated screenshots, build, sign, notarize, publish the GitHub release and verify the update feed. Use when asked to release, ship, publish or cut a version of Suijin, or to prepare its release notes. Not for building or testing the app during development, nor for changing how releases work (edit ./scripts/release-notarize.sh and docs/release-process.md instead)."
+description: "Release the Suijin macOS app from this repository: check the last released version, bump the version, write release notes with annotated screenshots, build, sign, notarize, publish the GitHub release, verify the update feed and announce the release on Discord. Use when asked to release, ship, publish or cut a version of Suijin, or to prepare its release notes. Not for building or testing the app during development, nor for changing how releases work (edit ./scripts/release-notarize.sh and docs/release-process.md instead)."
 metadata:
-  version: 1.1.0
+  version: 1.2.0
 ---
 
 # Suijin release (macOS)
@@ -29,6 +29,11 @@ until every check before it passed, and the publish step itself waits for the ow
 - **Publishing.** `gh release create`, pushing a tag and deleting a release are outward-facing. Do them only after the
   owner confirmed in this conversation, with the version and the notes in front of them. A go-ahead for one release
   does not cover the next.
+- **The Discord bot token** lives in TSSC (project Suijin, environment `prod`, secret `DISCORD_BOT_TOKEN`) and reaches
+  the announcement script only through `tssc run`. Never print it, read it with `tssc secrets`, or write it to a file.
+- **Announcing.** A message in `#releases` is outward-facing too, and it is covered by the owner's go-ahead for
+  publishing that same release: once stage 10 passed, announce without asking again. Never announce a release that
+  is not published or that failed stage 10.
 - **The feed address** `https://suijin.app/appcast.xml` and the bundle identifier never change in a release.
 - **Privacy in images.** Screenshots go into a public repository. No real email address, account name, host name,
   token or usage figure of the owner may be readable in them.
@@ -163,17 +168,32 @@ was built, and that Gatekeeper accepts the download. Then:
   installs this version and that running sessions survive (section 5 of `docs/release-process.md`). For the first
   release there is nothing to update from; say that the update path stays unproven until the second release.
 
-### 11. If something is wrong after publishing
+### 11. Announce on Discord
+
+Only after every line of stage 10 passed:
+
+```sh
+tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- \
+  .claude/skills/suijin-release-macos/scripts/announce-release-discord.py
+```
+
+It posts the opening paragraph of the release notes and the link to the release page in `#releases` of the Suijin
+Discord server, as Suijin Bot. It stops when the release is not the latest published one, and it does not post a
+version twice. Add `--dry-run` (no `tssc run` needed) to read the message first. If `tssc` reports an expired
+session, ask the owner to run `tssc login`; do not ask for the token.
+
+### 12. If something is wrong after publishing
 
 A broken release reaches users through the feed, so act quickly and tell the owner first. With their go-ahead,
 `gh release delete v<version> --repo Suijin-App/Suijin --cleanup-tag --yes` makes the previous release the latest
 again; copies that already updated keep the broken version until a fixed one with a higher build number ships.
-Never reuse a version or build number that was published.
+Never reuse a version or build number that was published. If the release was announced, tell the owner so they can
+remove or correct the message in `#releases`.
 
 ## Report
 
 End with: the version and build released, the release URL, what each verification stage showed (with the failing
-output if any), which hands-on checks the owner did or skipped, which features have no screenshot and why, and
+output if any), whether the release was announced on Discord, which hands-on checks the owner did or skipped, which features have no screenshot and why, and
 anything still unproven.
 
 ## Resources
@@ -182,6 +202,7 @@ anything still unproven.
   items' presence and the feed.
 - `scripts/verify-release-artifacts.sh`: stage 8; checks the built app, DMG and appcast.
 - `scripts/verify-published-release.sh`: stage 10; checks the feed and the download against what was built.
+- `scripts/announce-release-discord.py`: stage 11; posts the release in `#releases` on Discord.
 - `scripts/capture-window.sh` and `scripts/annotate-screenshot.py`: stage 4; see `references/screenshots.md`.
 - `references/screenshots.md`: open for stage 4.
 - `references/release-notes.md`: open for stage 5.

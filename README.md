@@ -182,3 +182,8 @@ machine and again after a SwiftTerm upgrade. Command-line builds skip the prompt
 - [`docs/architecture.md`](docs/architecture.md): package layout, processes, sessions, accounts and tests.
 - [`docs/release-process.md`](docs/release-process.md): signing, notarization and Sparkle updates.
 - [`CHANGELOG.md`](CHANGELOG.md): what changed.
+
+## License
+
+Suijin is licensed under the [Apache License 2.0](LICENSE). Copyright 2026 Tekmium Solutions. The license covers the
+code; it does not grant the use of the Suijin name or icon.

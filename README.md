@@ -86,10 +86,12 @@ confirmed first.
 - The status bar shows each plan's usage.
 - **Continue With Another Account** carries a conversation to another account when one runs out, in the same tab,
   folder and permission mode.
-- Optional automatic switching moves a session to the next account with room when its account hits a limit, in an
-  order you set.
+- Two options, both off by default, move sessions for you: when the default account changes, and when an account
+  hits a usage limit (to the next account with room, in an order you set).
+- Using several accounts, and switching between them at a usage limit, may be against the terms of Anthropic or
+  OpenAI. Check them: you are responsible for how you use your accounts. Settings › Accounts says so as well.
 
-![Settings, Accounts: several accounts per agent and automatic switching](docs/screenshots/accounts.png)
+![Settings, Accounts: several accounts per agent, the optional switching settings and the note on provider terms](docs/screenshots/accounts.png)
 
 ### Agent orchestration
 

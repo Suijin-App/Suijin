@@ -32,7 +32,7 @@ const application = {
     "Split tabs with up to ten sessions",
     "Native diff viewer, commit, push and pull requests",
     "Agent orchestration: one agent starts and coordinates others",
-    "Several managed accounts per agent with automatic switching",
+    "Several managed accounts per agent",
     "Sessions keep running after the app quits",
   ],
 };
@@ -159,10 +159,10 @@ const logos = import.meta.glob<string>("../assets/agents/*.svg", { query: "?raw"
         </article>
         <article class="card wide" data-reveal>
           <div class="body">
-            <h3>Several accounts, switched for you</h3>
-            <p>Add more than one Claude or Codex account. When one hits its usage limit, the session moves to the next account with room, conversation included.</p>
+            <h3>Several accounts, your choice</h3>
+            <p>Add more than one Claude or Codex account and see each plan's usage. When one runs out, continue the conversation on another account yourself, in the same tab. Switching at a limit is an option, off by default.</p>
           </div>
-          <div class="shot"><Image src={accounts} alt="Settings, Accounts: two Claude accounts, automatic switching on, and the order accounts are tried in." {...shot} /></div>
+          <div class="shot"><Image src={accounts} alt="Settings, Accounts: two Claude accounts and the options for switching between them." {...shot} /></div>
         </article>
 
         <article class="card" data-reveal>

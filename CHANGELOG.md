@@ -21,8 +21,9 @@ agent side by side, each in a git worktree of its own.
   the default for each agent, and a session that skips permission checks is confirmed first and marked with a badge.
 - **Multiple accounts.** Add several managed Claude and Codex accounts without touching your own logins, and see
   each plan's usage in the status bar. **Continue With Another Account** carries a conversation to another account
-  when one runs out, and optional automatic switching moves a session to the next account with room when its account
-  hits a limit.
+  when one runs out. Two options, off by default, move sessions for you when the default account changes or when an
+  account hits a usage limit. Settings › Accounts notes that using several accounts this way may be against the
+  provider's terms.
 - **Agent orchestration.** Ask an agent for "Suijin workers" and it starts other Claude Code or Codex agents with the
   bundled `suijin` command, each in a tab of its own, answers their questions and collects their results. Ask it to
   stop a worker and it does (`suijin worker stop`): the worker's terminal ends and its tab closes by itself. Worker

@@ -196,9 +196,15 @@ struct AutoSwitchSettingsSection: View {
         } header: {
             Text(provider == .claude ? "Claude Code: Automatic Switching" : "Codex: Automatic Switching")
         } footer: {
-            Text("Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Suijin knows and that has room; if none has, it stays and offers the choice. Shells are never moved.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Sessions move with their conversation, as Continue With Another Account does, once their current turn ends. At a limit, a session moves to the first account in this order whose usage Suijin knows and that has room; if none has, it stays and offers the choice. Shells are never moved.")
+                // The providers' terms, not Suijin, decide whether this is allowed; say so where the choice is made.
+                Text(provider == .claude
+                     ? "Using several accounts, and switching between them at a usage limit, may be against Anthropic's terms. You are responsible for how you use your accounts."
+                     : "Using several accounts, and switching between them at a usage limit, may be against OpenAI's terms. You are responsible for how you use your accounts.")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
     }
 

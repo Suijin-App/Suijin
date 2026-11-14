@@ -8,6 +8,17 @@ mode: plan-only (thực hiện sau)
 
 # Đổi tên Sevinda → Suijin
 
+## Tình trạng (2026-11-14)
+
+Tiêu chí 1–4 đã đạt và đã merge vào `main`: đổi tên toàn bộ, CI xanh, dữ liệu chuyển sang `Application Support/Suijin` với hai tài khoản Claude còn đăng nhập, thư mục repo đã là `~/Self-Works/Suijin`, dữ liệu và helper Sevinda đã gỡ.
+
+**Tạm gác theo quyết định của chủ dự án:**
+
+- Tiêu chí 5 — thử tay 25 chức năng ở phase 6 và cấp lại quyền hệ thống (Full Disk Access, Accessibility, Notifications) cho bundle ID mới.
+- Tiêu chí 6 — ký và notarize bản Release. Cần profile notary tên `suijin-notary` hoặc đặt `SUIJIN_NOTARY_PROFILE`.
+
+Plan chưa hoàn thành cho tới khi hai mục này xong.
+
 ## Mục tiêu
 
 Ứng dụng, bundle, package, code và mọi nội dung người dùng nhìn thấy dùng tên **Suijin** (水神). Sau khi đổi:

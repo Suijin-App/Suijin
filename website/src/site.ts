@@ -10,6 +10,7 @@ export const site = {
   repositoryName: "Suijin-App/Suijin",
   releases: "https://github.com/Suijin-App/Suijin/releases",
   discord: "https://discord.gg/sFEhaWAMvq",
+  sponsor: "https://ko-fi.com/vovanvu",
   changelog: "https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md",
   publisher: "The Suijin Authors",
   // The independent developer who makes Suijin.

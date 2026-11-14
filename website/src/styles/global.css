@@ -151,6 +151,11 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .icon-button:hover { border-color: var(--line-strong); }
 .icon-button:active { transform: scale(0.92); }
 .icon-button svg { width: 16px; height: 16px; }
+.icon-button.sponsor { color: #e5484d; }
+/* The heart's point hangs below its body, so it is lifted a touch to look centred. */
+.icon-button.sponsor svg { margin-top: 1px; }
+.icon-button.sponsor:hover svg { transform: scale(1.15); }
+.icon-button.sponsor svg { transition: transform var(--base) var(--spring); }
 .icon-button .moon, [data-theme="dark"] .icon-button .sun { display: none; }
 [data-theme="dark"] .icon-button .moon { display: block; }
 
@@ -158,6 +163,9 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
   font-weight: 600; font-size: 15.5px; text-decoration: none; border: 1px solid transparent; cursor: pointer;
   transition: transform var(--fast) var(--ease), background-color var(--fast) var(--ease), border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease); }
 .button svg { width: 17px; height: 17px; }
+/* The Apple mark sits a little above the text's centre, where its body is. */
+.button svg.apple { margin-top: -2px; }
+.button.small svg.apple { width: 14px; height: 14px; margin-right: -2px; }
 .button.primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow); }
 .button.primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-lift); }
 .button.secondary { background: var(--surface); border-color: var(--line-strong); color: var(--text); }
@@ -535,6 +543,8 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
   section { padding: 76px 0; }
   .hero { padding-top: 120px; }
   .stars .label { display: none; }
+  /* The header is tight on a phone: the Discord and sponsor links stay in the community section and the footer. */
+  .nav-actions a.icon-button { display: none; }
   .stars, .icon-button, .button.small { height: 40px; }
   .icon-button { width: 40px; }
   .nav-inner { gap: 10px; }

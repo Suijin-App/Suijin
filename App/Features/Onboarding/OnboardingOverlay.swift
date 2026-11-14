@@ -15,6 +15,8 @@ struct OnboardingOverlay: View {
     /// the leaving step keeps the transition it had when it was last drawn.
     @State private var direction: OnboardingTour.Direction = .forward
     @State private var keyMonitor: Any?
+    /// Where the pointer is over the tour; the sprites look at it.
+    @State private var pointer: CGPoint?
 
     var body: some View {
         GeometryReader { proxy in
@@ -32,6 +34,14 @@ struct OnboardingOverlay: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .background { OverlayBackdrop() }
+        .coordinateSpace(name: tourCoordinateSpace)
+        .onContinuousHover(coordinateSpace: .named(tourCoordinateSpace)) { phase in
+            switch phase {
+            case .active(let location): pointer = location
+            case .ended: pointer = nil
+            }
+        }
+        .environment(\.tourPointer, pointer)
         .onAppear {
             // The terminal behind keeps no keyboard focus while the tour is up.
             model.mainWindow?.makeFirstResponder(nil)
@@ -315,10 +325,12 @@ private struct OnboardingScreenshot: View {
                 .opacity(isShown ? 1 : 0)
                 .animation(.easeOut(duration: 0.3).delay(reduceMotion ? 0 : 0.5), value: isShown)
             // Seated on the edge: the boots hang two pixels below it.
+            // It drops in from above and settles with a bounce.
             LivelySprite(tint: annotation.sprite, pixel: pixel, mood: .sitting)
-                .offset(x: width * annotation.seat - pixel * 6, y: -pixel * 12)
+                .offset(x: width * annotation.seat - pixel * 6, y: -pixel * 12 - (isShown || reduceMotion ? 0 : 46))
                 .opacity(isShown ? 1 : 0)
-                .animation(.easeOut(duration: 0.3).delay(0.5), value: isShown)
+                .animation(reduceMotion ? .easeOut(duration: 0.3) : .spring(response: 0.5, dampingFraction: 0.5).delay(0.45),
+                           value: isShown)
         }
         .frame(width: width, height: 1, alignment: .topLeading)
         .accessibilityHidden(true)

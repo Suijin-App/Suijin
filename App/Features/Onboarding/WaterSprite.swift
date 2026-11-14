@@ -7,9 +7,9 @@ struct WaterSprite: Equatable {
         /// Any other agent, Claude Code, Codex, a shell.
         case aqua, claude, codex, shell
     }
-    enum Eyes { case open, happy, blink, wide }
+    enum Eyes { case open, happy, blink, wide, left, right, up, down }
     enum Arms { case down, up, wave }
-    enum Legs { case stand, tuck, sit }
+    enum Legs { case stand, tuck, sit, swingLeft, swingRight }
     enum Mouth { case none, smile, open }
     enum Part { case body, shade, highlight, eye, blush }
 
@@ -56,6 +56,13 @@ struct WaterSprite: Equatable {
         case .sit:
             put([(4, 12), (7, 12)], .body)
             put([(4, 13), (7, 13)], .shade)
+        case .swingLeft:
+            // Sitting, the left boot kicked outward.
+            put([(4, 12), (7, 12)], .body)
+            put([(3, 13), (7, 13)], .shade)
+        case .swingRight:
+            put([(4, 12), (7, 12)], .body)
+            put([(4, 13), (8, 13)], .shade)
         }
         if blush { put([(2, 9), (9, 9)], .blush) }
         switch mouth {
@@ -68,6 +75,10 @@ struct WaterSprite: Equatable {
         case .happy: put([(2, 8), (3, 7), (4, 8), (7, 8), (8, 7), (9, 8)], .eye)
         case .blink: put([(3, 8), (8, 8)], .eye)
         case .wide: put([(3, 6), (3, 7), (3, 8), (8, 6), (8, 7), (8, 8)], .eye)
+        case .left: put([(2, 7), (2, 8), (7, 7), (7, 8)], .eye)
+        case .right: put([(4, 7), (4, 8), (9, 7), (9, 8)], .eye)
+        case .up: put([(3, 6), (3, 7), (8, 6), (8, 7)], .eye)
+        case .down: put([(3, 8), (3, 9), (8, 8), (8, 9)], .eye)
         }
         return cells
     }
@@ -122,43 +133,100 @@ struct WaterSpriteView: View {
     }
 }
 
-/// A sprite that lives a little: it blinks, and hops now and then (idle), keeps jumping with happy eyes (cheering)
-/// or sits with its legs hanging (sitting). With Reduce Motion it holds one still pose.
+/// Where the pointer is over the welcome tour, in the tour's coordinate space; the sprites look at it.
+private struct TourPointerKey: EnvironmentKey {
+    static let defaultValue: CGPoint? = nil
+}
+
+extension EnvironmentValues {
+    var tourPointer: CGPoint? {
+        get { self[TourPointerKey.self] }
+        set { self[TourPointerKey.self] = newValue }
+    }
+}
+
+/// The name of the tour's coordinate space, which pointer positions and sprite frames share.
+let tourCoordinateSpace = "onboardingTour"
+
+/// A sprite that lives a little: it blinks, follows the pointer with its eyes, and hops now and then (idle), keeps
+/// jumping with happy eyes (cheering) or sits swinging its legs (sitting). A click makes it jump for joy with a heart
+/// above it. With Reduce Motion it holds one still pose and only its face answers.
 struct LivelySprite: View {
     enum Mood { case idle, cheering, sitting }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.tourPointer) private var pointer
     let tint: WaterSprite.Tint
     var pixel: CGFloat = 6
     var mood = Mood.idle
     /// Seconds this sprite runs ahead of the others, so a row of them does not move in step.
     var phase: Double = 0
 
+    @State private var frame = CGRect.zero
+    @State private var tappedAt: Date?
+
+    /// How long the answer to a click lasts.
+    static let joy = 0.9
+
     var body: some View {
-        if reduceMotion {
-            frame(at: nil)
-        } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
-                frame(at: timeline.date.timeIntervalSinceReferenceDate + phase)
+        Group {
+            if reduceMotion {
+                // No timeline: the happy face shows until the click's time is cleared.
+                drawing(at: nil, sinceTap: tappedAt == nil ? nil : 0)
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    drawing(at: timeline.date.timeIntervalSinceReferenceDate + phase,
+                            sinceTap: tappedAt.map { timeline.date.timeIntervalSince($0) })
+                }
+            }
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(tourCoordinateSpace)) } action: { frame = $0 }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            let now = Date.now
+            tappedAt = now
+            Task {
+                try? await Task.sleep(for: .seconds(Self.joy))
+                if tappedAt == now { tappedAt = nil }
             }
         }
     }
 
-    /// The pose and lift at `time`; nil is the still pose.
-    private func frame(at time: Double?) -> some View {
-        let pose = LivelySprite.pose(tint: tint, mood: mood, time: time)
+    private func drawing(at time: Double?, sinceTap: Double?) -> some View {
+        let gaze = LivelySprite.gaze(from: CGPoint(x: frame.midX, y: frame.midY), to: pointer, reach: pixel * 8)
+        let pose = LivelySprite.pose(tint: tint, mood: mood, time: time, gaze: gaze, sinceTap: sinceTap)
         return WaterSpriteView(sprite: pose.sprite, pixel: pixel)
             .offset(y: -pose.lift * pixel)
+            .overlay(alignment: .top) {
+                if let sinceTap, sinceTap < Self.joy {
+                    PixelHeart(pixel: pixel * 0.6)
+                        .offset(y: -pixel * (5 + (reduceMotion ? 0 : sinceTap * 9)) - pose.lift * pixel)
+                        .opacity(1 - sinceTap / Self.joy)
+                }
+            }
     }
 
-    /// The sprite and how many pixels it is off the ground at `time`.
-    static func pose(tint: WaterSprite.Tint, mood: Mood, time: Double?) -> (sprite: WaterSprite, lift: Double) {
+    /// Where the eyes go for a pointer at `pointer`: nil without one, happy when it is on the sprite, else the side
+    /// it is on.
+    static func gaze(from center: CGPoint, to pointer: CGPoint?, reach: CGFloat) -> WaterSprite.Eyes? {
+        guard let pointer else { return nil }
+        let dx = pointer.x - center.x, dy = pointer.y - center.y
+        if hypot(dx, dy) < reach { return .happy }
+        if abs(dx) > abs(dy) * 0.8 { return dx < 0 ? .left : .right }
+        return dy < 0 ? .up : .down
+    }
+
+    /// The sprite and how many pixels it is off the ground at `time` (nil is the still pose), looking where `gaze`
+    /// says, `sinceTap` seconds after a click.
+    static func pose(tint: WaterSprite.Tint, mood: Mood, time: Double?, gaze: WaterSprite.Eyes? = nil,
+                     sinceTap: Double? = nil) -> (sprite: WaterSprite, lift: Double) {
         var sprite = WaterSprite(tint: tint)
         var lift = 0.0
         let blinking = time.map { $0.truncatingRemainder(dividingBy: 3.4) < 0.14 } ?? false
+        let resting: WaterSprite.Eyes = blinking ? .blink : (gaze ?? .open)
         switch mood {
         case .idle:
-            sprite.eyes = blinking ? .blink : .open
+            sprite.eyes = resting
             if let time {
                 // One short hop every four seconds.
                 let hop = time.truncatingRemainder(dividingBy: 4) / 0.45
@@ -176,8 +244,42 @@ struct LivelySprite: View {
             }
         case .sitting:
             sprite.legs = .sit
-            sprite.eyes = blinking ? .blink : .open
+            sprite.eyes = resting
+            if let time {
+                // The legs swing, one after the other, with a rest between.
+                let swing = time.truncatingRemainder(dividingBy: 2.4)
+                if swing < 0.5 { sprite.legs = .swingLeft } else if swing > 1.2, swing < 1.7 { sprite.legs = .swingRight }
+            }
+        }
+        if let sinceTap, sinceTap < joy {
+            // A click: a jump for joy, whatever it was doing.
+            sprite.eyes = .happy
+            sprite.blush = true
+            sprite.mouth = .open
+            if time != nil {
+                lift = max(lift, sin(sinceTap / joy * .pi) * 4)
+                sprite.legs = .tuck
+            }
         }
         return (sprite, lift)
+    }
+}
+
+/// A small pixel heart, the sprite's answer to a click.
+private struct PixelHeart: View {
+    let pixel: CGFloat
+    private static let rows = [".##.##.", "#######", "#######", ".#####.", "..###..", "...#..."]
+
+    var body: some View {
+        Canvas { context, _ in
+            for (row, line) in Self.rows.enumerated() {
+                for (column, mark) in line.enumerated() where mark == "#" {
+                    context.fill(Path(CGRect(x: CGFloat(column) * pixel, y: CGFloat(row) * pixel, width: pixel + 0.35, height: pixel + 0.35)),
+                                 with: .color(Color(red: 0.94, green: 0.34, blue: 0.48)))
+                }
+            }
+        }
+        .frame(width: pixel * 7, height: pixel * 6)
+        .accessibilityHidden(true)
     }
 }

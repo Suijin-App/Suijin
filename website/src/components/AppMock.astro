@@ -136,8 +136,10 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
       <Sidebar rows={side.rows} />
       <div class="m-main">
         <Toolbar tabs={side.tabs} />
-        <div class="m-panes four">
-          <div class="m-pane focus">
+        <!-- After the agents finish, the first pane is dragged by its header onto the right edge of the last one,
+             as in the app: the dragged pane dims, the target shows where it will land, and the layout follows. -->
+        <div class="m-panes four" data-set="13:moved">
+          <div class="m-pane p1 focus" data-set="10:dragging">
             <header><span class="m-ic logo" set:html={claude} /><span class="m-name">Claude · usage bar</span></header>
             <div class="m-term">
               <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
@@ -152,7 +154,7 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
               <p class="dim" data-step="7">✻ Worked for 18s</p>
             </div>
           </div>
-          <div class="m-pane">
+          <div class="m-pane p2">
             <header><span class="m-ic logo" set:html={codex} /><span class="m-name">Codex · review</span></header>
             <div class="m-term">
               <p><span class="acc">&gt;_</span> <b>OpenAI Codex</b> <span class="dim">(v0.169.0)</span></p>
@@ -163,7 +165,7 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
               <p class="dim" data-step="8">Worked for 9s</p>
             </div>
           </div>
-          <div class="m-pane">
+          <div class="m-pane p3">
             <header><span class="m-ic faint" set:html={icon("terminal")} /><span class="m-name">usage-bar</span></header>
             <div class="m-term">
               <p class="you" data-step="3" data-type>$ gemini "write tests for UsageBar"</p>
@@ -172,7 +174,9 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
               <p class="dim caret" data-step="8">Running swift test</p>
             </div>
           </div>
-          <div class="m-pane">
+          <div class="m-pane p4">
+            <i class="m-outline" data-step="11" data-set="13:gone"></i>
+            <div class="m-dropzone" data-step="11" data-set="13:gone"><span class="m-ic" set:html={icon("inspector")} />Place Right</div>
             <header><span class="m-ic faint" set:html={icon("terminal")} /><span class="m-name">usage-bar</span></header>
             <div class="m-term">
               <p class="you">$ git status --short</p>
@@ -181,6 +185,7 @@ const accounts: { rows: Row[]; tabs: Tab[] } = {
               <p class="caret" data-step="9">$ </p>
             </div>
           </div>
+          <div class="m-drag-ghost" data-set="10:go"><span data-set="13:gone"><span class="m-ic logo" set:html={claude} />Claude · usage bar</span></div>
         </div>
         <Status running="6 running" memory="192,7 MB" />
       </div>

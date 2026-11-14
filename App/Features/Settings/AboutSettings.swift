@@ -2,13 +2,20 @@ import AppKit
 import SuijinUI
 import SwiftUI
 
-/// Where people reach the Suijin Authors about Suijin. Fill these in once the real addresses exist; each link stays
-/// hidden while its value is nil, and the Contact section disappears while both are.
+/// Where people find Suijin and reach the Suijin Authors. The support mailbox stays hidden while it is nil.
 enum AboutLinks {
     /// The support mailbox, e.g. "support@example.com".
     static let supportEmail: String? = nil
-    /// The public issue tracker or GitHub repository.
-    static let issueTracker: URL? = nil
+    static let website = URL(string: "https://suijin.app")!
+    static let sourceCode = URL(string: "https://github.com/Suijin-App/Suijin")!
+    static let community = URL(string: "https://discord.gg/sFEhaWAMvq")!
+    static let sponsor = URL(string: "https://ko-fi.com/vovanvu")!
+
+    /// What a link row shows: the address without its scheme, e.g. "github.com/Suijin-App/Suijin".
+    static func display(_ url: URL) -> String {
+        let path = url.path()
+        return (url.host() ?? "") + (path == "/" ? "" : path)
+    }
 
     /// A `mailto:` link for `email`; nil for anything that is not a plain address.
     static func mailURL(_ email: String?) -> URL? {
@@ -67,7 +74,7 @@ struct OpenSourceComponent: Identifiable {
     }
 }
 
-/// Settings → About: what Suijin is, its version, who made it, contact links, the legal documents and the
+/// Settings → About: what Suijin is, its version, who made it, its links, the legal documents and the
 /// open-source components it uses.
 struct AboutSettings: View {
     /// `-SuijinAboutDocument terms|privacy` opens that document at launch, for screenshots.
@@ -90,7 +97,7 @@ struct AboutSettings: View {
                     Text(verbatim: copyright).font(.caption).foregroundStyle(.secondary)
                 }
             }
-            contactSection
+            linksSection
             Section {
                 ForEach(LegalDocument.Kind.allCases) { kind in
                     LegalDocumentRow(kind: kind) { openDocument = kind }
@@ -119,28 +126,35 @@ struct AboutSettings: View {
         }
     }
 
-    @ViewBuilder private var contactSection: some View {
-        let mail = AboutLinks.mailURL(AboutLinks.supportEmail)
-        if mail != nil || AboutLinks.issueTracker != nil {
-            Section {
-                if let mail, let email = AboutLinks.supportEmail {
-                    LabeledContent("Support") {
-                        Link(destination: mail) { Text(verbatim: email).lineLimit(1).truncationMode(.middle) }
-                            .accessibilityLabel(Text("Email support"))
-                    }
+    private var linksSection: some View {
+        Section {
+            AboutLinkRow(title: "Website", url: AboutLinks.website)
+            AboutLinkRow(title: "Source Code", url: AboutLinks.sourceCode)
+            AboutLinkRow(title: "Community", url: AboutLinks.community)
+            AboutLinkRow(title: "Sponsor", url: AboutLinks.sponsor)
+            if let email = AboutLinks.supportEmail, let mail = AboutLinks.mailURL(email) {
+                LabeledContent("Support") {
+                    Link(destination: mail) { Text(verbatim: email).lineLimit(1).truncationMode(.middle) }
+                        .accessibilityLabel(Text("Email support"))
                 }
-                if let tracker = AboutLinks.issueTracker {
-                    LabeledContent("Issues") {
-                        Link(destination: tracker) {
-                            Text(verbatim: tracker.host() ?? tracker.absoluteString).lineLimit(1).truncationMode(.middle)
-                        }
-                        .help(Text(verbatim: tracker.absoluteString))
-                        .accessibilityLabel(Text("Open the issue tracker"))
-                    }
-                }
-            } header: {
-                Text("Contact")
             }
+        } header: {
+            Text("Links")
+        }
+    }
+}
+
+/// A titled web address that opens in the browser.
+private struct AboutLinkRow: View {
+    let title: LocalizedStringKey
+    let url: URL
+
+    var body: some View {
+        LabeledContent(title) {
+            Link(destination: url) {
+                Text(verbatim: AboutLinks.display(url)).lineLimit(1).truncationMode(.middle)
+            }
+            .help(Text(verbatim: url.absoluteString))
         }
     }
 }

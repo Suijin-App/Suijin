@@ -44,6 +44,16 @@ struct AboutSettingsTests {
         #expect(AboutLinks.mailURL("a@b@c.com") == nil)
     }
 
+    @Test func linkRowsShowTheAddressWithoutItsScheme() {
+        #expect(AboutLinks.display(AboutLinks.website) == "suijin.app")
+        #expect(AboutLinks.display(AboutLinks.sourceCode) == "github.com/Suijin-App/Suijin")
+        #expect(AboutLinks.display(AboutLinks.sponsor) == "ko-fi.com/vovanvu")
+        #expect(AboutLinks.display(URL(string: "https://example.com/")!) == "example.com")
+        for url in [AboutLinks.website, AboutLinks.sourceCode, AboutLinks.community, AboutLinks.sponsor] {
+            #expect(url.scheme == "https")
+        }
+    }
+
     @Test func legalDocumentsHaveTitledSectionsWithText() {
         for kind in LegalDocument.Kind.allCases {
             let document = LegalDocument.document(kind)

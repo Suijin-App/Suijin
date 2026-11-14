@@ -1,0 +1,30 @@
+# Suijin
+
+> Suijin is a native macOS app that runs Claude Code, Codex and any other AI coding agent side by side, each in its own git worktree, and lets you review, commit and open pull requests for their work from one window. Everything runs on the user's Mac.
+
+Key facts:
+
+- Platform: macOS 15 or later. The Liquid Glass interface needs macOS 26 or later. Written in Swift (SwiftUI and AppKit).
+- Agents: Claude Code and Codex are built in (status, accounts, permission modes, orchestration, usage). Any other agent that runs in a terminal, such as Gemini CLI, Aider or OpenCode, runs in a shell tab or pane, with its own worktree and split layouts but without those extra features.
+- Isolation: each agent works in a git worktree, a separate folder on its own branch, so parallel changes never collide. A plain folder can be used instead of a repository.
+- Layout: tabs and split tabs of up to ten sessions; panes are rearranged by dragging.
+- Review: a native diff viewer, notes on lines that can be sent to an agent, commit, push and pull requests from the same window.
+- Orchestration: an agent can start worker agents with the bundled `suijin` command, exchange messages with them and collect their results.
+- Accounts: several managed Claude and Codex accounts, with optional automatic switching when an account hits a usage limit. The user's own logins are never changed.
+- Sessions run in a background helper and survive quitting the app.
+- Privacy: no account, no telemetry, no crash reports. The app goes online itself only to check for updates and to read usage limits with the user's own login.
+- Distribution: outside the Mac App Store, signed with a Developer ID and notarized by Apple, with in-app updates.
+- License: open source under the Apache License 2.0; the source is at https://github.com/Suijin-App/Suijin.
+- Publisher: The Suijin Authors. Suijin is developed by vuvv-dev (https://github.com/vuvv-dev), an independent developer in Vietnam. Suijin is not affiliated with Anthropic or OpenAI.
+
+## Pages
+
+- [Home](https://suijin.app/): what Suijin is, its features with screenshots, how it works and frequently asked questions
+- [Privacy](https://suijin.app/privacy): what the app and the website collect
+- [Release notes](https://suijin.app/releases): what changed in each version
+
+## Source
+
+- [Repository](https://github.com/Suijin-App/Suijin): source code, README with screenshots and build instructions
+- [Changelog](https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md): what changed in each version
+- [Releases](https://github.com/Suijin-App/Suijin/releases): downloads

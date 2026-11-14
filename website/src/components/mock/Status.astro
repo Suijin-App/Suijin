@@ -1,0 +1,29 @@
+---
+// The status bar under the detail column: each provider's usage windows, the running sessions and their memory.
+import { icon } from "../mock-icons";
+import claude from "../../assets/agents/claude-color.svg?raw";
+import codex from "../../assets/agents/codex.svg?raw";
+
+interface Props {
+  claudeText?: string;
+  claudeFill?: number;
+  running?: string;
+  memory?: string;
+  /** Animation hooks for the Claude meter and its text. */
+  meterAttrs?: Record<string, string>;
+  textAttrs?: Record<string, string>;
+}
+const { claudeText = "34% used 3h 12m · 16% used 5d 5h", claudeFill = 34, running = "4 running", memory = "172,3 MB", meterAttrs = {}, textAttrs = {} } = Astro.props;
+---
+
+<div class="m-status">
+  <span class="m-ic logo" set:html={claude} />
+  <span class="m-meter" {...meterAttrs}><i style={`width:${claudeFill}%`}></i></span>
+  <span {...textAttrs}>{claudeText}</span>
+  <span class="m-ic logo gap" set:html={codex} />
+  <span class="m-meter"><i style="width:8%"></i></span>
+  <span>8% used 4h 59m · 2% used 5d 5h</span>
+  <span class="m-ic faint small" set:html={icon("refresh")} />
+  <span class="m-status-right"><span class="m-ic faint small" set:html={icon("terminal")} />{running}</span>
+  <span>{memory}</span>
+</div>

@@ -1,0 +1,5 @@
+# Everyone may read the site, search engines and AI assistants alike.
+User-agent: *
+Allow: /
+
+Sitemap: https://suijin.app/sitemap-index.xml

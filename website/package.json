@@ -1,0 +1,20 @@
+{
+  "name": "suijin-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "preview": "wrangler dev",
+    "build": "GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)} astro build",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.7.5",
+    "astro": "^7.4.12",
+    "sharp": "^0.35.5",
+    "wrangler": "^4.162.0"
+  },
+  "dependencies": {
+    "animejs": "^4.5.0"
+  }
+}

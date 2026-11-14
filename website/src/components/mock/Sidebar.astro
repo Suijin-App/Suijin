@@ -1,0 +1,51 @@
+---
+// The app's sidebar: workspaces, their worktrees and the sessions in them. `attrs` carries the animation hooks of
+// AppMock.astro (data-step, data-set, data-text) onto the element they belong to.
+import { icon } from "../mock-icons";
+import claude from "../../assets/agents/claude-color.svg?raw";
+import codex from "../../assets/agents/codex.svg?raw";
+
+type Attrs = Record<string, string>;
+export interface Row {
+  kind: "checkout" | "tree" | "session" | "worker" | "group";
+  name: string;
+  agent?: "claude" | "codex" | "shell";
+  selected?: boolean;
+  /** Status dot: "ok" (idle or done), "busy" or none. */
+  dot?: "ok" | "busy";
+  /** Text on the right: a count, an age or a worker's state. */
+  right?: string;
+  attrs?: Attrs;
+  dotAttrs?: Attrs;
+  nameAttrs?: Attrs;
+  rightAttrs?: Attrs;
+}
+interface Props { rows: Row[] }
+const { rows } = Astro.props;
+const logo = { claude, codex, shell: icon("terminal") };
+---
+
+<aside class="m-side">
+  <div class="m-side-top">
+    <span class="m-lights"><i></i><i></i><i></i></span>
+    <span class="m-round" set:html={icon("sidebar")} />
+  </div>
+  <div class="m-ws"><span class="m-ws-icon" set:html={icon("server")} /><div><b>suijin-api</b><small>Git repository</small></div></div>
+  {rows.map((row) => (
+    <div class:list={["m-row", `m-${row.kind}`, { on: row.selected }]} {...row.attrs}>
+      {row.kind === "checkout" && <span class="m-ic blue" set:html={icon("house")} />}
+      {row.kind === "tree" && <span class="m-ic blue" set:html={icon("branch")} />}
+      {row.kind === "group" && <span class="m-ic blue" set:html={icon("terminal")} />}
+      {row.kind === "worker" && <span class="m-ic faint" set:html={icon("turn")} />}
+      {(row.kind === "worker" || row.kind === "session") && row.dot && <i class:list={["m-dot", row.dot]} {...row.dotAttrs}></i>}
+      {(row.kind === "session" || row.kind === "worker") && <span class:list={["m-ic", row.agent === "shell" ? "faint" : "logo"]} set:html={logo[row.agent ?? "shell"]} />}
+      <span class="m-name" {...row.nameAttrs}>{row.name}</span>
+      {(row.kind === "tree" || row.kind === "group") && row.dot && <i class:list={["m-dot", "push", row.dot]} {...row.dotAttrs}></i>}
+      {row.right && <span class:list={["m-right", { push: !((row.kind === "tree" || row.kind === "group") && row.dot) }]} {...row.rightAttrs}>{row.right}</span>}
+    </div>
+  ))}
+  <div class="m-ws second"><span class="m-ws-letter">D</span><div><b>design-notes</b><small>Folder</small></div></div>
+  <div class="m-row m-group"><span class="m-ic blue" set:html={icon("terminal")} /><span class="m-name">Sessions</span><i class="m-dot push ok"></i><span class="m-right">1</span></div>
+  <div class="m-row m-session"><span class="m-ic faint" set:html={icon("terminal")} /><span class="m-name">design-notes</span><span class="m-right push">2m</span></div>
+  <div class="m-add"><span set:html={icon("plus")} />Add Workspace</div>
+</aside>

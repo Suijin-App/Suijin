@@ -1,0 +1,42 @@
+---
+// The title-bar row of the detail column: the tab group in the middle, the agent picker and the action buttons.
+import { icon } from "../mock-icons";
+import claude from "../../assets/agents/claude-color.svg?raw";
+import codex from "../../assets/agents/codex.svg?raw";
+
+export interface Tab {
+  icon: "terminal" | "claude" | "codex" | "changes" | "split" | "doc";
+  title: string;
+  selected?: boolean;
+  /** Number of panes, shown after the title of a split tab. */
+  panes?: number;
+  attrs?: Record<string, string>;
+  /** Animation hooks for the title, when a scene renames the tab. */
+  titleAttrs?: Record<string, string>;
+}
+interface Props { tabs: Tab[] }
+const { tabs } = Astro.props;
+const glyph = (name: Tab["icon"]) => (name === "claude" ? claude : name === "codex" ? codex : icon(name));
+---
+
+<div class="m-toolbar">
+  <div class="m-tabs">
+    {tabs.map((tab) => (
+      <span class:list={["m-tab", { on: tab.selected }]} {...tab.attrs}>
+        {tab.selected && <span class="m-x" set:html={icon("close")} />}
+        <span class:list={["m-ic", tab.icon === "claude" || tab.icon === "codex" ? "logo" : "faint"]} set:html={glyph(tab.icon)} />
+        <span class="m-name" {...tab.titleAttrs}>{tab.title}</span>
+        {tab.panes && <span class="m-panes"><span class="m-ic faint" set:html={icon("split")} />{tab.panes}</span>}
+      </span>
+    ))}
+  </div>
+  <div class="m-tools">
+    <span class="m-pill"><span class="m-ic logo" set:html={claude} /><span class="m-ic small" set:html={icon("chevron")} /></span>
+    <span class="m-round" set:html={icon("plus")} />
+    <span class="m-pill"><span class="m-ic" set:html={icon("split")} /><i class="m-sep"></i><span class="m-ic small" set:html={icon("chevron")} /></span>
+    <span class="m-pill wide">
+      <span class="m-ic" set:html={icon("commit")} /><span class="m-ic" set:html={icon("push")} /><span class="m-ic" set:html={icon("pull")} />
+      <span class="m-ic" set:html={icon("branch")} /><span class="m-ic" set:html={icon("inspector")} />
+    </span>
+  </div>
+</div>

@@ -1,0 +1,186 @@
+---
+import "../styles/global.css";
+import { site } from "../site";
+import { starCount, compact } from "../lib/github";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path of this page, starting with a slash; used for the canonical address. */
+  path: string;
+  /** Extra structured data for this page. */
+  structuredData?: object[];
+}
+
+const { title, description, path, structuredData = [] } = Astro.props;
+const canonical = new URL(path, site.url).href;
+const image = new URL("/og.png", site.url).href;
+const stars = await starCount(site.repositoryName);
+const released = site.releasedVersion !== null;
+
+const organization = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: site.publisher,
+  url: site.url,
+  logo: new URL("/icon-512.png", site.url).href,
+  sameAs: [site.repository],
+};
+const website = { "@context": "https://schema.org", "@type": "WebSite", name: site.name, url: site.url };
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/icon-512.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#f2efe7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Suijin: many agents, one calm window." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    {[organization, website, ...structuredData].map((data) => (
+      <script type="application/ld+json" set:html={JSON.stringify(data)} />
+    ))}
+
+    {site.analyticsToken && (
+      <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: site.analyticsToken })}></script>
+    )}
+
+    <!-- Before the first paint: the chosen theme (or the system's), and a mark that scripts run, so nothing flashes. -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var saved = null;
+        try { saved = localStorage.getItem("theme"); } catch (error) {}
+        var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.dataset.theme = dark ? "dark" : "light";
+        root.classList.add("js");
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="nav">
+      <div class="nav-inner" data-nav>
+        <a class="brand" href="/" aria-label="Suijin, home">
+          <img src="/icon-512.png" alt="" width="28" height="28" />
+          <span>Suijin</span>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/#agents">Agents</a>
+          <a href="/#faq">FAQ</a>
+          <a href="/releases">Release notes</a>
+          <a href="/#community">Community</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="stars" href={site.repository} aria-label={stars ? `Star Suijin on GitHub, ${stars} stars` : "Star Suijin on GitHub"}>
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+            <span class="label">Star</span>
+            {stars !== null && stars > 0 && <span class="count">{compact(stars)}</span>}
+          </a>
+          <a class="icon-button" href={site.discord} aria-label="Join the Suijin community on Discord">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>
+          </a>
+          <button class="icon-button" type="button" data-theme-toggle aria-label="Switch between light and dark">
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2Z"/></svg>
+          </button>
+          <a class="button primary small" href={released ? site.releases + "/latest" : site.repository}>{released ? "Download" : "Get Suijin"}</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="wrap">
+        <p>
+          © {new Date().getFullYear()} {site.publisher}. Built in Vietnam by <a href={site.developer.url}>{site.developer.name}</a>.
+        </p>
+        <nav aria-label="Footer">
+          <a href={site.repository}>GitHub</a>
+          <a href={site.discord}>Discord</a>
+          <a href="/releases">Release notes</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/llms.txt">llms.txt</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      import { animate, stagger } from "animejs";
+
+      const root = document.documentElement;
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Theme: follow the system until the visitor picks one, then remember the pick.
+      document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+        const next = root.dataset.theme === "dark" ? "light" : "dark";
+        root.dataset.theme = next;
+        try { localStorage.setItem("theme", next); } catch {}
+      });
+
+      // The header gathers into a glass droplet once the page has scrolled. Its width is set in pixels for each state
+      // so it slides between two lengths, and the two thresholds are apart so a scroll position near the top does
+      // not flip it back and forth.
+      const bar = document.querySelector<HTMLElement>("[data-nav]");
+      const gathered = 900;
+      let scrolled = false;
+      const fit = () => {
+        if (!bar) return;
+        const room = bar.parentElement!.clientWidth - parseFloat(getComputedStyle(bar.parentElement!).paddingLeft) * 2;
+        const full = Math.min(room, parseFloat(getComputedStyle(root).getPropertyValue("--width")) || room);
+        bar.style.setProperty("--nav-width", `${Math.round(scrolled ? Math.min(gathered, room) : full)}px`);
+      };
+      const onScroll = () => {
+        const y = window.scrollY;
+        const now = scrolled ? y > 12 : y > 56;
+        if (now === scrolled) return;
+        scrolled = now;
+        root.toggleAttribute("data-scrolled", now);
+        fit();
+      };
+      fit();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", fit, { passive: true });
+      onScroll();
+
+      // Sections rise into place the first time they scroll into view.
+      const waiting = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+      if (calm || !("IntersectionObserver" in window)) {
+        waiting.forEach((element) => { element.style.opacity = "1"; element.style.transform = "none"; });
+      } else {
+        const observer = new IntersectionObserver((entries) => {
+          const shown = entries.filter((entry) => entry.isIntersecting).map((entry) => entry.target as HTMLElement);
+          if (!shown.length) return;
+          shown.forEach((element) => observer.unobserve(element));
+          animate(shown, { opacity: [0, 1], y: [18, 0], duration: 620, delay: stagger(70), ease: "outCubic" });
+        }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+        waiting.forEach((element) => observer.observe(element));
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,84 @@
+---
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+---
+
+<Base
+  title="Privacy: what Suijin and suijin.app collect"
+  description="Suijin has no account and no server that sees your code. This page lists the few connections the app makes and what suijin.app keeps."
+  path="/privacy"
+>
+  <div class="page-head">
+    <div class="wrap">
+      <p class="eyebrow">Privacy</p>
+      <h1>Your code stays on your Mac</h1>
+      <p>
+        Neither the app nor this website tracks you. This page lists the few connections the app makes and what
+        suijin.app keeps.
+      </p>
+    </div>
+  </div>
+  <div class="wrap prose">
+    <p>
+      This page is a summary. The full policy ships inside the app, in Settings › About, and the app's version of it is
+      the authoritative one.
+    </p>
+
+    <h2>The app</h2>
+    <ul>
+      <li>There is no Suijin account, and Suijin sends no telemetry or crash reports.</li>
+      <li>
+        Your repositories, the agents' conversations and your settings are stored on your Mac, under
+        <code>~/Library/Application Support/Suijin</code>.
+      </li>
+      <li>
+        The agents and tools you run (Claude Code, Codex, git, the GitHub CLI, your shell) talk to their own services
+        with your own logins, as they do in any terminal. Their providers' terms and policies apply to that.
+      </li>
+      <li>Suijin never changes your own logins in <code>~/.claude</code> or <code>~/.codex</code>.</li>
+    </ul>
+
+    <h2>Connections the app makes itself</h2>
+    <ul>
+      <li>
+        <strong>Updates.</strong> About once a day, and when you choose Check for Updates, the app asks
+        <code>suijin.app</code> whether a newer version exists. The request carries the app's name and version. An
+        update is downloaded from Suijin's releases on GitHub. You can turn the automatic check off in Settings ›
+        General.
+      </li>
+      <li>
+        <strong>Usage limits.</strong> To show how much of a plan is used, the app asks Anthropic or OpenAI with that
+        login's own token.
+      </li>
+      <li>
+        <strong>GitHub.</strong> If the GitHub CLI is installed, the app uses it with your own sign-in to show and
+        create pull requests you ask for.
+      </li>
+    </ul>
+
+    <h2>What suijin.app keeps</h2>
+    <ul>
+      <li>
+        Update checks are counted per day and app version, to estimate how many copies are in use. Nothing else is kept
+        about them: no address and no identifier.
+      </li>
+      {site.analyticsToken ? (
+        <li>
+          This website sets no cookies. Page views are counted with Cloudflare Web Analytics, which uses no cookies and
+          does not identify visitors; its script is the only thing loaded from a third party.
+        </li>
+      ) : (
+        <li>This website sets no cookies, loads nothing from third parties and runs no analytics.</li>
+      )}
+      <li>
+        The site is served by Cloudflare, which processes requests, including IP addresses, to deliver pages and
+        protect the service.
+      </li>
+    </ul>
+
+    <h2>Questions</h2>
+    <p>
+      Open an issue in the <a href={site.repository + "/issues"}>repository on GitHub</a>.
+    </p>
+  </div>
+</Base>

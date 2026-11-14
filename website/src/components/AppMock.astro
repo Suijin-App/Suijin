@@ -1,0 +1,434 @@
+---
+// The hero's playground: Suijin's window drawn in HTML after the real app (sidebar, tab group, toolbar, panes,
+// inspector, status bar), playing four short scenes. Each element with `data-step` appears at that step;
+// `data-set="<step>:<class>"` adds a class at a step (a status that changes); `data-text="<step>:<text>"` swaps a
+// label. Without the script, or with reduced motion, every scene shows its finished state.
+import Sidebar, { type Row } from "./mock/Sidebar.astro";
+import Toolbar, { type Tab } from "./mock/Toolbar.astro";
+import Inspector, { type Entry } from "./mock/Inspector.astro";
+import Status from "./mock/Status.astro";
+import { icon } from "./mock-icons";
+import claude from "../assets/agents/claude-color.svg?raw";
+import codex from "../assets/agents/codex.svg?raw";
+
+const scenes = [
+  { id: "side", label: "Side by side" },
+  { id: "orchestrate", label: "Orchestrate" },
+  { id: "review", label: "Review & ship" },
+  { id: "files", label: "Files & media" },
+  { id: "accounts", label: "Switch accounts" },
+];
+
+// The worktree's files as the inspector lists them: folders first, then files.
+const tree = (options: { docs?: boolean; tests?: Record<string, string>; pick?: string; attrs?: Record<string, Record<string, string>> } = {}): Entry[] => {
+  const entries: Entry[] = [
+    { name: "Sources", folder: "open" },
+    { name: "UsageBar", folder: "open", depth: 1 },
+    { name: "UsageBar.swift", depth: 2 },
+    { name: "UsageController.swift", depth: 2 },
+    { name: "UsageStatusItem.swift", depth: 2 },
+    { name: "Tests", folder: "open" },
+    { name: "UsageBarTests.swift", depth: 1, attrs: options.tests },
+    { name: "docs", folder: options.docs ? "open" : "closed" },
+    ...(options.docs ? [{ name: "chime.m4a", depth: 1 }, { name: "demo.mov", depth: 1 }, { name: "preview.png", depth: 1 }] : []),
+    { name: "scripts", folder: "closed" },
+    { name: "Package.swift" },
+    { name: "package.json" },
+    { name: "README.md" },
+  ];
+  return entries.map((entry) => ({ ...entry, selected: entry.name === options.pick, attrs: options.attrs?.[entry.name] ?? entry.attrs }));
+};
+
+const tail: Row[] = [
+  { kind: "tree", name: "fix/login-timeout", dot: "ok", right: "1" },
+  { kind: "session", name: "Codex · login timeout", agent: "codex", right: "12m" },
+];
+
+const side: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "busy", right: "4", dotAttrs: { "data-set": "9:ok" } },
+    { kind: "group", name: "Split tab", dot: "busy", right: "4", dotAttrs: { "data-set": "9:ok" } },
+    { kind: "session", name: "Claude · usage bar", agent: "claude", selected: true, right: "1m" },
+    { kind: "session", name: "Codex · review", agent: "codex", right: "1m" },
+    { kind: "session", name: "usage-bar", agent: "shell", right: "1m" },
+    { kind: "session", name: "usage-bar", agent: "shell", right: "1m" },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "terminal", title: "usage-bar", selected: true, panes: 4 },
+    { icon: "changes", title: "Changes" },
+  ],
+};
+
+const orchestrate: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "busy", right: "3", dotAttrs: { "data-set": "10:ok" } },
+    { kind: "session", name: "Claude · coordinator", agent: "claude", selected: true, right: "2m" },
+    { kind: "worker", name: "write-tests", agent: "codex", dot: "busy", right: "Working", attrs: { "data-step": "3" }, dotAttrs: { "data-set": "7:ok" }, rightAttrs: { "data-text": "7:Done" } },
+    { kind: "worker", name: "add-docs", agent: "claude", dot: "busy", right: "Working", attrs: { "data-step": "5" }, dotAttrs: { "data-set": "9:ok" }, rightAttrs: { "data-text": "9:Done" } },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "claude", title: "Claude · coordinator", selected: true },
+    { icon: "codex", title: "write-tests", attrs: { "data-step": "3" } },
+    { icon: "claude", title: "add-docs", attrs: { "data-step": "5" } },
+    { icon: "changes", title: "Changes" },
+  ],
+};
+
+const review: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "ok", right: "2", selected: true },
+    { kind: "session", name: "Claude · usage bar", agent: "claude", right: "6m" },
+    { kind: "session", name: "Codex · review", agent: "codex", right: "6m" },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "claude", title: "Claude · usage bar" },
+    { icon: "codex", title: "Codex · review" },
+    { icon: "changes", title: "Changes", selected: true },
+  ],
+};
+
+const files: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "ok", right: "1", selected: true },
+    { kind: "session", name: "Claude · usage bar", agent: "claude", right: "8m" },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "claude", title: "Claude · usage bar" },
+    { icon: "doc", title: "README.md", selected: true, attrs: { "data-set": "6:off" } },
+    { icon: "doc", title: "demo.mov", attrs: { "data-step": "5", "data-set": "6:on" } },
+  ],
+};
+
+const accounts: { rows: Row[]; tabs: Tab[] } = {
+  rows: [
+    { kind: "checkout", name: "Main checkout" },
+    { kind: "tree", name: "feature/usage-bar", dot: "busy", right: "1", dotAttrs: { "data-set": "8:ok" } },
+    { kind: "session", name: "Claude · Work", agent: "claude", selected: true, right: "9m", nameAttrs: { "data-text": "5:Claude · Personal" } },
+    ...tail,
+  ],
+  tabs: [
+    { icon: "claude", title: "Claude · Work", selected: true, titleAttrs: { "data-text": "5:Claude · Personal" } },
+    { icon: "changes", title: "Changes" },
+  ],
+};
+---
+
+<div class="stage" data-stage>
+  <div class="scene-tabs" role="tablist" aria-label="What Suijin does">
+    {scenes.map((scene, index) => (
+      <button type="button" role="tab" id={`tab-${scene.id}`} aria-controls={`scene-${scene.id}`} aria-selected={index === 0 ? "true" : "false"} data-scene={scene.id}>
+        {scene.label}<i></i>
+      </button>
+    ))}
+  </div>
+
+  <div class="mac" role="img" aria-label="An animated drawing of Suijin's window: a sidebar with a repository, its worktrees and sessions, a tab group, panes where agents work, a file inspector and a status bar with each plan's usage.">
+    <!-- Scene 1: four sessions in one split tab -->
+    <div class="m-scene" id="scene-side" data-scene-body="side" aria-hidden="true">
+      <Sidebar rows={side.rows} />
+      <div class="m-main">
+        <Toolbar tabs={side.tabs} />
+        <div class="m-panes four">
+          <div class="m-pane focus">
+            <header><span class="m-ic logo" set:html={claude} /><span class="m-name">Claude · usage bar</span></header>
+            <div class="m-term">
+              <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
+              <p class="m-prompt" data-step="1" data-type>❯ Add a label to UsageBar that shows the percentage</p>
+              <p class="dim" data-step="2">Read 1 file</p>
+              <p data-step="3"><span class="ok">●</span> <b>Update</b>(UsageBar.swift)</p>
+              <p class="dim" data-step="3">  ⎿ Added 4 lines</p>
+              <p class="add" data-step="4"> 7 +    var label: String &#123;</p>
+              <p class="add" data-step="4"> 8 +        "\(Int((fraction * 100).rounded()))%"</p>
+              <p class="add" data-step="4"> 9 +    &#125;</p>
+              <p data-step="6"><span class="ok">●</span> UsageBar has a label now: 0.42 reads "42%".</p>
+              <p class="dim" data-step="7">✻ Worked for 18s</p>
+            </div>
+          </div>
+          <div class="m-pane">
+            <header><span class="m-ic logo" set:html={codex} /><span class="m-name">Codex · review</span></header>
+            <div class="m-term">
+              <p><span class="acc">&gt;_</span> <b>OpenAI Codex</b> <span class="dim">(v0.169.0)</span></p>
+              <p class="m-prompt" data-step="2" data-type>› Review the change in UsageBar.swift</p>
+              <p data-step="4">• <b>Ran</b> git diff --stat</p>
+              <p data-step="5">• label rounds instead of truncating.</p>
+              <p data-step="7">• It does not clamp above 100%.</p>
+              <p class="dim" data-step="8">Worked for 9s</p>
+            </div>
+          </div>
+          <div class="m-pane">
+            <header><span class="m-ic faint" set:html={icon("terminal")} /><span class="m-name">usage-bar</span></header>
+            <div class="m-term">
+              <p class="you" data-step="3" data-type>$ gemini "write tests for UsageBar"</p>
+              <p class="dim" data-step="5">Planning 3 test cases…</p>
+              <p data-step="7">Created UsageBarTests.swift</p>
+              <p class="dim caret" data-step="8">Running swift test</p>
+            </div>
+          </div>
+          <div class="m-pane">
+            <header><span class="m-ic faint" set:html={icon("terminal")} /><span class="m-name">usage-bar</span></header>
+            <div class="m-term">
+              <p class="you">$ git status --short</p>
+              <p data-step="5"> M UsageBar.swift</p>
+              <p data-step="8">?? UsageBarTests.swift</p>
+              <p class="caret" data-step="9">$ </p>
+            </div>
+          </div>
+        </div>
+        <Status running="6 running" memory="192,7 MB" />
+      </div>
+      <Inspector mode="files" files={tree({ pick: "UsageBar.swift", tests: { class: "m-new", "data-set": "7:shown" } })} />
+    </div>
+
+    <!-- Scene 2: one agent starts workers and collects their results; each worker gets a tab of its own -->
+    <div class="m-scene" id="scene-orchestrate" data-scene-body="orchestrate" aria-hidden="true" hidden>
+      <Sidebar rows={orchestrate.rows} />
+      <div class="m-main">
+        <Toolbar tabs={orchestrate.tabs} />
+        <div class="m-panes">
+          <div class="m-pane">
+            <div class="m-term roomy">
+              <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
+              <p class="m-prompt" data-step="1" data-type>❯ Use Suijin workers: tests with Codex, docs with Claude. Report back when both are done.</p>
+              <p data-step="2"><span class="ok">●</span> <b>Bash</b>(suijin worker start --agent codex --name write-tests --spec "…")</p>
+              <p class="dim" data-step="3">  ⎿ Started worker write-tests (Codex)</p>
+              <p data-step="4"><span class="ok">●</span> <b>Bash</b>(suijin worker start --agent claude --name add-docs --spec "…")</p>
+              <p class="dim" data-step="5">  ⎿ Started worker add-docs (Claude Code)</p>
+              <p class="dim" data-step="6">● Both workers are running. I'll report when they finish.</p>
+              <p class="m-prompt soft" data-step="7">[Suijin] Worker "write-tests" finished successfully. Summary: created UsageBarTests.swift with two cases.</p>
+              <p class="m-prompt soft" data-step="9">[Suijin] Worker "add-docs" finished successfully. Summary: added a Usage section to README.md.</p>
+              <p data-step="10"><span class="ok">●</span> Both workers are done: two tests added, README updated. Nothing was committed.</p>
+            </div>
+          </div>
+        </div>
+        <Status running="4 running" memory="176,7 MB" />
+      </div>
+      <Inspector mode="info">
+        <h4>Worktree</h4>
+        <div class="m-kv"><span>Branch</span><b>feature/usage-bar</b></div>
+        <div class="m-kv"><span>Base</span><b>main</b></div>
+        <h4>Workers</h4>
+        <div class="m-kv" data-step="3"><span><i class="m-dot busy" data-set="7:ok"></i>write-tests</span><b data-text="7:Done">Working</b></div>
+        <div class="m-kv" data-step="5"><span><i class="m-dot busy" data-set="9:ok"></i>add-docs</span><b data-text="9:Done">Working</b></div>
+        <h4>Changes <em data-text="9:(3)">(1)</em></h4>
+        <div class="m-change"><i class="m-box"></i>UsageBar.swift<b class="m-badge">M</b></div>
+        <div class="m-change" data-step="7"><i class="m-box"></i>UsageBarTests.swift<b class="m-badge new">U</b></div>
+        <div class="m-change" data-step="9"><i class="m-box"></i>README.md<b class="m-badge">M</b></div>
+      </Inspector>
+    </div>
+
+    <!-- Scene 3: the Changes tab, with the commit box in the inspector -->
+    <div class="m-scene" id="scene-review" data-scene-body="review" aria-hidden="true" hidden>
+      <Sidebar rows={review.rows} />
+      <div class="m-main">
+        <Toolbar tabs={review.tabs} />
+        <div class="m-review">
+          <div class="m-list">
+            <div class="m-list-head"><b>Uncommitted</b><span data-text="8:0 files">3 files</span></div>
+            <div class="m-file on"><b class="m-badge">M</b>UsageBar.swift</div>
+            <div class="m-file"><b class="m-badge">M</b>README.md</div>
+            <div class="m-file"><b class="m-badge new">U</b>UsageBarTests.swift</div>
+          </div>
+          <div class="m-diff">
+            <div class="m-diff-head"><span>UsageBar.swift</span><span class="m-note-button" data-set="4:on"><span class="m-ic small" set:html={icon("note")} />Note on File</span></div>
+            <p class="hunk" data-step="1">@@ -4,5 +4,10 @@</p>
+            <p data-step="1"><i>4</i><i>4</i>  struct UsageBar &#123;</p>
+            <p data-step="1"><i>5</i><i>5</i>      var fraction: Double</p>
+            <p class="add" data-step="2"><i></i><i>6</i>+     var resetsAt: Date?</p>
+            <p class="add" data-step="2"><i></i><i>7</i>+</p>
+            <p class="add" data-step="2"><i></i><i>8</i>+     /// The fraction as a whole percentage, such as "42%".</p>
+            <p class="add" data-step="3"><i></i><i>9</i>+     var label: String &#123;</p>
+            <p class="add" data-step="3"><i></i><i>10</i>+         "\(Int((fraction * 100).rounded()))%"</p>
+            <p class="add" data-step="3"><i></i><i>11</i>+     &#125;</p>
+            <p data-step="3"><i>6</i><i>12</i>  &#125;</p>
+            <p class="m-linenote" data-step="4">Line 10 · Clamp this to 100%? <b>Sent to Claude · usage bar</b></p>
+          </div>
+        </div>
+        <Status running="3 running" memory="91,6 MB" />
+      </div>
+      <Inspector mode="info">
+        <h4>Source Control</h4>
+        <div class="m-kv"><span>Upstream</span><b data-text="9:origin/feature/usage-bar">Not published</b></div>
+        <h4>Commit</h4>
+        <div class="m-field" data-step="5" data-type>Show usage as a percentage label</div>
+        <div class="m-buttons"><span class="m-btn"><span class="m-ic small" set:html={icon("spark")} />Generate</span><span class="m-btn primary" data-step="6">Commit</span></div>
+        <h4>Changes <em data-text="8:(0)">(3)</em></h4>
+        <div class="m-change" data-set="8:gone"><i class="m-box on"></i>UsageBar.swift<b class="m-badge">M</b></div>
+        <div class="m-change" data-set="8:gone"><i class="m-box on"></i>README.md<b class="m-badge">M</b></div>
+        <div class="m-change" data-set="8:gone"><i class="m-box on"></i>UsageBarTests.swift<b class="m-badge new">U</b></div>
+        <h4>Pull Request</h4>
+        <div class="m-pr" data-step="10"><i class="m-dot ok"></i>#42 Show usage as a percentage label<small>Open · 2 checks passed</small></div>
+      </Inspector>
+    </div>
+
+    <!-- Scene: files open in a tab next to the sessions: Markdown rendered, then a video in the system player -->
+    <div class="m-scene" id="scene-files" data-scene-body="files" aria-hidden="true" hidden>
+      <Sidebar rows={files.rows} />
+      <div class="m-main">
+        <Toolbar tabs={files.tabs} />
+        <div class="m-doc" data-set="6:gone">
+          <h3 data-step="1">UsageBar</h3>
+          <p data-step="1">A small bar that shows how much of a plan's limit is used, with a label such as <code>42%</code>.</p>
+          <h5 data-step="2">Usage</h5>
+          <pre data-step="2"><span class="kw">let</span> bar = <span class="ty">UsageBar</span>(fraction: <span class="nu">0.42</span>)
+bar.label   <span class="dim">// "42%"</span></pre>
+          <h5 data-step="3">What changed</h5>
+          <ul data-step="3">
+            <li>The label rounds to a whole percentage.</li>
+            <li>Values above the limit stop at <code>100%</code>.</li>
+          </ul>
+          <p class="dim" data-step="4">See <u>demo.mov</u> for the bar filling up.</p>
+        </div>
+        <div class="m-media" data-step="6">
+          <figure>
+            <img src="/demo-frame.png" alt="" width="1200" height="675" loading="lazy" />
+            <div class="m-player" data-set="7:play">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5h3v11H4zM9 2.5h3v11H9z"/></svg>
+              <span data-text="7:0:04">0:00</span>
+              <span class="m-scrub"><i></i></span>
+              <span>0:12</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6h2.5L8 3v10L4.5 10H2zM10 5.2a4 4 0 0 1 0 5.6l.9.9a5.2 5.2 0 0 0 0-7.4z"/></svg>
+            </div>
+          </figure>
+          <p data-step="8">Video, audio and images play in a tab with the system player.</p>
+        </div>
+        <Status running="3 running" memory="118,4 MB" />
+      </div>
+      <Inspector mode="files" files={tree({ docs: true, pick: "README.md", attrs: { "README.md": { "data-set": "6:off" }, "demo.mov": { "data-set": "6:on" } } })} />
+    </div>
+
+    <!-- Scene 4: an account runs out and the session moves to the next one -->
+    <div class="m-scene" id="scene-accounts" data-scene-body="accounts" aria-hidden="true" hidden>
+      <Sidebar rows={accounts.rows} />
+      <div class="m-main">
+        <Toolbar tabs={accounts.tabs} />
+        <div class="m-panes">
+          <div class="m-pane">
+            <div class="m-banner" data-step="3" data-set="5:gone"><b>Work reached its 5-hour limit.</b> Moving this session to the next account with room…</div>
+            <div class="m-banner moved" data-step="5"><b>Moved to Personal.</b> The conversation continues where it stopped.</div>
+            <div class="m-term roomy">
+              <div class="m-cc"><svg viewBox="0 0 22 16" aria-hidden="true"><path fill="#d97757" d="M3 2h16v9h-2v3h-2v-3h-2v3h-2v-3H9v3H7v-3H5v3H3v-3H1V6h2z"/><path fill="#1d1d1f" d="M6 5h1.6v2.4H6zM14.4 5H16v2.4h-1.6z"/></svg><p><b>Claude Code</b> v2.1.325<br /><span class="dim">Fable 5.2 · Claude Max</span></p></div>
+              <p class="m-prompt" data-step="1" data-type>❯ Refactor the usage polling into one actor</p>
+              <p data-step="2"><span class="ok">●</span> <b>Update</b>(UsageController.swift)</p>
+              <p class="dim" data-step="2">  ⎿ 42 additions, 31 removals</p>
+              <p class="dim" data-step="6">Resumed conversation.</p>
+              <p data-step="7"><span class="ok">●</span> <b>Update</b>(UsageStatusItem.swift)</p>
+              <p data-step="8"><span class="ok">●</span> Polling runs in one actor now. The build passes.</p>
+            </div>
+          </div>
+        </div>
+        <Status claudeText="34% used 3h 12m · 16% used 5d 5h" claudeFill={34} running="2 running" memory="88,2 MB" meterAttrs={{ "data-set": "3:full" }} textAttrs={{ "data-text": "3:100% used · resets in 2h 48m" }} />
+      </div>
+      <Inspector mode="info">
+        <h4>Session</h4>
+        <div class="m-kv"><span>Agent</span><b>Claude Code</b></div>
+        <div class="m-kv"><span>Account</span><b data-text="5:Personal">Work</b></div>
+        <h4>Claude accounts</h4>
+        <div class="m-kv"><span><i class="m-dot busy" data-set="3:stop"></i>Work</span><b data-text="3:At its limit">34%</b></div>
+        <div class="m-kv"><span><i class="m-dot ok"></i>Personal</span><b>18%</b></div>
+        <h4>Automatic switching</h4>
+        <div class="m-kv"><span>When an account hits its limit</span><b>On</b></div>
+      </Inspector>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { animate } from "animejs";
+
+  const stage = document.querySelector<HTMLElement>("[data-stage]");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (stage) {
+    const tabs = Array.from(stage.querySelectorAll<HTMLButtonElement>("[data-scene]"));
+    const bodies = Array.from(stage.querySelectorAll<HTMLElement>("[data-scene-body]"));
+    const stepTime = 640;
+    const restTime = 2800;
+    let timers: number[] = [];
+    let current = 0;
+    let visible = false;
+    let userPicked = false;
+    let progress: ReturnType<typeof animate> | null = null;
+
+    // Remember every label and class a scene changes, so a replay starts from the beginning.
+    const changes = new Map<HTMLElement, { text: string | null; classes: string }>();
+    stage.querySelectorAll<HTMLElement>("[data-text], [data-set]").forEach((element) => {
+      changes.set(element, { text: element.hasAttribute("data-text") ? element.textContent : null, classes: element.className });
+    });
+
+    const clear = () => { timers.forEach(clearTimeout); timers = []; };
+    const later = (callback: () => void, delay: number) => { timers.push(window.setTimeout(callback, delay)); };
+    const stepOf = (value: string) => Number(value.split(":")[0]);
+    const restOf = (value: string) => value.split(":").slice(1).join(":");
+
+    function finish(body: HTMLElement) {
+      body.querySelectorAll<HTMLElement>("[data-step]").forEach((element) => { element.style.opacity = "1"; element.style.transform = "none"; element.style.clipPath = "none"; });
+      body.querySelectorAll<HTMLElement>("[data-set]").forEach((element) => element.classList.add(restOf(element.dataset.set!)));
+      body.querySelectorAll<HTMLElement>("[data-text]").forEach((element) => { element.textContent = restOf(element.dataset.text!); });
+    }
+
+    function play(index: number) {
+      clear();
+      current = index;
+      progress?.cancel();
+      tabs.forEach((tab, i) => {
+        tab.setAttribute("aria-selected", i === index ? "true" : "false");
+        const bar = tab.querySelector<HTMLElement>("i");
+        if (bar) bar.style.width = "0%";
+      });
+      bodies.forEach((body, i) => { body.hidden = i !== index; });
+      const body = bodies[index];
+      changes.forEach((start, element) => { if (body.contains(element)) { if (start.text !== null) element.textContent = start.text; element.className = start.classes; } });
+      if (calm) { finish(body); return; }
+
+      const steps = Array.from(body.querySelectorAll<HTMLElement>("[data-step]"));
+      const sets = Array.from(body.querySelectorAll<HTMLElement>("[data-set]"));
+      const texts = Array.from(body.querySelectorAll<HTMLElement>("[data-text]"));
+      steps.forEach((element) => { element.style.opacity = "0"; });
+      const last = Math.max(...steps.map((element) => Number(element.dataset.step)), ...sets.map((element) => stepOf(element.dataset.set!)), ...texts.map((element) => stepOf(element.dataset.text!)));
+
+      steps.forEach((element) => {
+        later(() => {
+          if (element.hasAttribute("data-type")) {
+            element.style.opacity = "1";
+            animate(element, { clipPath: ["inset(0 100% 0 0)", "inset(0 0% 0 0)"], duration: 560, ease: "linear" });
+          } else {
+            animate(element, { opacity: [0, 1], y: [5, 0], duration: 340, ease: "outCubic" });
+          }
+        }, Number(element.dataset.step) * stepTime);
+      });
+      sets.forEach((element) => later(() => element.classList.add(restOf(element.dataset.set!)), stepOf(element.dataset.set!) * stepTime));
+      texts.forEach((element) => later(() => { element.textContent = restOf(element.dataset.text!); animate(element, { opacity: [0.2, 1], duration: 340, ease: "outQuad" }); }, stepOf(element.dataset.text!) * stepTime));
+
+      // A thin line under the tab shows how long the scene has left, then the next one starts.
+      const total = (last + 1) * stepTime + restTime;
+      const bar = tabs[index].querySelector<HTMLElement>("i");
+      if (bar) progress = animate(bar, { width: ["0%", "100%"], duration: total, ease: "linear" });
+      later(() => { if (visible) play(userPicked ? index : (index + 1) % bodies.length); }, total);
+    }
+
+    tabs.forEach((tab, index) => tab.addEventListener("click", () => { userPicked = true; play(index); }));
+
+    // Play only while the window is on screen and the page is in front.
+    if (calm || !("IntersectionObserver" in window)) {
+      bodies.forEach(finish);
+    } else {
+      new IntersectionObserver(([entry]) => {
+        const now = entry.isIntersecting;
+        if (now === visible) return;
+        visible = now;
+        if (visible) play(current); else clear();
+      }, { threshold: 0.25 }).observe(stage);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) clear(); else if (visible) play(current);
+      });
+    }
+  }
+</script>

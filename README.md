@@ -10,6 +10,8 @@ did without leaving the app. Everything runs locally on your Mac: no servers, no
 
 Website: [suijin.app](https://suijin.app)
 
+[![Support Suijin on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/vovanvu)
+
 ![The main window: the sidebar with workspaces, worktrees and sessions, a Claude Code session, and the file inspector](docs/screenshots/main.png)
 
 ## Status

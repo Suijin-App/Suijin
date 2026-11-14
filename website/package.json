@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
     "preview": "wrangler dev",
-    "deploy": "astro build && wrangler deploy"
+    "build": "GITHUB_TOKEN=${GITHUB_TOKEN:-$(gh auth token 2>/dev/null)} astro build",
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.5",

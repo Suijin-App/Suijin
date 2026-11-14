@@ -2,8 +2,11 @@
 // failing the build or showing a made-up number.
 export async function starCount(repository: string): Promise<number | null> {
   try {
+    // GitHub allows few anonymous requests per hour; a token in GITHUB_TOKEN (build time only, never shipped) lifts
+    // that limit. `npm run deploy` passes one from the GitHub CLI when it is signed in.
+    const token = process.env.GITHUB_TOKEN;
     const response = await fetch(`https://api.github.com/repos/${repository}`, {
-      headers: { Accept: "application/vnd.github+json", "User-Agent": "suijin-website-build" },
+      headers: { Accept: "application/vnd.github+json", "User-Agent": "suijin-website-build", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) return null;

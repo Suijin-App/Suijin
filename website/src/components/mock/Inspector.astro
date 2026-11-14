@@ -1,0 +1,27 @@
+---
+// The inspector column: the worktree's files, or its details (branch, source control, pull request, commit, changes).
+// In "info" mode the body is the default slot, so a scene can animate what it shows there.
+import { icon } from "../mock-icons";
+
+interface Props {
+  mode: "files" | "info";
+  files?: { name: string; attrs?: Record<string, string> }[];
+}
+const { mode, files = [] } = Astro.props;
+---
+
+<aside class="m-insp">
+  <div class="m-seg"><span class:list={{ on: mode === "files" }} set:html={icon("doc")} /><span class:list={{ on: mode === "info" }} set:html={icon("info")} /></div>
+  {mode === "files" ? (
+    <>
+      <div class="m-search"><span>Filter files</span><span class="m-ic faint small" set:html={icon("refresh")} /></div>
+      {files.map((file) => (
+        <div class="m-file" {...file.attrs}>
+          <b class:list={["m-type", file.name.endsWith(".md") ? "md" : "swift"]}>{file.name.endsWith(".md") ? "MD" : ""}</b>{file.name}
+        </div>
+      ))}
+    </>
+  ) : (
+    <slot />
+  )}
+</aside>

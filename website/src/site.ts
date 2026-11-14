@@ -9,6 +9,7 @@ export const site = {
   repository: "https://github.com/Suijin-App/Suijin",
   repositoryName: "Suijin-App/Suijin",
   releases: "https://github.com/Suijin-App/Suijin/releases",
+  discord: "https://discord.gg/sFEhaWAMvq",
   changelog: "https://github.com/Suijin-App/Suijin/blob/main/CHANGELOG.md",
   publisher: "Tekmium Solutions",
   minimumSystem: "macOS 15",
@@ -60,8 +61,23 @@ export const faq = [
 ];
 
 // Agents named on the site. The first two are integrated; the others are examples of command-line agents, which run
-// in a shell tab or pane like any terminal program.
-export const agents = {
-  builtIn: ["Claude Code", "Codex"],
-  inShell: ["Gemini CLI", "Aider", "OpenCode", "Goose", "Amp", "Cline", "Qwen Code", "Any CLI agent"],
-};
+// in a shell tab or pane like any terminal program. `icon` names a file in src/assets/agents; the logos belong to
+// their owners and are shown only to say which tools run in Suijin.
+export const agents: { name: string; icon: string | null; builtIn?: boolean }[] = [
+  { name: "Claude Code", icon: "claude-color", builtIn: true },
+  { name: "Codex", icon: "codex", builtIn: true },
+  { name: "Gemini CLI", icon: "gemini-color" },
+  { name: "OpenCode", icon: "opencode" },
+  { name: "Cursor CLI", icon: "cursor" },
+  { name: "Copilot CLI", icon: "githubcopilot" },
+  { name: "Amp", icon: "amp-color" },
+  { name: "Goose", icon: "goose" },
+  { name: "Cline", icon: "cline" },
+  { name: "Qwen Code", icon: "qwen-color" },
+  { name: "Kiro CLI", icon: "kiro-color" },
+  { name: "Grok CLI", icon: "grok" },
+  { name: "Kimi CLI", icon: "kimi-color" },
+  { name: "Mistral Vibe", icon: "mistral-color" },
+  { name: "Aider", icon: null },
+  { name: "Any CLI agent", icon: null },
+];

@@ -34,3 +34,7 @@ Config/Secrets.xcconfig
 *.pyc
 # Screenshots taken while reviewing UI work stay local (tens of MB per review).
 plans/reports/**/*.png
+
+# Local agent state; the project skills under .claude/skills are tracked.
+.claude/agent-memory/
+.claude/worktrees/

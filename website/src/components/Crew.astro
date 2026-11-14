@@ -266,7 +266,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const acting = new Map<Member, number>();
       const travel = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
         if (one === codex) { stroll?.pause(); window.clearInterval(stride); one.walking = false; }
-        const from = one.state === "gone" ? null : feet(one), afloat = one.floating;
+        // a sprite arriving at a page with only open water starts in it, where it will stay
+        const from = one.state === "gone" ? (spot.floats ? { x: spot.x, y: spot.y } : null) : feet(one), afloat = one.floating || one.state === "gone";
         window.clearInterval(bobs.get(one)); one.floating = false; acting.delete(one); one.post.style.marginLeft = "";
         one.state = "swim"; one.goal = spot; one.perch = null; one.up = false; one.busy = false; one.mood = null;
         window.setTimeout(() => {
@@ -336,6 +337,16 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         }, delay);
       };
 
+      // On arriving at a page a sprite is simply there, rising into place on its edge: nobody swims in from outside.
+      const appear = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
+        one.state = home ? "home" : "away"; one.perch = perch; one.rest = spot.rest;
+        resize(one, home && spot.hides ? small() : pixel); stand(one, spot.x, spot.y);
+        if (spot.hides) one.post.classList.add("hides");
+        one.post.style.opacity = "1";
+        animate(one.element, { y: [tall() + 4, one.rest], opacity: [0, 1], duration: 560, delay, ease: "outBack(1.8)" });
+        window.setTimeout(() => feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1000), delay + 400);
+      };
+
       // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.
       const roam = () => {
         if (document.hidden) return;
@@ -351,10 +362,12 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         const open = perches();
         movers.forEach((one, index) => {
           const spot = one.home?.() ?? null;
-          if (spot && onScreen(spot.y)) { taken.push(spot); travel(one, spot, true, null, index * 240); return; }
+          if (spot && onScreen(spot.y)) { taken.push(spot); if (one.state === "gone") appear(one, spot, true, null, index * 160); else travel(one, spot, true, null, index * 240); return; }
           const here = one.state === "gone" ? { x: window.scrollX + window.innerWidth / 2, y: window.scrollY + window.innerHeight / 2 } : feet(one);
-          const choice = open.filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))
-            .sort((p, q) => Math.hypot(p.x - here.x, p.y - here.y) - Math.hypot(q.x - here.x, q.y - here.y))[0];
+          // a sprite on its way takes the nearest free edge; one that is just arriving at the page takes any of them
+          const free = open.filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4));
+          const choice = one.state === "gone" ? free[Math.floor(Math.random() * free.length)]
+            : free.sort((p, q) => Math.hypot(p.x - here.x, p.y - here.y) - Math.hypot(q.x - here.x, q.y - here.y))[0];
           if (!choice) {                                        // nowhere to stand here: open water will do
             if (one.floating && onScreen(here.y)) { taken.push(here); return; }
             const pool = pools().filter((place) => taken.every((other) => Math.hypot(other.x - place.x, other.y - place.y) > wide() * 2.4))[0];
@@ -362,7 +375,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             return;
           }
           taken.push(choice);
-          travel(one, { x: choice.x, y: choice.y, rest: 0 }, false, choice.perch, index * 240);
+          if (one.state === "gone") appear(one, { x: choice.x, y: choice.y, rest: 0 }, false, choice.perch, index * 160);
+          else travel(one, { x: choice.x, y: choice.y, rest: 0 }, false, choice.perch, index * 240);
         });
       };
 
@@ -416,14 +430,10 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       members.forEach((one, index) => {
         const spot = one.home?.() ?? null;
         if (!spot || !onScreen(spot.y)) return;
-        one.state = "home"; one.rest = spot.rest; resize(one, hiders.has(one) ? small() : pixel); stand(one, spot.x, spot.y);
-        if (spot.hides) one.post.classList.add("hides");
-        one.post.style.opacity = "1";
-        animate(one.element, { y: [tall() + 4, one.rest], opacity: [0, 1], duration: 560, delay: 500 + index * 160, ease: "outBack(1.8)" });
-        window.setTimeout(() => feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1000), 900 + index * 160);
+        appear(one, spot, true, null, 500 + index * 160);
       });
       members.forEach(draw);
-      window.setTimeout(roam, 900);
+      window.setTimeout(roam, 300);
       // whoever is left treading water keeps looking for an edge that has come free
       window.setInterval(() => { if (members.some((one) => one.floating)) roam(); }, 5000);
       window.setTimeout(walk, 3200);

@@ -4,7 +4,7 @@
 
 > **Draft.** This README is a first pass and will change before the first release.
 
-Suijin (水神) is a native macOS app that runs Claude Code and Codex agents side by side. Each agent works in a git
+Suijin is a native macOS app that runs Claude Code and Codex agents side by side. Each agent works in a git
 worktree of its own (or straight in a plain folder), so their changes never collide, and you review and ship what they
 did without leaving the app. Everything runs locally on your Mac: no servers, no remote hosts, no cloud.
 

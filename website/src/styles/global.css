@@ -152,6 +152,8 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .icon-button:active { transform: scale(0.92); }
 .icon-button svg { width: 16px; height: 16px; }
 .icon-button.sponsor { color: #e5484d; }
+/* The heart's point hangs below its body, so it is lifted a touch to look centred. */
+.icon-button.sponsor svg { margin-top: 1px; }
 .icon-button.sponsor:hover svg { transform: scale(1.15); }
 .icon-button.sponsor svg { transition: transform var(--base) var(--spring); }
 .icon-button .moon, [data-theme="dark"] .icon-button .sun { display: none; }

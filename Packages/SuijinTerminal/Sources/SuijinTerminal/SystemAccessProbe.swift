@@ -13,7 +13,13 @@ public enum HostApproval: Equatable, Sendable {
 
 extension PTYHostClient {
     /// The background item's state as launchd reports it. Only reads: nothing is registered (`register()` does that).
+    /// launchd can report an agent as enabled that it cannot start; `isHelperUnreachable` tells that apart.
     public var approval: HostApproval {
+        registration.approval()
+    }
+
+    /// The `SMAppService` reading behind `PTYHostRegistration.live`.
+    nonisolated static func liveApproval() -> HostApproval {
         switch SMAppService.agent(plistName: PTYHostConstants.launchAgentPlist).status {
         case .enabled: .enabled
         case .requiresApproval: .requiresApproval

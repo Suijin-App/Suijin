@@ -45,7 +45,8 @@ struct PermissionsScreenshotTests {
         let states: [(String, PermissionsModel)] = [
             ("granted", await permissions(.allowed, .allowed, .allowed)),
             ("missing", await permissions(.notDetermined, .denied, .denied)),
-            ("mixed", await permissions(.denied, .unknown(reason: "The terminal host is not registered yet."), .unknown(reason: "Suijin could not check this on your Mac.")))
+            ("mixed", await permissions(.denied, .unknown(reason: "The terminal host is not registered yet."), .unknown(reason: "Suijin could not check this on your Mac."))),
+            ("broken", await permissions(.allowed, PermissionsModel.status(for: .enabled, reachable: false, runsInApp: true), .allowed))
         ]
         for (name, model) in states {
             for width in [CGFloat(460), 760] {

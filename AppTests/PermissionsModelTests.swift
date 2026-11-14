@@ -17,6 +17,9 @@ import UserNotifications
         var requests = 0
         var opened: [URL] = []
         var loginItemsOpened = 0
+        var repairs = 0
+        /// What the helper's state becomes once it is repaired.
+        var helperAfterRepair: PermissionStatus?
         /// URLs macOS refuses, as an unknown System Settings pane would be.
         var refused: Set<URL> = []
 
@@ -27,7 +30,11 @@ import UserNotifications
                 fullDiskAccess: { self.disk },
                 requestNotifications: { self.requests += 1; self.notifications = .allowed },
                 open: { self.opened.append($0); return !self.refused.contains($0) },
-                openLoginItems: { self.loginItemsOpened += 1 })
+                openLoginItems: { self.loginItemsOpened += 1 },
+                repairBackgroundHelper: {
+                    self.repairs += 1
+                    if let state = self.helperAfterRepair { self.helper = state }
+                })
         }
     }
 
@@ -116,6 +123,74 @@ import UserNotifications
         fake.refused = [disk]
         PermissionsModel(sources: fake.sources).openFullDiskAccessSettings()
         #expect(fake.opened == [disk, PermissionsModel.systemSettingsURL])
+    }
+
+    @Test func anEnabledHelperThatCannotBeReachedIsBrokenNotAllowed() {
+        // launchd reports the agent as enabled while it refuses to start it (a registration made by another build).
+        guard case .broken(let inApp) = PermissionsModel.status(for: HostApproval.enabled, reachable: false, runsInApp: true),
+              case .broken(let later) = PermissionsModel.status(for: HostApproval.enabled, reachable: false, runsInApp: false)
+        else {
+            Issue.record("an unreachable helper must not read as allowed")
+            return
+        }
+        // Each says what it costs: sessions that end on quit, or sessions that cannot start.
+        #expect(inApp.contains("end when you quit"))
+        #expect(later.contains("cannot start") && !later.contains("quit"))
+        #expect(PermissionsModel.status(for: HostApproval.enabled, reachable: true, runsInApp: false) == .allowed)
+        guard case .broken = PermissionsModel.status(for: HostApproval.notRegistered, reachable: false, runsInApp: true) else {
+            Issue.record("a registration held by another copy is repaired, not shown as merely unregistered")
+            return
+        }
+        // Turned off or missing: that state says more than "not working".
+        #expect(PermissionsModel.status(for: HostApproval.requiresApproval, reachable: false, runsInApp: true) == .denied)
+        guard case .unknown = PermissionsModel.status(for: HostApproval.notFound, reachable: false, runsInApp: true) else {
+            Issue.record("a missing helper stays unknown")
+            return
+        }
+    }
+
+    @Test func repairingTheHelperReadsItsStateAgain() async {
+        let fake = Fake()
+        fake.helper = .broken(reason: "does not start")
+        fake.helperAfterRepair = .allowed
+        let model = PermissionsModel(sources: fake.sources)
+        await model.refresh()
+        #expect(model.backgroundHelper == .broken(reason: "does not start"))
+        await model.repairBackgroundHelper()
+        #expect(fake.repairs == 1)
+        #expect(model.backgroundHelper == .allowed)
+        #expect(!model.isRepairingHelper)
+    }
+
+    @Test func alertsAboutTheHelperSayWhatToDo() {
+        for error in [PTYHostClientError.notResponding, .timedOut, .connectionFailed("invalid")] {
+            let message = SessionRuntimeRegistry.alertMessage(for: error)
+            #expect(message.contains("Repair"), "\(error) must point at the Repair button")
+            #expect(message != error.localizedDescription)
+        }
+        #expect(SessionRuntimeRegistry.alertMessage(for: PTYHostClientError.requiresApproval).contains("Login Items"))
+        // Anything else keeps its own description.
+        let other = PTYHostClientError.spawnFailed("no such file")
+        #expect(SessionRuntimeRegistry.alertMessage(for: other) == other.localizedDescription)
+        #expect(SessionRuntimeRegistry.alertMessage(for: PTYHostClientError.registeredElsewhere).contains("Repair"))
+    }
+
+    @Test func aSessionTheHelperDidNotAnswerForIsKeptNotEnded() {
+        typealias Registry = SessionRuntimeRegistry
+        for error in [PTYHostClientError.timedOut, .connectionFailed("interrupted"), .notResponding] {
+            // A helper process runs, or that is unknown: the session may be alive there, so it is not ended (a
+            // Resume would start a second agent on the same conversation).
+            #expect(Registry.fateOfUnattached(after: error, helperRunning: true) == .notConnected)
+            #expect(Registry.fateOfUnattached(after: error, helperRunning: nil) == .notConnected)
+            // No helper runs: its sessions are gone with it.
+            #expect(Registry.fateOfUnattached(after: error, helperRunning: false) == .ended)
+        }
+        // The helper answered that the session is gone or broken.
+        #expect(Registry.fateOfUnattached(after: PTYHostClientError.sessionNotFound("x"), helperRunning: true) == .ended)
+        #expect(Registry.fateOfUnattached(after: PTYHostClientError.invalidReply, helperRunning: true) == .ended)
+        // Turned off by the user: nothing runs it.
+        #expect(Registry.fateOfUnattached(after: PTYHostClientError.requiresApproval, helperRunning: nil) == .ended)
+        #expect(Registry.fateOfUnattached(after: nil, helperRunning: true) == .ended)
     }
 
     @Test func notificationPaneNamesTheApp() {

@@ -19,7 +19,7 @@ export const site = {
   licenseUrl: "https://github.com/Suijin-App/Suijin/blob/main/LICENSE",
   minimumSystem: "macOS 15",
   // Set to the version string once the first release is published; the download wording follows it.
-  releasedVersion: "0.1.1" as string | null,
+  releasedVersion: null as string | null,
   // The site token of Cloudflare Web Analytics (dashboard: Analytics & Logs, Web Analytics). Empty turns it off.
   analyticsToken: "",
 };

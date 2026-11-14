@@ -143,7 +143,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 
     // ── looks: where the eyes point, overlaid by a mood that lasts a while
     const draw = (one: Member) => {
-      const pose = { ...one.pose, ...(one.mood ?? {}) }, key = JSON.stringify(pose);
+      // asleep, the eyes stay shut whatever the sprite was doing when it dozed off: a walk that ends or a landing does not open them
+      const dozing = crew.classList.contains("asleep") && one.state !== "swim" && !one.walking && !one.mood;
+      const pose = { ...one.pose, ...(one.mood ?? {}), ...(dozing ? { eyes: "shut", mouth: "none" } : {}) } as SpritePose, key = JSON.stringify(pose);
       if (one.element.dataset.pose !== key) { one.element.dataset.pose = key; one.svg.innerHTML = spritePixels(one.color, pose); }
     };
     const moods = new Map<Member, number>();

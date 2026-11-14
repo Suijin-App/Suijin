@@ -37,6 +37,7 @@ if hdiutil attach -quiet -nobrowse -readonly -mountpoint "$MOUNT" "$DMG"; then
   [ "$(value SUFeedURL)" = "https://suijin.app/appcast.xml" ] && pass "DMG app asks https://suijin.app/appcast.xml" || fail "DMG app has the wrong SUFeedURL"
   [ -L "$MOUNT/Applications" ] && pass "DMG has the Applications shortcut" || fail "DMG has no Applications shortcut"
   hdiutil detach -quiet "$MOUNT" || true
+  scripts/dmg/check-layout.sh "$DMG" 2>/dev/null && pass "DMG opens as the installer window (background picture set)" || fail "DMG opens as a plain window: Finder's settings name no background picture"
 else
   fail "cannot mount the DMG"
 fi

@@ -16,7 +16,7 @@ struct OnboardingOverlay: View {
     @State private var direction: OnboardingTour.Direction = .forward
     @State private var keyMonitor: Any?
     /// Where the pointer is over the tour; the sprites look at it.
-    @State private var pointer: CGPoint?
+    @State private var pointer = TourPointer()
 
     var body: some View {
         GeometryReader { proxy in
@@ -37,11 +37,11 @@ struct OnboardingOverlay: View {
         .coordinateSpace(name: tourCoordinateSpace)
         .onContinuousHover(coordinateSpace: .named(tourCoordinateSpace)) { phase in
             switch phase {
-            case .active(let location): pointer = location
-            case .ended: pointer = nil
+            case .active(let location): pointer.location = location
+            case .ended: pointer.location = nil
             }
         }
-        .environment(\.tourPointer, pointer)
+        .environment(pointer)
         .onAppear {
             // The terminal behind keeps no keyboard focus while the tour is up.
             model.mainWindow?.makeFirstResponder(nil)
@@ -257,6 +257,7 @@ private struct OnboardingFeatureStep: View {
                     .animation(reduceMotion ? .easeOut(duration: 0.25) : .spring(response: 0.6, dampingFraction: 0.82).delay(0.1),
                                value: isShown)
                     .accessibilityLabel(Text(step.screenshotDescription))
+                    .accessibilityHint(step.annotation.map { Text($0.note) } ?? Text(verbatim: ""))
                     .accessibilityAddTraits(.isImage)
             }
         }
@@ -285,7 +286,7 @@ private struct OnboardingScreenshot: View {
             let noteSize = max(width / 30, 12)
             // Room above the capture for the sitting sprite and the two-line note.
             let band = annotation == nil ? 0 : max(pixel * 14, noteSize * 2.7)
-            let height = min(proxy.size.height - band, fullHeight)
+            let height = max(0, min(proxy.size.height - band, fullHeight))
             Image(name)
                 .resizable()
                 .interpolation(.high)

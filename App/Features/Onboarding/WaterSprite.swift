@@ -133,16 +133,11 @@ struct WaterSpriteView: View {
     }
 }
 
-/// Where the pointer is over the welcome tour, in the tour's coordinate space; the sprites look at it.
-private struct TourPointerKey: EnvironmentKey {
-    static let defaultValue: CGPoint? = nil
-}
-
-extension EnvironmentValues {
-    var tourPointer: CGPoint? {
-        get { self[TourPointerKey.self] }
-        set { self[TourPointerKey.self] = newValue }
-    }
+/// Where the pointer is over the welcome tour, in the tour's coordinate space. A reference the sprites observe, so
+/// a pointer move redraws them alone and not the whole tour.
+@MainActor @Observable
+final class TourPointer {
+    var location: CGPoint?
 }
 
 /// The name of the tour's coordinate space, which pointer positions and sprite frames share.
@@ -155,7 +150,7 @@ struct LivelySprite: View {
     enum Mood { case idle, cheering, sitting }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.tourPointer) private var pointer
+    @Environment(TourPointer.self) private var pointer: TourPointer?
     let tint: WaterSprite.Tint
     var pixel: CGFloat = 6
     var mood = Mood.idle
@@ -182,6 +177,7 @@ struct LivelySprite: View {
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(tourCoordinateSpace)) } action: { frame = $0 }
         .contentShape(Rectangle())
+        .accessibilityHidden(true)
         .onTapGesture {
             let now = Date.now
             tappedAt = now
@@ -193,7 +189,7 @@ struct LivelySprite: View {
     }
 
     private func drawing(at time: Double?, sinceTap: Double?) -> some View {
-        let gaze = LivelySprite.gaze(from: CGPoint(x: frame.midX, y: frame.midY), to: pointer, reach: pixel * 8)
+        let gaze = LivelySprite.gaze(from: CGPoint(x: frame.midX, y: frame.midY), to: pointer?.location, reach: pixel * 8)
         let pose = LivelySprite.pose(tint: tint, mood: mood, time: time, gaze: gaze, sinceTap: sinceTap)
         return WaterSpriteView(sprite: pose.sprite, pixel: pixel)
             .offset(y: -pose.lift * pixel)

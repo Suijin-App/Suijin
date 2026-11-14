@@ -5,7 +5,8 @@ import SwiftUI
 enum HandInk {
     static let color = Color(red: 0.898, green: 0.282, blue: 0.302)
 
-    /// Bradley Hand ships with macOS; Noteworthy stands in if it is missing.
+    /// A handwriting face on purpose, not the system font: the notes should read as scribbled on by hand. Bradley Hand
+    /// ships with macOS; Noteworthy stands in if it is missing.
     static func font(size: CGFloat) -> Font {
         let name = NSFont(name: "BradleyHandITCTT-Bold", size: size) != nil ? "BradleyHandITCTT-Bold" : "Noteworthy-Bold"
         return .custom(name, fixedSize: size)

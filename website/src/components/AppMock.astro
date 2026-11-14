@@ -4,6 +4,7 @@
 // `data-set="<step>:<class>"` adds a class at a step (a status that changes); `data-text="<step>:<text>"` swaps a
 // label. Without the script, or with reduced motion, every scene shows its finished state.
 import Sidebar, { type Row } from "./mock/Sidebar.astro";
+import Crew from "./Crew.astro";
 import Toolbar, { type Tab } from "./mock/Toolbar.astro";
 import Inspector, { type Entry } from "./mock/Inspector.astro";
 import Status from "./mock/Status.astro";
@@ -346,6 +347,7 @@ bar.label   <span class="dim">// "42%"</span></pre>
       </Inspector>
     </div>
   </div>
+  <Crew />
 </div>
 
 <script>

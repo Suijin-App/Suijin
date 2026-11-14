@@ -1,0 +1,137 @@
+---
+// The four water sprites of the introduction film, living on the top edge of the app window on the home page. They
+// blink and breathe, watch the pointer, greet a pointer that comes close, hop when the page is pressed or the scene
+// changes, cheer when the film opens, and doze off when nothing moves. With reduced motion they simply stand there.
+import { spritePixels, type SpriteColor } from "../lib/sprite";
+
+const crew: SpriteColor[] = ["aqua", "claude", "codex", "shell"];
+---
+
+<div class="crew" data-crew aria-hidden="true">
+  {crew.map((color) => (
+    <span class="crew-sprite" data-sprite={color}>
+      <svg viewBox="0 0 12 14" shape-rendering="crispEdges" set:html={spritePixels(color)} />
+    </span>
+  ))}
+</div>
+
+<script>
+  import { animate, stagger } from "animejs";
+  import { spritePixels, type SpriteColor, type SpritePose } from "../lib/sprite";
+
+  const crew = document.querySelector<HTMLElement>("[data-crew]");
+  const stage = document.querySelector<HTMLElement>("[data-stage]");
+  const windowEdge = stage?.querySelector<HTMLElement>(".mac");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (crew && stage && windowEdge) {
+    type Member = { element: HTMLElement; svg: SVGElement; color: SpriteColor; pose: SpritePose; mood: SpritePose | null; busy: boolean };
+    const members: Member[] = Array.from(crew.querySelectorAll<HTMLElement>("[data-sprite]")).map((element) => ({
+      element, svg: element.querySelector("svg") as SVGElement, color: element.dataset.sprite as SpriteColor, pose: {}, mood: null, busy: false,
+    }));
+
+    // Stand the sprites in a row at the right end of the window's top edge, sized for the window's width. Where the
+    // row of scene tabs reaches that far (narrow screens), they stand on the tabs' top edge instead.
+    const tabsRow = stage.querySelector<HTMLElement>(".scene-tabs");
+    const place = () => {
+      const edge = windowEdge.getBoundingClientRect(), box = stage.getBoundingClientRect(), tabs = tabsRow?.getBoundingClientRect();
+      const pixel = edge.width < 520 ? 3 : edge.width < 900 ? 4 : 5, width = 12 * pixel, gap = width * 1.18, inset = Math.max(14, edge.width * 0.022);
+      const rowLeft = edge.right - inset - width - (members.length - 1) * gap;
+      const perch = tabs && tabs.right > rowLeft - 10 ? tabs.top : edge.top;
+      crew.style.top = `${perch - box.top}px`;
+      crew.style.left = `${edge.left - box.left}px`;
+      crew.style.width = `${edge.width}px`;
+      crew.style.setProperty("--sprite", `${pixel}px`);
+      members.forEach((member, index) => { member.element.style.left = `${edge.width - inset - width - (members.length - 1 - index) * gap}px`; });
+    };
+    place();
+    new ResizeObserver(place).observe(stage);
+
+    // A pose is the look of the moment (where the eyes point) overlaid by a mood that lasts a while.
+    const draw = (member: Member) => {
+      const pose = { ...member.pose, ...(member.mood ?? {}) }, key = JSON.stringify(pose);
+      if (member.element.dataset.pose !== key) { member.element.dataset.pose = key; member.svg.innerHTML = spritePixels(member.color, pose); }
+    };
+    const moods = new WeakMap<Member, number>();
+    const feel = (member: Member, mood: SpritePose, time = 900) => {
+      member.mood = mood; draw(member);
+      window.clearTimeout(moods.get(member));
+      moods.set(member, window.setTimeout(() => { member.mood = null; draw(member); }, time));
+    };
+
+    if (!calm) {
+      crew.classList.add("alive");
+
+      // A hop: crouch, leap, land with a squash. Feet stay on the edge (the transform's origin is the bottom).
+      const hop = (member: Member, height = 22, delay = 0) => {
+        if (member.busy) return;
+        member.busy = true;
+        animate(member.element, {
+          y: [{ to: 0, duration: 90 }, { to: -height, duration: 210, ease: "outQuad" }, { to: 0, duration: 230, ease: "inQuad" }],
+          scaleY: [{ to: 0.82, duration: 90, ease: "outQuad" }, { to: 1.1, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 0.86, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
+          scaleX: [{ to: 1.12, duration: 90, ease: "outQuad" }, { to: 0.94, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 1.1, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
+          delay,
+          onComplete: () => { member.busy = false; },
+        });
+      };
+
+      // They arrive one after another, rising from behind the window's edge, and wave.
+      animate(members.map((member) => member.element), { y: ["120%", "0%"], opacity: [0, 1], duration: 620, delay: stagger(130, { start: 500 }), ease: "outBack(1.6)" });
+      members.forEach((member, index) => window.setTimeout(() => feel(member, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100), 900 + index * 130));
+
+      // Blinking, each at its own pace.
+      members.forEach((member, index) => {
+        const blink = () => {
+          if (!member.mood && !asleep) { const eyes = member.pose.eyes; member.pose.eyes = "blink"; draw(member); window.setTimeout(() => { member.pose.eyes = eyes; draw(member); }, 110); }
+          window.setTimeout(blink, 2300 + ((index * 977 + Date.now()) % 2900));
+        };
+        window.setTimeout(blink, 1800 + index * 610);
+      });
+
+      // Watching the pointer; a pointer that comes close gets a happy face. Nothing moving for a while sends them to sleep.
+      let asleep = false, rest = 0, frame = 0, pointer = { x: 0, y: 0 };
+      const sleep = () => { asleep = true; crew.classList.add("asleep"); members.forEach((member) => { member.pose = { eyes: "shut" }; member.mood = null; draw(member); }); };
+      const stir = () => {
+        window.clearTimeout(rest); rest = window.setTimeout(sleep, 26000);
+        if (asleep) { asleep = false; crew.classList.remove("asleep"); members.forEach((member, index) => { feel(member, { eyes: "wide", mouth: "o" }, 600); hop(member, 10, index * 60); }); }
+      };
+      const look = () => {
+        frame = 0;
+        for (const member of members) {
+          const box = member.element.getBoundingClientRect(), dx = pointer.x - (box.left + box.width / 2), dy = pointer.y - (box.top + box.height * 0.55), far = Math.hypot(dx, dy);
+          member.pose.eyes = far < box.width * 0.9 ? "happy" : Math.abs(dx) > Math.abs(dy) * 1.2 ? (dx < 0 ? "l" : "r") : dy < 0 ? "u" : "d";
+          member.pose.mouth = far < box.width * 0.9 ? "smile" : "none";
+          draw(member);
+        }
+      };
+      document.addEventListener("pointermove", (event) => { pointer = { x: event.clientX, y: event.clientY }; stir(); if (!frame) frame = requestAnimationFrame(look); }, { passive: true });
+      stir();
+
+      // A press on the page: the nearest sprite starts and hops, the others glance over. A press on a sprite delights it.
+      document.addEventListener("pointerdown", (event) => {
+        stir();
+        const target = (event.target as Element | null)?.closest?.("[data-sprite]");
+        const ranked = members.map((member) => { const box = member.element.getBoundingClientRect(); return { member, far: Math.hypot(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height / 2) }; }).sort((a, b) => a.far - b.far);
+        if (target) { const member = members.find((one) => one.element === target); if (member) { feel(member, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1200); hop(member, 34); } return; }
+        if (ranked[0].far < 900) { feel(ranked[0].member, { eyes: "wide", mouth: "o" }, 520); hop(ranked[0].member, 16); }
+      }, { passive: true });
+
+      // The scene of the window changes: a wave of hops runs along the row, starting with a different sprite each time.
+      let scene = 0;
+      new MutationObserver(() => {
+        const now = Array.from(stage.querySelectorAll("[data-scene]")).findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+        if (now < 0 || now === scene) return;
+        scene = now;
+        members.forEach((member, index) => { const turn = (index - (now % members.length) + members.length) % members.length; hop(member, turn === 0 ? 26 : 14, turn * 90); if (turn === 0) feel(member, { eyes: "happy", mouth: "smile", arms: "up" }, 900); });
+      }).observe(stage, { attributes: true, attributeFilter: ["aria-selected"], subtree: true });
+
+      // The film opens or the theme changes: everyone reacts.
+      new MutationObserver((records) => {
+        for (const record of records) {
+          if (record.attributeName === "data-theater" && document.documentElement.hasAttribute("data-theater")) members.forEach((member, index) => { feel(member, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1600); hop(member, 24, index * 80); });
+          if (record.attributeName === "data-theme") members.forEach((member, index) => { feel(member, { eyes: "wide", mouth: "o" }, 800); hop(member, 12, index * 70); });
+        }
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theater", "data-theme"] });
+    }
+  }
+</script>

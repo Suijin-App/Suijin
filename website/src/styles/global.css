@@ -478,6 +478,21 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 .step p { color: var(--muted); font-size: 15.5px; }
 
 /* Privacy band */
+/* The crew: four pixel water sprites standing on the top edge of the app window. --sprite is the side of one pixel. */
+.crew { position: absolute; height: 0; z-index: 3; pointer-events: none; --sprite: 5px; }
+.crew-sprite { position: absolute; bottom: -1px; width: calc(12 * var(--sprite)); height: calc(14 * var(--sprite)); transform-origin: 50% 100%; pointer-events: auto; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; }
+.crew-sprite svg { display: block; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 100%; filter: drop-shadow(0 1px 0 rgba(19, 48, 94, 0.12)); }
+/* breathing, each a little out of step; slower and deeper when they doze */
+.crew.alive .crew-sprite svg { animation: crew-breathe 2.6s ease-in-out infinite; }
+.crew.alive .crew-sprite:nth-child(2) svg { animation-delay: -0.7s; }
+.crew.alive .crew-sprite:nth-child(3) svg { animation-delay: -1.5s; }
+.crew.alive .crew-sprite:nth-child(4) svg { animation-delay: -2.1s; }
+.crew.asleep .crew-sprite svg { animation-duration: 4.4s; animation-name: crew-doze; }
+@keyframes crew-breathe { 50% { transform: scale(1.025, 0.965); } }
+@keyframes crew-doze { 50% { transform: scale(1.05, 0.92); } }
+html:not(.js) .crew { display: none; }
+
 /* Water under the page: rings spread from wherever a press lands. The layer is behind all content (a negative
    z-index paints above the page background and below everything else), so only bare background shows them. */
 .touch { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; contain: strict; }

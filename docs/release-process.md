@@ -87,8 +87,10 @@ never update.
       ID`; the DMG is checked with `spctl --assess --type open --context context:primary-signature -vv`.
 
    10. Sign the DMG for Sparkle (`sign_update --account suijin`; the key that signs must be the one in
-       `SUPublicEDKey`) and write `appcast.xml`: one item with the version, the build, the minimum macOS, a link to
-       the release notes and the download with its signature and length.
+       `SUPublicEDKey`) and write `appcast.xml`: one item with the version, the build, the minimum macOS, the
+       release notes and the download with its signature and length. The notes come from
+       `docs/releases/<version>/release-notes.md`, turned into HTML by `scripts/release-notes-html.py`, so the
+       update window shows them; without that file the item only links to the release page.
 
    Nothing is uploaded. Output stays in `build/release/<version>/` (ignored by git).
 5. Publish: write the release notes from `CHANGELOG.md`, then create the GitHub release with the two files, the DMG

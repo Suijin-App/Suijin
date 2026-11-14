@@ -326,6 +326,14 @@ else
   KEYCHAIN_PUBLIC_KEY="$("$SPARKLE_BIN/generate_keys" --account "$SPARKLE_ACCOUNT" -p 2>/dev/null || true)"
   [ "$KEYCHAIN_PUBLIC_KEY" = "$PUBLIC_KEY" ] \
     || die "the Sparkle key in the Keychain is not the one in App/Info.plist (SUPublicEDKey)"
+  # The update window shows the release's notes themselves; without a notes file it shows a link to them.
+  NOTES_FILE="$ROOT/docs/releases/$VERSION/release-notes.md"
+  if [ -f "$NOTES_FILE" ]; then
+    NOTES_HTML="$(python3 "$ROOT/scripts/release-notes-html.py" "$NOTES_FILE" "$RELEASE_PAGE")" || die "could not turn $NOTES_FILE into HTML"
+  else
+    note "no $NOTES_FILE: the update window will show only a link to the release page"
+    NOTES_HTML="<p>Suijin $VERSION. <a href=\"$RELEASE_PAGE\">Release notes</a></p>"
+  fi
   cat >"$APPCAST" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
@@ -340,7 +348,7 @@ else
       <sparkle:version>$BUILD_NUMBER</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>$MINIMUM_SYSTEM</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Suijin $VERSION. <a href="$RELEASE_PAGE">Release notes</a></p>]]></description>
+      <description><![CDATA[$NOTES_HTML]]></description>
       <enclosure url="$DOWNLOAD_URL" $SIGNATURE type="application/octet-stream"/>
     </item>
   </channel>

@@ -27,12 +27,11 @@
 	<!-- Sparkle 2 (docs/release-process.md). Every installed copy asks SUFeedURL for as long as it is installed, so the
 	     address never changes: suijin.app redirects it to the appcast of the latest GitHub release (Tools/update-feed).
 	     SUPublicEDKey is the public half of the key updates are signed with, printed by
-	     `generate_keys --account suijin -p`; the private key stays in the release Mac's login Keychain. While it is
-	     still the placeholder the updater stays off and reports "not configured". -->
+	     `generate_keys --account suijin -p`; the private key stays in the release Mac's login Keychain. -->
 	<key>SUFeedURL</key>
 	<string>https://suijin.app/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY</string>
+	<string>nSik1Na1brMKbgh/FWCHIqsMqlhSAX048dIYWrfdzB4=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUScheduledCheckInterval</key>

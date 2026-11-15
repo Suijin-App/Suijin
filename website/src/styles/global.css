@@ -517,6 +517,9 @@ main .wrap { position: relative; z-index: 1; }
 /* a sign left above the head */
 .crew-sign { position: absolute; left: 50%; bottom: calc(15 * var(--sprite)); transform: translateX(-50%); pointer-events: none; }
 .crew-sign svg { display: block; }
+/* a sign thrown from one sprite to another: it flies over the page, like the speech bubbles */
+.crew-toss { position: absolute; z-index: 4; transform: translate(-50%, -50%); pointer-events: none; }
+.crew-toss svg { display: block; }
 /* breathing, each a little out of step; slower and deeper when they doze */
 .crew.alive .crew-sprite > svg { animation: crew-breathe 2.6s ease-in-out infinite; }
 .crew.alive .crew-post:nth-child(2) .crew-sprite > svg { animation-delay: -0.7s; }

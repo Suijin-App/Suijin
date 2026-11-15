@@ -1,9 +1,9 @@
 // The Suijin water sprite: a pixel droplet on a 12 x 14 grid, the same character as in the introduction film and
 // the app's welcome tour. `spritePixels` turns a pose into the SVG rectangles of one sprite.
 export type SpriteColor = "aqua" | "claude" | "codex" | "shell";
-export type SpriteEyes = "n" | "l" | "r" | "u" | "d" | "wide" | "happy" | "shut" | "blink" | "sleepy" | "star";
+export type SpriteEyes = "n" | "l" | "r" | "u" | "d" | "wide" | "happy" | "shut" | "blink" | "sleepy" | "star" | "wink";
 export type SpriteMouth = "none" | "open" | "o" | "smile";
-export type SpriteArms = "down" | "up" | "wave" | "swimA" | "swimB" | "guard" | "punch";
+export type SpriteArms = "down" | "up" | "wave" | "swimA" | "swimB" | "guard" | "punch" | "push" | "creep";
 export type SpriteLegs = "stand" | "tuck" | "walkA" | "walkB" | "sit" | "none" | "stance" | "kick";
 export interface SpritePose { eyes?: SpriteEyes; mouth?: SpriteMouth; arms?: SpriteArms; legs?: SpriteLegs; blush?: boolean; flip?: boolean }
 
@@ -25,6 +25,8 @@ const eyes: Record<SpriteEyes, number[][]> = {
   shut: [[2, 8], [3, 8], [4, 8], [7, 8], [8, 8], [9, 8]],
   blink: [[3, 8], [8, 8]],
   sleepy: [[2, 7], [3, 7], [4, 7], [3, 8], [7, 7], [8, 7], [9, 7], [8, 8]],
+  // one eye shut, the other open: woken up, and not pleased
+  wink: [[2, 8], [3, 8], [4, 8], [8, 7], [8, 8]],
   // big eyes, each with a sparkle (the third number marks a highlight pixel)
   star: [[3, 7], [4, 7], [3, 8], [4, 8], [7, 7], [8, 7], [7, 8], [8, 8], [3, 7, 1], [7, 7, 1]],
 };
@@ -46,6 +48,8 @@ const arms: Record<SpriteArms, number[][]> = {
   swimA: [[11, 7], [12, 7], [0, 8]], swimB: [[11, 8], [0, 7], [-1, 7]],
   // fists up; and a straight punch with the front arm
   guard: [[0, 6], [11, 6]], punch: [[0, 6], [11, 7], [12, 7], [13, 7]],
+  // both hands straight out in a shove; and a paw held up in front, creeping up on somebody
+  push: [[11, 6], [12, 6], [11, 8], [12, 8]], creep: [[11, 5], [11, 6], [0, 8]],
 };
 
 /** Small pixel signs a sprite leaves above its head. Each is rows of characters; "." is empty. */

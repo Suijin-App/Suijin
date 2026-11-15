@@ -13,7 +13,13 @@
 // back to the hero sends them home; on the other pages they swim in and find a place the same way.
 //
 // All of them blink and breathe, watch the pointer, start at a press on the page, cheer when the film opens and doze
-// off when nothing moves. With reduced motion they stand still at their posts and do not travel.
+// off when nothing moves.
+//
+// They also play with each other: a conversation is held face to face, and now and then two or more of them spar until
+// one is kicked into the water, splash each other, sing in a round, do a wave, play peekaboo behind the two buttons,
+// copy each other's moves, race to another edge, shove a singer in, throw a sign back and forth or climb on each
+// other's head. A press on one makes the others look, and one may come over to be pressed too; asleep, a loud snorer is
+// hushed by its neighbour, and one that sleeps on is woken by another. With reduced motion they stand still at their posts and do not travel.
 import { spritePixels, type SpriteColor } from "../lib/sprite";
 
 const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
@@ -39,7 +45,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 <script>
   import { animate } from "animejs";
   import { spritePixels, signSvg, type SpriteColor, type SpritePose, type SpriteSign } from "../lib/sprite";
-  import { scenes, introductions, places, race, reactions, audience, pitches, type TalkLine, type TalkMood } from "../lib/crew-talk";
+  import { scenes, introductions, places, race, reactions, audience, pitches, plays, type TalkLine, type TalkMood } from "../lib/crew-talk";
   import { crewSound, setSound, soundOn, soundWanted, type CrewSound } from "../lib/crew-sound";
 
   // Whether the reader sent the sprites away; remembered across pages and visits.
@@ -174,6 +180,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       if (time > 0) moods.set(one, window.setTimeout(() => { one.mood = null; draw(one); }, time));
     };
 
+    // which way a sprite turns to face another
+    const toward = (one: Member, other: Member): SpritePose => ({ flip: feet(other).x < feet(one).x });
+
     // ── keeping everyone where they belong when the layout changes
     const settle = (one: Member) => { if (!one.busy && !one.up && one.state !== "swim") one.element.style.transform = `translateY(${one.rest}px)`; };
     const place = () => {
@@ -181,7 +190,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       for (const one of members) {
         if (one.state !== "swim") resize(one, one.state === "home" && hiders.has(one) ? small() : pixel);
         if (one.state === "home" && one.home) { const spot = one.home(); if (spot && !(one === codex && one.walking) && !(one === shell && one.busy)) { stand(one, spot.x, spot.y); one.rest = spot.rest; } }
-        if (one.state === "away" && one.perch) { const edge = edgeOf(one.perch); if (edge) stand(one, edge.left + edge.width * one.perch.at + window.scrollX, edge.top + 1 + window.scrollY); }
+        // not in the middle of an act: it may be in the water then, or on somebody's head
+        if (one.state === "away" && one.perch && !one.busy) { const edge = edgeOf(one.perch); if (edge) stand(one, edge.left + edge.width * one.perch.at + window.scrollX, edge.top + 1 + window.scrollY); }
         settle(one);
       }
     };
@@ -283,10 +293,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const spray = (x: number, y: number, ux: number) => { for (let drop = 0; drop < 3; drop++) fleck(x, y - 2, -ux * (40 + Math.random() * 70), -(90 + Math.random() * 90), 2, undefined, y + any(2)); };
 
       // ── moves
-      // A hop from wherever the sprite rests: crouch, leap, land with a squash.
-      const hop = (one: Member, height = 20, delay = 0) => {
-        if (one.busy || one.up || one.floating || one.state === "swim" || one.state === "gone") return;
-        one.busy = true;
+      // A hop from wherever the sprite rests: crouch, leap, land with a squash. `bounce` is the move itself, for a sprite
+      // that is part of something larger.
+      const bounce = (one: Member, height = 20, delay = 0, done?: () => void) => {
         window.setTimeout(() => play("hop", one), delay);
         const rest = one.rest;
         animate(one.element, {
@@ -294,8 +303,14 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           scaleY: [{ to: 0.84, duration: 90, ease: "outQuad" }, { to: 1.1, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 0.87, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
           scaleX: [{ to: 1.1, duration: 90, ease: "outQuad" }, { to: 0.95, duration: 210, ease: "outQuad" }, { to: 1, duration: 150 }, { to: 1.09, duration: 80 }, { to: 1, duration: 260, ease: "outElastic(1, .5)" }],
           delay,
-          onComplete: () => { one.busy = false; },
+          onComplete: () => done?.(),
         });
+      };
+      // the same hop for a sprite that is doing nothing else: it is busy until it is down again
+      const hop = (one: Member, height = 20, delay = 0) => {
+        if (one.busy || one.up || one.floating || one.state === "swim" || one.state === "gone") return;
+        one.busy = true;
+        bounce(one, height, delay, () => { one.busy = false; });
       };
       // A hider comes all the way up from behind its button, or sinks back.
       const rise = (one: Member, up: boolean) => {
@@ -317,7 +332,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       //    the sprite's voice with it
       const bubbles = new Map<Member, HTMLElement>();
       let following = 0, talking = false, chase = { left: 0, first: true, rushed: false };
-      const any1 = (lines: string[]) => lines[Math.floor(Math.random() * lines.length)];
+      function any1<T>(lines: T[]): T { return lines[Math.floor(Math.random() * lines.length)]; }
       const inSight = (one: Member) => { const top = feet(one).y - window.scrollY; return one.state !== "gone" && top > 90 && top < window.innerHeight + 10; };
       const follow = () => {
         following = 0;
@@ -329,27 +344,42 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         }
         if (bubbles.size) following = requestAnimationFrame(follow);
       };
-      const speak = (one: Member, words: string, mood: TalkMood = "chat", time = 0) => {
+      const speak = (one: Member, words: string, mood: TalkMood = "chat", time = 0, to?: Member) => {
         if (!inSight(one) || document.hidden) return;
         bubbles.get(one)?.remove();
+        // a neighbour's bubble would lie under this one: whoever speaks now is the one heard
+        for (const [other, old] of bubbles) if (other !== one && Math.hypot(feet(other).x - feet(one).x, feet(other).y - feet(one).y) < wide() * 3) { old.remove(); bubbles.delete(other); }
         const bubble = document.createElement("span");
         bubble.className = "crew-say"; bubble.textContent = words;
         crew.append(bubble); bubbles.set(one, bubble);
         if (!following) follow();
         play(mood === "yay" ? "cheer" : mood, one);
-        if (!one.busy && one.state !== "swim") feel(one, { mouth: "open", eyes: mood === "yay" ? "happy" : mood === "oh" ? "wide" : undefined, arms: mood === "yay" || mood === "hi" ? "wave" : undefined }, 620);
+        if (!one.busy && one.state !== "swim") feel(one, { ...(to ? toward(one, to) : {}), mouth: "open", eyes: mood === "yay" ? "happy" : mood === "oh" ? "wide" : undefined, arms: mood === "yay" || mood === "hi" ? "wave" : undefined }, 620);
         window.setTimeout(() => { if (bubbles.get(one) !== bubble) return; bubbles.delete(one); bubble.classList.add("leaves"); window.setTimeout(() => bubble.remove(), 220); }, time || 1500 + words.length * 38);
       };
-      // a scene: its lines one after another, each spoken by a member of the cast
+      // whoever is spoken to turns to the speaker and shows what it makes of the words
+      const reacts: Record<TalkMood, SpritePose> = { chat: { eyes: "r" }, hi: { eyes: "happy", arms: "wave" }, ask: { eyes: "u" }, yay: { eyes: "happy", mouth: "smile" }, laugh: { eyes: "happy", mouth: "open" }, hmm: { eyes: "sleepy" }, oh: { eyes: "wide", mouth: "o" } };
+      const heed = (one: Member, speaker: Member, mood: TalkMood) => { if (!asleep && idle(one) && !one.busy && !one.up) feel(one, { ...toward(one, speaker), ...reacts[mood] }, 800); };
+      // a scene: its lines one after another, each spoken by a member of the cast to the others, face to face
       const converse = (cast: Member[], lines: TalkLine[]) => {
         talking = true;
         let at = 0;
-        for (const [who, words, mood] of lines) { window.setTimeout(() => { if (!asleep) speak(cast[who % cast.length], words, mood); }, at); at += 1250 + words.length * 34; }
+        for (const [who, words, mood] of lines) {
+          window.setTimeout(() => {
+            if (asleep) return;
+            const one = cast[who % cast.length], rest = cast.filter((other) => other !== one);
+            speak(one, words, mood, 0, rest[0]);
+            window.setTimeout(() => rest.forEach((other) => heed(other, one, mood)), 300);
+          }, at);
+          at += 1250 + words.length * 34;
+        }
         window.setTimeout(() => { talking = false; }, at + 600);
       };
 
       // Coming down on an edge: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding).
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
+        // what this journey was to end with; read now, since by the time it runs a next journey may have set its own
+        const then = arrivals.get(one); arrivals.delete(one);
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
         if (home && spot.hides) resize(one, small());
         stand(one, spot.x, spot.y); play("land", one); play("shake", one);
@@ -358,6 +388,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         feel(one, { eyes: "shut", mouth: "smile" }, 520);
         window.setTimeout(() => {
           if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
+          else if (then) { if (one.state === "away") then(); }
           else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one);
             if (chase.left > 0) {                               // the race to the reader: the first to arrive gloats, the last complains
               chase.left--;
@@ -372,8 +403,11 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       let stroll: ReturnType<typeof animate> | null = null, stride = 0;
       const bobs = new Map<Member, number>();
       const acting = new Map<Member, number>();
+      // what a sprite does once it gets where it was sent, in place of the usual greeting
+      const arrivals = new Map<Member, () => void>();
       const travel = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0, leaving = false) => {
         if (away && !leaving) return;
+        arrivals.delete(one);
         if (one === codex) { stroll?.pause(); window.clearInterval(stride); one.walking = false; }
         // a sprite arriving at a page with only open water starts in it, where it will stay
         const from = one.state === "gone" ? (spot.floats ? { x: spot.x, y: spot.y } : null) : feet(one), afloat = one.floating || one.state === "gone";
@@ -416,7 +450,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
             let high = false;
             bobs.set(one, window.setInterval(() => { high = !high; one.element.style.transform = `translateY(${high ? -pixel : 0}px)`;
               const here = feet(one); for (const way of [-1, 1]) fleck(here.x + way * 5 * pixel, here.y - line(), way * 42, any(5), 0.8); }, 700));
-            feel(one, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100);
+            const then = arrivals.get(one); arrivals.delete(one);
+            if (then) then(); else feel(one, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100);
           };
           const climb = () => {
             one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8, one);
@@ -437,6 +472,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         }, delay);
       };
 
+      // a journey to somewhere on the page that is not a post, and what to do on getting there
+      const voyage = (one: Member, spot: Spot, perch: Perch | null, then?: () => void, delay = 0) => { travel(one, spot, false, perch, delay); if (then && one.state === "swim") arrivals.set(one, then); };
+
       // On arriving at a page nobody swims in from outside: each sprite leaps out of the water right beside its place.
       const appear = (one: Member, spot: Spot, home: boolean, perch: Perch | null, delay = 0) => {
         if (away) return;
@@ -453,6 +491,16 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         }, delay);
       };
 
+      // Several swimming off together is a race, which `land` settles: the first to arrive gloats, the last complains.
+      const contest = (racers: Member[], rushed = false) => {
+        chase = { left: racers.length, first: true, rushed };
+        // said once they have swum into view: whoever is furthest from where it is going is the one behind
+        const left = (one: Member) => (one.goal ? Math.hypot(one.goal.x - feet(one).x, one.goal.y - feet(one).y) : 0);
+        window.setTimeout(() => { const seen = racers.filter((one) => one.state === "swim" && inSight(one)).sort((p, q) => left(p) - left(q));
+          if (seen.length > 1) { speak(seen[seen.length - 1], any1(race.behind), "ask"); window.setTimeout(() => speak(seen[0], any1(race.ahead), "laugh"), 800); } }, 1000);
+        window.setTimeout(() => { chase.left = 0; }, 9000);
+      };
+
       // Who is out of sight goes to the reader: home if its post is on screen, otherwise to a free edge in view.
       let lastRoam = window.scrollY;
       const roam = () => {
@@ -463,18 +511,14 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           const spot = one.home?.() ?? null;
           if (spot && onScreen(spot.y)) { if (one.state === "home") taken.push(spot); else movers.push(one); continue; }
           const here = feet(one);
-          if (one.state === "away" && onScreen(here.y) && !one.floating) taken.push(here); else movers.push(one);
+          // a place to stand is still sought for whoever treads water, unless it is in the water as part of a game
+          if (one.state === "away" && onScreen(here.y) && (!one.floating || acting.has(one))) taken.push(here); else movers.push(one);
         }
         if (!movers.length) return;
         // several setting off together is a race: the one at the back calls out, the one in front teases
         const racers = movers.filter((one) => one.state !== "gone");
         if (racers.length > 1) {
-          chase = { left: racers.length, first: true, rushed: Math.abs(window.scrollY - lastRoam) > window.innerHeight * 2.2 };
-          // said once they have swum into view: whoever is furthest from where it is going is the one behind
-          const left = (one: Member) => (one.goal ? Math.hypot(one.goal.x - feet(one).x, one.goal.y - feet(one).y) : 0);
-          window.setTimeout(() => { const seen = racers.filter((one) => one.state === "swim" && inSight(one)).sort((p, q) => left(p) - left(q));
-            if (seen.length > 1) { speak(seen[seen.length - 1], any1(race.behind), "ask"); window.setTimeout(() => speak(seen[0], any1(race.ahead), "laugh"), 800); } }, 1000);
-          window.setTimeout(() => { chase.left = 0; }, 9000);
+          contest(racers, Math.abs(window.scrollY - lastRoam) > window.innerHeight * 2.2);
         }
         lastRoam = window.scrollY;
         const open = perches();
@@ -535,7 +579,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const peek = (one: Member, every: number, mood: SpritePose, lines: string[]) => {
         let turns = 0;
         const turn = () => {
-          if (one.state === "home" && !asleep && !one.up && !one.busy && !document.hidden) {
+          if (one.state === "home" && !asleep && !playing && !one.up && !one.busy && !document.hidden) {
             rise(one, true); feel(one, mood, 2300); speak(one, lines[turns++ % lines.length], "yay", 2100);    // up it comes, with its pitch
             window.setTimeout(() => { if (!hiders.get(one)?.matches(":hover, :focus-visible")) rise(one, false); }, 2400);
           }
@@ -609,22 +653,42 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       window.addEventListener("resize", () => { window.clearTimeout(scrolled); scrolled = window.setTimeout(roam, 600); }, { passive: true });
 
       // ── pastimes: standing in one place for a while, a sprite sings, practises its kung fu or paces along its edge
-      // A pastime is a list of frames, each shown a while after the one before; a journey that starts meanwhile ends it.
-      let turns = 0;
+      // An act is a list of frames for one sprite or for several, each shown a while after the one before. A journey that
+      // one of the cast starts meanwhile ends it for all of them; `after` runs whether it was played out or cut short.
+      type Frame = [number, () => void];
+      let turns = 0, playing = false;
       const shift = (one: Member, pixels: number) => { one.post.style.marginLeft = `${pixels * one.size}px`; };
-      const perform = (one: Member, frames: [number, () => void][]) => {
-        const id = ++turns; let at = 0;
-        acting.set(one, id); one.busy = true;
-        for (const [wait, show] of frames) { at += wait; window.setTimeout(() => { if (acting.get(one) === id) show(); }, at); }
-        window.setTimeout(() => { if (acting.get(one) !== id) return; acting.delete(one); one.busy = false; one.mood = null; shift(one, 0); draw(one); if (one === shell) ride(); }, at + 260);
+      const act = (cast: Member[], script: (live: () => boolean) => Frame[], after?: () => void) => {
+        const id = ++turns; let at = 0, over = false;
+        const live = () => !over && cast.every((one) => acting.get(one) === id);
+        const end = () => {
+          if (over) return;
+          over = true;
+          for (const one of cast) if (acting.get(one) === id) { acting.delete(one); one.busy = false; one.mood = null; shift(one, 0); draw(one); if (one === shell) ride(); }
+          after?.();
+        };
+        for (const one of cast) { acting.set(one, id); one.busy = true; }
+        for (const [wait, show] of script(live)) { at += wait; window.setTimeout(() => { if (live()) show(); else end(); }, at); }
+        window.setTimeout(end, at + 260);
       };
-      const sing = (one: Member) => perform(one, [0, 1, 2, 3, 4, 5, 6, 7].map((beat) => [beat ? 300 : 0, () => {
+      const perform = (one: Member, frames: Frame[]) => act([one], () => frames);
+      // several lists of frames run side by side as one, each starting `lag` later than the one before
+      const weave = (lists: Frame[][], lag: number): Frame[] => {
+        const all: Frame[] = [];
+        lists.forEach((frames, index) => { let at = index * lag; for (const [wait, show] of frames) { at += wait; all.push([at, show]); } });
+        all.sort((p, q) => p[0] - q[0]);
+        let last = 0;
+        return all.map(([at, show]): Frame => { const wait = at - last; last = at; return [wait, show]; });
+      };
+      const tune = (one: Member, beat: number) => {
         feel(one, { eyes: beat % 4 === 3 ? "happy" : "shut", mouth: beat % 2 ? "o" : "open", arms: beat % 2 ? "wave" : "up", blush: true }, 0);
         shift(one, beat % 2 ? 1 : -1); play("note", one, beat); if (beat % 3 === 0) leave(one, "note");
-      }]));
-      const fight = (one: Member) => {
+      };
+      const song = (one: Member): Frame[] => [0, 1, 2, 3, 4, 5, 6, 7].map((beat) => [beat ? 300 : 0, () => tune(one, beat)]);
+      const sing = (one: Member) => perform(one, song(one));
+      const kata = (one: Member): Frame[] => {
         const guard: SpritePose = { legs: "stance", arms: "guard", eyes: "r" }, left = { flip: true };
-        perform(one, [
+        return [
           [0, () => feel(one, guard, 0)],
           [320, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
           [150, () => { feel(one, { ...guard, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, 1); }], [170, () => { feel(one, guard, 0); shift(one, 0); }],
@@ -633,27 +697,28 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           [220, () => { feel(one, { ...guard, ...left, arms: "punch", mouth: "open" }, 0); play("punch", one); shift(one, -1); }], [170, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
           [220, () => { feel(one, { ...guard, ...left, legs: "kick", mouth: "open", eyes: "wide" }, 0); play("kick", one); shift(one, -2); }], [260, () => { feel(one, { ...guard, ...left }, 0); shift(one, 0); }],
           [300, () => { feel(one, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0); play("cheer", one); leave(one, "spark"); }], [700, () => {}],
-        ]);
+        ];
       };
+      const fight = (one: Member) => perform(one, kata(one));
       // a few steps along the edge it stands on and back, if the way is free
-      const pace = (one: Member): boolean => {
+      const paces = (one: Member): Frame[] | null => {
         const edge = one.perch && edgeOf(one.perch);
-        if (!edge || one.state !== "away") return false;
+        if (!edge || one.state !== "away") return null;
         const here = feet(one), way = one.perch!.at < 0.5 ? 1 : -1, steps = Math.min(8, Math.floor(edge.width * 0.3 / (2 * one.size)));
         const far = here.x + way * steps * 2 * one.size;
-        if (steps < 3 || !clear(far - window.scrollX, edge.top) || !clear((here.x + far) / 2 - window.scrollX, edge.top)) return false;
-        if (members.some((other) => other !== one && Math.hypot(feet(other).x - far, feet(other).y - here.y) < wide() * 1.8)) return false;
-        const frames: [number, () => void][] = [];
+        if (steps < 3 || !clear(far - window.scrollX, edge.top) || !clear((here.x + far) / 2 - window.scrollX, edge.top)) return null;
+        if (members.some((other) => other !== one && Math.hypot(feet(other).x - far, feet(other).y - here.y) < wide() * 1.8)) return null;
+        const frames: Frame[] = [];
         const stride = (count: number, toward: number) => frames.push([150, () => { feel(one, { flip: toward < 0, eyes: "n", legs: count % 2 ? "walkA" : "walkB" }, 0); play("step", one); }]);
         for (let step = 1; step <= steps; step++) { stride(step, way); frames.push([0, () => shift(one, way * step * 2)]); }
         frames.push([200, () => feel(one, { flip: way < 0, eyes: "u" }, 0)], [500, () => feel(one, { flip: way > 0, eyes: "n" }, 0)]);
         for (let step = steps - 1; step >= 0; step--) { stride(step, -way); frames.push([0, () => shift(one, way * step * 2)]); }
-        perform(one, frames);
-        return true;
+        return frames;
       };
+      const pace = (one: Member): boolean => { const frames = paces(one); if (frames) perform(one, frames); return !!frames; };
       let pastime = 0;
       window.setInterval(() => {
-        if (asleep || document.hidden || talking) return;
+        if (asleep || document.hidden || talking || playing) return;
         const free = members.filter((one) => idle(one) && !one.busy && !one.up && !one.floating && !(one.state === "home" && (hiders.has(one) || one === codex)));
         if (!free.length) return;
         const one = free[pastime % free.length], turn = pastime++ % 3;
@@ -661,7 +726,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (act === "sing") sing(one); else if (act === "fight") fight(one);
         // somebody nearby has an opinion about it
         const watcher = members.filter((other) => other !== one && idle(other) && !other.busy && inSight(other))[0];
-        if (watcher && pastime % 2) window.setTimeout(() => speak(watcher, any1(audience[act]), act === "sing" ? "laugh" : "ask"), 1300);
+        if (watcher && pastime % 2) window.setTimeout(() => speak(watcher, any1(audience[act]), act === "sing" ? "laugh" : "ask", 0, one), 1300);
       }, 4600);
 
       // ── conversation: now and then two of them have a word, or one tells the reader about the part of the page on screen
@@ -673,7 +738,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         return found || (places[location.pathname.replace(/\/$/, "")] ? location.pathname.replace(/\/$/, "") : "");
       };
       window.setInterval(() => {
-        if (talking || asleep || document.hidden || chase.left > 0) return;
+        if (talking || playing || asleep || document.hidden || chase.left > 0) return;
         const cast = members.filter((one) => idle(one) && !one.busy && inSight(one)).sort(() => Math.random() - 0.5);
         if (!cast.length) return;
         const here = section(), turn = chats++;
@@ -684,6 +749,370 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       }, 9000);
       // soon after the page opens, each says who it is
       window.setTimeout(() => { if (!talking && !asleep) converse(members.filter(inSight), members.filter(inSight).map((one, index) => [index, ...introductions[one.color]] as TalkLine)); }, 3800);
+
+      // ── playing together: what two or more of them do with each other
+      // Who can take part: standing somewhere in sight with nothing else to do. The walker counts while it walks (it stops
+      // for the occasion); the two behind the buttons do not, except in the games made for them.
+      const still = (one: Member) => idle(one) || (one === codex && codex.walking && codex.state === "home");
+      const free = (one: Member) => still(one) && !one.busy && !one.up && !one.floating && inSight(one) && !(one.state === "home" && hiders.has(one));
+      const perched = (one: Member) => free(one) && one.state === "away" && !!one.perch;
+      const apart = (p: Member, q: Member) => Math.hypot(feet(p).x - feet(q).x, feet(p).y - feet(q).y);
+      const nearest = (one: Member, among: Member[]): Member | undefined => among.filter((other) => other !== one).sort((p, q) => apart(one, p) - apart(one, q))[0];
+      function mixed<T>(list: T[]): T[] { return [...list].sort(() => Math.random() - 0.5); }
+      // the walker stops where it is to take part in something; its walk starts again by itself
+      const halt = (one: Member) => {
+        if (one !== codex || !codex.walking) return;
+        stroll?.pause(); window.clearInterval(stride); codex.walking = false; codex.pose = { ...codex.pose, legs: "stand" }; draw(codex);
+        window.setTimeout(walk, 3000);
+      };
+      // an act for several: while it lasts nobody starts a pastime, a conversation or another game
+      const together = (cast: Member[], script: (live: () => boolean) => Frame[], after?: () => void) => {
+        playing = true; cast.forEach(halt);
+        act(cast, script, () => { playing = false; after?.(); });
+      };
+
+      type Place = { spot: Spot; perch: Perch | null };
+      // A place on the host's own edge, `gap` sprite pixels to one side of it, if the guest can stand there.
+      const beside = (host: Member, side: number, gap: number, guest: Member): Place | null => {
+        const edge = host.perch && edgeOf(host.perch);
+        if (!edge || host.state !== "away" || host.floating) return null;
+        const x = feet(host).x - window.scrollX + side * gap * pixel, y = edge.top + 1 + window.scrollY;
+        if (x < edge.left + 5 * pixel || x > edge.right - 5 * pixel || x - wide() / 2 < 8 || x + wide() / 2 > window.innerWidth - 8 || !clear(x, edge.top)) return null;
+        if (members.some((other) => other !== host && other !== guest && other.state !== "gone" && Math.hypot(feet(other).x - window.scrollX - x, feet(other).y - y) < 11 * pixel)) return null;
+        return { spot: { x: x + window.scrollX, y, rest: 0 }, perch: { element: host.perch!.element, at: (x - edge.left) / edge.width, line: host.perch!.line } };
+      };
+      // One goes over to another, which waits for it. `then` runs once it is there, if the host has waited.
+      const meet = (guest: Member, host: Member, spot: Spot, perch: Perch | null, then: () => void) => {
+        const id = ++turns; let over = false;
+        acting.set(host, id); host.busy = true; playing = true;
+        feel(host, { ...toward(host, guest), eyes: "r" }, 1400);
+        const release = () => { if (over) return false; over = true; playing = false; if (acting.get(host) !== id) return false; acting.delete(host); host.busy = false; return true; };
+        voyage(guest, spot, perch, () => { if (release()) then(); else { feel(guest, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100); play("hi", guest); } });
+        window.setTimeout(() => { if (release()) { host.mood = null; draw(host); } }, 10000);
+      };
+      // Two on one edge, `gap` sprite pixels apart. If they are not neighbours yet, one swims over to the other first.
+      const paired = (gap: number, then: (guest: Member, host: Member) => void, fits: (host: Member) => boolean = () => true): boolean => {
+        for (const host of mixed(members.filter(perched)).filter(fits)) {
+          const guest = nearest(host, members.filter(perched));
+          if (!guest) return false;
+          const here = feet(host), there = feet(guest);
+          if (Math.abs(there.y - here.y) < 3 && Math.abs(Math.abs(there.x - here.x) - gap * pixel) < 4 * pixel) { then(guest, host); return true; }
+          for (const side of there.x < here.x ? [-1, 1] : [1, -1]) {
+            const place = beside(host, side, gap, guest);
+            if (place) { meet(guest, host, place.spot, place.perch, () => then(guest, host)); return true; }
+          }
+        }
+        return false;
+      };
+
+      // what a sprite has shifted by becomes its place
+      const plant = (one: Member) => {
+        const here = feet(one), edge = one.perch && edgeOf(one.perch);
+        shift(one, 0); stand(one, here.x, here.y);
+        if (edge) one.perch = { ...one.perch!, at: (here.x - window.scrollX - edge.left) / edge.width };
+      };
+      // through the air to a point, in an arc; nothing happens at the end if the act it belongs to is over by then
+      const fling = (one: Member, to: { x: number; y: number }, height: number, time: number, live: () => boolean, then: () => void) => {
+        const from = feet(one), state = { p: 0 };
+        animate(state, { p: 1, duration: time, ease: "linear",
+          onUpdate: () => { if (live()) stand(one, from.x + (to.x - from.x) * state.p, from.y + (to.y - from.y) * state.p - Math.sin(state.p * Math.PI) * height); },
+          onComplete: () => { if (live()) then(); } });
+      };
+      // Who is in the water after a fall, and the place each of them fell from.
+      const dunked = new Map<Member, Place>();
+      // Knocked off its edge: through the air and into the water `far` sprite pixels to one side, where it stays until
+      // `ashore` brings it back to where it stood (or to `back`).
+      const dunk = (one: Member, side: number, live: () => boolean, far = 15, back?: Place) => {
+        plant(one);
+        const here = feet(one), home = back ?? { spot: { x: here.x, y: here.y, rest: 0 }, perch: one.perch }, pool = { x: home.spot.x + side * far * pixel, y: home.spot.y + 24 };
+        dunked.set(one, home);
+        feel(one, { flip: side < 0, eyes: "wide", mouth: "o", arms: "up", legs: "tuck" }, 0); play("oh", one);
+        animate(one.element, { rotate: side * 50, duration: 420, ease: "outQuad" });
+        fling(one, pool, 34, 460, live, () => {
+          animate(one.element, { rotate: 0, duration: 0 });
+          one.post.classList.add("swims"); splash(pool.x, pool.y - line(), 1.1, one);
+          feel(one, { flip: side < 0, eyes: "shut", mouth: "o", arms: "swimA", legs: "none" }, 0);
+        });
+      };
+      const ashore = (one: Member, then?: () => void) => {
+        const home = dunked.get(one);
+        dunked.delete(one);
+        if (!home || one.state !== "away") return;
+        one.floating = true;                                    // it is in the water already: the way back starts with a swim, not a leap
+        voyage(one, home.spot, home.perch, then);
+      };
+      // water thrown by a swimmer at somebody standing above it
+      const douse = (from: Member, at: Member) => {
+        const a = feet(from), b = feet(at), top = a.y - line(), time = 0.5;
+        crewSoundAt("splash", from);
+        for (let drop = 0; drop < 14; drop++) fleck(a.x + any(6), top, (b.x - a.x) / time + any(40), (b.y - 5 * pixel - top) / time - 0.5 * gravity * time + any(40), 2, undefined, b.y - 3 * pixel + any(8));
+      };
+
+      // Two spar face to face, blow for blow, until one is kicked into the water; it swims round and climbs back, sulking.
+      const duel = (): boolean => paired(15, (a, b) => {
+        const [winner, loser] = Math.random() < 0.5 ? [a, b] : [b, a];
+        const way = (one: Member, other: Member) => (feet(other).x < feet(one).x ? -1 : 1);
+        const guard = (one: Member, other: Member, more: SpritePose = {}) => feel(one, { ...toward(one, other), legs: "stance", arms: "guard", eyes: "r", ...more }, 0);
+        const blow = (one: Member, other: Member) => { guard(other, one, { eyes: "shut" }); guard(one, other, { arms: "punch", mouth: "open" }); shift(one, way(one, other)); play("punch", one); };
+        const back = () => { shift(a, 0); shift(b, 0); guard(a, b); guard(b, a); };
+        together([a, b], (live) => [
+          [0, () => { back(); speak(a, any1(plays.duel.start), "yay"); }],
+          [800, () => blow(a, b)], [180, back], [240, () => blow(b, a)], [180, back], [220, () => blow(a, b)], [180, back], [220, () => blow(b, a)], [180, back],
+          [320, () => { guard(winner, loser, { legs: "kick", mouth: "open", eyes: "wide" }); shift(winner, 2 * way(winner, loser)); play("kick", winner); dunk(loser, way(winner, loser), live); }],
+          [580, () => { shift(winner, 0); feel(winner, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0); leave(winner, "spark"); speak(winner, any1(plays.duel.won), "yay"); }],
+          [1500, () => {}],
+        ], () => ashore(loser, () => { speak(loser, any1(plays.duel.lost), "hmm"); feel(loser, { ...toward(loser, winner), eyes: "sleepy" }, 2400); }));
+      });
+
+      // One swims under another and throws water at it, twice. The second time the wet one dives in after it; the
+      // swimmer gets away to where it came from, and the other climbs back.
+      const soak = (): boolean => {
+        const victim = mixed(members.filter(perched))[0];
+        const soaker = victim && nearest(victim, members.filter((one) => perched(one) || (one.floating && one.state === "away" && !one.busy && inSight(one))));
+        if (!soaker) return false;
+        const dry: Place = { spot: { ...feet(victim), rest: 0 }, perch: victim.perch }, shore: Place | null = soaker.floating ? null : { spot: { ...feet(soaker), rest: 0 }, perch: soaker.perch };
+        const fits = (side: number) => { const x = dry.spot.x + side * 11 * pixel - window.scrollX; return x > 30 && x < window.innerWidth - 30; };
+        const side = [feet(soaker).x < dry.spot.x ? -1 : 1, feet(soaker).x < dry.spot.x ? 1 : -1].find(fits);
+        if (!side) return false;
+        const pool: Spot = { x: dry.spot.x + side * 11 * pixel, y: dry.spot.y + 24, rest: 0, floats: true };
+        const hurl = () => { feel(soaker, { ...toward(soaker, victim), legs: "none", arms: "up", eyes: "happy", mouth: "open" }, 0); douse(soaker, victim); };
+        const wet = () => { animate(victim.element, { rotate: [0, -9, 8, -6, 4, 0], duration: 520, ease: "outQuad" }); feel(victim, { eyes: "shut", mouth: "o" }, 0); play("shake", victim); };
+        meet(soaker, victim, pool, null, () => together([soaker, victim], () => [
+          [300, hurl], [420, wet],
+          [650, () => { feel(victim, { ...toward(victim, soaker), eyes: "wide", mouth: "o" }, 0); speak(victim, any1(plays.splash.hit), "oh"); feel(soaker, { ...toward(soaker, victim), legs: "none", arms: "swimA", eyes: "happy", mouth: "smile" }, 0); }],
+          [1200, () => speak(soaker, any1(plays.splash.tease), "laugh")],
+          [1100, hurl], [420, wet],
+          [650, () => { feel(victim, { ...toward(victim, soaker), eyes: "sleepy", arms: "up", legs: "stance" }, 0); speak(victim, any1(plays.splash.enough), "oh"); }],
+          [1000, () => {}],
+        ], () => {
+          if (soaker.state !== "away" || !soaker.floating || victim.state !== "away") return;
+          const lair: Spot = { ...feet(soaker), rest: 0, floats: true };
+          const off = (place: { x: number; y: number }) => Math.hypot(place.x - lair.x, place.y - lair.y);
+          const far = shore ? null : pools().sort((p, q) => off(q) - off(p))[0];
+          if (shore) voyage(soaker, shore.spot, shore.perch, () => { speak(soaker, any1(race.ahead), "laugh"); feel(soaker, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100); });
+          else if (far) voyage(soaker, { ...far, rest: 0, floats: true }, null);
+          voyage(victim, lair, null, () => voyage(victim, dry.spot, dry.perch, () => { speak(victim, any1(plays.splash.late), "hmm"); feel(victim, { eyes: "sleepy" }, 1800); }), 500);
+        }));
+        return true;
+      };
+
+      // One starts a song, the next comes in two beats later in its own voice, then a third; whoever is left has had enough.
+      const chorus = (): boolean => {
+        const voices = members.filter(free);
+        if (voices.length < 2) return false;
+        const choir = mixed(voices).slice(0, 3).sort((p, q) => feet(p).x - feet(q).x), critic = members.find((one) => !choir.includes(one) && one.state !== "swim" && inSight(one));
+        together(choir, () => [
+          ...weave(choir.map(song), 600),
+          [300, () => choir.forEach((one) => feel(one, { eyes: "happy", mouth: "smile", arms: "up", blush: true }, 0))], [800, () => {}],
+        ], () => { if (critic && !critic.busy) speak(critic, any1(plays.chorus), "hmm"); });
+        return true;
+      };
+
+      // All four in sight: arms up and a hop, one after another from left to right, and back again.
+      const wave = (): boolean => {
+        const row = members.filter((one) => still(one) && !one.busy && !one.up && inSight(one)).sort((p, q) => feet(p).x - feet(q).x);
+        if (row.length < members.length) return false;
+        const lift = (one: Member) => {
+          feel(one, { eyes: "happy", mouth: "open", arms: "up" }, 460);
+          if (one.state === "home" && hiders.has(one)) { rise(one, true); window.setTimeout(() => rise(one, false), 460); }   // from behind its button
+          else if (one.floating) play("hop", one);                                                                              // in the water: arms only
+          else bounce(one, 16);
+        };
+        const pass = (line: Member[]): Frame[] => line.map((one, index) => [index ? 150 : 0, () => lift(one)]);
+        together(row, () => [
+          [0, () => speak(row[0], any1(plays.wave.start), "yay")], [900, () => {}], ...pass(row), [750, () => {}], ...pass([...row].reverse()),
+          [900, () => speak(row[row.length - 1], any1(plays.wave.done), "yay")], [900, () => {}],
+        ]);
+        return true;
+      };
+
+      // The two behind the buttons: one comes up as the other ducks, faster and faster, until both are up at once.
+      const peekaboo = (): boolean => {
+        const [a, b] = Math.random() < 0.5 ? [aqua, claude] : [claude, aqua];
+        if (![a, b].every((one) => one.state === "home" && hiders.has(one) && !one.up && !one.busy && inSight(one) && !hiders.get(one)!.matches(":hover, :focus-visible"))) return false;
+        const up = (one: Member, other: Member, more: SpritePose = {}) => { rise(one, true); feel(one, { eyes: feet(other).x < feet(one).x ? "l" : "r", ...more }, 0); };
+        const down = (one: Member) => { one.mood = null; draw(one); rise(one, false); };
+        together([a, b], () => [
+          [0, () => { up(a, b); speak(a, any1(plays.peekaboo.start), "hi"); }], [900, () => down(a)],
+          [350, () => up(b, a)], [800, () => down(b)], [300, () => up(a, b)], [650, () => down(a)], [250, () => up(b, a)], [550, () => down(b)],
+          [450, () => { up(a, b, { eyes: "wide", mouth: "o" }); up(b, a, { eyes: "wide", mouth: "o" }); speak(a, any1(plays.peekaboo.both), "oh"); }],
+          [700, () => speak(b, any1(plays.peekaboo.after), "oh")],
+          [1400, () => { down(a); down(b); }], [300, () => {}],
+        ]);
+        return true;
+      };
+
+      // One practises its kung fu or takes a walk and its neighbour does the same a moment behind, until it is caught.
+      const copycat = (): boolean => {
+        const lead = mixed(members.filter(free))[0], mimic = lead && nearest(lead, members.filter(free));
+        if (!mimic) return false;
+        const walks = [paces(lead), paces(mimic)], moves = walks[0] && walks[1] && Math.random() < 0.5 ? [walks[0], walks[1]] : [kata(lead), kata(mimic)];
+        together([lead, mimic], () => [
+          ...weave(moves, 340),
+          [350, () => { feel(lead, { ...toward(lead, mimic), eyes: "sleepy" }, 0); speak(lead, any1(plays.copycat.stop), "hmm"); }],
+          [800, () => { feel(mimic, { flip: !toward(mimic, lead).flip, eyes: "u", mouth: "o" }, 0); leave(mimic, "note"); play("note", mimic, 4); }],
+          [1100, () => speak(mimic, any1(plays.copycat.who), "ask")],
+          [1200, () => {}],
+        ]);
+        return true;
+      };
+
+      // A dare, and two of them swim for two free edges; `land` knows who got there first.
+      const regatta = (): boolean => {
+        const racers = mixed(members.filter(perched)).slice(0, 2);
+        if (racers.length < 2) return false;
+        const [first, other] = racers, from = { x: (feet(first).x + feet(other).x) / 2, y: (feet(first).y + feet(other).y) / 2 };
+        const off = (p: { x: number; y: number }, q: { x: number; y: number }) => Math.hypot(p.x - q.x, p.y - q.y);
+        const open = perches().filter((place) => members.every((one) => off(feet(one), place) > wide() * 2.4 && (!one.goal || off(one.goal, place) > wide() * 2.4))).sort((p, q) => off(q, from) - off(p, from));
+        const finish = open[0], second = finish && open.filter((place) => off(place, finish) > wide() * 1.3).sort((p, q) => off(p, finish) - off(q, finish))[0];
+        if (!second) return false;
+        together(racers, () => [
+          [0, () => { feel(first, { ...toward(first, other), arms: "wave", eyes: "r" }, 0); speak(first, any1(plays.race.dare), "yay"); }],
+          [1500, () => { feel(other, { ...toward(other, first), eyes: "r" }, 0); speak(other, any1(plays.race.accept), "chat"); }],
+          [1400, () => speak(first, any1(plays.race.go), "yay")], [500, () => {}],
+        ], () => {
+          if (!racers.every((one) => one.state === "away")) return;
+          contest(racers);
+          travel(first, { x: finish.x, y: finish.y, rest: 0 }, false, finish.perch); travel(other, { x: second.x, y: second.y, rest: 0 }, false, second.perch);
+        });
+        return true;
+      };
+
+      // One creeps up behind another that is singing and shoves it into the water.
+      const prank = (): boolean => {
+        const victim = mixed(members.filter(perched))[0], joker = victim && nearest(victim, members.filter(perched));
+        if (!joker) return false;
+        for (const side of feet(joker).x < feet(victim).x ? [-1, 1] : [1, -1]) {
+          const place = beside(victim, side, 22, joker), way = -side;   // the joker lands a few steps off, behind the singer's back
+          if (!place || !beside(victim, side, 13, joker)) continue;
+          const sneaky = (more: SpritePose = {}): SpritePose => ({ flip: way < 0, arms: "creep", eyes: "r", ...more });
+          const sneak = (step: number): Frame => [300, () => { feel(joker, sneaky({ legs: step % 2 ? "walkA" : "walkB" }), 0); shift(joker, way * step * 2); play("step", joker); }];
+          meet(joker, victim, place.spot, place.perch, () => together([joker, victim], (live) => [
+            [0, () => { feel(joker, sneaky(), 0); speak(joker, any1(plays.prank.hush), "hmm"); }],
+            [700, () => {}], sneak(1), sneak(2), sneak(3), sneak(4),
+            [400, () => feel(joker, sneaky({ eyes: "happy", mouth: "smile" }), 0)],
+            [450, () => { feel(joker, { flip: way < 0, arms: "push", legs: "stance", eyes: "wide", mouth: "open" }, 0); shift(joker, way * 10); play("punch", joker); dunk(victim, way, live); }],
+            [580, () => { plant(joker); feel(joker, { flip: way < 0, eyes: "happy", mouth: "open", arms: "up", blush: true }, 0); speak(joker, any1(plays.prank.done), "laugh"); }],
+            [1500, () => {}],
+          ], () => ashore(victim, () => { speak(victim, any1(plays.prank.wet), "hmm"); feel(victim, { ...toward(victim, joker), eyes: "sleepy" }, 2400); })));
+          // the one about to get wet sings with its back turned, from the moment the joker sets off until the shove
+          let beat = 0;
+          const hum = window.setInterval(() => {
+            if (!victim.busy || victim.state !== "away" || dunked.has(victim)) { window.clearInterval(hum); return; }
+            feel(victim, { flip: side > 0, eyes: "shut", mouth: beat % 2 ? "o" : "open", arms: beat % 2 ? "wave" : "up", blush: true }, 0);
+            play("note", victim, beat); if (beat++ % 3 === 0) leave(victim, "note");
+          }, 300);
+          return true;
+        }
+        return false;
+      };
+
+      // A sign thrown back and forth over the page; the last throw is sometimes dropped into the water.
+      const toss = (): boolean => {
+        const thrower = mixed(members.filter(free))[0], catcher = thrower && nearest(thrower, members.filter(free));
+        if (!catcher || apart(thrower, catcher) > 900 || apart(thrower, catcher) < wide() * 1.5) return false;
+        const sign = any1<SpriteSign>(["heart", "star", "spark"]), miss = Math.random() < 0.5, far = apart(thrower, catcher);
+        const time = Math.min(1100, Math.max(520, far * 1.5)), high = Math.min(150, Math.max(36, far * 0.3));
+        const head = (one: Member) => ({ x: feet(one).x, y: feet(one).y - 17 * one.size });
+        const fly = (from: Member, to: Member, live: () => boolean, lost: boolean) => {
+          const a = head(from), b = lost ? { x: feet(to).x + (a.x < feet(to).x ? 1 : -1) * 10 * pixel, y: feet(to).y + 24 - line() } : head(to);
+          const mark = document.createElement("span"), state = { p: 0 };
+          mark.className = "crew-toss"; mark.innerHTML = signSvg(sign, Math.max(2, pixel - 1)); mark.style.left = `${a.x}px`; mark.style.top = `${a.y}px`; crew.append(mark);
+          feel(from, { ...toward(from, to), arms: "punch", mouth: "open", eyes: "r" }, 0); feel(to, { ...toward(to, from), arms: "up", eyes: "u" }, 0); play("hop", from);
+          animate(state, { p: 1, duration: time, ease: "linear",
+            onUpdate: () => { mark.style.left = `${a.x + (b.x - a.x) * state.p}px`; mark.style.top = `${a.y + (b.y - a.y) * state.p - Math.sin(state.p * Math.PI) * high}px`; },
+            onComplete: () => {
+              mark.remove();
+              if (!live()) return;
+              if (lost) { splash(b.x, b.y, 0.5, to); feel(to, { ...toward(to, from), eyes: "d", mouth: "o", arms: "up" }, 0); }
+              else { play("pop", to); feel(to, { ...toward(to, from), eyes: "happy", mouth: "smile", arms: "up" }, 0); feel(from, { ...toward(from, to), eyes: "r" }, 0); }
+            } });
+        };
+        together([thrower, catcher], (live) => [
+          [0, () => { speak(thrower, any1(plays.toss.throw), "yay"); fly(thrower, catcher, live, false); }],
+          [time + 450, () => fly(catcher, thrower, live, false)],
+          [time + 450, () => fly(thrower, catcher, live, miss)],
+          [time + 200, () => { if (miss) speak(catcher, any1(plays.toss.missed), "oh"); else { leave(catcher, sign); speak(catcher, any1(plays.toss.caught), "yay"); } }],
+          [1100, () => { if (miss) { feel(thrower, { ...toward(thrower, catcher), eyes: "sleepy" }, 0); speak(thrower, any1(plays.toss.tease), "laugh"); } }],
+          [1100, () => {}],
+        ]);
+        return true;
+      };
+
+      // One climbs on its neighbour's head for the view; the one below sways, and both end up in the water.
+      const tower = (): boolean => {
+        const top = 10 * pixel;                                 // how high above the edge the one on top stands
+        const room = (host: Member) => { const edge = host.perch && edgeOf(host.perch); return !!edge && edge.top - top - tall() > 90 && clear(feet(host).x - window.scrollX, edge.top - top); };
+        return paired(13, (climber, base) => {
+          const seat: Place = { spot: { ...feet(climber), rest: 0 }, perch: climber.perch }, lean = feet(climber).x < feet(base).x ? 1 : -1;   // they fall away from where the climber came from
+          const sway = [0, 4, -4, 7, -7, 10, -10, 12].map((turn) => turn * lean);
+          together([climber, base], (live) => [
+            [0, () => { feel(climber, { ...toward(climber, base), eyes: "u" }, 0); speak(climber, any1(plays.tower.want), "ask"); }],
+            [1100, () => {
+              feel(climber, { ...toward(climber, base), legs: "tuck", arms: "up", eyes: "u" }, 0); play("leap", climber);
+              fling(climber, { x: feet(base).x, y: feet(base).y - top }, 24, 380, live, () => {
+                play("land", climber); feel(climber, { flip: lean < 0, arms: "wave", eyes: "r" }, 0); feel(base, { eyes: "wide", mouth: "o" }, 0);
+                animate(base.element, { scaleY: [0.8, 1.04, 1], scaleX: [1.14, 0.97, 1], duration: 420, ease: "outQuad" });
+              });
+            }],
+            [1000, () => speak(climber, any1(plays.tower.view), "yay")],
+            [1400, () => {
+              speak(base, any1(plays.tower.heavy), "oh"); feel(climber, { eyes: "wide", mouth: "o", arms: "up" }, 0);
+              animate(base.element, { rotate: sway, duration: 1500, ease: "linear" });
+              animate(climber.element, { x: sway.map((turn) => turn * 0.9), rotate: sway, duration: 1500, ease: "linear" });
+            }],
+            [1500, () => { animate(climber.element, { x: 0, duration: 0 }); dunk(base, lean, live, 12); dunk(climber, lean, live, 38, seat); }],
+            [1200, () => {}],
+          ], () => {
+            // cut short with one still on the other's head: it goes back to where it stood
+            animate(climber.element, { x: 0, duration: 0 });
+            if (!dunked.has(climber) && climber.state === "away") { animate(climber.element, { rotate: 0, duration: 0 }); stand(climber, seat.spot.x, seat.spot.y); }
+            if (!dunked.has(base) && base.state === "away") animate(base.element, { rotate: 0, duration: 0 });
+            ashore(base, () => { speak(base, plays.tower.wet[0], "hmm"); feel(base, { ...toward(base, climber), eyes: "sleepy" }, 2400); });
+            ashore(climber, () => window.setTimeout(() => speak(climber, any1(plays.tower.wet.slice(1)), "laugh"), 1200));
+          });
+        }, room);
+      };
+
+      // A press on one of them: the others turn to look, and now and then one comes over, wanting to be pressed too.
+      let envied = 0;
+      const envy = (star: Member) => {
+        const others = members.filter((one) => one !== star && idle(one) && !one.busy && inSight(one));
+        others.forEach((one) => feel(one, { ...toward(one, star), eyes: "r" }, 1100));
+        const fan = nearest(star, others.filter((one) => !one.up && !one.floating && !(one.state === "home" && hiders.has(one))));
+        if (!fan || playing || asleep || Date.now() - envied < 12000) return;
+        envied = Date.now();
+        const plead = () => { speak(fan, any1(plays.envy), "ask"); feel(fan, { eyes: "star", mouth: "smile", arms: "wave", blush: true }, 2600); hop(fan, 18); window.setTimeout(() => hop(fan, 18), 750); };
+        window.setTimeout(() => {
+          if (playing || fan.busy || !idle(fan) || !inSight(fan)) return;
+          const sides = feet(fan).x < feet(star).x ? [-1, 1] : [1, -1];
+          const place = fan.state === "away" && fan.perch && apart(fan, star) > 18 * pixel ? sides.map((side) => beside(star, side, 14, fan)).find(Boolean) : null;
+          if (place) voyage(fan, place.spot, place.perch, plead); else plead();
+        }, 800);
+      };
+
+      // One of them slept on when the others woke: a neighbour jumps beside it and calls, louder each time, until it is up.
+      const rouse = (late: Member, caller: Member) => {
+        if (late.busy || caller.busy || !idle(late) || !idle(caller) || playing) { late.mood = null; late.pose.eyes = "n"; draw(late); return; }
+        const call = (height: number, words?: string) => { feel(caller, { ...toward(caller, late), eyes: "r", mouth: "open", arms: "up" }, 0); bounce(caller, height); if (words) speak(caller, words, "oh"); };
+        const words = any1(plays.wake.call);
+        together([late, caller], () => [
+          [0, () => { feel(late, { eyes: "shut" }, 0); leave(late, "zzz"); feel(caller, { ...toward(caller, late), eyes: "r" }, 0); }],
+          [500, () => call(12, words)], [900, () => { leave(late, "zzz"); call(18); }], [800, () => call(26, words.toUpperCase())],
+          [500, () => { feel(late, { eyes: "wide", mouth: "o", arms: "up" }, 0); bounce(late, 22); speak(late, any1(plays.wake.up), "oh"); feel(caller, { ...toward(caller, late), eyes: "happy", mouth: "smile" }, 0); }],
+          [1500, () => {}],
+        ], () => { late.pose.eyes = "n"; draw(late); });   // awake at the end, even if the skit was cut short
+      };
+
+      // Now and then, a game: the next one in turn that can be played with who is free and where they stand.
+      const games = [wave, duel, peekaboo, soak, toss, prank, chorus, tower, copycat, regatta];
+      let game = Math.floor(Math.random() * games.length);
+      window.setInterval(() => {
+        if (asleep || away || document.hidden || playing || talking || chase.left > 0) return;
+        for (let tries = 0; tries < games.length; tries++) if (games[game++ % games.length]()) return;
+      }, 12000);
+      // in development the games can be started by hand from the console, e.g. crewPlay.duel()
+      if (import.meta.env.DEV) Object.assign(window, { crewPlay: { wave, duel, peekaboo, soak, toss, prank, chorus, tower, copycat, regatta } });
 
       // ── habits
       // blinking, each at its own pace
@@ -697,15 +1126,29 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // watching the pointer; nothing moving for a while sends them to sleep
       let rest = 0, frame = 0, pointer = { x: 0, y: 0 };
       const idle = (one: Member) => (one.state === "home" || one.state === "away") && !one.walking;
-      let snores = 0;
-      const snore = () => members.filter(idle).forEach((one, index) => window.setTimeout(() => { if (asleep && idle(one)) leave(one, "zzz"); }, index * 520));
+      let snores = 0, nights = 0, wakes = 0;
+      const snore = () => {
+        const sleepers = members.filter(idle), seen = sleepers.filter(inSight);
+        sleepers.forEach((one, index) => window.setTimeout(() => { if (asleep && idle(one)) leave(one, "zzz"); }, index * 520));
+        // every third time round one of them snores out loud, and its neighbour opens an eye to hush it
+        if (++nights % 3 || seen.length < 2) return;
+        const loud = seen[(nights / 3) % seen.length], light = nearest(loud, seen)!;
+        play("snore", loud); animate(loud.element, { scaleX: [1, 1.14, 1], scaleY: [1, 1.1, 1], duration: 700, ease: "inOutQuad" });
+        window.setTimeout(() => { if (!asleep || !idle(light)) return; speak(light, any1(plays.wake.hush), "hmm", 1300, loud); feel(light, { ...toward(light, loud), eyes: "wink" }, 1500); }, 800);
+      };
       const sleep = () => { asleep = true; crew.classList.add("asleep"); members.filter(idle).forEach((one) => { one.pose.eyes = "shut"; one.mood = null; draw(one); });
         const sleepy = members.filter(idle).find(inSight); if (sleepy) speak(sleepy, any1(reactions.nap), "hmm");
         window.setTimeout(snore, 1800); snores = window.setInterval(snore, 2600); };
       function stir() {
         window.clearTimeout(rest); rest = window.setTimeout(sleep, 26000);
-        if (asleep) { asleep = false; window.clearInterval(snores); crew.classList.remove("asleep"); members.filter(idle).forEach((one, index) => { one.pose.eyes = "n"; feel(one, { eyes: "wide", mouth: "o" }, 600); hop(one, 10, index * 60); });
-          const awake = members.filter(idle).find(inSight); if (awake) window.setTimeout(() => speak(awake, any1(reactions.back), "hi"), 500); }
+        if (!asleep) return;
+        asleep = false; window.clearInterval(snores); crew.classList.remove("asleep");
+        // every other time one of them sleeps on, and a neighbour has to wake it
+        const able = members.filter((one) => idle(one) && !one.busy && !one.up && !one.floating && inSight(one) && !(one.state === "home" && hiders.has(one)));
+        const late = wakes++ % 2 === 0 && able.length > 1 && !playing ? any1(able) : null, caller = late && nearest(late, able);
+        members.filter(idle).forEach((one, index) => { if (one === late) return; one.pose.eyes = "n"; feel(one, { eyes: "wide", mouth: "o" }, 600); hop(one, 10, index * 60); });
+        if (late && caller) { feel(late, { eyes: "shut" }, 0); window.setTimeout(() => rouse(late, caller), 900); return; }
+        const awake = members.filter(idle).find(inSight); if (awake) window.setTimeout(() => speak(awake, any1(reactions.back), "hi"), 500);
       }
       const look = () => {
         frame = 0;
@@ -731,6 +1174,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           speak(pressed, reactions.pressed[presses++ % reactions.pressed.length], "laugh");
           feel(pressed, { eyes: "star", mouth: "smile", arms: "up", blush: true }, 1200);
           if (hiders.has(pressed) && pressed.state === "home") { rise(pressed, true); window.setTimeout(() => rise(pressed, false), 1300); } else { hop(pressed, 30); leave(pressed, "heart"); }
+          envy(pressed);
           return;
         }
         const near = members.filter(idle).map((one) => { const box = one.element.getBoundingClientRect(); return { one, far: Math.hypot(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height / 2) }; }).sort((a, b) => a.far - b.far)[0];

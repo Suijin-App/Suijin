@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Fixed a crash after closing a terminal.** Closing a tab while Suijin was still checking the paths printed on its
+  screen could crash the app the next time a modifier key was pressed or released, which ⌘W itself does.
 - **The terminal host gives memory back.** Closing a tab now makes the helper drop that session's scrollback at
   once; before, it kept up to 8 MB per ended session for a day, so its memory grew with every tab closed. A session
   that ends on its own while Suijin is closed keeps only the last 256 KB, which is all Suijin reads of it.

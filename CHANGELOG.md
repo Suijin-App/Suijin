@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Pull request tags stay on one line.** In a narrow inspector "Review required" broke onto two lines beside the
+  Open button; the button now moves under the tags when there is no room. A merged or closed pull request no longer
+  shows a review tag.
 - **The emoji field of a workspace's icon looks empty when it is.** The field showed a rocket as its placeholder, in
   full color, so it looked filled in while Use Emoji stayed dimmed. The placeholder is now the word "Emoji".
 

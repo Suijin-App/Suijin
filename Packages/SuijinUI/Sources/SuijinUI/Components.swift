@@ -143,6 +143,8 @@ public struct Tag: View {
     public var body: some View {
         text
             .font(.caption2.weight(.medium))
+            // A tag is one short label: wrapped onto two lines its capsule turns into a blob.
+            .lineLimit(1)
             .padding(.horizontal, 7)
             .padding(.vertical, 1)
             .foregroundStyle(tone?.textColor ?? .secondary)

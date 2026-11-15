@@ -55,14 +55,37 @@ struct PullRequestSummary: View {
                 Text(verbatim: "#\(pr.number)").monospacedDigit().foregroundStyle(.secondary)
                 Text(verbatim: pr.title).lineLimit(2).truncationMode(.tail)
             }
-            HStack(spacing: SuijinSpacing.xs) {
-                Tag(glyph.label, tone: glyph.tone)
-                if let review = Self.review(pr.reviewDecision) { Tag(review.0, tone: review.1) }
-                Spacer(minLength: 0)
-                Button("Open") { NSWorkspace.shared.open(pr.url) }
-                    .help(Text(verbatim: pr.url.absoluteString))
+            // The tags and the button share a row while the inspector is wide enough; in a narrow one the button
+            // goes under the tags instead of squeezing them.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SuijinSpacing.xs) {
+                    tags(glyph)
+                    Spacer(minLength: SuijinSpacing.xs)
+                    openButton
+                }
+                VStack(alignment: .leading, spacing: SuijinSpacing.xs) {
+                    HStack(spacing: SuijinSpacing.xs) { tags(glyph) }
+                    openButton
+                }
             }
         }
+    }
+
+    @ViewBuilder
+    private func tags(_ glyph: PullRequestGlyph) -> some View {
+        Tag(glyph.label, tone: glyph.tone)
+        if let review = Self.reviewTag(for: pr) { Tag(review.0, tone: review.1) }
+    }
+
+    private var openButton: some View {
+        Button("Open") { NSWorkspace.shared.open(pr.url) }
+            .help(Text(verbatim: pr.url.absoluteString))
+    }
+
+    /// The review tag of a pull request: only while it is open. Once it is merged or closed the review is over, and
+    /// "Review required" beside "Merged" (a pull request merged without one) says nothing the user can act on.
+    static func reviewTag(for pr: PullRequest) -> (Text, StatusTone)? {
+        pr.state == .open ? review(pr.reviewDecision) : nil
     }
 
     static func review(_ decision: String?) -> (Text, StatusTone)? {

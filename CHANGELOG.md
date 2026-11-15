@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Tabs by number.** ⌘1 to ⌘8 select the tab at that position in the tab bar and ⌘9 selects the last tab, also
+  while a terminal has the keyboard. Settings › Shortcuts lists them.
+
 ## 0.1.0 (2026-11-15)
 
 The first release of Suijin: a native macOS app that runs Claude Code, Codex and any other command-line AI coding

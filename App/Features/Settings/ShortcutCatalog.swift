@@ -67,6 +67,19 @@ enum ShortcutCatalog {
                                          group: .sessions, shortcut: KeyboardShortcut("[", modifiers: [.command, .shift]))
     static let nextTab = AppShortcut(id: "nextTab", title: "Next Tab", detail: nil,
                                      group: .sessions, shortcut: KeyboardShortcut("]", modifiers: [.command, .shift]))
+    /// ⌘1…⌘8 select the tab with that number, ⌘9 the last tab.
+    static let selectTabs: [AppShortcut] = (1...9).map { number in
+        let key = KeyboardShortcut(KeyEquivalent(Character(String(number))))
+        guard number < 9 else {
+            return AppShortcut(id: "selectLastTab", title: "Select Last Tab", detail: nil, group: .sessions, shortcut: key)
+        }
+        return AppShortcut(id: "selectTab\(number)", title: "Select Tab \(number)", detail: nil, group: .sessions, shortcut: key)
+    }
+
+    /// The entry of ⌘`number`, 1…9.
+    static func selectTab(_ number: Int) -> AppShortcut {
+        selectTabs[number - 1]
+    }
 
     // MARK: Panes
 
@@ -156,6 +169,7 @@ enum ShortcutCatalog {
     /// Every keyboard shortcut, in display order within each group.
     static let all: [AppShortcut] = [
         newSession, newShell, newWorktree, addWorkspace, closeTab, previousTab, nextTab,
+    ] + selectTabs + [
         splitRight, splitDown, zoomPane, equalizePanes,
         focusPaneLeft, focusPaneRight, focusPaneAbove, focusPaneBelow,
         movePaneLeft, movePaneRight, movePaneUp, movePaneDown,

@@ -12,11 +12,25 @@ struct TerminalKeyRoutingTests {
             ("t", [.command], .newTab), ("w", [.command], .closeTab), ("d", [.command], .splitRight),
             ("D", [.command, .shift], .splitDown), ("{", [.command, .shift], .previousTab), ("]", [.command, .shift], .nextTab),
             ("c", [.command], .copy), ("v", [.command], .paste), ("a", [.command], .selectAll), ("f", [.command], .find),
-            ("1", [.command], .app), (",", [.command], .app), ("q", [.command], .app), ("k", [.command, .option], .app),
+            ("0", [.command], .app), (",", [.command], .app), ("q", [.command], .app), ("k", [.command, .option], .app),
         ]
         for (key, modifiers, route) in table {
             #expect(TerminalKeyRouter.route(key: key, modifiers: modifiers) == route, "\(key) \(modifiers)")
         }
+    }
+
+    @Test("⌘1…⌘9 select a tab; other modifiers, ⌘0 and a bare digit do not")
+    func tabNumbers() {
+        for number in 1...9 {
+            #expect(TerminalKeyRouter.route(key: String(number), modifiers: [.command]) == .selectTab(number))
+        }
+        #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .shift]) == .app)
+        #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .option]) == .app)
+        #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .control]) == .app)
+        #expect(TerminalKeyRouter.route(key: "0", modifiers: [.command]) == .app)
+        #expect(TerminalKeyRouter.route(key: "1", modifiers: []) == .terminal)
+        // The number row of an AZERTY layout types `&` for the first key.
+        #expect(TerminalKeyRouter.route(key: "&", modifiers: [.command]) == .app)
     }
 
     @Test("pane shortcuts never reach the program")

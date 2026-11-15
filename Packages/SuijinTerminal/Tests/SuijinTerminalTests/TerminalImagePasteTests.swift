@@ -141,6 +141,27 @@ struct TerminalImagePasteTests {
         #expect(files().isEmpty)
     }
 
+    @Test("a file in a temporary folder is one a promise replaces; a file anywhere else is pasted by its own path")
+    func temporaryFiles() {
+        let temporary = [
+            "/var/folders/mn/abc/T/TemporaryItems/NSIRD_screencaptureui_yCb5uN/Screenshot 2026-11-15 at 15.56.25.png",
+            "/private/var/folders/mn/abc/T/x.png", "/tmp/x.png", "/private/tmp/x.png",
+            "/Users/me/Library/Caches/TemporaryItems/x.png",
+        ]
+        for path in temporary { #expect(SuijinTerminalView.isTemporaryFile(URL(fileURLWithPath: path)), "\(path)") }
+        let lasting = ["/Users/me/Desktop/shot.png", "/Users/me/tmp/x.png", "/Volumes/Disk/a.png", "/Users/me/Screenshots/a.png"]
+        for path in lasting { #expect(!SuijinTerminalView.isTemporaryFile(URL(fileURLWithPath: path)), "\(path)") }
+    }
+
+    @Test("an existing folder with wider permissions is made private when an image is saved")
+    func existingFolderIsMadePrivate() throws {
+        defer { cleanUp() }
+        let manager = FileManager.default
+        try manager.createDirectory(at: store.directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o755])
+        _ = try store.save(png: png)
+        #expect(try manager.attributesOfItem(atPath: store.directory.path)[.posixPermissions] as? Int == 0o700)
+    }
+
     @Test("a promised drop pastes the files that arrived, and the drag's image when none did")
     func promisedDropOutcome() throws {
         defer { cleanUp() }

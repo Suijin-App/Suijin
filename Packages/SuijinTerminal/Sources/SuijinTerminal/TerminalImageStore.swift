@@ -64,9 +64,11 @@ public struct TerminalImageStore: Sendable, Equatable {
     /// The pasteboard types `png(on:)` reads.
     public static let imageTypes: [NSPasteboard.PasteboardType] = [.png, .tiff]
 
+    /// Creates the folder, private to the user; one that exists with wider permissions is made private too.
     private func prepareDirectory() throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
     }
 
     private static func stamp(_ date: Date) -> String {

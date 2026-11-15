@@ -30,6 +30,9 @@ agent side by side, each in a git worktree of its own.
   rows in the sidebar have a menu with **Show Worker** and **Close Worker**.
 - **Stats and usage.** Settings › Stats & Usage shows tokens, estimated cost and activity per day from the local
   Claude Code and Codex logs, and the Resource Manager shows the memory and CPU of running sessions.
+- **Welcome tour.** The first launch opens a short tour of workspaces, sessions, changes and accounts, with whole-window
+  captures, hand-written notes and four water sprites that follow the pointer and answer a click. Help › Welcome to
+  Suijin opens it again.
 - **Settings.** Light, dark or automatic appearance, 15 terminal themes, a searchable list of every keyboard
   shortcut (⌘/), and a Permissions section that shows whether macOS allows notifications, the background helper and
   Full Disk Access, with a button to allow each and a **Repair** button when the background helper is not working.

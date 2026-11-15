@@ -2850,6 +2850,12 @@
     "Select All" : {
 
     },
+    "Select Last Tab" : {
+
+    },
+    "Select Tab %lld" : {
+
+    },
     "Select the whole terminal buffer." : {
 
     },

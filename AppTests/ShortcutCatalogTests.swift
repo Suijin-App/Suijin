@@ -57,6 +57,29 @@ struct ShortcutCatalogTests {
         #expect(ShortcutSpeech.label(for: "⇧Space") == "Shift Space")
     }
 
+    @Test func tabNumbersAreListedAndFoundByTab() {
+        #expect(ShortcutCatalog.selectTabs.map(\.glyphs) == (1...9).map { "⌘\($0)" })
+        #expect(ShortcutCatalog.selectTab(1).id == "selectTab1")
+        #expect(ShortcutCatalog.selectTab(9).id == "selectLastTab")
+        let found = ShortcutCatalog.sections(matching: "tab").flatMap { $0.shortcuts.map(\.id) }
+        #expect(ShortcutCatalog.selectTabs.allSatisfy { found.contains($0.id) })
+        // ⌘0 stays with the image viewer.
+        #expect(ShortcutCatalog.viewerFit.glyphs == "⌘0")
+    }
+
+    @Test func tabNumbersCountFromTheFirstTabAndNineIsTheLast() {
+        #expect(AppModel.tabIndex(forNumber: 1, count: 3) == 0)
+        #expect(AppModel.tabIndex(forNumber: 3, count: 3) == 2)
+        #expect(AppModel.tabIndex(forNumber: 5, count: 3) == nil)
+        #expect(AppModel.tabIndex(forNumber: 9, count: 3) == 2)
+        #expect(AppModel.tabIndex(forNumber: 9, count: 12) == 11)
+        #expect(AppModel.tabIndex(forNumber: 8, count: 12) == 7)
+        #expect(AppModel.tabIndex(forNumber: 1, count: 0) == nil)
+        #expect(AppModel.tabIndex(forNumber: 9, count: 0) == nil)
+        #expect(AppModel.tabIndex(forNumber: 0, count: 3) == nil)
+        #expect(AppModel.tabIndex(forNumber: 10, count: 12) == nil)
+    }
+
     // MARK: Search
 
     @Test func searchMatchesActionNames() {
@@ -98,6 +121,7 @@ struct ShortcutCatalogTests {
         case .closeTab: ShortcutCatalog.closeTab
         case .previousTab: ShortcutCatalog.previousTab
         case .nextTab: ShortcutCatalog.nextTab
+        case .selectTab(let number): ShortcutCatalog.selectTab(number)
         case .splitRight: ShortcutCatalog.splitRight
         case .splitDown: ShortcutCatalog.splitDown
         case .focusPane(let direction): ShortcutCatalog.focusPane(edge(direction))
@@ -125,7 +149,7 @@ struct ShortcutCatalogTests {
     private static let routes: [TerminalKeyRoute] = [
         .newTab, .closeTab, .previousTab, .nextTab, .splitRight, .splitDown, .zoomPane, .equalizePanes,
         .copy, .paste, .selectAll, .find,
-    ] + directions.map { .focusPane($0) } + directions.map { .movePane($0) }
+    ] + directions.map { .focusPane($0) } + directions.map { .movePane($0) } + (1...9).map { .selectTab($0) }
 
     /// What a terminal does with the catalog entry's keys.
     private func route(of shortcut: KeyboardShortcut) -> TerminalKeyRoute {

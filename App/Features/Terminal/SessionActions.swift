@@ -108,6 +108,22 @@ extension AppModel {
         selectedTab[context] = tabs[(current + offset + tabs.count) % tabs.count]
     }
 
+    /// Selects the tab with that number in the tab bar (⌘1…⌘8), or the last tab for 9, as browsers do. Nothing when
+    /// there is no such tab.
+    func selectTab(number: Int, in context: SessionContext) {
+        let tabs = tabList(in: context)
+        guard let index = Self.tabIndex(forNumber: number, count: tabs.count) else { return }
+        selectedTab[context] = tabs[index]
+    }
+
+    /// The position of tab `number` among `count` tabs: 1…8 count from the first tab, 9 is the last one. Nil when the
+    /// number is not 1…9 or there is no tab at that position.
+    nonisolated static func tabIndex(forNumber number: Int, count: Int) -> Int? {
+        guard count > 0, (1...9).contains(number) else { return nil }
+        if number == 9 { return count - 1 }
+        return number <= count ? number - 1 : nil
+    }
+
     /// Handles a tab or split shortcut typed in the terminal of session `pane`; returns whether it was handled. ⌘W
     /// closes that pane: the terminal that received the key is the one with the keyboard.
     func handle(_ route: TerminalKeyRoute, in context: SessionContext, from pane: UUID) -> Bool {
@@ -118,6 +134,7 @@ extension AppModel {
         case .splitDown: split(in: context, axis: .stacked)
         case .previousTab: selectAdjacentTab(in: context, offset: -1)
         case .nextTab: selectAdjacentTab(in: context, offset: 1)
+        case .selectTab(let number): selectTab(number: number, in: context)
         case .focusPane(let direction):
             focusPane(pane)
             focusNeighborPane(in: context, toward: PaneEdge(direction))

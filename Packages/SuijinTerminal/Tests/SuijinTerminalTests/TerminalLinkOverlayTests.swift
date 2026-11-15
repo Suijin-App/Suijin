@@ -111,13 +111,18 @@ struct TerminalLinkViewTests {
         view.linkResolver = { $0.map { _ in nil } }
         #expect(await waitUntil(timeout: .seconds(2)) { view.linkScanCount == 1 }, "the first scan of an empty screen")
         let before = view.linkScanCount
+        // Wide margins, so the test asks about the rule and not about this machine's speed: with the real timing
+        // (a scan after 120 ms of quiet, or 750 ms into a trickle) another suite holding the main actor between
+        // two feeds is enough to make the output look paused. The timing rules themselves have their own tests.
+        view.linkController.timing.quietPeriod = 1
+        view.linkController.timing.maximumDelay = 60
         for index in 0..<1000 {
             feed(view, "line \(index) of a long build log at Sources/App/File\(index).swift:\(index)\r\n")
             if index % 10 == 0 { try await Task.sleep(for: .milliseconds(5)) }
             if index % 100 == 0 { #expect(view.linkScanCount == before, "scanned during output at chunk \(index)") }
         }
         #expect(view.linkScanCount == before)
-        #expect(await waitUntil(timeout: .seconds(2)) { view.linkScanCount == before + 1 })
+        #expect(await waitUntil(timeout: .seconds(10)) { view.linkScanCount == before + 1 })
         try await Task.sleep(for: .milliseconds(300))
         #expect(view.linkScanCount == before + 1, "one scan, not one per chunk")
     }

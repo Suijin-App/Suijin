@@ -30,6 +30,10 @@ Suijin 0.1.0 is the first release: a native macOS app that runs Claude Code, Cod
 
 - **Stats and usage.** Settings › Stats & Usage shows tokens, estimated cost and activity per day from the local Claude Code and Codex logs. Costs are estimates at API list prices, not your subscription bill. The Resource Manager shows the memory and CPU of running sessions.
 
+- **Welcome tour.** The first launch opens a short tour of workspaces, sessions, changes and accounts, guided by four water sprites that follow your pointer and answer a click. Help › Welcome to Suijin opens it again.
+
+  ![The welcome step of the tour: the app icon and four water sprites labelled Claude Code, Codex, a shell and any other agent](https://raw.githubusercontent.com/Suijin-App/Suijin/v0.1.0/docs/screenshots/welcome.png)
+
 - **Settings.** Light, dark or automatic appearance, 15 terminal themes, a searchable list of every keyboard shortcut (⌘/), and a Permissions section in Settings › General that shows whether macOS allows notifications, the background helper and Full Disk Access, with a button to allow each and a **Repair** button when the background helper is not working. Full Disk Access is optional. Settings › About links to the website, the source code, the community and the sponsor page.
 
 - **Private by design.** No account, no telemetry and no crash reports. Suijin goes online itself only to check for updates and to read usage limits with your own login.

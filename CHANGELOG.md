@@ -10,6 +10,9 @@
   while a terminal has the keyboard. Settings › Shortcuts lists them.
 - **Copy a code block.** Every code block in the Markdown viewer has a copy button at its top corner; one click
   copies the whole block, including the part scrolled out of view.
+- **Move a tab into a split.** Drag a session tab from the tab bar onto a pane, or onto the terminal of a plain
+  tab, and it becomes a pane on the side nearest to the pointer; a split tab moves with all its panes and keeps
+  their arrangement. The same move is in the tab's context menu as Move Tab to Selected Tab.
 
 ## 0.1.0 (2026-11-15)
 

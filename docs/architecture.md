@@ -103,12 +103,26 @@ A new pane (⌘D, ⇧⌘D, the title-bar split button, context menus) runs the a
 default the focused pane's agent and account; the split button's menu can pick another for one pane.
 
 Panes are rearranged by dragging a pane's header (`PaneDragAndDrop.swift`): a system drag session with a payload type
-of its own (`com.tekmium.suijin.pane`, declared in `Info.plist`), so tab drags and pane drags never land on each
-other. Over another pane, `PanePlacement(dropAt:in:)` (SuijinCore) picks one of five zones (an edge places the pane
-beside it, the middle swaps the two), and dropping on the title-bar tab group moves the pane to a tab of its own.
+of its own (`com.tekmium.suijin.pane`, declared in `Info.plist`), so a pane never lands where a tab reorders. Over
+another pane, `PanePlacement(dropAt:in:)` (SuijinCore) picks one of five zones (an edge places the pane beside it,
+the middle swaps the two), and dropping on the title-bar tab group moves the pane to a tab of its own.
 ⌃⌥⌘ arrows and Session ▸ Move Pane swap the focused pane with its neighbor. After any rearrangement,
 `PaneRearrangeAnimation` slides each pane's layer from its old frame to its new one. The terminal views move into
 their new containers and are never recreated.
+
+The other way round, a whole tab moves into another tab (`AppModel.mergeTab`): a plain tab becomes one pane, a split
+tab is added as a group that keeps its arrangement (`PaneLayout.inserting(_:beside:edge:)` taking a layout), and its
+own layout is deleted. Tabs are dragged the way panes are, by the same AppKit drag source laid over the tab, with a
+type of their own (`com.tekmium.suijin.tab`, also in `Info.plist`), and `PaneDragState` knows the dragged tab from the
+drag's start to its end. Both payloads are plain strings written straight to the drag's pasteboard: an item provided
+lazily (`NSItemProvider`, SwiftUI's `onDrag`) under a custom type reaches AppKit as a promised file, and a terminal
+takes that as a dropped file before any drop target around it is asked. Every pane takes a tab, and so does the
+terminal of a plain tab, which then becomes a split tab in its place; a Changes or file tab is refused because it holds
+no session. A tab has nothing to swap with, so `PaneEdge(nearestTo:in:)` divides the pane into four zones and the
+nearest edge takes the drop; a zoomed pane takes it too and the tab shows every pane again. Each tab of the title bar
+is a drop target of its own (another tab reorders) that lies over the tab group, so the tabs take a dragged pane as
+well as the group does; otherwise only the gaps between them would.
+The tab's context menu (Move Tab to Selected Tab) and VoiceOver actions on the tab do the same without a drag.
 
 ## Keyboard shortcuts
 

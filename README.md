@@ -39,6 +39,7 @@ themselves. You can also build it from source (see [Build from source](#build-fr
   built-in agents; the status badges, accounts, permission modes and orchestration are for Claude Code and Codex.
 - Split a tab to the right or down (⌘D, ⇧⌘D) and run two to ten sessions as panes in one tab.
 - Drag tabs to reorder them. Drag a pane's header onto an edge to place it there, or onto the center to swap.
+- Drag a tab onto a pane to move it into that split, with all its panes when it is a split tab.
 - Move focus between panes (⌥⌘←→) or zoom the focused one (⇧⌘↩).
 - Sessions run in a background helper, so quitting or updating Suijin does not stop your agents. Closing a tab ends
   its session.

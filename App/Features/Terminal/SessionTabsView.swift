@@ -1,6 +1,7 @@
 import SuijinCore
 import SuijinUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The detail area of a context: a tab per session plus a Changes tab (git contexts), and the selected tab's
 /// content. Custom tab strip on purpose: SwiftUI on macOS has no in-content document tab bar (`TabView` draws a
@@ -16,6 +17,8 @@ struct SessionTabsView: View {
                 switch selected {
                 case .session(let id):
                     SessionPaneContent(session: id, context: context, isFocused: true, closeTitle: "Close Tab")
+                        // A session tab dragged from the title bar lands here too and makes this a split tab.
+                        .modifier(PaneDropTarget(session: id))
                 case .panes(let id):
                     if let layout = model.paneLayouts[id] {
                         PaneTreeView(layout: layout, context: context)
@@ -230,27 +233,61 @@ struct ToolbarTabBar: View {
 }
 
 /// Drag any tab (session, split, Changes or file) onto another to move it there; a bar on the target's leading edge
-/// shows where it lands. The order is kept by `AppModel.moveTab`.
+/// shows where it lands. The order is kept by `AppModel.moveTab`. A session or split tab dragged down onto a pane
+/// moves into that tab instead, and a pane dropped on a tab becomes a tab of its own (`PaneDragAndDrop.swift`).
+///
+/// The tab is dragged by an AppKit drag source laid over it (`PaneDragSource`), which also takes the click that
+/// selects the tab. It leaves the tab's leading edge free, where the close button is.
 private struct TabReordering: ViewModifier {
     @Environment(AppModel.self) private var model
     let tab: DetailTab
     let context: SessionContext
     @State private var isTargeted = false
 
+    /// The room of the close button at the tab's leading edge (the label starts after it).
+    static let closeButtonWidth: CGFloat = 26
+
     func body(content: Content) -> some View {
+        let model = model, tab = tab, context = context
         content
-            .draggable(tab.dragPayload)
-            .dropDestination(for: String.self) { items, _ in
-                guard let dragged = items.first.flatMap(DetailTab.init(dragPayload:)) else { return false }
-                withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
-                return true
-            } isTargeted: { isTargeted = $0 }
+            .overlay {
+                PaneDragSource(payload: [(.suijinTab, tab.dragPayload)], icon: icon, title: title, showsHandCursor: false,
+                               onBegin: { model.paneDrag.beginTab(tab) },
+                               onEnd: { model.paneDrag.end() },
+                               onClick: { model.selectedTab[context] = tab })
+                    .padding(.leading, Self.closeButtonWidth)
+            }
+            .onDrop(of: [.suijinTab, .suijinPane],
+                    delegate: TabDropDelegate(model: model, tab: tab, context: context, isTargeted: $isTargeted))
             .overlay(alignment: .leading) {
                 if isTargeted {
                     Capsule().fill(Color.accentColor).frame(width: 3).padding(.vertical, 4)
                         .transition(.opacity)
+                        .allowsHitTesting(false)
                 }
             }
+    }
+
+    /// The session a session or split tab reads as: its own, or the split tab's focused pane.
+    private var session: AgentSessionRecord? {
+        let id: UUID? = if case .panes(let layout) = tab { model.paneLayouts[layout]?.focused } else { model.panes(of: tab).first }
+        return model.sessions.first { $0.id == id }
+    }
+
+    private var icon: PaneDragChip.Icon {
+        switch tab {
+        case .session, .panes: .agent(session.map { model.runtimes.displayAgent(of: $0) } ?? .shell)
+        case .changes: .symbol("plusminus")
+        case .file(let path): .file(path)
+        }
+    }
+
+    private var title: String {
+        switch tab {
+        case .session, .panes: session.map { model.runtimes.displayTitle(of: $0) } ?? ""
+        case .changes: String(localized: "Changes")
+        case .file(let path): (path as NSString).lastPathComponent
+        }
     }
 }
 
@@ -285,11 +322,29 @@ private struct SessionTab: View {
         }
         .help(Text(verbatim: model.sessionTooltip(of: session)))
         .contextMenu { SessionMenuItems(session: session) }
+        .modifier(MoveTabToSelectedTabActions(session: session.id))
     }
 }
 
-/// One tab of the title-bar group: centered content, a close button on the leading edge on hover (as in Safari),
-/// a raised background when selected.
+/// VoiceOver's way to drag a tab onto a pane: actions on the tab that move it into the selected tab. Always attached,
+/// so the tab keeps its identity (and a drag in progress) when the selection changes; an action does nothing while
+/// the move is not possible.
+private struct MoveTabToSelectedTabActions: ViewModifier {
+    @Environment(AppModel.self) private var model
+    let session: UUID
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityAction(named: Text("Move Tab to Selected Tab, Right")) { move(.right) }
+            .accessibilityAction(named: Text("Move Tab to Selected Tab, Below")) { move(.bottom) }
+    }
+
+    private func move(_ edge: PaneEdge) {
+        guard model.moveTabToSelectedTabUnavailableReason(showing: session) == nil else { return }
+        model.moveTabToSelectedTab(showing: session, edge: edge)
+    }
+}
+
 private struct ToolbarTab<Label: View>: View {
     let isSelected: Bool
     let onClose: (() -> Void)?

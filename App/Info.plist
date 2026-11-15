@@ -36,7 +36,8 @@
 	<true/>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
-	<!-- The payload of a pane dragged to a new place in its split tab; it never leaves the app. -->
+	<!-- The payloads of a pane dragged to a new place in its split tab and of a session tab dragged onto a pane;
+	     they never leave the app. -->
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
@@ -44,6 +45,16 @@
 			<string>com.tekmium.suijin.pane</string>
 			<key>UTTypeDescription</key>
 			<string>Suijin Pane</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.tekmium.suijin.tab</string>
+			<key>UTTypeDescription</key>
+			<string>Suijin Tab</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>

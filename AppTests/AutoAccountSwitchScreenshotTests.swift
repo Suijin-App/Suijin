@@ -13,7 +13,7 @@ import Testing
 /// window and the desktop icons, ignores the mouse and is ordered in without activating the app, so nothing comes to
 /// the front or takes focus. A stand-in `claude` script runs instead of the real one.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_AUTOSWITCH_SHOT"] != nil))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_AUTOSWITCH_SHOT"] != nil))
 struct AutoAccountSwitchScreenshotTests {
     let output = ProcessInfo.processInfo.environment["SUIJIN_AUTOSWITCH_SHOT"] ?? ""
 

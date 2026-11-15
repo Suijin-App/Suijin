@@ -9,7 +9,7 @@ import Testing
 /// git workspace with two worktrees, a folder workspace, and shell sessions left running in the PTY host, so the app
 /// attaches to them on launch.
 @MainActor
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SEED_ROOT"] != nil))
+@Suite(.endsHostedSessions, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SEED_ROOT"] != nil))
 struct DemoSeedTests {
     @Test func seed() async throws {
         let base = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["SUIJIN_SEED_ROOT"]), isDirectory: true)

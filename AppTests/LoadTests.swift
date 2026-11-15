@@ -7,7 +7,7 @@ import Testing
 /// Ten hosted terminals flooding output at once, all on screen: the main thread must keep serving the UI.
 /// Prints the measurements; the thresholds are generous so the test catches freezes, not noise.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(3)))
 struct LoadTests {
     @Test func tenFloodingTerminalsKeepTheMainThreadResponsive() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-load-\(UUID().uuidString)", isDirectory: true)

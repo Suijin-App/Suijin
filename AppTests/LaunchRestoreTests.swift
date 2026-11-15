@@ -31,7 +31,7 @@ final class StateRecorder<Value: Equatable> {
 /// Launch after a quit that left sessions behind: the window opens straight into the restored context and tab, and a
 /// session whose process is gone shows the ended view without a terminal or a spinner first.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct LaunchRestoreTests {
     private func eventually(_ timeout: Duration = .seconds(10), _ condition: () async -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout

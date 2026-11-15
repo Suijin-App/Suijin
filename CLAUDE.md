@@ -56,10 +56,11 @@ Check: `Tools/comment-lint/comment-lint.py` (also runs in `scripts/ci-local.sh c
 - **No orphan processes.** Every terminal runs in the PTY host helper (`SuijinPTYHost`) so it survives the app
   quitting; closing a tab terminates its session (SIGHUP, then SIGKILL). Tests that spawn processes clean them up.
 - **Tests leave nothing in the PTY host.** App tests share this Mac's registered `SuijinPTYHost` with the installed
-  app. A test that starts a hosted session ends it before it returns (`runtimes.terminate`, or
-  `PTYHostClient.shared.terminate` for a session started without a runtime), also when the test fails (`defer` or a
-  teardown). Ending a session makes the host drop its process, scrollback and metadata; a session left to exit on
-  its own stays in the host for a day. Tests that flood output (`LoadTests`, layout suites) are included. A test
+  app, so no test leaves a session in it. A suite that starts hosted sessions carries the `.endsHostedSessions`
+  trait (`AppTests/HostedSessionCleanup.swift`): after each test, also a failed one, it ends the host sessions
+  whose temporary data root is gone. So a test keeps its data root (or, for a session started without one, its
+  working directory) in a temporary folder and removes that folder as it returns. Ending a session makes the host
+  drop its process, scrollback and metadata; a session left to exit on its own stays in the host for a day. A test
   never restarts, kills or re-registers the helper: the user's own sessions run in it.
 - **Package boundaries.** The graph is documented in `docs/architecture.md`; packages never import the app, and
   `SuijinUI` imports no domain package.

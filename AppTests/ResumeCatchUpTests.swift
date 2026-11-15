@@ -10,7 +10,7 @@ import Testing
 /// session…" over a hidden terminal until that output settles, then the terminal already at its end: no scrolling
 /// through the history, and nothing typed meanwhile is lost. A script stands in for the agent.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct ResumeCatchUpTests {
     @Test func aResumedSessionShowsAtItsEndWithoutScrolling() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-resume-\(UUID().uuidString)", isDirectory: true)

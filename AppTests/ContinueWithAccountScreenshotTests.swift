@@ -15,7 +15,7 @@ import Testing
 /// front or takes focus.
 /// A stand-in `claude` script runs instead of the real one.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SWITCH_SHOT"] != nil))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SWITCH_SHOT"] != nil))
 struct ContinueWithAccountScreenshotTests {
     let output = ProcessInfo.processInfo.environment["SUIJIN_SWITCH_SHOT"] ?? ""
 

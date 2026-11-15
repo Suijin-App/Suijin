@@ -11,7 +11,7 @@ import Testing
 /// pasted as Terminal.app pastes it, and the pane takes the keyboard. Ended panes, pane drags and tab drags never
 /// reach a terminal. With `SUIJIN_SCREENSHOTS` set, the drop highlight and the result are rendered there.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct TerminalFileDropTests {
     let root: URL
     let folder: URL

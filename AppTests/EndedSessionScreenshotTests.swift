@@ -12,7 +12,7 @@ import Testing
 /// up while the caller captures it with `screencapture -l` (Liquid Glass does not draw into `cacheDisplay`). The window
 /// is ordered in without activating the app.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ENDED_SHOT"] != nil))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(3)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ENDED_SHOT"] != nil))
 struct EndedSessionScreenshotTests {
     let output = ProcessInfo.processInfo.environment["SUIJIN_ENDED_SHOT"] ?? ""
 

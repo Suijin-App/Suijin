@@ -7,7 +7,7 @@ import Testing
 /// Clicking a session in the sidebar must leave the keyboard in its terminal, not in the list (where the arrow keys
 /// would switch sessions instead of reaching the agent).
 @MainActor
-@Suite(.serialized)
+@Suite(.endsHostedSessions, .serialized)
 struct TerminalFocusTests {
     @Test func clickedSessionTakesTheKeyboardFromTheList() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-focus-\(UUID().uuidString)", isDirectory: true)

@@ -9,7 +9,7 @@ import Testing
 /// ⌘W in a split tab closes the pane that has the keyboard, whichever way the pane got it: a click, the app focusing
 /// it, or AppKit moving the first responder on its own. Runs the real tab view with real shells in the PTY host.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct PaneCloseTests {
     /// A split tab on screen: the window, its two sessions and their terminal views.
     @MainActor

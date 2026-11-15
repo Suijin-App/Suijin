@@ -11,7 +11,7 @@ import Testing
 /// view: the dead terminal stays on screen otherwise, and nothing can be done in it. A small script stands in for the
 /// agent: it prints the same exit hint as Claude Code and exits on the second SIGINT.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct SessionExitTests {
     static let resumeID = "0f4c3a52-7d1e-4b8a-9c2d-5e6f7a8b9c0d"
     static let codexID = "019a5f3e-8c2b-7d41-a9e0-3b6c1d2e4f50"

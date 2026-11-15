@@ -11,7 +11,7 @@ import Testing
 /// (logo, title, status, notifications, stats, resume id) and a shell again once it is done. Fake `claude` and `codex`
 /// scripts first on PATH stand in for the real CLIs, which never run here.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct ShellAgentSessionTests {
     static let hookID = "3a1b2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d"
     static let codexID = "019a5f3e-8c2b-7d41-a9e0-3b6c1d2e4f51"

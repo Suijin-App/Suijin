@@ -10,7 +10,7 @@ import Testing
 /// folder workspace, and fourteen shells left running in the PTY host (no agents, so nothing reaches an account).
 /// `TEST_RUNNER_SUIJIN_PERF_CLEANUP_ROOT=<dir>` ends the shells of such a data root again.
 @MainActor
-@Suite(.serialized)
+@Suite(.endsHostedSessions, .serialized)
 struct PerfSeedTests {
     @Test(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_PERF_SEED_ROOT"] != nil))
     func seed() async throws {

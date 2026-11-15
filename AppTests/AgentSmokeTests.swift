@@ -10,7 +10,7 @@ import Testing
 /// the PTY host, with the user's own login: the TUI must draw, and Claude's SessionStart hook must reach the events
 /// file. Opt-in: `TEST_RUNNER_SUIJIN_AGENT_SMOKE=1`. Screen text is checked, never printed (it can show an email).
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_AGENT_SMOKE"] == "1"))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_AGENT_SMOKE"] == "1"))
 struct AgentSmokeTests {
     private func eventually(_ timeout: Duration, _ condition: () -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout

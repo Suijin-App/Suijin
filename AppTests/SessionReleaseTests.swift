@@ -8,7 +8,7 @@ import Testing
 /// A closed session must free its terminal: the view, its scrollback and its renderer. A handler the pane installed on
 /// the view once captured the pane (which holds the runtime), so every closed tab stayed in memory.
 @MainActor
-@Suite(.serialized)
+@Suite(.endsHostedSessions, .serialized)
 struct SessionReleaseTests {
     @Test func closingASessionShownInAPaneReleasesItsTerminal() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-release-\(UUID().uuidString)", isDirectory: true)

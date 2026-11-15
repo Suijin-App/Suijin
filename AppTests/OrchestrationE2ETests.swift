@@ -16,7 +16,7 @@ import Testing
 /// this build (scripts start one with launchctl) so the user's own helper and sessions are untouched, and
 /// `TEST_RUNNER_SUIJIN_ORCH_E2E_ROOT` a short temporary directory. Prompts are tiny; screens are never printed whole.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(20)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ORCH_E2E"] == "1"))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(20)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ORCH_E2E"] == "1"))
 struct OrchestrationE2ETests {
     private func eventually(_ timeout: Duration, every: Duration = .milliseconds(500), _ condition: () async -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout

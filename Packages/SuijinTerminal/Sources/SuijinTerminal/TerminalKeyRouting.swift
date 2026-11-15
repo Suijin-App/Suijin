@@ -3,7 +3,8 @@ import AppKit
 /// Who handles a ⌘ key press while a terminal has keyboard focus.
 ///
 /// Copy, paste (through the paste guard), select all and find belong to the terminal view. Tab, split and pane
-/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘1…⌘9, ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
+/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘1…⌘9, ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) and the text size shortcuts (⌘+, ⌘-,
+/// ⌘0) go to the session's owner through
 /// `SuijinTerminalView.onKeyRoute`, so the program never receives them as escape sequences. Every other ⌘
 /// shortcut goes on to the app's menus. Keys without ⌘ take the normal event path, where SwiftTerm turns them into
 /// terminal input (and input methods such as Vietnamese Telex compose text), so nothing here touches them.
@@ -24,6 +25,12 @@ public enum TerminalKeyRoute: Equatable, Sendable {
     case zoomPane
     /// ⌃⌘=: every split of the tab shares its room equally.
     case equalizePanes
+    /// ⌘+ (also ⌘=, the same key without ⇧): this terminal's text one point larger.
+    case biggerText
+    /// ⌘-: this terminal's text one point smaller.
+    case smallerText
+    /// ⌘0: this terminal's text back at the size set in Settings.
+    case defaultTextSize
     case copy
     case paste
     case selectAll
@@ -60,6 +67,10 @@ public enum TerminalKeyRouter {
             case "v": return .paste
             case "a": return .selectAll
             case "f": return .find
+            // `=` is the plus key without ⇧; `+` arrives from the numeric keypad.
+            case "=", "+": return .biggerText
+            case "-": return .smallerText
+            case "0": return .defaultTextSize
             default:
                 // ⌘1…⌘9. A layout whose number row types other characters without ⇧ (AZERTY) does not match here,
                 // and the key goes on to the menu's key equivalent.
@@ -72,6 +83,8 @@ public enum TerminalKeyRouter {
         if extra == [.shift], key == "]" || key == "}" { return .nextTab }
         if extra == [.shift], key == "d" { return .splitDown }
         if extra == [.shift], key == "\r" { return .zoomPane }
+        // ⇧⌘= types `+` on most layouts.
+        if extra == [.shift], key == "+" || key == "=" { return .biggerText }
         if extra == [.control], key == "=" { return .equalizePanes }
         if extra == [.option], let direction = arrow(key) { return .focusPane(direction) }
         if extra == [.control, .option], let direction = arrow(key) { return .movePane(direction) }

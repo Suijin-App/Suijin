@@ -206,6 +206,18 @@ struct SuijinCommands: Commands {
             }
             .disabled(!isSplitTab || isZoomed)
             Divider()
+            // The text size of the terminal with the focus; the same as ⌘+, ⌘- and ⌘0 typed in it. Dimmed on the
+            // Changes tab and on files, where these keys belong to the image viewer.
+            Button("Bigger Text") { if let session = activeTerminal { model.adjustTerminalFontSize(of: session, by: 1) } }
+                .keyboardShortcut(ShortcutCatalog.viewerZoomIn.shortcut)
+                .disabled(activeTerminal == nil)
+            Button("Smaller Text") { if let session = activeTerminal { model.adjustTerminalFontSize(of: session, by: -1) } }
+                .keyboardShortcut(ShortcutCatalog.viewerZoomOut.shortcut)
+                .disabled(activeTerminal == nil)
+            Button("Default Text Size") { if let session = activeTerminal { model.resetTerminalFontSize(of: session) } }
+                .keyboardShortcut(ShortcutCatalog.viewerFit.shortcut)
+                .disabled(activeTerminal == nil)
+            Divider()
             Button("Previous Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: -1) } }
                 .keyboardShortcut(ShortcutCatalog.previousTab.shortcut)
             Button("Next Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: 1) } }
@@ -232,6 +244,14 @@ struct SuijinCommands: Commands {
     }
 
     private var isSplitTab: Bool { focusedPane != nil }
+
+    /// The session whose terminal has the focus in the selected tab (a plain tab's, or a split tab's focused pane),
+    /// while it runs; nil on the Changes tab, on a file and for an ended session.
+    private var activeTerminal: UUID? {
+        guard let context = mainContext, let session = model.activeSession(in: context),
+              model.runtimes.runtime(for: session) != nil else { return nil }
+        return session
+    }
 
     private var isZoomed: Bool {
         guard let pane = focusedPane else { return false }

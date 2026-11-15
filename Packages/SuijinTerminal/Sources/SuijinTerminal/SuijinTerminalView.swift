@@ -510,7 +510,8 @@ open class SuijinTerminalView: TerminalView {
     /// Performs a routed shortcut; `false` lets the event continue to the app's menus.
     open func perform(_ route: TerminalKeyRoute) -> Bool {
         switch route {
-        case .newTab, .closeTab, .previousTab, .nextTab, .selectTab, .splitRight, .splitDown, .focusPane, .movePane, .zoomPane, .equalizePanes:
+        case .newTab, .closeTab, .previousTab, .nextTab, .selectTab, .splitRight, .splitDown, .focusPane, .movePane, .zoomPane, .equalizePanes,
+             .biggerText, .smallerText, .defaultTextSize:
             return onKeyRoute?(route) ?? false
         case .copy:
             if selectionActive { copy(self) }

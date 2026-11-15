@@ -25,6 +25,8 @@ struct TerminalPane: View {
                 applyTheme()
                 applyLinkSettings()
             }
+            // ⌘+, ⌘- and ⌘0 change this session's text size only.
+            .onChange(of: model.terminalFontOffsets[id]) { applyTheme() }
             .confirmationDialog(
                 Text("Paste \(review?.review.commandLineCount ?? 0) lines?"),
                 isPresented: Binding(get: { review != nil }, set: { if !$0 { review?.decide(nil); review = nil } }),
@@ -129,8 +131,7 @@ struct TerminalPane: View {
         let theme = theme
         runtime.terminal.view.setGPURendering(model.setting(.terminalGPURendering) != "false")
         runtime.terminal.view.apply(theme)
-        let size = model.setting(.terminalFontSize).flatMap(Double.init) ?? Double(TerminalTheme.defaultFontSize)
-        runtime.terminal.view.apply(fontSize: size, family: model.setting(.terminalFontFamily))
+        runtime.terminal.view.apply(fontSize: model.terminalFontSize(of: runtime.id), family: model.setting(.terminalFontFamily))
     }
 
     struct PendingPaste {

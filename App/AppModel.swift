@@ -53,7 +53,11 @@ final class AppModel {
     private(set) var worktrees: [UUID: [WorktreeRecord]] = [:]
     private(set) var sessions: [AgentSessionRecord] = [] {
         // A session that goes leaves its split tab (`PaneLayouts.swift`).
-        didSet { if sessions.count < oldValue.count { reconcilePaneLayouts() } }
+        didSet {
+            guard sessions.count < oldValue.count else { return }
+            reconcilePaneLayouts()
+            forgetTerminalFontOffsets(of: Set(oldValue.map(\.id)).subtracting(sessions.map(\.id)))
+        }
     }
     private(set) var accounts: [ManagedAccountRecord] = []
     /// False until `load()` has put the stored workspaces, sessions and the last selection in place. Until then the
@@ -93,6 +97,9 @@ final class AppModel {
     /// Every tab of each context (sessions, Changes, files) in the order the user dragged them into, as drag payloads
     /// (`TabOrder.swift`). Tabs not listed keep their place after the tab they follow by default.
     var tabOrder: [SessionContext: [String]] = AppModel.savedTabOrder()
+    /// How many points each session's terminal text is larger (or smaller, negative) than the size in Settings
+    /// (`TerminalTextZoom.swift`); sessions not listed use that size.
+    var terminalFontOffsets: [UUID: Int] = AppModel.savedTerminalFontOffsets()
     /// A path the inspector's file tree should show (expand its folders, select, scroll to it); a new request id
     /// each time, so asking twice for the same path works.
     var fileTreeReveal: (path: String, request: UUID)?

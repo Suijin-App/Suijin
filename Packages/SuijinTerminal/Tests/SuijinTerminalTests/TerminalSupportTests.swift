@@ -12,7 +12,12 @@ struct TerminalKeyRoutingTests {
             ("t", [.command], .newTab), ("w", [.command], .closeTab), ("d", [.command], .splitRight),
             ("D", [.command, .shift], .splitDown), ("{", [.command, .shift], .previousTab), ("]", [.command, .shift], .nextTab),
             ("c", [.command], .copy), ("v", [.command], .paste), ("a", [.command], .selectAll), ("f", [.command], .find),
-            ("0", [.command], .app), (",", [.command], .app), ("q", [.command], .app), ("k", [.command, .option], .app),
+            (",", [.command], .app), ("q", [.command], .app), ("k", [.command, .option], .app),
+            // Text size: ⌘= and ⌘+ (⇧, or the keypad's plus), ⌘-, ⌘0. ⌃⌘= stays Equalize Panes.
+            ("=", [.command], .biggerText), ("+", [.command, .shift], .biggerText), ("+", [.command], .biggerText),
+            ("-", [.command], .smallerText), ("0", [.command], .defaultTextSize),
+            ("=", [.command, .control], .equalizePanes), ("-", [.command, .option], .app), ("0", [.command, .shift], .app),
+            ("=", [], .terminal), ("-", [], .terminal), ("0", [.control], .terminal),
         ]
         for (key, modifiers, route) in table {
             #expect(TerminalKeyRouter.route(key: key, modifiers: modifiers) == route, "\(key) \(modifiers)")
@@ -27,7 +32,8 @@ struct TerminalKeyRoutingTests {
         #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .shift]) == .app)
         #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .option]) == .app)
         #expect(TerminalKeyRouter.route(key: "1", modifiers: [.command, .control]) == .app)
-        #expect(TerminalKeyRouter.route(key: "0", modifiers: [.command]) == .app)
+        // ⌘0 is no tab: it puts the terminal's text back at its size in Settings.
+        #expect(TerminalKeyRouter.route(key: "0", modifiers: [.command]) == .defaultTextSize)
         #expect(TerminalKeyRouter.route(key: "1", modifiers: []) == .terminal)
         // The number row of an AZERTY layout types `&` for the first key.
         #expect(TerminalKeyRouter.route(key: "&", modifiers: [.command]) == .app)
@@ -52,9 +58,10 @@ struct TerminalKeyRoutingTests {
         #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: [.command, .control, .option, .shift]) == .app)
         #expect(TerminalKeyRouter.route(key: "\r", modifiers: [.command, .shift]) == .zoomPane)
         #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command, .control]) == .equalizePanes)
-        // ⌘↩ and ⌘= stay with the app's menus; ⌥ arrows without ⌘ stay with the terminal (word moves).
+        // ⌘↩ stays with the app's menus and ⌘= is the terminal's text size, neither is a pane shortcut; ⌥ arrows
+        // without ⌘ stay with the terminal (word moves).
         #expect(TerminalKeyRouter.route(key: "\r", modifiers: [.command]) == .app)
-        #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command]) == .app)
+        #expect(TerminalKeyRouter.route(key: "=", modifiers: [.command]) == .biggerText)
         #expect(TerminalKeyRouter.route(key: key(NSLeftArrowFunctionKey), modifiers: [.option, .numericPad, .function]) == .terminal)
     }
 

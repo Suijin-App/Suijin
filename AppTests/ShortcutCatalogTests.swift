@@ -63,7 +63,7 @@ struct ShortcutCatalogTests {
         #expect(ShortcutCatalog.selectTab(9).id == "selectLastTab")
         let found = ShortcutCatalog.sections(matching: "tab").flatMap { $0.shortcuts.map(\.id) }
         #expect(ShortcutCatalog.selectTabs.allSatisfy { found.contains($0.id) })
-        // ⌘0 stays with the image viewer.
+        // ⌘0 stays with the zoom entry (the image viewer's fit, a terminal's default text size).
         #expect(ShortcutCatalog.viewerFit.glyphs == "⌘0")
     }
 
@@ -128,6 +128,9 @@ struct ShortcutCatalogTests {
         case .movePane(let direction): ShortcutCatalog.movePane(edge(direction))
         case .zoomPane: ShortcutCatalog.zoomPane
         case .equalizePanes: ShortcutCatalog.equalizePanes
+        case .biggerText: ShortcutCatalog.viewerZoomIn
+        case .smallerText: ShortcutCatalog.viewerZoomOut
+        case .defaultTextSize: ShortcutCatalog.viewerFit
         case .copy: ShortcutCatalog.copy
         case .paste: ShortcutCatalog.paste
         case .selectAll: ShortcutCatalog.selectAll
@@ -148,7 +151,7 @@ struct ShortcutCatalogTests {
     private static let directions: [TerminalKeyRoute.Direction] = [.left, .right, .up, .down]
     private static let routes: [TerminalKeyRoute] = [
         .newTab, .closeTab, .previousTab, .nextTab, .splitRight, .splitDown, .zoomPane, .equalizePanes,
-        .copy, .paste, .selectAll, .find,
+        .biggerText, .smallerText, .defaultTextSize, .copy, .paste, .selectAll, .find,
     ] + directions.map { .focusPane($0) } + directions.map { .movePane($0) } + (1...9).map { .selectTab($0) }
 
     /// What a terminal does with the catalog entry's keys.

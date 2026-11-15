@@ -511,8 +511,23 @@ main .wrap { position: relative; z-index: 1; }
 :root[data-theme="dark"] .crew { --foam: #8fb4f0; --foam-light: #c9dcfa; }
 .crew-sea { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
 .crew-sprite { position: absolute; left: calc(3 * var(--sprite)); bottom: 0; width: calc(12 * var(--sprite)); height: calc(14 * var(--sprite)); transform-origin: 50% 100%; pointer-events: auto;
-  cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; }
 .crew-post.swims .crew-sprite { pointer-events: none; }
+/* picked up by the reader: above everything else the crew draws; a finger on a sprite drags it instead of scrolling */
+.crew-post.held { z-index: 5; }
+.crew-post.held .crew-sprite { cursor: grabbing; }
+/* things a sprite holds in a game, drawn in its own pixels and mirrored when it faces left: a fishing rod whose line
+   hangs to the water, the beam of a torch. The rope of a tug of war lies in the layer itself, under the sprites. */
+.crew-rod { position: absolute; left: calc(14 * var(--sprite)); bottom: calc(-2 * var(--sprite)); width: calc(10 * var(--sprite)); height: calc(19 * var(--sprite)); pointer-events: none; }
+.crew-rod.left { left: auto; right: calc(14 * var(--sprite)); transform: scaleX(-1); }
+.crew-rod svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.crew-rod.bites svg { animation: crew-bite 0.24s steps(2) infinite; }
+@keyframes crew-bite { 50% { transform: translateY(var(--sprite)); } }
+.crew-rope { position: absolute; z-index: 2; pointer-events: none; }
+.crew-rope svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.crew-beam { position: absolute; left: calc(15 * var(--sprite)); bottom: calc(4 * var(--sprite)); width: calc(14 * var(--sprite)); height: calc(8 * var(--sprite)); pointer-events: none;
+  background: linear-gradient(90deg, rgba(242, 185, 46, 0.6), rgba(242, 185, 46, 0)); clip-path: polygon(0 42%, 100% 0, 100% 100%, 0 58%); }
+.crew-beam.left { left: auto; right: calc(15 * var(--sprite)); transform: scaleX(-1); }
 .crew-sprite > svg { display: block; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 100%; }
 /* a sign left above the head */
 .crew-sign { position: absolute; left: 50%; bottom: calc(15 * var(--sprite)); transform: translateX(-50%); pointer-events: none; }

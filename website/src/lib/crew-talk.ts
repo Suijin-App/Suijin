@@ -117,5 +117,26 @@ export const plays = {
   toss: { throw: ["Catch!", "Heads up!", "Here!"], caught: ["Got it!", "Mine now.", "Nice throw!"], missed: ["Oops.", "It slipped.", "It's wet anyway."], tease: ["Butterfingers.", "It was right there.", "We had one job."] },
   tower: { want: ["I can't see from here.", "Lift me up?", "Hold still."], view: ["I can see the footer!", "Nice view up here.", "So that's the whole page."], heavy: ["You're heavy.", "Hurry up!", "My head!"], wet: ["Never again.", "Worth it.", "Told you."] },
   envy: ["Me too!", "Press me next!", "What about me?", "My turn!"],
+  held: { up: ["Whoa!", "Put me down!", "I can fly!", "Careful, I'm wet."], watch: ["Me next!", "Where are you taking it?", "Don't drop it!"], wet: ["Thanks a lot.", "Really?", "Splash."] },
+  pet: { hello: ["You again! Hi!", "My favourite human is back.", "I knew you'd come back."], pressed: ["I missed that.", "Best human.", "Don't tell the others."] },
+  read: { answer: ["Good question, that one.", "I had that question too.", "Read it. It's short."], select: ["Good part.", "That line? Nice pick.", "Read it twice. I did."] },
+  lost: { look: ["Anyone seen the page?", "It was right here.", "Spread out. Find it."], dive: ["I'll check below.", "Maybe it sank."], none: ["Nothing down there.", "Just water.", "Not there either."], on: ["Keep looking.", "Try the home page.", "It's gone, isn't it."] },
+  fish: { bait: ["Ooh. What's this?", "Is that a snack?"], bite: ["A bite!", "Got one!"], caught: ["That's not a fish.", "Oh. It's you.", "Too small. No, wait."], sulk: ["Rude.", "I was swimming.", "Throw me back."] },
+  tug: { start: ["Pull!", "Heave!", "Don't let go."], won: ["Too easy.", "Hold the rope next time.", "Short arms. Strong arms."], lost: ["You let go first.", "My feet slipped.", "Rematch."] },
   wake: { call: ["Wake up!", "Hey. Hey. Hey!", "The human is back!"], up: ["I'm up! I'm up!", "Five more minutes...", "I wasn't sleeping."], hush: ["Shh.", "Some of us are sleeping.", "Roll over."] },
+};
+/** A moment where a sprite may speak in its own words instead of the line they all share. */
+export type Saying = "won" | "lost" | "pressed" | "prank" | "tease" | "first" | "last" | "wet";
+/**
+ * Who each of them is. The numbers only tilt the odds, every sprite still plays every game and holds every conversation:
+ * `bold` is how readily it starts something, `speed` how fast it swims, `chat` how often it speaks first, `pull` how
+ * hard it pulls a rope. `says` holds its own lines.
+ * Aqua, the guide, is the one with ideas; Claude is polite even when it wins; Codex is quick and brief; the shell says
+ * little and is stronger than it looks.
+ */
+export const persona: Record<string, { bold: number; speed: number; chat: number; pull: number; says: Partial<Record<Saying, string[]>> }> = {
+  aqua: { bold: 3, speed: 1, chat: 1.6, pull: 1, says: { won: ["Ta-da!", "And that's how it's done."], pressed: ["Follow me!", "This way!", "Hehe."], first: ["First! As a guide should be."], last: ["I was showing you the way."] } },
+  claude: { bold: 1, speed: 1, chat: 1.2, pull: 1, says: { won: ["Sorry! Good fight.", "Are you okay?"], lost: ["Well played.", "Good one, honestly."], pressed: ["Oh! Hello.", "Happy to help.", "Of course."], prank: ["Sorry. Couldn't resist."], tease: ["Sorry!", "Too much?"], first: ["After you. Oh. I'm first."], last: ["Well swum."], wet: ["That's fair.", "I'll allow it."] } },
+  codex: { bold: 1.4, speed: 1.3, chat: 1, pull: 0.9, says: { won: ["Done. Next.", "Shipped."], lost: ["Rerun."], pressed: ["Typing...", "One sec.", "Fast, but busy."], first: ["Shipped.", "Fast, as promised."], last: ["Network lag.", "That never happens."], wet: ["Not in the spec."] } },
+  shell: { bold: 0.6, speed: 0.9, chat: 0.35, pull: 1.8, says: { won: ["Hm.", "Done."], lost: ["...", "Fine."], pressed: ["...", "Hm.", "Busy."], prank: ["Hm."], tease: ["Heh."], first: ["Done."], last: ["Fine."], wet: ["Wet.", "..."] } },
 };

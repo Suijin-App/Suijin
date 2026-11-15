@@ -8,7 +8,7 @@ import SwiftTerm
 /// - Input (keys, input-method text, approved pastes) leaves through `onInput`. Key handling and `NSTextInputClient`
 ///   are SwiftTerm's own, untouched, so input methods (Vietnamese Telex/VNI, Japanese, …) compose as usual.
 /// - `paste(_:)` runs the paste guard first: text that needs confirmation goes to `onPasteReview`, and nothing is sent
-///   until the app answers.
+///   until the app answers. A clipboard holding an image and no text is saved as a file and its path is pasted.
 /// - A local key monitor applies `TerminalKeyRouter` to ⌘ shortcuts while this view is the key window's first
 ///   responder; tab and split routes go to `onKeyRoute`.
 /// - The visible screen is exposed to accessibility (and UI tests) as the view's value; the app sets the label.
@@ -33,6 +33,9 @@ open class SuijinTerminalView: TerminalView {
     public var pasteGuardPolicy: PasteGuardPolicy = .always
     /// Whether dropped files are pasted as paths now (see `TerminalFileDrop`); nil takes every file drop.
     public var acceptsFileDrop: (() -> Bool)?
+    /// Where a pasted or dropped image that is not a file yet is saved, so its path can be pasted like a dropped
+    /// file's. Nil (the default) leaves such images alone: only text is pasted and only files are dropped.
+    public var imageStore: TerminalImageStore?
 
     /// Smaller than any terminal anyone uses. A view in a container that is not laid out yet, or one collapsing during
     /// a tab switch, is briefly this small; resizing the emulator to it reflows every line into a few columns, which
@@ -179,6 +182,7 @@ open class SuijinTerminalView: TerminalView {
         linkMenuProvider = nil
         linkResolver = nil
         acceptsFileDrop = nil
+        imageStore = nil
         pendingLinkOpen?.cancel()
         pendingLinkOpen = nil
     }
@@ -445,8 +449,29 @@ open class SuijinTerminalView: TerminalView {
 
     // MARK: Paste guard
 
+    /// What a paste takes from a pasteboard: its text when it has any (text copied in a browser often comes with an
+    /// image of itself), otherwise its image, as PNG data.
+    enum PasteContent: Equatable {
+        case text(String)
+        case image(Data)
+        case nothing
+    }
+
+    static func pasteContent(on pasteboard: NSPasteboard) -> PasteContent {
+        if let text = pasteboard.string(forType: .string), !text.isEmpty { return .text(text) }
+        if let png = TerminalImageStore.png(on: pasteboard) { return .image(png) }
+        return .nothing
+    }
+
     open override func paste(_ sender: Any) {
-        guard let text = NSPasteboard.general.string(forType: .string), !text.isEmpty else { return }
+        let text: String
+        switch Self.pasteContent(on: .general) {
+        case .text(let string): text = string
+        case .image(let png):
+            pasteImage(png)
+            return
+        case .nothing: return
+        }
         let bracketed = isBracketedPasteMode
         guard let onPasteReview, let review = PasteGuard.review(text, bracketedPaste: bracketed, policy: pasteGuardPolicy) else {
             super.paste(sender)
@@ -456,6 +481,19 @@ open class SuijinTerminalView: TerminalView {
             guard let self, let action else { return }
             self.insert(review.text, action: action)
         }
+    }
+
+    /// Saves image data as a file and pastes its path, as a drop of that file would. Without an image store nothing
+    /// happens; when the file cannot be written nothing is pasted and the system alert sound plays. Returns the file.
+    @discardableResult
+    func pasteImage(_ png: Data) -> URL? {
+        guard let imageStore else { return nil }
+        guard let file = try? imageStore.save(png: png) else {
+            NSSound.beep()
+            return nil
+        }
+        pasteFilePaths([file])
+        return file
     }
 
     /// Sends text the user approved (or a command the app inserts) as `action` asks. Returns `false` when it cannot

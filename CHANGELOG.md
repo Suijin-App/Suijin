@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Screenshots in a terminal.** A screenshot on the clipboard (⌃⇧⌘4) pastes with ⌘V, and the screenshot tool's
+  floating thumbnail, or an image dragged out of another app, can be dropped on a terminal. Suijin saves the image
+  as a PNG in its caches folder and pastes the file's path, as it does for a file dropped from Finder, so Claude Code
+  and Codex attach it. Saved images are removed after a week.
 - **Tabs by number.** ⌘1 to ⌘8 select the tab at that position in the tab bar and ⌘9 selects the last tab, also
   while a terminal has the keyboard. Settings › Shortcuts lists them.
 

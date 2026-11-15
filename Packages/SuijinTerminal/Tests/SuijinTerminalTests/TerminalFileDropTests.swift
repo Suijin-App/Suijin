@@ -65,10 +65,14 @@ struct TerminalFileDropTests {
     }
 
     @MainActor
-    @Test("the terminal registers for file URLs only")
+    @Test("the terminal registers for files, promised files and image data, and for nothing a pane or tab drag carries")
     func registeredTypes() {
         let (view, _) = makeView()
-        #expect(view.registeredDraggedTypes == [.fileURL])
+        let types = Set(view.registeredDraggedTypes)
+        #expect(types.isSuperset(of: [.fileURL, .png, .tiff]))
+        #expect(types.isSuperset(of: NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) }))
+        #expect(!types.contains(.string))
+        #expect(!types.contains(NSPasteboard.PasteboardType("com.tekmium.suijin.pane")))
     }
 
     @MainActor

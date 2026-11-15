@@ -137,6 +137,14 @@ enum ShortcutCatalog {
     static let toggleInspector = AppShortcut(id: "toggleInspector", title: "Show or Hide Inspector",
                                              detail: "Browse the files of the workspace or worktree.",
                                              group: .files, shortcut: KeyboardShortcut("i", modifiers: [.command, .option]))
+    static let saveFile = AppShortcut(id: "saveFile", title: "Save", detail: "Save the Markdown file you are editing.",
+                                      group: .files, shortcut: KeyboardShortcut("s"))
+    static let toggleMarkdownEditing = AppShortcut(id: "toggleMarkdownEditing", title: "Edit or Read Markdown",
+                                                   detail: "Switch a Markdown tab between its editor and its reader.",
+                                                   group: .files, shortcut: KeyboardShortcut("e", modifiers: [.command, .shift]))
+    static let addComment = AppShortcut(id: "addComment", title: "Add Comment",
+                                        detail: "Comment on the text selected in the Markdown editor, for an agent.",
+                                        group: .files, shortcut: KeyboardShortcut("m", modifiers: [.command, .shift]))
     // The three zoom entries have two meanings, by where the keyboard is: a terminal changes its own text size, the
     // file viewer zooms its image.
     static let viewerZoomIn = AppShortcut(id: "viewerZoomIn", title: "Zoom In",
@@ -179,7 +187,7 @@ enum ShortcutCatalog {
         focusPaneLeft, focusPaneRight, focusPaneAbove, focusPaneBelow,
         movePaneLeft, movePaneRight, movePaneUp, movePaneDown,
         copy, paste, selectAll, find,
-        toggleInspector, viewerZoomIn, viewerZoomOut, viewerFit,
+        toggleInspector, saveFile, toggleMarkdownEditing, addComment, viewerZoomIn, viewerZoomOut, viewerFit,
         commit, saveDiffNote,
         settings, keyboardShortcuts, closeSettings, designGallery,
     ]

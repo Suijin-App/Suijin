@@ -7,6 +7,15 @@
     "A split tab with Claude, Codex and two shells side by side" : {
 
     },
+    "Add Comment" : {
+
+    },
+    "Agent replied: %@" : {
+
+    },
+    "Agents can mark comments as fixed once the running sessions have ended and Suijin’s helper has updated." : {
+
+    },
     "any other agent" : {
 
     },
@@ -19,13 +28,82 @@
     "Claude Code, Codex, a shell and any other agent" : {
 
     },
+    "Comment" : {
+
+    },
+    "Comment Actions" : {
+
+    },
+    "Comment on the selected text for an agent (%@)" : {
+
+    },
+    "Comment on the text selected in the Markdown editor, for an agent." : {
+
+    },
+    "Commented text: %@" : {
+
+    },
+    "Comments" : {
+
+    },
+    "Comments, %lld not done" : {
+
+    },
     "Community" : {
+
+    },
+    "Copy Comments" : {
+
+    },
+    "Could not delete the comment" : {
+
+    },
+    "Could not load the comments" : {
+
+    },
+    "Could not mark the comments as sent" : {
+
+    },
+    "Could not save the comment" : {
+
+    },
+    "Could not send the comments" : {
+
+    },
+    "Couldn’t Save “%@”" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Detached" : {
+
+    },
+    "Don’t Save" : {
 
     },
     "drag a pane by its header\nto move it" : {
 
     },
+    "Edit" : {
+
+    },
+    "Edit Markdown" : {
+
+    },
+    "Edit Note" : {
+
+    },
+    "Edit or Read Markdown" : {
+
+    },
+    "Edited" : {
+
+    },
     "every agent in a\nworktree of its own" : {
+
+    },
+    "Fixed" : {
 
     },
     "For questions about privacy or security, contact the Suijin Authors through the details in Settings → About." : {
@@ -34,13 +112,112 @@
     "For questions about these terms, contact the Suijin Authors through the details in Settings → About." : {
 
     },
+    "In Edit, select some text and choose Comment to leave a note for an agent." : {
+
+    },
+    "Keep editing; saving will ask before it replaces the version on disk" : {
+
+    },
+    "Keep My Changes" : {
+
+    },
+    "Line %lld" : {
+
+    },
+    "Lines %lld–%lld" : {
+
+    },
     "Links" : {
+
+    },
+    "Markdown Mode" : {
+
+    },
+    "No Comments" : {
+
+    },
+    "Not Fixed" : {
+
+    },
+    "Note" : {
+
+    },
+    "Note for the agent (optional)" : {
+
+    },
+    "Note: %@" : {
+
+    },
+    "OK" : {
+
+    },
+    "on “%@”" : {
+
+    },
+    "Overwrite" : {
+
+    },
+    "Overwrite the Newer Version on Disk?" : {
+
+    },
+    "Read" : {
+
+    },
+    "Read Markdown" : {
+
+    },
+    "Read the rendered file, or edit it in place" : {
+
+    },
+    "Reopen" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save All" : {
+
+    },
+    "Save changes to %lld Markdown files before quitting?" : {
+
+    },
+    "Save changes to “%@” before quitting?" : {
+
+    },
+    "Save changes to “%@”?" : {
+
+    },
+    "Save the Markdown file you are editing." : {
+
+    },
+    "Send ^[%lld Comment](inflect: true) to %@" : {
+
+    },
+    "Send Again" : {
+
+    },
+    "Send Automatically" : {
+
+    },
+    "Send comments, %lld not sent" : {
+
+    },
+    "Send the comments that were not sent yet to an agent, or copy them" : {
+
+    },
+    "Sent" : {
 
     },
     "Settings, Accounts, with several accounts for each agent" : {
 
     },
     "several accounts\nfor each agent" : {
+
+    },
+    "Show or hide the comments on this file" : {
+
+    },
+    "Show the version on disk and drop your changes" : {
 
     },
     "Source Code" : {
@@ -52,13 +229,25 @@
     "Suijin is open-source software under the Apache License 2.0. That license sets out how you may use, copy, change and redistribute it, and it comes first where these terms say something different." : {
 
     },
+    "Switch a Markdown tab between its editor and its reader." : {
+
+    },
     "The license covers the code. It does not grant the use of the Suijin name or icon, which belong to the Suijin Authors." : {
 
     },
     "The Suijin Authors are not responsible for what an agent does in your repositories, on your Mac or in your accounts." : {
 
     },
+    "The text these comments were on is no longer in the file." : {
+
+    },
     "These terms apply to your use of Suijin, a Mac app made by the Suijin Authors. Suijin is developed by vuvv-dev, an independent developer. By installing or using Suijin, you agree to them. If you do not agree, do not use Suijin." : {
+
+    },
+    "This file changed on disk while you were editing it." : {
+
+    },
+    "This file no longer exists on disk. Save to create it again." : {
 
     },
     "Using several accounts, and switching between them at a usage limit, may be against Anthropic's terms. You are responsible for how you use your accounts." : {
@@ -73,6 +262,9 @@
     "what the agent changed,\nline by line" : {
 
     },
+    "Your changes are lost if you don’t save them." : {
+
+    },
     "“%@” (#%lld) is already open for this branch. New commits you push appear in it." : {
       "comment" : "A paragraph describing a GitHub pull request that already exists for the current branch. The first argument is the pull request title. The second argument is the pull request number.",
       "isCommentAutoGenerated" : true,
@@ -84,6 +276,9 @@
           }
         }
       }
+    },
+    "“%@” changed on disk after you chose to keep your changes. Saving replaces that version with yours." : {
+
     },
     "“%@” contains %lld git repositories" : {
       "comment" : "The title of the alert shown when choosing between adding a folder and its git repositories.",
@@ -572,7 +767,7 @@
       "comment" : "A description of an error that occurs when a user tries to create a branch with a name that already exists.",
       "isCommentAutoGenerated" : true
     },
-    "A database (`suijin.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes you write, your settings and the counters behind the Stats page." : {
+    "A database (`suijin.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes and Markdown comments you write (with the text they quote and the replies agents give), your settings and the counters behind the Stats page." : {
 
     },
     "A home folder for each managed account. Managed Claude sign-ins are kept in the macOS Keychain; managed Codex sign-ins stay in that account's folder, where Codex itself stores them." : {

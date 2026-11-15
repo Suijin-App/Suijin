@@ -1,5 +1,6 @@
 import Foundation
 import SuijinCore
+import SuijinMarkdown
 import Testing
 @testable import Suijin
 

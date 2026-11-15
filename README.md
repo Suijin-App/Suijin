@@ -67,6 +67,10 @@ themselves. You can also build it from source (see [Build from source](#build-fr
 Files open in a tab next to your sessions: code with syntax highlighting, Markdown rendered, images with zoom and pan,
 and video and audio with a player, so you can look at what an agent produced without switching apps.
 
+- Edit a Markdown file in place (⇧⌘E): it stays formatted while you type, and ⌘S saves only what you changed.
+- Select text and leave a comment for an agent (⇧⌘M), send the comments to a running session, and watch each one
+  turn Fixed or Not Fixed as the agent reports it with `suijin comment resolve`.
+
 ![A Markdown file rendered in a tab](docs/screenshots/markdown.png)
 
 ![A video playing in a tab](docs/screenshots/media-video.png)

@@ -153,6 +153,7 @@ private final class SilentClient: NSObject, OrchestrationClientXPC, Sendable {
     func startWorker(_ request: Data) {}
     func stateChanged() {}
     func attention(_ event: Data) {}
+    func commentsResolved(_ results: Data) {}
 }
 
 @Suite("suijin CLI")
@@ -277,6 +278,6 @@ struct CLIParsingTests {
         let cli = SuijinCLI(environment: [:], skillsDirectory: directory, version: "t")
         #expect(cli.run(["skills", "get", "orchestration"]) == CLIResult(stdout: "# Guide\n"))
         #expect(cli.run(["skills", "get", "other"]).exitCode == SuijinCLI.Exit.usage)
-        #expect(cli.run(["--version"]).stdout == "suijin t (protocol 3)\n")
+        #expect(cli.run(["--version"]).stdout == "suijin t (protocol 4)\n")
     }
 }

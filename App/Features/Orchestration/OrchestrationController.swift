@@ -22,13 +22,24 @@ final class OrchestrationController {
     /// reconnect): the task running it keeps this controller alive past its model, and reading the unowned
     /// reference then would stop the app.
     @ObservationIgnored private weak var owner: AppModel?
+    /// The model while it lives, for the comment calls in `CommentResolution.swift`.
+    var appModel: AppModel? { owner }
     private(set) var snapshot = OrchestrationSnapshot()
     /// Why orchestration is unavailable (an older terminal host, no host at all), nil while connected or connecting.
     private(set) var problem: String?
     private(set) var isConnected = false
 
+    /// The protocol version of the helper this controller is connected to. Agents can answer Markdown comments from
+    /// `PTYHostConstants.commentsProtocolVersion` on; an older helper stays until its sessions end.
+    private(set) var hostProtocolVersion: Int?
+
     @ObservationIgnored private var connection: NSXPCConnection?
-    @ObservationIgnored private var broker: (any OrchestrationHostXPC)?
+    /// The broker's proxy; also used by the comment calls in `CommentResolution.swift`.
+    @ObservationIgnored var broker: (any OrchestrationHostXPC)?
+    #if DEBUG
+    /// Screenshot tests show the Comments column as it looks with a current helper, without a broker.
+    @ObservationIgnored var assumesCommentSupportForPreview = false
+    #endif
     @ObservationIgnored private var refreshScheduled = false
     @ObservationIgnored private var retryDelay: Duration = .seconds(2)
     @ObservationIgnored private var started = false
@@ -64,14 +75,15 @@ final class OrchestrationController {
     private func connect() async {
         guard started, connection == nil, let model = owner else { return }
         do {
-            let endpoint = try await Self.fetchEndpoint(dataRoot: model.dataRoot.path)
+            let (endpoint, hostVersion) = try await Self.fetchEndpoint(dataRoot: model.dataRoot.path)
             let connection = NSXPCConnection(listenerEndpoint: endpoint)
             connection.remoteObjectInterface = OrchestrationXPCInterfaces.host()
             connection.exportedInterface = OrchestrationXPCInterfaces.client()
             connection.exportedObject = OrchestrationClientReceiver(
                 startWorker: { [weak self] request in Task { @MainActor in await self?.startWorker(request) } },
                 stateChanged: { [weak self] in Task { @MainActor in self?.scheduleRefresh() } },
-                attention: { [weak self] event in Task { @MainActor in self?.notify(event) } }
+                attention: { [weak self] event in Task { @MainActor in self?.notify(event) } },
+                commentsResolved: { [weak self] results in Task { @MainActor in await self?.applyCommentResults(results) } }
             )
             let identity = ObjectIdentifier(connection)
             // XPC calls these handlers on its own queue; `@Sendable` keeps them from inheriting the controller's
@@ -92,10 +104,12 @@ final class OrchestrationController {
             broker = connection.remoteObjectProxyWithErrorHandler { @Sendable error in
                 logger.debug("broker message failed: \(error.localizedDescription, privacy: .public)")
             } as? any OrchestrationHostXPC
+            hostProtocolVersion = hostVersion
             isConnected = true
             problem = nil
             retryDelay = .seconds(2)
             await refresh()
+            await syncComments()
         } catch {
             connection?.invalidate()
             connection = nil
@@ -127,7 +141,7 @@ final class OrchestrationController {
     }
 
     /// A short-lived connection to the helper's Mach service for the broker endpoint (protocol 3).
-    private static func fetchEndpoint(dataRoot: String) async throws -> NSXPCListenerEndpoint {
+    private static func fetchEndpoint(dataRoot: String) async throws -> (NSXPCListenerEndpoint, Int) {
         let host = NSXPCConnection(machServiceName: PTYHostConstants.machServiceName, options: [])
         host.remoteObjectInterface = PTYXPCInterfaces.host()
         host.resume()
@@ -140,7 +154,7 @@ final class OrchestrationController {
             proxy.orchestrationEndpoint(dataRoot: dataRoot) { finish(($0, $1)) }
         }
         guard let endpoint else { throw OrchestrationLinkError.unavailable(error ?? "no endpoint") }
-        return endpoint
+        return (endpoint, version)
     }
 
     /// One request with a reply, a connection error or a timeout, whichever comes first.
@@ -341,12 +355,20 @@ private final class OrchestrationClientReceiver: NSObject, OrchestrationClientXP
     private let onStartWorker: @Sendable (WorkerLaunchRequest) -> Void
     private let onStateChanged: @Sendable () -> Void
     private let onAttention: @Sendable (OrchestrationAttention) -> Void
+    private let onCommentsResolved: @Sendable ([CommentResult]) -> Void
 
     init(startWorker: @escaping @Sendable (WorkerLaunchRequest) -> Void, stateChanged: @escaping @Sendable () -> Void,
-         attention: @escaping @Sendable (OrchestrationAttention) -> Void) {
+         attention: @escaping @Sendable (OrchestrationAttention) -> Void,
+         commentsResolved: @escaping @Sendable ([CommentResult]) -> Void) {
         onStartWorker = startWorker
         onStateChanged = stateChanged
         onAttention = attention
+        onCommentsResolved = commentsResolved
+    }
+
+    func commentsResolved(_ results: Data) {
+        guard let decoded = try? OrchestrationCoding.decoder.decode([CommentResult].self, from: results) else { return }
+        onCommentsResolved(decoded)
     }
 
     func startWorker(_ request: Data) {

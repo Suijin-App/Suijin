@@ -91,6 +91,13 @@ final class AppModel {
     var openFiles: [SessionContext: [String]] = [:]
     /// Where each open audio or video tab was paused when it was last hidden, in seconds; dropped when it closes.
     @ObservationIgnored var mediaPositions: [MediaPositionKey: Double] = [:]
+    /// The editing state of open Markdown tabs (`MarkdownEditSession.swift`), made when a tab first enters Edit and
+    /// kept until the tab closes.
+    var markdownSessions: [FileTabKey: MarkdownEditSession] = [:]
+    /// The comments of open Markdown tabs (`MarkdownCommentsBook.swift`), kept until the tab closes.
+    var markdownBooks: [FileTabKey: MarkdownCommentsBook] = [:]
+    /// A file tab the user asked to close while it has unsaved changes; answered in the main window.
+    var pendingFileClose: FileTabKey?
     /// The order the user dragged each context's session tabs into (`TabOrder.swift`); sessions not listed follow in
     /// the order they were created.
     var sessionOrder: [SessionContext: [UUID]] = AppModel.savedSessionOrder()

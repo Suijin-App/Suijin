@@ -1,6 +1,7 @@
 import AppKit
 import MarkdownUI
 import SuijinDiff
+import SuijinMarkdown
 import SuijinUI
 import PDFKit
 import SwiftUI
@@ -18,6 +19,12 @@ struct FileViewer: View {
     @State private var code = CodeViewController()
     @State private var zoom = ImageZoomController()
     @State private var media = MediaPlaybackController()
+    /// Width of the tab, to decide between the Comments column and its popover.
+    @State private var width: CGFloat = 900
+    @State private var showsCommentsPopover = false
+
+    /// Below this width the Comments column would squeeze the text, so it opens as a popover instead.
+    static let commentsColumnMinimumTabWidth: CGFloat = 640
 
     enum Content {
         case loading
@@ -51,6 +58,52 @@ struct FileViewer: View {
     private var url: URL { URL(fileURLWithPath: path) }
     private var content: Content { file.content }
 
+    /// The editing state of this tab, once it was switched to Edit.
+    private var session: MarkdownEditSession? { model.markdownSessions[FileTabKey(context: context, path: path)] }
+
+    /// The comments of this tab, for Markdown files.
+    private var book: MarkdownCommentsBook? { model.markdownBooks[FileTabKey(context: context, path: path)] }
+
+    private var hasRoomForCommentsColumn: Bool { width >= Self.commentsColumnMinimumTabWidth }
+
+    /// The tab's content with the Comments column beside it, when the column is shown and fits. The divider between
+    /// them drags, within the column's width range.
+    @ViewBuilder
+    private func withComments<V: View>(@ViewBuilder _ content: () -> V) -> some View {
+        if let book, book.isPanelShown, hasRoomForCommentsColumn {
+            HSplitView {
+                content().frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+                MarkdownCommentsPanel(book: book)
+                    .frame(minWidth: 260, idealWidth: 280, maxWidth: 320, maxHeight: .infinity)
+            }
+        } else {
+            content()
+        }
+    }
+
+    private var isMarkdownContent: Bool {
+        if case .markdown = content { return true }
+        return false
+    }
+
+    private var isMissing: Bool {
+        if case .missing = content { return true }
+        return false
+    }
+
+    /// Read or Edit; choosing Edit makes the editing state on first use.
+    private var mode: Binding<MarkdownEditSession.Mode> {
+        Binding {
+            session?.mode ?? .read
+        } set: { mode in
+            if mode == .edit {
+                model.markdownSession(for: path, in: context, create: true)?.mode = .edit
+            } else {
+                session?.mode = .read
+            }
+        }
+    }
+
     /// The path relative to the context's folder when it lies inside it, else with `~` for the home folder.
     private var displayPath: String {
         if let root = model.directory(of: context)?.standardizedFileURL.path, path.hasPrefix(root + "/") {
@@ -63,7 +116,11 @@ struct FileViewer: View {
         VStack(spacing: 0) {
             header
             Divider()
+            withComments {
             Group {
+                if let session, session.mode == .edit {
+                    MarkdownEditorPane(session: session)
+                } else {
                 switch content {
                 case .loading, .mediaFile:
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -84,8 +141,9 @@ struct FileViewer: View {
                         Button("Open in Default App") { NSWorkspace.shared.open(url) }.glassButtonStyle()
                         Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }.glassButtonStyle()
                     }
-                case .markdown(let text):
-                    let document = MarkdownDocument(text)
+                case .markdown(let diskText):
+                    // Unsaved edits show in the reader too.
+                    let document = MarkdownDocument(session.map { $0.textRevision >= 0 ? $0.text : diskText } ?? diskText)
                     ScrollView {
                         VStack(alignment: .leading, spacing: SuijinSpacing.l) {
                             if !document.frontMatter.isEmpty {
@@ -133,15 +191,40 @@ struct FileViewer: View {
                     } description: {
                         Text("“\(url.lastPathComponent)” no longer exists at \(displayPath).")
                     } actions: {
-                        Button("Close Tab") { model.closeFile(path, in: context) }.glassButtonStyle()
+                        Button("Close Tab") { model.requestCloseFile(path, in: context) }.glassButtonStyle()
                     }
+                }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        // The watcher saw the file change: the editing state decides between its own save, a reload and a conflict.
+        // Without an editor the comments look for their text in the new version themselves.
+        .onChange(of: file.revision) {
+            if let session {
+                session.diskMayHaveChanged()
+            } else if let book, let text = book.currentText() {
+                book.textReplaced(text)
+            }
+        }
+        .onChange(of: isMissing) { session?.diskMayHaveChanged() }
+        .alert("Couldn’t Save “\(url.lastPathComponent)”", isPresented: Binding(get: { session?.saveError != nil }, set: { if !$0 { session?.saveError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(verbatim: session?.saveError ?? "")
+        }
+        .alert("Overwrite the Newer Version on Disk?", isPresented: Binding(get: { session?.isConfirmingOverwrite == true }, set: { if !$0 { session?.isConfirmingOverwrite = false } })) {
+            Button("Overwrite", role: .destructive) { session?.save(overwriting: true) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("“\(url.lastPathComponent)” changed on disk after you chose to keep your changes. Saving replaces that version with yours.")
         }
         .onChange(of: model.fileLineReveal?.request, initial: true) { revealPendingLine() }
         .onChange(of: isCode) { revealPendingLine() }
         .task(id: path) {
+            if Self.isMarkdown(path) { model.openMarkdownComments(for: path, in: context) }
             await file.start()
             // Follow the file until the tab closes or another tab is shown.
             while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }
@@ -178,7 +261,48 @@ struct FileViewer: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
+            if session?.isDirty == true {
+                Text("Edited")
+                    .font(.callout)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize()
+            }
             Spacer(minLength: SuijinSpacing.s)
+            if isMarkdownContent || session != nil {
+                Picker("Markdown Mode", selection: mode) {
+                    Text("Read").tag(MarkdownEditSession.Mode.read)
+                    Text("Edit").tag(MarkdownEditSession.Mode.edit)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .help(Text("Read the rendered file, or edit it in place"))
+            }
+            if let book {
+                Button {
+                    if hasRoomForCommentsColumn {
+                        book.panelPreference = !book.isPanelShown
+                    } else {
+                        showsCommentsPopover.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: book.comments.isEmpty ? "text.bubble" : "text.bubble.fill")
+                        if book.unfinishedCount > 0 {
+                            Text(verbatim: "\(book.unfinishedCount)")
+                                .font(.caption)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+                .help(Text("Show or hide the comments on this file"))
+                .accessibilityLabel(Text("Comments, \(book.unfinishedCount) not done"))
+                .popover(isPresented: $showsCommentsPopover, arrowEdge: .bottom) {
+                    MarkdownCommentsPanel(book: book)
+                        .frame(width: 300, height: 420)
+                        .environment(model)
+                }
+            }
             headerControls
             Button { NSWorkspace.shared.activateFileViewerSelecting([url]) } label: {
                 Label("Show in Finder", systemImage: "folder")
@@ -249,11 +373,16 @@ struct FileViewer: View {
         return await MediaProbe.content(for: url)
     }
 
+    /// Whether the path names a Markdown file, by its extension.
+    nonisolated static func isMarkdown(_ path: String) -> Bool {
+        ["md", "markdown", "mdown", "mkd"].contains((path as NSString).pathExtension.lowercased())
+    }
+
     nonisolated static func read(_ url: URL) -> Content {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else { return .missing }
         let size = (attributes[.size] as? Int) ?? 0
         let type = UTType(filenameExtension: url.pathExtension.lowercased())
-        if ["md", "markdown", "mdown", "mkd"].contains(url.pathExtension.lowercased()) {
+        if isMarkdown(url.path) {
             guard size <= maximumTextSize, let text = try? String(contentsOf: url, encoding: .utf8) else { return .unsupported }
             return .markdown(text)
         }
@@ -269,28 +398,46 @@ struct FileViewer: View {
     }
 }
 
-/// A Markdown file split into its YAML front matter (`---` … `---` at the top, as plans and docs use) and its body.
-/// The front matter is shown as fields; Markdown would otherwise read it as a setext heading.
-struct MarkdownDocument {
-    let frontMatter: [(key: String, value: String)]
-    let body: String
+/// The editor of a Markdown tab, under a bar that says what happened to the file on disk while it had unsaved
+/// changes.
+struct MarkdownEditorPane: View {
+    let session: MarkdownEditSession
 
-    init(_ text: String) {
-        let lines = text.components(separatedBy: "\n")
-        guard lines.first?.trimmingCharacters(in: .whitespaces) == "---",
-              let end = lines.dropFirst().firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "---" }) else {
-            frontMatter = []
-            body = text
-            return
+    var body: some View {
+        VStack(spacing: 0) {
+            if let conflict = session.conflict {
+                HStack(spacing: SuijinSpacing.m) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(SuijinColor.warning)
+                        .accessibilityHidden(true)
+                    Group {
+                        switch conflict {
+                        case .changed: Text("This file changed on disk while you were editing it.")
+                        case .deleted: Text("This file no longer exists on disk. Save to create it again.")
+                        }
+                    }
+                    .font(.callout)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: SuijinSpacing.s)
+                    switch conflict {
+                    case .changed:
+                        Button("Reload") { session.reload() }
+                            .help(Text("Show the version on disk and drop your changes"))
+                        Button("Keep My Changes") { session.keepOwnChanges() }
+                            .help(Text("Keep editing; saving will ask before it replaces the version on disk"))
+                    case .deleted:
+                        Button("Save") { session.save() }
+                    }
+                }
+                .padding(.horizontal, SuijinSpacing.l)
+                .padding(.vertical, SuijinSpacing.s)
+                .background(SuijinColor.warning.opacity(0.12))
+                .accessibilityElement(children: .contain)
+                Divider()
+            }
+            MarkdownEditorView(session: session)
         }
-        frontMatter = lines[1..<end].compactMap { line in
-            guard let colon = line.firstIndex(of: ":"), !line.hasPrefix(" ") else { return nil }
-            let key = line[..<colon].trimmingCharacters(in: .whitespaces)
-            let value = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-            return key.isEmpty ? nil : (key, value)
-        }
-        body = lines[(end + 1)...].joined(separator: "\n")
     }
 }
 

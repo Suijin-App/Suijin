@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Edit Markdown in place.** A Markdown tab has an Edit mode (⇧⌘E) next to Read: headings, bold, lists, task
+  boxes, quotes and links show formatted as you type, and the Markdown punctuation appears only on the line you are
+  editing. ⌘S saves exactly what you typed, without reformatting the rest of the file. When an agent changes the
+  file while you have unsaved edits, Suijin asks before either version is lost. Tables and code blocks show as
+  source in Edit; Read still renders them.
+- **Comments for agents.** In Edit, select some text and choose Comment (⇧⌘M) to leave a note on it. The Comments
+  column lists the notes and sends them to a running Claude Code or Codex session. The agent edits the file and
+  reports each comment with `suijin comment resolve`, and the comment turns Fixed or Not Fixed with the agent's
+  reply; reopen it if you disagree. Comments stay in Suijin's database, never in your file, and follow their text
+  as the file changes.
 - **Screenshots in a terminal.** A screenshot on the clipboard (⌃⇧⌘4) pastes with ⌘V, and the screenshot tool's
   floating thumbnail, or an image dragged out of another app, can be dropped on a terminal. Suijin saves the image
   as a PNG in its caches folder and pastes the file's path, as it does for a file dropped from Finder, so Claude Code

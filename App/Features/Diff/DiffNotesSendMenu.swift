@@ -24,7 +24,7 @@ struct DiffNotesSendMenu: View {
 
     var body: some View {
         let unsent = book.unsentInOrder
-        let sessions = liveSessions
+        let sessions = model.liveSessions(in: context)
         Menu {
             Section {
                 if sessions.isEmpty {
@@ -54,17 +54,6 @@ struct DiffNotesSendMenu: View {
         }
         .help(Text("Send your diff notes to an agent, or copy them"))
         .accessibilityLabel(Text("Notes, \(unsent.count) unsent"))
-    }
-
-    /// Running sessions of this context, agents first.
-    private var liveSessions: [AgentSessionRecord] {
-        model.sessions(in: context)
-            .filter { session in
-                guard model.runtimes.runtime(for: session.id) != nil else { return false }
-                let activity = model.runtimes.activity(of: session)
-                return activity != .exited && activity != .failed
-            }
-            .sorted { ($0.agent == .shell ? 1 : 0, $0.createdAt) < ($1.agent == .shell ? 1 : 0, $1.createdAt) }
     }
 
     private func send(_ notes: [DiffNote], to session: AgentSessionRecord) {

@@ -201,6 +201,9 @@ public struct SuijinCLI: Sendable {
           suijin inbox [--all] [--json]
           suijin whoami [--json]
           suijin skills get orchestration       the full guide
+        Review comments (Markdown files):
+          suijin comment list [--json]          the comments waiting for this session
+          suijin comment resolve <id> (--fixed | --declined) [--reply <text>] [--json]
 
         Start workers, then END YOUR TURN: Suijin types replies and results into your terminal when your turn has
         ended. Never poll or loop waiting. Every command takes --json for a stable machine-readable result.

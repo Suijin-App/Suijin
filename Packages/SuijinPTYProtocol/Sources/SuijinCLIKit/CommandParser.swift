@@ -38,6 +38,8 @@ struct CommandSpec: Sendable {
     /// Flags that take no value.
     let switches: Set<String>
     let required: [String]
+    /// Option key on the wire for the one argument that is not a flag (`comment resolve <id>`); nil when none.
+    var positional: String? = nil
     let usage: String
 
     static let all: [CommandSpec] = [
@@ -66,6 +68,11 @@ struct CommandSpec: Sendable {
                     usage: "suijin inbox [--all] [--limit <n>] [--json]"),
         CommandSpec(words: ["whoami"], wire: "whoami", flags: [:], switches: [], required: [],
                     usage: "suijin whoami [--json]"),
+        CommandSpec(words: ["comment", "list"], wire: "comment.list", flags: [:], switches: [], required: [],
+                    usage: "suijin comment list [--json]"),
+        CommandSpec(words: ["comment", "resolve"], wire: "comment.resolve", flags: ["reply": "reply"],
+                    switches: ["fixed", "declined"], required: [], positional: "id",
+                    usage: "suijin comment resolve <id> (--fixed | --declined) [--reply <text>] [--json]"),
     ]
 
     /// Every spelling an agent may type for a command, for suggestions.
@@ -131,6 +138,10 @@ public struct CommandParser: Sendable {
         while index < args.count {
             let argument = args[index]
             index += 1
+            if let positional = spec.positional, options[positional] == nil, !argument.hasPrefix("-") {
+                options[positional] = argument
+                continue
+            }
             guard argument.hasPrefix("--"), argument.count > 2 else {
                 throw CLIUsageError("Unexpected argument `\(argument)`; values follow a flag.", suggestion: spec.usage)
             }
@@ -178,6 +189,18 @@ public struct CommandParser: Sendable {
         if spec.wire == "done", let status = options["status"],
            !["success", "succeeded", "failed", "failure"].contains(status.lowercased()) {
             throw CLIUsageError("`--status` must be `success` or `failed`.", suggestion: spec.usage)
+        }
+        if spec.wire == "comment.resolve" {
+            guard !(options["id"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw CLIUsageError("Missing the comment id (the `c-…` code in front of the comment).", suggestion: spec.usage)
+            }
+            let fixed = options.removeValue(forKey: "fixed") != nil
+            let declined = options.removeValue(forKey: "declined") != nil
+            guard fixed != declined else {
+                throw CLIUsageError(fixed ? "Use either `--fixed` or `--declined`, not both." : "Missing `--fixed` or `--declined`.",
+                                    suggestion: spec.usage)
+            }
+            options["outcome"] = fixed ? "fixed" : "declined"
         }
         if spec.wire == "inbox", let limit = options["limit"], Int(limit).map({ $0 > 0 }) != true {
             throw CLIUsageError("`--limit` must be a positive number.", suggestion: spec.usage)

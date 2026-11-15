@@ -114,6 +114,7 @@ final class SuijinAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificati
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !isShuttingDown else { return .terminateLater }
+        if let model, !model.confirmQuitWithUnsavedFiles() { return .terminateCancel }
         isShuttingDown = true
         Task { @MainActor in
             await model?.runtimes.prepareForQuit()
@@ -168,6 +169,18 @@ struct SuijinCommands: Commands {
                 model.performCloseCommand()
             }
             .keyboardShortcut(ShortcutCatalog.closeTab.shortcut)
+            Divider()
+            // Both act on the selected Markdown tab only; with a terminal selected they are dimmed, and ⌘S typed
+            // there does nothing to any file.
+            Button("Save") { model.activeMarkdownSession?.save() }
+                .keyboardShortcut(ShortcutCatalog.saveFile.shortcut)
+                .disabled(model.activeMarkdownSession?.canSave != true)
+            Button(model.activeMarkdownSession?.mode == .edit ? "Read Markdown" : "Edit Markdown") { model.toggleMarkdownEditing() }
+                .keyboardShortcut(ShortcutCatalog.toggleMarkdownEditing.shortcut)
+                .disabled(model.activeMarkdownFile == nil)
+            Button("Add Comment") { model.activeMarkdownBook?.beginComment() }
+                .keyboardShortcut(ShortcutCatalog.addComment.shortcut)
+                .disabled(!model.canAddComment)
         }
         CommandGroup(replacing: .help) {
             Button("Welcome to Suijin") {

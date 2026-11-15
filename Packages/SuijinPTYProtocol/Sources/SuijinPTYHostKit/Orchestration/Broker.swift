@@ -16,6 +16,8 @@ public protocol OrchestrationAppLink: AnyObject, Sendable {
     func startWorker(_ request: WorkerLaunchRequest)
     func stateChanged()
     func attention(_ event: OrchestrationAttention)
+    /// Agents answered comments; sent only to an app that called `syncComments`.
+    func commentsResolved(_ results: [CommentResult])
 }
 
 /// The orchestration broker of one data root.
@@ -55,6 +57,8 @@ public final class Broker: @unchecked Sendable {
     private var turns = TurnTracker()
     private var app: (any OrchestrationAppLink)?
     private var appID: UUID?
+    /// The app connection that synced its comments: it understands comment results and receives them.
+    private var commentSyncAppID: UUID?
     private var startReplies: [String: @Sendable (BrokerResponse) -> Void] = [:]
     /// Sessions with a paste typed but Return not yet sent.
     private var submitting: Set<String> = []
@@ -122,6 +126,7 @@ public final class Broker: @unchecked Sendable {
             timer = nil
             app = nil
             appID = nil
+            commentSyncAppID = nil
             let pending = startReplies.values
             startReplies.removeAll()
             for reply in pending { reply(.failure(Self.closedFailure)) }
@@ -133,6 +138,11 @@ public final class Broker: @unchecked Sendable {
 
     public func snapshot() -> OrchestrationSnapshot {
         queue.sync { store.state }
+    }
+
+    /// The comment ledger as stored (tests).
+    func commentRecords() -> [CommentRecord] {
+        queue.sync { store.comments }
     }
 
     /// Runs `body` on the broker queue and waits (tests, and callers that need ordering).
@@ -149,6 +159,13 @@ public final class Broker: @unchecked Sendable {
             self.identity.register(
                 token: token, binding: SessionBinding(hostSessionID: hostSessionID, sessionID: sessionID, agent: agent))
             self.turns.track(sessionID, now: self.now())
+            // A session resumed under the same id owns its comments again: they stay until withdrawn or it ends.
+            self.store.updateComments { records in
+                for index in records.indices
+                where records[index].sessionEnded && CommentLedger.sameSession(records[index].comment.sessionID, sessionID) {
+                    records[index].sessionEnded = false
+                }
+            }
         }
     }
 
@@ -174,11 +191,14 @@ public final class Broker: @unchecked Sendable {
             let queued = self.store.state.dispatches.filter { $0.status == .queued }
             for dispatch in queued { self.sendStartLocked(dispatch) }
             link.stateChanged()
+            // The app synced its comments before saying hello.
+            self.deliverCommentResultsLocked(self.store.comments.filter(\.awaitsDelivery).compactMap(\.result))
         }
     }
 
     public func detachApp(id: UUID) {
         queue.async {
+            if self.commentSyncAppID == id { self.commentSyncAppID = nil }
             guard self.appID == id else { return }
             self.app = nil
             self.appID = nil
@@ -191,6 +211,136 @@ public final class Broker: @unchecked Sendable {
 
     public func workerStartFinished(_ result: WorkerLaunchResult) {
         queue.async { self.workerStartFinishedLocked(result) }
+    }
+
+    // MARK: Review comments
+
+    /// The app pasted `comments` into their sessions. A comment registered again replaces its entry and forgets the
+    /// answer stored for it: it was sent again.
+    public func registerComments(_ comments: [PendingComment]) {
+        queue.async {
+            let incoming = Self.validComments(comments)
+            guard !incoming.isEmpty else { return }
+            let ids = Set(incoming.map(\.id))
+            self.store.updateComments { records in
+                records.removeAll { ids.contains($0.comment.id) }
+                records.append(contentsOf: incoming.map(CommentRecord.init(comment:)))
+            }
+        }
+    }
+
+    /// The user deleted, reopened or edited these comments: they and any answer to them are forgotten.
+    public func withdrawComments(_ ids: [String]) {
+        queue.async {
+            let withdrawn = Set(ids.map { $0.lowercased() })
+            self.store.updateComments { records in records.removeAll { withdrawn.contains($0.comment.id) } }
+        }
+    }
+
+    /// The app's complete list of comments still waiting for an answer, sent by connection `appID` after `hello`.
+    /// Waiting entries the app no longer lists are dropped and missing ones added; answers are kept. That connection
+    /// then receives every answer it has not acknowledged, and new ones as they come.
+    public func syncComments(_ comments: [PendingComment], appID: UUID) {
+        queue.async {
+            guard !self.closed else { return }
+            let listed = Self.validComments(comments)
+            let byID = Dictionary(listed.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+            self.store.updateComments { records in
+                records = records.compactMap { record in
+                    let current = byID[record.comment.id]
+                    if let result = record.result {
+                        // An answer older than the comment the app lists answered an earlier sending of it (the
+                        // user edited and resent it while the link was down): the listed comment waits again.
+                        guard let current, result.resolvedAt < current.createdAt else { return record }
+                        return CommentRecord(comment: current)
+                    }
+                    guard let current else { return nil }
+                    var updated = record
+                    updated.comment = current
+                    return updated
+                }
+                let known = Set(records.map(\.comment.id))
+                for comment in listed where !known.contains(comment.id) {
+                    records.append(CommentRecord(comment: comment))
+                }
+            }
+            self.commentSyncAppID = appID
+            self.deliverCommentResultsLocked(self.store.comments.filter(\.awaitsDelivery).compactMap(\.result))
+        }
+    }
+
+    /// The app applied (or deliberately ignored) these results. The answer is still remembered, so a second
+    /// `resolve` is refused, until the comment is withdrawn or its session has ended.
+    public func commentResultsApplied(_ ids: [String]) {
+        queue.async {
+            let applied = Set(ids.map { $0.lowercased() })
+            self.store.updateComments { records in
+                for index in records.indices where records[index].result != nil && applied.contains(records[index].comment.id) {
+                    records[index].acknowledged = true
+                }
+                records.removeAll { $0.acknowledged && $0.sessionEnded }
+            }
+        }
+    }
+
+    /// Comments with an id and a session, ids lowercased, the last of each id kept.
+    private static func validComments(_ comments: [PendingComment]) -> [PendingComment] {
+        var seen: [String: Int] = [:]
+        var result: [PendingComment] = []
+        for var comment in comments {
+            comment.id = comment.id.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard !comment.id.isEmpty, !comment.sessionID.isEmpty else { continue }
+            if let index = seen[comment.id] {
+                result[index] = comment
+            } else {
+                seen[comment.id] = result.count
+                result.append(comment)
+            }
+        }
+        return result
+    }
+
+    private func deliverCommentResultsLocked(_ results: [CommentResult]) {
+        guard !results.isEmpty, let app, let appID, appID == commentSyncAppID else { return }
+        app.commentsResolved(results)
+    }
+
+    private func commentList(_ caller: SessionBinding) -> BrokerResponse {
+        let waiting = store.comments
+            .filter { $0.result == nil && CommentLedger.sameSession($0.comment.sessionID, caller.sessionID) }
+            .map(\.comment)
+            .sorted { ($0.createdAt, $0.id) < ($1.createdAt, $1.id) }
+        return .success(waiting, text: CommentLedger.listText(waiting))
+    }
+
+    /// `caller` is nil for a token no running Suijin session holds; it gets the same answer as an unknown id.
+    private func commentResolve(_ caller: SessionBinding?, _ options: [String: String]) -> BrokerResponse {
+        let outcome = (options["outcome"] ?? "").lowercased()
+        guard CommentLedger.outcomes.contains(outcome) else {
+            return .failure(BrokerFailure(code: "invalid_outcome", message: "Say whether you fixed the comment or declined it.",
+                                          hint: "suijin comment resolve <id> --fixed --reply \"what you changed\""))
+        }
+        let typed = options["id"] ?? ""
+        guard let caller, let query = CommentLedger.query(typed) else { return .failure(CommentLedger.noSuchComment) }
+        let matches = store.comments.filter {
+            CommentLedger.sameSession($0.comment.sessionID, caller.sessionID) && CommentLedger.compact($0.comment.id).hasPrefix(query)
+        }
+        guard matches.count == 1, let record = matches.first else { return .failure(CommentLedger.noSuchComment) }
+        if let existing = record.result {
+            return .failure(BrokerFailure(code: "already-resolved",
+                                          message: "That comment was already reported as \(existing.outcome).",
+                                          hint: "Nothing to do. The user can reopen it in Suijin if it needs another look."))
+        }
+        let result = CommentResult(id: record.comment.id, sessionID: record.comment.sessionID, outcome: outcome,
+                                   reply: CommentLedger.sanitizeReply(options["reply"]), resolvedAt: now())
+        store.updateComments { records in
+            guard let index = records.firstIndex(where: { $0.comment.id == record.comment.id }) else { return }
+            records[index].result = result
+            records[index].acknowledged = false
+        }
+        Self.logger.info("comment \(record.comment.id, privacy: .public) reported \(outcome, privacy: .public) by \(caller.sessionID, privacy: .public)")
+        deliverCommentResultsLocked([result])
+        return .success(result, text: "Marked \(CommentLedger.displayID(typed)) as \(outcome).")
     }
 
     // MARK: Requests
@@ -209,6 +359,11 @@ public final class Broker: @unchecked Sendable {
             reply(.failure(BrokerFailure(code: "version_mismatch",
                                          message: "This `suijin` speaks request version \(request.version); Suijin's terminal host speaks \(BrokerRequest.currentVersion).",
                                          hint: "Restart the agent from Suijin after updating.")))
+            return
+        }
+        if request.command == "comment.resolve" {
+            // Checked before the caller: a stranger learns no more than a session naming another session's comment.
+            reply(commentResolve(identity.caller(token: request.token), request.options))
             return
         }
         guard let caller = identity.caller(token: request.token) else {
@@ -231,6 +386,7 @@ public final class Broker: @unchecked Sendable {
         case "inbox": reply(inbox(caller, options))
         case "hook.claude": reply(claudeHook(caller, options))
         case "hook.codex": reply(codexHook(caller, options))
+        case "comment.list": reply(commentList(caller))
         default:
             reply(.failure(BrokerFailure(code: "unknown_command", message: "Unknown command `\(request.command)`.",
                                          hint: "Run `suijin help`.")))
@@ -755,6 +911,13 @@ public final class Broker: @unchecked Sendable {
             for index in state.messages.indices
             where state.messages[index].toSessionID == binding.sessionID && state.messages[index].status == .pending {
                 state.messages[index].status = .undeliverable
+            }
+        }
+        // Nobody can answer the session's waiting comments now; answers the app has not applied yet stay for it.
+        store.updateComments { records in
+            records.removeAll { CommentLedger.sameSession($0.comment.sessionID, binding.sessionID) && !$0.awaitsDelivery }
+            for index in records.indices where CommentLedger.sameSession(records[index].comment.sessionID, binding.sessionID) {
+                records[index].sessionEnded = true
             }
         }
         notifyApp()

@@ -54,6 +54,7 @@ struct RootView: View {
         .onAppear { SidebarClickFocus.install(model: model) }
         // Each dialog with a "Don't ask again" box sits on a view of its own, so the boxes stay separate.
         .background { Color.clear.modifier(CloseConfirmationDialog()) }
+        .background { Color.clear.modifier(UnsavedFileCloseDialog()) }
         .sheet(item: Binding(
             get: { model.newWorktreeWorkspaceID.flatMap(model.workspace) },
             set: { model.newWorktreeWorkspaceID = $0?.id }

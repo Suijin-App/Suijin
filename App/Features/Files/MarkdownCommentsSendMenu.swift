@@ -52,7 +52,12 @@ struct MarkdownCommentsSendMenu: View {
             Toggle("Send Automatically", isOn: $sendAutomatically)
         } label: {
             Label {
-                Text(unsent.isEmpty ? "Send" : "Send \(unsent.count)")
+                // Two literals, so each goes through the String Catalog.
+                if unsent.isEmpty {
+                    Text("Send")
+                } else {
+                    Text("Send \(unsent.count)")
+                }
             } icon: {
                 Image(systemName: unsent.isEmpty ? "paperplane" : "paperplane.fill")
             }

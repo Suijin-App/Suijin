@@ -139,6 +139,14 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .nav-links a:hover { color: var(--text); background: var(--accent-soft); }
 .nav-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .nav-links + .nav-actions { margin-left: 0; }
+/* the menu of a narrow header and the sheet it opens under the bar */
+.nav-menu { display: none; }
+.nav-menu svg { width: 18px; height: 18px; }
+.nav-sheet { position: absolute; top: calc(100% + 10px); right: 0; z-index: 2; display: grid; min-width: 210px; padding: 8px; border-radius: 18px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.nav-sheet[hidden] { display: none; }
+.nav-sheet a { padding: 11px 14px; border-radius: 12px; font-size: 16px; font-weight: 500; color: var(--text); text-decoration: none; }
+.nav-sheet a:hover, .nav-sheet a:focus-visible { background: var(--accent-soft); }
 
 .stars { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line);
   font-size: 13.5px; font-weight: 550; text-decoration: none; color: var(--text); background: var(--surface);
@@ -481,7 +489,9 @@ h2 { font-size: clamp(30px, 4.3vw, 50px); letter-spacing: -0.035em; }
 /* The crew: four pixel water sprites that live on the page. --sprite is the side of one pixel. The layer spans the
    document and makes no stacking context, so a post can sit above the content (standing somewhere) or below it
    (swimming in the water of the background). A post is a box whose bottom is the edge its sprite stands on. */
-.crew { position: absolute; left: 0; top: 0; width: 100%; height: 0; pointer-events: none; --sprite: 4px; user-select: none; -webkit-user-select: none; }
+/* The layer is as wide as the page and cuts off what leaves it sideways: a sprite swimming in from beyond the edge, or
+   sent away past it, must not widen the page (a phone would zoom the whole page out). */
+.crew { position: absolute; left: 0; top: 0; width: 100%; height: 0; overflow-x: clip; overflow-y: visible; pointer-events: none; --sprite: 4px; user-select: none; -webkit-user-select: none; }
 .crew-post { position: absolute; z-index: 3; width: calc(18 * var(--sprite)); height: calc(42 * var(--sprite)); visibility: hidden; }
 .crew.alive .crew-post, .crew.still .crew-post.posted { visibility: visible; }
 /* hiding behind a button: whatever sinks below the button's top edge is cut off */
@@ -665,6 +675,7 @@ html[data-theater] { overflow: hidden; }
   .m-scene { grid-template-columns: 200px minmax(0, 1fr); }
   .m-insp, .m-pill.wide, .m-status > :last-child { display: none; }
   .nav-links { display: none; }
+  .nav-menu { display: inline-grid; }
   .nav-actions, .nav-links + .nav-actions { margin-left: auto; }
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card, .card.wide, .card.full { grid-column: span 2; }
@@ -690,6 +701,7 @@ html[data-theater] { overflow: hidden; }
   .stars, .icon-button, .button.small { height: 40px; }
   .icon-button { width: 40px; }
   .nav-inner { gap: 10px; }
+  .nav-actions { gap: 6px; }
   .m-scene { grid-template-columns: minmax(0, 1fr); height: 540px; }
   .m-main > *, .m-main > .m-toolbar, .m-main > .m-status { grid-column: 1 / -1; }
   .m-side, .m-insp, .m-tools, .m-list { display: none; }
@@ -712,4 +724,12 @@ html[data-theater] { overflow: hidden; }
   .ripples circle:nth-child(2) { transform: scale(0.8); }
   .ripples circle:nth-child(3) { transform: scale(1); }
   .ripples circle:nth-child(4) { display: none; }
+}
+
+/* a phone: the star count moves into the menu, as its GitHub entry, to leave room for the menu button */
+@media (max-width: 480px) {
+  .nav-actions .stars { display: none; }
+}
+@media (min-width: 981px) {
+  .nav-sheet { display: none; }
 }

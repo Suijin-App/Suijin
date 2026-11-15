@@ -101,7 +101,14 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       // under a third of a hider stays below the button's edge: the eyes are always above it
       aqua.home = () => page(filmButton.getBoundingClientRect(), 0.84, Math.round(14 * small() * 0.3), true);
       claude.home = () => page(downloadButton.getBoundingClientRect(), 0.16, Math.round(14 * small() * 0.3), true);
-      shell.home = () => { const tab = activeTab(); return tab ? { ...page(tab.getBoundingClientRect(), 0.5), y: tabsRow.getBoundingClientRect().top + 1 + window.scrollY } : null; };
+      // over the selected tab, but never past the ends of the row: on a narrow screen the row scrolls sideways and the
+      // selected tab can lie beyond the edge of the screen, where a sprite would widen the page
+      shell.home = () => {
+        const tab = activeTab(); if (!tab) return null;
+        const row = tabsRow.getBoundingClientRect(), rect = tab.getBoundingClientRect(), half = 7 * pixel;
+        const x = Math.min(Math.max(rect.left + rect.width * 0.5, row.left + half), row.right - half);
+        return { ...page(rect, 0.5), x: x + window.scrollX, y: row.top + 1 + window.scrollY };
+      };
       codex.home = () => { const road = patrol(); if (!road) return null;
         return { x: road.room ? Math.min(Math.max(codex.state === "home" ? feet(codex).x : road.to, road.from), road.to) : road.end, y: road.y, rest: 0 }; };
       hiders.set(aqua, filmButton); hiders.set(claude, downloadButton);

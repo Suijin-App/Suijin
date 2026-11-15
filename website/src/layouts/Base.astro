@@ -120,7 +120,18 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
             )}
             {released ? "Download" : "Get Suijin"}
           </a>
+          <button class="icon-button nav-menu" type="button" data-nav-menu aria-expanded="false" aria-controls="nav-sheet" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
         </div>
+        <nav class="nav-sheet" id="nav-sheet" data-nav-sheet aria-label="Main" hidden>
+          <a href="/#features">Features</a>
+          <a href="/#agents">Agents</a>
+          <a href="/#faq">FAQ</a>
+          <a href="/releases">Release notes</a>
+          <a href="/#community">Community</a>
+          <a href={site.repository} target="_blank" rel="noopener">GitHub</a>
+        </nav>
       </div>
     </header>
 
@@ -188,6 +199,18 @@ const website = { "@context": "https://schema.org", "@type": "WebSite", name: si
         root.dataset.theme = next;
         try { localStorage.setItem("theme", next); } catch {}
       });
+
+      // The menu of a narrow header: the links that do not fit in the bar. It closes on a choice, a press outside or Esc.
+      const menu = document.querySelector<HTMLButtonElement>("[data-nav-menu]");
+      const sheet = document.querySelector<HTMLElement>("[data-nav-sheet]");
+      if (menu && sheet) {
+        const open = (next: boolean) => { sheet.hidden = !next; menu.setAttribute("aria-expanded", String(next)); };
+        menu.addEventListener("click", () => open(sheet.hidden));
+        sheet.addEventListener("click", (event) => { if ((event.target as HTMLElement).closest("a")) open(false); });
+        document.addEventListener("click", (event) => { if (!sheet.hidden && !(event.target as HTMLElement).closest("[data-nav]")) open(false); });
+        document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !sheet.hidden) { open(false); menu.focus(); } });
+        window.addEventListener("resize", () => open(false), { passive: true });
+      }
 
       // The header gathers into a glass droplet once the page has scrolled. Its width is set in pixels for each state
       // so it slides between two lengths, and the two thresholds are apart so a scroll position near the top does

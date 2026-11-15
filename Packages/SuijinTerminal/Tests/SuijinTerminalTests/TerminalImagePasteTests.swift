@@ -141,6 +141,26 @@ struct TerminalImagePasteTests {
         #expect(files().isEmpty)
     }
 
+    @Test("a promised drop pastes the files that arrived, and the drag's image when none did")
+    func promisedDropOutcome() throws {
+        defer { cleanUp() }
+        let (view, sent) = makeView()
+        let arrived = URL(fileURLWithPath: "/tmp/Dropped/Screenshot 1.png")
+        view.finishPromisedDrop([arrived], fallbackImage: png)
+        #expect(sent() == Array("/tmp/Dropped/Screenshot\\ 1.png".utf8))
+        #expect(files().isEmpty)
+
+        let before = sent().count
+        view.finishPromisedDrop([], fallbackImage: png)
+        let saved = try #require(files().first)
+        #expect(try Data(contentsOf: saved) == png)
+        #expect(sent().count > before)
+
+        let afterFallback = sent().count
+        view.finishPromisedDrop([], fallbackImage: nil)
+        #expect(sent().count == afterFallback)
+    }
+
     @Test("image data is refused without an image store, and a pane drag is refused with one")
     func refusedDrops() {
         defer { cleanUp() }

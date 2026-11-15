@@ -94,21 +94,27 @@ extension SuijinTerminalView {
         return (objects as? [URL] ?? []).filter(\.isFileURL)
     }
 
-    /// What a drag offers, in the order it is preferred: files that exist, then files the dragging app promises to
-    /// write, then image data.
+    /// What a drag offers, in the order it is preferred: files the dragging app promises to write, then files that
+    /// exist, then image data.
     enum DropContent {
-        case files([URL])
         case promises([NSFilePromiseReceiver])
+        case files([URL])
         case image
     }
 
     /// The part of a drag this terminal can take; promised files and image data need an image store to be saved in.
+    ///
+    /// A promise comes first because the file URL beside it is not a file the program can open: the screenshot tool's
+    /// floating thumbnail carries a promise together with the URL of a private temporary copy, which a program in a
+    /// terminal is not allowed to read. A drag from Finder carries no promise, so it keeps pasting the file's own path.
     func dropContent(on pasteboard: NSPasteboard) -> DropContent? {
+        if imageStore != nil {
+            let promises = pasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver] ?? []
+            if !promises.isEmpty { return .promises(promises) }
+        }
         let urls = Self.droppedFileURLs(on: pasteboard)
         if !urls.isEmpty { return .files(urls) }
         guard imageStore != nil else { return nil }
-        let promises = pasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver] ?? []
-        if !promises.isEmpty { return .promises(promises) }
         let hasImage = pasteboard.availableType(from: TerminalImageStore.imageTypes) != nil
         return hasImage ? .image : nil
     }
@@ -129,7 +135,8 @@ extension SuijinTerminalView {
         case .files(let urls):
             guard pasteFilePaths(urls) else { return false }
         case .promises(let promises):
-            guard receive(promises) else { return false }
+            // Read now: the drag's pasteboard is gone by the time the promise is kept or broken.
+            guard receive(promises, fallbackImage: TerminalImageStore.png(on: pasteboard)) else { return false }
         case .image:
             guard let png = TerminalImageStore.png(on: pasteboard), pasteImage(png) != nil else { return false }
         }
@@ -147,9 +154,10 @@ extension SuijinTerminalView {
     }
 
     /// Asks the dragging app to write its promised files into a new folder of the image store and pastes their paths
-    /// when all of them have arrived, so a path never names a file that does not exist yet. Nothing is pasted when the
-    /// session ended meanwhile; when no file arrives the system alert sound plays.
-    private func receive(_ promises: [NSFilePromiseReceiver]) -> Bool {
+    /// when all of them have arrived, so a path never names a file that does not exist yet. When no file arrives, the
+    /// image the drag carried (if any) is saved and pasted instead; otherwise the system alert sound plays. Nothing is
+    /// pasted when the session ended meanwhile.
+    private func receive(_ promises: [NSFilePromiseReceiver], fallbackImage: Data?) -> Bool {
         guard let folder = try? imageStore?.makeDropFolder() else {
             NSSound.beep()
             return false
@@ -163,11 +171,18 @@ extension SuijinTerminalView {
                     if error == nil { received.append(url) }
                     waiting -= 1
                     guard waiting == 0, let self, self.onInput != nil else { return }
-                    if !self.pasteFilePaths(received) { NSSound.beep() }
+                    self.finishPromisedDrop(received, fallbackImage: fallbackImage)
                 }
             }
         }
         return true
+    }
+
+    /// Pastes the promised files that arrived, or the drag's image when none did.
+    func finishPromisedDrop(_ received: [URL], fallbackImage: Data?) {
+        if pasteFilePaths(received) { return }
+        if let fallbackImage, pasteImage(fallbackImage) != nil { return }
+        if fallbackImage == nil { NSSound.beep() }
     }
 
     open override func draggingEntered(_ sender: any NSDraggingInfo) -> NSDragOperation {

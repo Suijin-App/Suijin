@@ -188,7 +188,9 @@ func makeExecutable(at url: URL, script: String = "#!/bin/sh\nexit 0\n") throws 
         echo $! > '\(pidFile.path)'
         exit 0
         """)
-        let path = await AgentCatalog.queryShellPATH(shell: shell.path, arguments: ["-l"], timeout: .milliseconds(300))
+        // The timeout must leave the script time to start and write its pid file: the first launch of a file written
+        // a moment ago can take well over 300 ms on a busy machine, and a script killed before that leaves no pid.
+        let path = await AgentCatalog.queryShellPATH(shell: shell.path, arguments: ["-l"], timeout: .seconds(3))
         #expect(path == nil)
         let orphan = try #require(pid_t(String(contentsOf: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
         var alive = true

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The emoji field of a workspace's icon looks empty when it is.** The field showed a rocket as its placeholder, in
+  full color, so it looked filled in while Use Emoji stayed dimmed. The placeholder is now the word "Emoji".
+
 ## 0.1.1 (2026-11-15)
 
 - **Fixed a crash after closing a terminal.** Closing a tab while Suijin was still checking the paths printed on its

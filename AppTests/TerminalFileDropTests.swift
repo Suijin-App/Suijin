@@ -64,6 +64,13 @@ struct TerminalFileDropTests {
         try data.write(to: output.appendingPathComponent("\(name)-\(dark ? "dark" : "light").png"))
     }
 
+    @Test("pasted images of a data root that is not the user's own are saved under that root")
+    func pastedImagesStayInAnIsolatedDataRoot() throws {
+        let dataRoot = root.appendingPathComponent("data")
+        let model = AppModel(store: try SuijinStore.inMemory(), dataRoot: dataRoot)
+        #expect(model.pastedImageStore.directory == dataRoot.appendingPathComponent("PastedImages", isDirectory: true))
+    }
+
     @Test(arguments: [false, true])
     func filesDroppedOnAPaneArePastedAsPaths(dark: Bool) async throws {
         defer { try? FileManager.default.removeItem(at: root) }

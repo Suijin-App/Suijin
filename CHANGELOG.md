@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Screenshots in a terminal.** A screenshot on the clipboard (⌃⇧⌘4) pastes with ⌘V, and the screenshot tool's
+  floating thumbnail, or an image dragged out of another app, can be dropped on a terminal. Suijin saves the image
+  as a PNG in its caches folder and pastes the file's path, as it does for a file dropped from Finder, so Claude Code
+  and Codex attach it. Saved images are removed after a week.
 - **Copy a code block.** Every code block in the Markdown viewer has a copy button at its top corner; one click
   copies the whole block, including the part scrolled out of view.
 

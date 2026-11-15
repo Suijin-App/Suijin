@@ -84,7 +84,10 @@ struct TerminalLinkScanTiming: Sendable, Equatable {
 /// - A shown link is dropped as soon as the text under it changes, so an underline never sits under other text.
 @MainActor
 final class TerminalLinkController {
-    private unowned let view: SuijinTerminalView
+    /// Weak, not unowned: the view owns the controller, but a scan waiting for its paths to be confirmed keeps the
+    /// controller alive on its own, so the controller can outlive a view that was closed meanwhile. Everything stops
+    /// quietly once the view is gone.
+    private weak var view: SuijinTerminalView?
     let overlay: TerminalLinkOverlay
 
     /// Confirms paths, in order; nil entries do not exist. Nil turns detection off: nothing is scanned or drawn.
@@ -193,13 +196,14 @@ final class TerminalLinkController {
 
     /// Whether the screen can be scanned now: on screen, shown, not concealed (replaying scrollback or catching up).
     var canScan: Bool {
-        isEnabled && view.window != nil && !view.isHiddenOrHasHiddenAncestor && !view.isConcealed
+        guard isEnabled, let view else { return false }
+        return view.window != nil && !view.isHiddenOrHasHiddenAncestor && !view.isConcealed
     }
 
     /// Reads the screen on the main thread (the only part that must run there), finds candidates off it and has the
     /// paths confirmed; the overlay updates when the answer comes, keeping only links whose text is still on screen.
     func scanNow() {
-        guard canScan, let resolve else { return }
+        guard canScan, let resolve, let view else { return }
         let state = Self.signposter.beginInterval("scan")
         let started = ContinuousClock.now
         let snapshot = view.screenRows()
@@ -229,8 +233,9 @@ final class TerminalLinkController {
             for (match, target) in zip(paths, targets) {
                 if let target { found.append(TerminalLink(match: match, target: .file(target))) }
             }
+            guard let view = self.view else { return } // closed while the paths were being confirmed
             let kept = Set(TerminalPathDetector.preferred(found.map(\.match)))
-            self.links = found.filter { kept.contains($0.match) && self.view.textMatches($0.match) }
+            self.links = found.filter { kept.contains($0.match) && view.textMatches($0.match) }
                 .sorted { ($0.match.segments.first?.row ?? 0, $0.match.segments.first?.columns.lowerBound ?? 0)
                     < ($1.match.segments.first?.row ?? 0, $1.match.segments.first?.columns.lowerBound ?? 0) }
         }
@@ -238,6 +243,7 @@ final class TerminalLinkController {
 
     /// Drops links whose text changed and moves the overlay when the screen scrolled.
     func validateLinks() {
+        guard let view else { return }
         let valid = links.filter { view.textMatches($0.match) }
         if valid != links {
             links = valid
@@ -249,7 +255,7 @@ final class TerminalLinkController {
     // MARK: Overlay
 
     func layoutOverlay() {
-        guard let geometry = view.cellGeometry() else {
+        guard let view, let geometry = view.cellGeometry() else {
             overlay.marks = []
             return
         }
@@ -284,19 +290,19 @@ final class TerminalLinkController {
 
     /// The link at a point of the view (view coordinates).
     func link(at point: CGPoint) -> TerminalLink? {
-        guard let cell = view.bufferCell(at: point) else { return nil }
+        guard let cell = view?.bufferCell(at: point) else { return nil }
         return links.first { $0.match.contains(row: cell.row, column: cell.column) }
     }
 
     /// Whether a click opens a link now: ⌘ is held, or plain clicks open and the program does not read the mouse.
     var clickOpensLinks: Bool {
         if NSEvent.modifierFlags.contains(.command) { return true }
-        return trigger == .click && !view.isReportingMouse
+        return trigger == .click && view?.isReportingMouse == false
     }
 
     /// Finds the link under the pointer and emphasizes it when a click would open it.
     func updateHover() {
-        guard isEnabled, let window = view.window else {
+        guard isEnabled, let view, let window = view.window else {
             hovered = nil
             overlay.emphasized = nil
             return
@@ -326,7 +332,8 @@ final class TerminalLinkController {
         guard flagsMonitor == nil else { return }
         flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
             MainActor.assumeIsolated {
-                for controller in controllers.allObjects where controller.view.window === event.window && !controller.links.isEmpty {
+                for controller in controllers.allObjects {
+                    guard let view = controller.view, view.window === event.window, !controller.links.isEmpty else { continue }
                     controller.updateHover()
                 }
             }

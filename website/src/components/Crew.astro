@@ -127,19 +127,135 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
     }
 
     // ── places to stand elsewhere: the top edge of something real, where the sprite covers nothing
-    const structural = new Set(["HTML", "BODY", "MAIN", "SECTION", "ARTICLE", "FOOTER", "DIV"]);
-    const backdrop = (node: Element | null): boolean => {
-      if (!node || node.closest("[data-crew]")) return true;
-      if (!structural.has(node.tagName)) return false;
-      for (const child of node.childNodes) if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) return false;
-      if (node.tagName !== "DIV" && node.tagName !== "ARTICLE") return true;
-      if (node.getBoundingClientRect().width >= window.innerWidth * 0.9) return true;   // a band across the page is still water
-      const paint = getComputedStyle(node);
-      return paint.backgroundImage === "none" && /rgba?\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)|transparent/.test(paint.backgroundColor);
+    // Whether a box lets a swimmer behind it be seen: it has no colour or picture of its own, or it is one of the bands
+    // that make up the page. Words on the page's own background are see-through (the swimmer shows between the letters);
+    // a card, a picture and the header are not.
+    const bare = (node: Element): boolean => { const paint = getComputedStyle(node); return paint.backgroundImage === "none" && /rgba?\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)|transparent/.test(paint.backgroundColor); };
+    const sheer = (node: Element): boolean => {
+      if (node.closest("[data-crew]") || /^(HTML|BODY|MAIN|SECTION|FOOTER)$/.test(node.tagName)) return true;
+      if (/^(IMG|PICTURE|VIDEO|CANVAS|IFRAME)$/.test(node.tagName)) return false;
+      if ((node.tagName === "DIV" || node.tagName === "ARTICLE") && node.getBoundingClientRect().width >= window.innerWidth * 0.98) return true;   // a band across the page (a card that fills a phone's screen is not one)
+      return bare(node);
     };
-    const clear = (x: number, top: number): boolean => {
-      for (const dx of [-0.42, 0, 0.42]) for (const dy of [-16, 4, tall() / 2, tall() - 5]) if (!backdrop(document.elementFromPoint(x + dx * wide(), top - tall() + dy))) return false;
+    // Water is where a swimmer is seen: what lies at a point has to be see-through, and so has everything it sits in. A
+    // see-through box inside a card or inside the app window is not water: a swimmer there is covered.
+    // Answers are kept for the task at hand only, since one search asks about the same boxes many times.
+    let known = new WeakMap<Element, boolean>(), shown = new Map<number, boolean>(), kept = false;
+    const afresh = () => { if (!kept) { kept = true; known = new WeakMap(); shown = new Map(); window.setTimeout(() => { kept = false; }, 0); } };
+    const water = (node: Element | null): boolean => {
+      afresh();
+      const trail: Element[] = [];
+      let open = true;
+      for (let at = node; at && at !== document.body && at !== document.documentElement; at = at.parentElement) {
+        const before = known.get(at);
+        if (before !== undefined) { open = before; break; }
+        trail.push(at);
+        if (!sheer(at)) { open = false; break; }
+      }
+      for (const at of trail) known.set(at, open);
+      return open;
+    };
+    // Whether a point on the screen shows nothing a sprite would hide by standing there: no line of text, no picture, no
+    // control with a shape of its own. The empty part of a card counts as nothing, and so does the rest of a line beside
+    // a short heading, or the empty stretch of a row that is one big see-through button.
+    const lines = document.createRange();
+    const blank = (node: Element | null, x: number, y: number): boolean => {
+      if (!node || node.closest("[data-crew]")) return true;
+      if (node.closest("svg, img, picture, video, canvas, pre, table, input, textarea, select, iframe, kbd, .chip, .keys")) return false;
+      if (node.closest("a")) return false;                      // never in front of a link: a press meant for the sprite must not leave the page
+      const control = node.closest("button, summary");
+      if (control && !bare(control)) return false;
+      for (const child of node.childNodes) {
+        if (child.nodeType !== Node.TEXT_NODE || !child.textContent?.trim()) continue;
+        lines.selectNodeContents(child);
+        for (const line of lines.getClientRects()) if (x >= line.left - 8 && x <= line.right + 8 && y >= line.top - 3 && y <= line.bottom + 3) return false;
+      }
       return true;
+    };
+    // Room for a sprite with its feet at a point: nothing it would hide. That makes a place to stand, which may be a
+    // heading in the middle of a card; `wet` asks for water all round, for a place to swim.
+    const clear = (x: number, top: number, wet = false): boolean => {
+      for (const dx of [-0.42, 0, 0.42]) for (const dy of wet ? [-16, 4, tall() / 2, tall() - 5] : [4, tall() / 3, (tall() * 2) / 3, tall() - 5]) {
+        const px = x + dx * wide(), py = top - tall() + dy, node = document.elementFromPoint(px, py);
+        if (!blank(node, px, py) || (wet && !water(node))) return false;
+      }
+      return true;
+    };
+    // Whether a swimmer with its feet at a point of the page is in plain sight: nothing lies over its head. What is
+    // off the screen cannot be asked about and counts as open water.
+    type Point = { x: number; y: number };
+    // The head is asked about at two heights, so the narrow gap between two rows of cards is not taken for water. Both
+    // lie in the part of a swimmer that shows above an edge it treads water under, ready to climb out.
+    // A search for a way asks about the same places over and over, so the answers are kept, to the nearest ten pixels,
+    // for the task at hand.
+    const shows = (at: Point): boolean => {
+      afresh();
+      const key = (Math.round(at.x / 10) + 5000) * 100000 + Math.round(at.y / 10) + 5000, before = shown.get(key);
+      if (before !== undefined) return before;
+      const x = at.x - window.scrollX;
+      let seen = true;
+      for (const up of [0.5, 0.95]) {
+        const y = at.y - window.scrollY - Math.round(tall() * up);
+        if (y < 0 || y >= window.innerHeight) continue;
+        for (const dx of [-0.4, 0, 0.4]) { const px = x + dx * wide(); if (px >= 0 && px < window.innerWidth && !water(document.elementFromPoint(px, y))) { seen = false; break; } }
+        if (!seen) break;
+      }
+      shown.set(key, seen);
+      return seen;
+    };
+    // A way through the water that keeps the swimmer in sight: straight where nothing is in the way, otherwise round
+    // the cards and windows. The way round is searched on a grid of steps, always trying next the step that looks
+    // nearest to the end, and then straightened wherever a stretch of it is open. The search is cut short after a
+    // number of steps (the grid is coarser on a wide screen for the same reason): it runs while the page is being read.
+    const route = (from: Point, to: Point): Point[] => {
+      const open = (p: Point, q: Point) => {
+        const count = Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 24);
+        for (let index = 1; index < count; index++) if (!shows({ x: p.x + ((q.x - p.x) * index) / count, y: p.y + ((q.y - p.y) * index) / count })) return false;
+        return true;
+      };
+      if (Math.hypot(to.x - from.x, to.y - from.y) < wide() * 4 || open(from, to)) return [from, to];   // a few strokes are not worth a detour
+      const step = Math.max(40, Math.round(window.innerWidth / 36)), left = Math.min(from.x, to.x, window.scrollX) - step * 2, top = Math.min(from.y, to.y, window.scrollY) - step * 2;
+      const columns = Math.ceil((Math.max(from.x, to.x, window.scrollX + window.innerWidth) + step * 2 - left) / step) + 1, rows = Math.ceil((Math.max(from.y, to.y, window.scrollY + window.innerHeight) + step * 2 - top) / step) + 1;
+      const cell = (p: Point) => Math.round((p.y - top) / step) * columns + Math.round((p.x - left) / step), place = (key: number): Point => ({ x: left + (key % columns) * step, y: top + Math.floor(key / columns) * step });
+      const start = cell(from), goal = cell(to), ahead = (key: number) => Math.hypot((key % columns) - (goal % columns), Math.floor(key / columns) - Math.floor(goal / columns));
+      const asked = new Map<number, boolean>(), free = (key: number) => { let answer = asked.get(key); if (answer === undefined) { answer = key === start || key === goal || shows(place(key)); asked.set(key, answer); } return answer; };
+      const cost = new Map<number, number>([[start, 0]]), came = new Map<number, number>([[start, start]]), done = new Set<number>(), fringe = [start];
+      let nearest = start;
+      while (fringe.length && done.size < 420) {
+        let pick = 0;
+        for (let index = 1; index < fringe.length; index++) if (cost.get(fringe[index])! + ahead(fringe[index]) < cost.get(fringe[pick])! + ahead(fringe[pick])) pick = index;
+        const here = fringe.splice(pick, 1)[0];
+        if (done.has(here)) continue;
+        done.add(here);
+        if (ahead(here) < ahead(nearest)) nearest = here;
+        if (here === goal) break;
+        const column = here % columns, row = Math.floor(here / columns);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+          const c = column + dx, r = row + dy, next = r * columns + c, far = cost.get(here)! + (dx && dy ? 1.414 : 1);
+          if (c < 0 || r < 0 || c >= columns || r >= rows || done.has(next) || far >= (cost.get(next) ?? Infinity) || !free(next)) continue;
+          if (dx && dy && (!free(row * columns + c) || !free(r * columns + column))) continue;   // no squeezing past a corner
+          cost.set(next, far); came.set(next, here); fringe.push(next);
+        }
+      }
+      // walled in, or too far to search: as near as the water gets, and straight on from there
+      const cells: Point[] = [to];
+      for (let key = done.has(goal) ? came.get(goal)! : nearest; key !== start; key = came.get(key)!) cells.unshift(place(key));
+      cells.unshift(from);
+      const way = [from];
+      for (let at = 0; at < cells.length - 1;) { let reach = at + 1; while (reach < cells.length - 1 && open(cells[at], cells[reach + 1])) reach++; way.push(cells[reach]); at = reach; }
+      return way;
+    };
+    // The open water nearest to a point, on the screen: where a sprite gets into the water, or out of it, when the
+    // place it stands on has none beside it. There may be none: a phone's screen can be all cards.
+    const around: number[][] = [];
+    for (let dy = -600; dy <= 600; dy += 50) for (let dx = -900; dx <= 900; dx += 50) around.push([dx, dy]);
+    around.sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1]));   // nearest first, so the first one found is it
+    const shore = (near: Point): Point | null => {
+      for (const [dx, dy] of around) {
+        const at = { x: near.x + dx, y: near.y + dy }, x = at.x - window.scrollX, y = at.y - window.scrollY;
+        if (x > 30 && x < window.innerWidth - 30 && y - tall() > 90 && y < window.innerHeight - 20 && shows(at)) return at;
+      }
+      return null;
     };
     const edgeOf = (perch: Perch): DOMRect | null => {
       if (!perch.element.isConnected) return null;
@@ -149,7 +265,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
     };
     const perches = (): { perch: Perch; x: number; y: number }[] => {
       const found: { perch: Perch; x: number; y: number }[] = [];
-      for (const element of document.querySelectorAll("main :is(h1, h2, h3, .card, .link-card, .button, .chip, img, pre, table, details, figure, blockquote, p, li)")) {
+      for (const element of document.querySelectorAll("main :is(h1, h2, h3, h4, .card, .link-card, .qa, .step, .button, .chip, img, pre, table, details, summary, figure, blockquote, dt, p, li)")) {
         if (element.closest(".hero, .crew, [hidden]")) continue;
         const line = /^(H\d|P|LI)$/.test(element.tagName), edge = edgeOf({ element, at: 0, line });
         if (!edge || edge.width < 70 || edge.height < 14 || edge.top - tall() < 86 || edge.top > window.innerHeight - 10) continue;
@@ -167,7 +283,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const found: { x: number; y: number }[] = [];
       for (const fy of [0.3, 0.44, 0.58, 0.72, 0.86]) for (let fx = 0.06; fx < 0.96; fx += 0.08) {
         const x = window.innerWidth * fx, y = window.innerHeight * fy;
-        if (y - tall() > 86 && x - wide() / 2 > 8 && x + wide() / 2 < window.innerWidth - 8 && clear(x, y)) found.push({ x: x + window.scrollX, y: y + window.scrollY });
+        if (y - tall() > 86 && x - wide() / 2 > 8 && x + wide() / 2 < window.innerWidth - 8 && clear(x, y, true)) found.push({ x: x + window.scrollX, y: y + window.scrollY });
       }
       return found;
     };
@@ -365,6 +481,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       };
       const speak = (one: Member, words: string, mood: TalkMood = "chat", time = 0, to?: Member) => {
         if (!inSight(one) || document.hidden) return;
+        if (one.post.classList.contains("swims") && !shows(feet(one))) return;   // a swimmer that is out of sight under something says nothing: a bubble from nowhere
         bubbles.get(one)?.remove();
         // a neighbour's bubble would lie under this one: whoever speaks now is the one heard
         for (const [other, old] of bubbles) if (other !== one && Math.hypot(feet(other).x - feet(one).x, feet(other).y - feet(one).y) < wide() * 3) { old.remove(); bubbles.delete(other); }
@@ -399,6 +516,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
         // what this journey was to end with; read now, since by the time it runs a next journey may have set its own
         const then = arrivals.get(one); arrivals.delete(one);
+        // a card rises into place when it first scrolls into view: whoever landed on it meanwhile is stood on its edge again
+        if (!home) window.setTimeout(place, 1300);
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
         if (home && spot.hides) resize(one, small());
         stand(one, spot.x, spot.y); play("land", one); play("shake", one);
@@ -438,23 +557,55 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           const seen = from && from.y > view.top - 40 && from.y < view.bottom + 60;
           const start = seen ? from! : { x: from ? from.x : spot.x < window.innerWidth / 2 ? -40 : window.innerWidth + 40, y: from ? (from.y < view.top ? view.top - 30 : view.bottom + 30) : spot.y + 24 };
           const side = spot.x >= start.x ? 1 : -1, dip = 24;
-          const a = seen && !afloat ? { x: start.x + side * 26, y: start.y + dip } : start, b = spot.floats ? { x: spot.x, y: spot.y } : { x: spot.x - side * 26, y: spot.y + dip };
+          let a = seen && !afloat ? { x: start.x + side * 26, y: start.y + dip } : start, b = spot.floats ? { x: spot.x, y: spot.y } : { x: spot.x - side * 26, y: spot.y + dip };
+          // A place in the middle of a card has no water beside it: a swimmer there would be under the card. On a
+          // journey of any length the sprite then crosses the card on foot, in hops, and swims only where it is seen:
+          // into the water at the nearest open stretch, and out of it at the one nearest to where it is going.
+          const journey = Math.hypot(spot.x - start.x, spot.y - start.y) > wide() * 4;
+          const dry = journey && seen && !afloat && !shows(a), ends = journey && !spot.floats && !shows(b);
+          const into = dry ? shore(a) : a, out = ends ? shore(b) : b;
+          if (into) a = into;
+          if (out) b = out;
+          // no water in sight to swim in, or the way in and the way out are the same stretch of it: the whole way in hops
+          const afoot = journey && !spot.floats && (!into || !out || (dry && ends && Math.hypot(into.x - out.x, into.y - out.y) < wide() * 4));
+          const bound = (from: Point, to: Point, then: () => void) => {
+            const hops = Math.max(1, Math.round(Math.hypot(to.x - from.x, to.y - from.y) / 100)), leap = { p: 0 };
+            let done = 0;
+            one.post.classList.remove("swims");
+            one.pose = { flip: to.x < from.x, legs: "tuck", arms: "up", eyes: "r" }; draw(one); play("leap", one);
+            animate(leap, { p: hops, duration: hops * 290, ease: "linear",
+              onUpdate: () => {
+                const part = leap.p / hops;
+                stand(one, from.x + (to.x - from.x) * part, from.y + (to.y - from.y) * part - Math.abs(Math.sin(leap.p * Math.PI)) * 28);
+                if (Math.floor(leap.p) > done && leap.p < hops) { done = Math.floor(leap.p); play("hop", one); }
+              },
+              onComplete: then });
+          };
           one.post.classList.remove("hides"); one.rest = 0; resize(one, pixel); one.post.style.opacity = "1";
           animate(one.element, { y: 0, scaleX: 1, scaleY: 1, rotate: 0, opacity: 1, duration: 0 });
           const state = { p: 0 };
           const swim = () => {
             one.post.classList.add("swims"); if (!afloat) splash(a.x, a.y - line(), 1, one);
-            one.pose = { flip: side < 0, legs: "none", arms: "swimA", eyes: side < 0 ? "l" : "r" }; draw(one);
-            const far = Math.hypot(b.x - a.x, b.y - a.y), time = Math.min(3400, Math.max(520, far / (0.34 * persona[one.color].speed)));   // some swim faster than others
-            let bob = 0;
-            const ux = (b.x - a.x) / (far || 1), uy = (b.y - a.y) / (far || 1);
-            const stroke = window.setInterval(() => { one.pose.arms = one.pose.arms === "swimA" ? "swimB" : "swimA"; bob = bob ? 0 : pixel; draw(one); play("paddle", one);
-              const here = feet(one); spray(here.x + side * 4 * pixel, here.y - line(), side); }, 170);
+            // the way there goes round whatever would cover the swimmer; it faces the way it is swimming on each stretch
+            const path = route(a, b), legs = path.slice(1).map((point, index) => Math.hypot(point.x - path[index].x, point.y - path[index].y)), far = legs.reduce((sum, leg) => sum + leg, 0);
+            const time = Math.min(5200, Math.max(520, far / (0.34 * persona[one.color].speed)));   // some swim faster than others
+            const along = (part: number) => {
+              let left = part * far, index = 0;
+              while (index < legs.length - 1 && left > legs[index]) left -= legs[index++];
+              const p = path[index], q = path[index + 1], long = legs[index] || 1, share = Math.min(1, left / long);
+              return { x: p.x + (q.x - p.x) * share, y: p.y + (q.y - p.y) * share, ux: (q.x - p.x) / long, uy: (q.y - p.y) / long };
+            };
+            let bob = 0, heading = along(0).ux < 0 ? -1 : along(0).ux > 0 ? 1 : side;
+            const face = () => { one.pose.flip = heading < 0; one.pose.eyes = heading < 0 ? "l" : "r"; };
+            one.pose = { legs: "none", arms: "swimA" }; face(); draw(one);
+            const stroke = window.setInterval(() => { one.pose.arms = one.pose.arms === "swimA" ? "swimB" : "swimA"; bob = bob ? 0 : pixel; face(); draw(one); play("paddle", one);
+              const here = feet(one); spray(here.x + heading * 4 * pixel, here.y - line(), heading); }, 170);
             let last = { x: a.x, y: a.y, at: performance.now() }, owed = 0;
             state.p = 0;
             animate(state, { p: 1, duration: time, ease: "inOutSine",
               onUpdate: () => {
-                const x = a.x + (b.x - a.x) * state.p, y = a.y + (b.y - a.y) * state.p, now = performance.now();
+                const { x, y, ux, uy } = along(state.p), now = performance.now();
+                if (Math.abs(ux) > 0.2) heading = ux < 0 ? -1 : 1;
                 stand(one, x, y + bob);
                 const gone = Math.hypot(x - last.x, y - last.y), speed = gone / Math.max(0.004, (now - last.at) / 1000);
                 for (owed += gone; owed >= 5; owed -= 5) wake(x - ux * 2 * pixel, y - line(), ux, uy, speed);
@@ -474,6 +625,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
           };
           const climb = () => {
             one.post.classList.remove("swims"); splash(b.x, b.y - line(), 0.8, one);
+            if (ends) { bound(b, spot, () => land(one, spot, home, perch)); return; }   // out at the shore, and across the card in hops
             one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "u" }; draw(one); play("leap", one);
             state.p = 0;
             animate(state, { p: 1, duration: 360, ease: "linear",
@@ -482,7 +634,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
                 land(one, spot, home, perch);
               } });
           };
+          if (afoot) { stand(one, start.x, start.y); bound(start, spot, () => land(one, spot, home, perch)); return; }
           if (!seen || afloat) { stand(one, a.x, a.y); swim(); return; }
+          if (dry) { bound(start, a, swim); return; }           // across the card in hops, to the water
           // off the edge
           one.pose = { flip: side < 0, legs: "tuck", arms: "up", eyes: "d" }; draw(one); play("leap", one);
           animate(state, { p: 1, duration: 300, ease: "linear",
@@ -815,10 +969,16 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         voyage(guest, spot, perch, () => { if (release()) then(); else { feel(guest, { eyes: "happy", mouth: "smile", arms: "wave" }, 1100); play("hi", guest); } });
         window.setTimeout(() => { if (release()) { host.mood = null; draw(host); } }, 10000);
       };
+      // Whether the edge a sprite stands on has open water under it, to both sides: a fall from there is seen. A heading
+      // inside a card has none, and nobody is knocked off one.
+      const wet = (one: Member) => {
+        const edge = one.perch && edgeOf(one.perch);
+        return !!edge && [-1, 0, 1].every((side) => shows({ x: feet(one).x + side * 15 * pixel, y: edge.top + 1 + window.scrollY + 24 }));
+      };
       // Two on one edge, `gap` sprite pixels apart. If they are not neighbours yet, one swims over to the other first.
       const paired = (gap: number, then: (guest: Member, host: Member) => void, fits: (host: Member) => boolean = () => true): boolean => {
         for (const guest of ranked(members.filter(perched), bold)) {            // the bolder one is the one that goes over
-          const host = nearest(guest, members.filter(perched).filter(fits));
+          const host = nearest(guest, members.filter(perched).filter(wet).filter(fits));   // every game for two ends with somebody in the water
           if (!host) continue;
           const here = feet(host), there = feet(guest);
           if (Math.abs(there.y - here.y) < 3 && Math.abs(Math.abs(there.x - here.x) - gap * pixel) < 4 * pixel) { then(guest, host); return true; }
@@ -865,12 +1025,6 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (!home || one.state !== "away") return;
         one.floating = true;                                    // it is in the water already: the way back starts with a swim, not a leap
         voyage(one, home.spot, home.perch, then);
-      };
-      // Whether a swimmer treading water at a point is seen there: under a heading inside a card, say, the card covers it.
-      // What lies there may be a see-through box inside the card, so everything it sits in has to be see-through as well.
-      const shows = (at: { x: number; y: number }) => {
-        for (let node = document.elementFromPoint(at.x - window.scrollX, at.y - window.scrollY - Math.round(tall() * 0.6)); node && node !== document.body; node = node.parentElement) if (!backdrop(node)) return false;
-        return true;
       };
       // water thrown by a swimmer at somebody standing above it
       const douse = (from: Member, at: Member) => {
@@ -1015,7 +1169,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 
       // One creeps up behind another that is singing and shoves it into the water.
       const prank = (): boolean => {
-        const joker = ranked(members.filter(perched), bold)[0], victim = joker && nearest(joker, members.filter(perched));
+        const joker = ranked(members.filter(perched), bold)[0], victim = joker && nearest(joker, members.filter(perched).filter(wet));
         if (!victim) return false;
         for (const side of feet(joker).x < feet(victim).x ? [-1, 1] : [1, -1]) {
           const place = beside(victim, side, 22, joker), way = -side;   // the joker lands a few steps off, behind the singer's back
@@ -1300,7 +1454,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         for (let tries = 0; tries < games.length; tries++) if (games[game++ % games.length]()) return;
       }, 12000);
       // in development the games can be started by hand from the console, e.g. crewPlay.duel()
-      if (import.meta.env.DEV) Object.assign(window, { crewPlay: { wave, duel, peekaboo, soak, toss, angle, prank, chorus, tug, tower, copycat, regatta, search } });
+      if (import.meta.env.DEV) Object.assign(window, { crewPlay: { wave, duel, peekaboo, soak, toss, angle, prank, chorus, tug, tower, copycat, regatta, search, spots: () => perches().map((place) => `${place.perch.element.tagName}@${Math.round(place.x - window.scrollX)},${Math.round(place.y - window.scrollY)}`) } });
 
       // ── habits
       // blinking, each at its own pace
@@ -1367,6 +1521,14 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (hiders.has(pressed) && pressed.state === "home") { rise(pressed, true); window.setTimeout(() => rise(pressed, false), 1300); } else { hop(pressed, 30); leave(pressed, "heart"); }
         envy(pressed);
       };
+      // A sprite may stand in front of a see-through button (a row of the questions): a plain press on it, while it
+      // stands there, works the button as well. Never a link, and never a button with a shape, which it only passes over.
+      const through = (one: Member, event: PointerEvent) => {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || (one.state !== "home" && one.state !== "away")) return;
+        const under = document.elementsFromPoint(event.clientX, event.clientY).find((node) => !node.closest("[data-crew]"));
+        const control = under?.closest("a") ? null : under?.closest("button, summary");
+        if (control instanceof HTMLElement && bare(control)) control.click();
+      };
       // In the reader's hand. A sprite that is pressed and then moved is picked up: out of whatever it was doing, it
       // hangs from the pointer and kicks. Let go over its post or a free edge it stands there; anywhere else it falls
       // into the water and swims to a place as usual. While it is carried it counts as on a journey, so nothing else
@@ -1411,7 +1573,7 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         if (held) carry(held, event);
         else if (grip && Math.hypot(event.clientX - grip.x, event.clientY - grip.y) > 6) { lift(grip.one, event); grip = null; }
       }, { passive: true });
-      document.addEventListener("pointerup", () => { if (held) drop(); else if (grip) press(grip.one); grip = null; }, { passive: true });
+      document.addEventListener("pointerup", (event) => { if (held) drop(); else if (grip) { press(grip.one); through(grip.one, event); } grip = null; }, { passive: true });
       document.addEventListener("pointercancel", () => { if (held) drop(); grip = null; }, { passive: true });
       document.addEventListener("pointerdown", (event) => {
         stir();

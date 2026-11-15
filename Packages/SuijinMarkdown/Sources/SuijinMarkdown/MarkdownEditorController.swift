@@ -546,8 +546,41 @@ public final class MarkdownEditorController: NSObject, NSTextStorageDelegate, NS
         // Widen the indentation spaces of this item's first line so nesting reads clearly.
         let leading = NSIntersectionRange(NSRange(location: firstLine.location, length: max(0, item.location - firstLine.location)), limit)
         if leading.length > 0 { storage.addAttribute(.kern, value: theme.indentationKern, range: leading) }
-        paragraphs(of: range, limit: limit) { style in
-            style.headIndent = style.firstLineHeadIndent + prefix
+        // Every source line of the item is a paragraph of its own. The first one starts at the marker and wraps
+        // under the item's text; a line the author wrapped by hand starts with its own indentation, which is
+        // topped up so that its text sits under the item's text too. Nested items set their own lines afterwards.
+        let lines = NSIntersectionRange(lineRange(range), limit)
+        var location = lines.location
+        while location < NSMaxRange(lines) {
+            let line = source.lineRange(for: NSRange(location: location, length: 0))
+            defer { location = NSMaxRange(line) }
+            let depth = storage.attribute(.markdownQuoteDepth, at: line.location, effectiveRange: nil) as? Int ?? 0
+            let base = CGFloat(depth) * theme.quoteIndent
+            var first = base
+            if line.location != firstLine.location {
+                var own = 0
+                var cursor = line.location
+                var isBlank = true
+                while cursor < NSMaxRange(line) {
+                    let unit = source.character(at: cursor)
+                    if unit == 0x3E {
+                        cursor += (cursor + 1 < source.length && source.character(at: cursor + 1) == 0x20) ? 2 : 1
+                    } else if unit == 0x20 || unit == 0x09 {
+                        own += 1
+                        cursor += 1
+                    } else {
+                        isBlank = unit == 0x0A || unit == 0x0D
+                        break
+                    }
+                }
+                if isBlank { continue }
+                first = base + max(0, prefix - CGFloat(own) * space)
+            }
+            let style = ((storage.attribute(.paragraphStyle, at: line.location, effectiveRange: nil) as? NSParagraphStyle)
+                ?? baseParagraphStyle).mutableCopy() as! NSMutableParagraphStyle
+            style.firstLineHeadIndent = first
+            style.headIndent = base + prefix
+            storage.addAttribute(.paragraphStyle, value: style, range: NSIntersectionRange(line, limit))
         }
     }
 

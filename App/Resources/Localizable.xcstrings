@@ -136,6 +136,9 @@
     "No Comments" : {
 
     },
+    "No comments to send" : {
+
+    },
     "Not Fixed" : {
 
     },
@@ -190,7 +193,13 @@
     "Save the Markdown file you are editing." : {
 
     },
-    "Send ^[%lld Comment](inflect: true) to %@" : {
+    "Send %lld" : {
+
+    },
+    "Send ^[%lld Comment](inflect: true) to" : {
+
+    },
+    "Send ^[%lld Sent Comment](inflect: true) Again to" : {
 
     },
     "Send Again" : {
@@ -199,10 +208,10 @@
     "Send Automatically" : {
 
     },
-    "Send comments, %lld not sent" : {
+    "Send comments to an agent session you choose, or copy them" : {
 
     },
-    "Send the comments that were not sent yet to an agent, or copy them" : {
+    "Send comments, %lld not sent" : {
 
     },
     "Sent" : {
@@ -226,10 +235,16 @@
     "Sponsor" : {
 
     },
+    "started %@" : {
+
+    },
     "Suijin is open-source software under the Apache License 2.0. That license sets out how you may use, copy, change and redistribute it, and it comes first where these terms say something different." : {
 
     },
     "Switch a Markdown tab between its editor and its reader." : {
+
+    },
+    "Tab %lld" : {
 
     },
     "The license covers the code. It does not grant the use of the Suijin name or icon, which belong to the Suijin Authors." : {

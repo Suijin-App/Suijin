@@ -3,8 +3,11 @@ import SuijinCore
 import SuijinUI
 import SwiftUI
 
-/// The menu at the top of the Comments column that hands the file's unsent comments to an agent: pasted into a
-/// running session of this context (one bracketed paste, so nothing runs until Return is pressed) or copied.
+/// The menu at the top of the Comments column that hands the file's comments to an agent: pasted into a running
+/// session of this context (one bracketed paste, so nothing runs until Return is pressed) or copied.
+///
+/// The number of comments is said once, in a heading; under it each running session is one item, named as its tab
+/// is. Comments that were sent and have no answer yet can be sent again, to the same session or another one.
 struct MarkdownCommentsSendMenu: View {
     @Environment(AppModel.self) private var model
     let book: MarkdownCommentsBook
@@ -13,35 +16,83 @@ struct MarkdownCommentsSendMenu: View {
 
     var body: some View {
         let unsent = book.unsent
-        let sessions = model.liveSessions(in: book.context)
+        let waiting = book.waiting
+        let targets = model.sendTargets(in: book.context)
         Menu {
-            Section {
-                if sessions.isEmpty {
-                    Text("No running session in this worktree")
-                }
-                ForEach(sessions) { session in
-                    Button("Send ^[\(unsent.count) Comment](inflect: true) to \(session.title)",
-                           systemImage: session.agent == .shell ? "terminal" : "paperplane") {
-                        book.send(unsent, to: session, pressReturn: sendAutomatically)
+            if unsent.isEmpty && waiting.isEmpty {
+                Text("No comments to send")
+            } else if targets.isEmpty {
+                Text("No running session in this worktree")
+            }
+            if !unsent.isEmpty, !targets.isEmpty {
+                Section {
+                    ForEach(targets) { target in
+                        Button(target.title, systemImage: target.systemImage) {
+                            book.send(unsent, to: target.session, pressReturn: sendAutomatically)
+                        }
                     }
-                    .disabled(unsent.isEmpty)
+                } header: {
+                    Text("Send ^[\(unsent.count) Comment](inflect: true) to")
                 }
             }
+            if !waiting.isEmpty, !targets.isEmpty {
+                Section {
+                    ForEach(targets) { target in
+                        Button(target.title, systemImage: target.systemImage) {
+                            book.send(waiting, to: target.session, pressReturn: sendAutomatically)
+                        }
+                    }
+                } header: {
+                    Text("Send ^[\(waiting.count) Sent Comment](inflect: true) Again to")
+                }
+            }
+            Divider()
             Button("Copy Comments", systemImage: "doc.on.doc") { book.copy(unsent) }
                 .disabled(unsent.isEmpty)
-            Divider()
             Toggle("Send Automatically", isOn: $sendAutomatically)
         } label: {
             Label {
-                Text("Send")
+                Text(unsent.isEmpty ? "Send" : "Send \(unsent.count)")
             } icon: {
                 Image(systemName: unsent.isEmpty ? "paperplane" : "paperplane.fill")
             }
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help(Text("Send the comments that were not sent yet to an agent, or copy them"))
+        .help(Text("Send comments to an agent session you choose, or copy them"))
         .accessibilityLabel(Text("Send comments, \(unsent.count) not sent"))
+    }
+}
+
+/// A running session comments or notes can be sent to, with the name its menu item shows.
+struct SendTarget: Identifiable {
+    let session: AgentSessionRecord
+    let title: String
+
+    var id: UUID { session.id }
+    var systemImage: String { session.agent == .shell ? "terminal" : "paperplane" }
+
+    /// Names for sessions shown together: each is called what its tab is called; sessions that would read the same
+    /// also say which tab they are in and, when that is still not enough, when they started.
+    static func titles(for sessions: [(id: UUID, title: String, tab: Int?, started: Date)]) -> [UUID: String] {
+        var result: [UUID: String] = [:]
+        let byTitle = Dictionary(grouping: sessions, by: \.title)
+        let time = Date.FormatStyle(date: .omitted, time: .standard)
+        for (title, group) in byTitle {
+            guard group.count > 1 else {
+                result[group[0].id] = title
+                continue
+            }
+            let byTab = Dictionary(grouping: group, by: \.tab)
+            for session in group {
+                let tab = session.tab.map { String(localized: "Tab \($0)") }
+                let alone = (byTab[session.tab]?.count ?? 0) == 1
+                let started = String(localized: "started \(session.started.formatted(time))")
+                let detail = [tab, alone && tab != nil ? nil : started].compactMap { $0 }.joined(separator: ", ")
+                result[session.id] = "\(title) (\(detail))"
+            }
+        }
+        return result
     }
 }
 
@@ -55,6 +106,18 @@ extension AppModel {
                 return activity != .exited && activity != .failed
             }
             .sorted { ($0.agent == .shell ? 1 : 0, $0.createdAt) < ($1.agent == .shell ? 1 : 0, $1.createdAt) }
+    }
+
+    /// The running sessions of `context` as the Send menus list them: named as their tabs are, and told apart when
+    /// several have the same name.
+    func sendTargets(in context: SessionContext) -> [SendTarget] {
+        let live = liveSessions(in: context)
+        let tabs = tabList(in: context)
+        let titles = SendTarget.titles(for: live.map { session in
+            (id: session.id, title: runtimes.displayTitle(of: session),
+             tab: tabs.firstIndex(of: tab(of: session.id)).map { $0 + 1 }, started: session.createdAt)
+        })
+        return live.map { SendTarget(session: $0, title: titles[$0.id] ?? runtimes.displayTitle(of: $0)) }
     }
 }
 

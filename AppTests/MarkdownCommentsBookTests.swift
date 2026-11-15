@@ -297,6 +297,39 @@ import Testing
         #expect(fixture.book.comments.first?.sentToSession == nil)
     }
 
+    @Test func sessionsInTheSendMenuAreNamedAsTheirTabsAndToldApart() {
+        let a = UUID(), b = UUID(), c = UUID(), d = UUID(), e = UUID()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let titles = SendTarget.titles(for: [
+            (id: a, title: "Fix the login form", tab: 1, started: start),
+            (id: b, title: "Claude", tab: 2, started: start.addingTimeInterval(60)),
+            (id: c, title: "Claude", tab: 3, started: start.addingTimeInterval(120)),
+            // Two panes of one split tab with the same name.
+            (id: d, title: "Codex", tab: 4, started: start.addingTimeInterval(180)),
+            (id: e, title: "Codex", tab: 4, started: start.addingTimeInterval(245)),
+        ])
+        #expect(titles[a] == "Fix the login form", "a name of its own needs nothing added")
+        #expect(titles[b] == "Claude (Tab 2)")
+        #expect(titles[c] == "Claude (Tab 3)")
+        #expect(titles[d] != titles[e], "the same name in the same tab is told apart by its start time")
+        #expect(titles[d]?.hasPrefix("Codex (Tab 4, started ") == true)
+        #expect(Set(titles.values).count == 5)
+    }
+
+    @Test func sentCommentsWithoutAnAnswerCanBeSentAgain() async throws {
+        let fixture = try await makeFixture()
+        defer { cleanUp(fixture) }
+        let sent = try #require(fixture.book.create(range: range(of: "First paragraph", in: fixture), body: ""))
+        let open = try #require(fixture.book.create(range: range(of: "Third paragraph.", in: fixture), body: ""))
+        fixture.book.markSent([sent.id], to: UUID())
+        #expect(fixture.book.unsent.map(\.id) == [open.id])
+        #expect(fixture.book.waiting.map(\.id) == [sent.id])
+        var answered = try #require(fixture.book.comments.first { $0.id == sent.id })
+        answered.resolve(.fixed, reply: nil)
+        fixture.book.showAnswer(of: answered)
+        #expect(fixture.book.waiting.isEmpty, "an answered comment is not sent again")
+    }
+
     @Test func sendingAgainWithoutItsSessionMakesTheCommentOpen() async throws {
         let fixture = try await makeFixture()
         defer { cleanUp(fixture) }

@@ -24,15 +24,16 @@ struct DiffNotesSendMenu: View {
 
     var body: some View {
         let unsent = book.unsentInOrder
-        let sessions = model.liveSessions(in: context)
+        let targets = model.sendTargets(in: context)
         Menu {
             Section {
-                if sessions.isEmpty {
+                if targets.isEmpty {
                     Text("No running session in this worktree")
                 }
-                ForEach(sessions) { session in
-                    Button("Send to \(session.title)", systemImage: session.agent == .shell ? "terminal" : "paperplane") {
-                        send(unsent, to: session)
+                // Each session is named as its tab is, so two sessions of one agent can be told apart.
+                ForEach(targets) { target in
+                    Button("Send to \(target.title)", systemImage: target.systemImage) {
+                        send(unsent, to: target.session)
                     }
                     .disabled(unsent.isEmpty)
                 }

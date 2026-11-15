@@ -268,6 +268,24 @@ private struct Editor {
         #expect(editor.textView.layoutManager!.temporaryAttribute(.backgroundColor, atCharacterIndex: range.location, effectiveRange: nil) == nil)
     }
 
+    @Test func aHandWrappedListItemKeepsItsTextInOneColumn() {
+        // The second and third lines are wrapped by the author, with different indentation.
+        let editor = Editor("intro\n\n- first words of the item\n  wrapped by hand\ncontinued without indentation\n  - nested item\n    nested wrapped\n")
+        editor.place(at: "intro")
+        editor.layout()
+        let manager = editor.textView.layoutManager!
+        func x(_ text: String) -> CGFloat {
+            manager.location(forGlyphAt: manager.glyphIndexForCharacter(at: editor.source.range(of: text).location)).x
+                + manager.lineFragmentRect(forGlyphAt: manager.glyphIndexForCharacter(at: editor.source.range(of: text).location), effectiveRange: nil).minX
+        }
+        let column = x("first words")
+        #expect(abs(x("wrapped by hand") - column) < 0.5)
+        #expect(abs(x("continued without") - column) < 0.5)
+        let nested = x("nested item")
+        #expect(nested > column + 4)
+        #expect(abs(x("nested wrapped") - nested) < 0.5)
+    }
+
     @Test func theSelectionAccessoryFollowsTheSelection() {
         let editor = Editor(Self.sample)
         let accessory = NSView(frame: NSRect(x: 0, y: 0, width: 80, height: 22))

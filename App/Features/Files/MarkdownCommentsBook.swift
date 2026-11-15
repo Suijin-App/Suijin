@@ -69,6 +69,9 @@ final class MarkdownCommentsBook {
     /// Comments to hand to an agent: not sent yet, and still in the file.
     var unsent: [MarkdownComment] { placed.filter { $0.status == .open } }
 
+    /// Comments an agent has and did not answer yet: they can be sent again.
+    var waiting: [MarkdownComment] { placed.filter { $0.status == .sent } }
+
     /// The comment on exactly `range`, if any.
     func comment(on range: NSRange) -> MarkdownComment? {
         placed.first { $0.anchor.range == range }

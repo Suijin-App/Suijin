@@ -139,8 +139,9 @@ kbd { font: 600 0.82em var(--sans); border: 1px solid var(--line-strong); border
 .nav-links a:hover { color: var(--text); background: var(--accent-soft); }
 .nav-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .nav-links + .nav-actions { margin-left: 0; }
-/* the menu of a narrow header and the sheet it opens under the bar */
-.nav-menu { display: none; }
+/* the menu of a narrow header and the sheet it opens under the bar; with .icon-button in the selector, so that
+   class's own display, set further down, does not bring the button back on a wide header */
+.icon-button.nav-menu { display: none; }
 .nav-menu svg { width: 18px; height: 18px; }
 .nav-sheet { position: absolute; top: calc(100% + 10px); right: 0; z-index: 2; display: grid; min-width: 210px; padding: 8px; border-radius: 18px;
   background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
@@ -675,7 +676,7 @@ html[data-theater] { overflow: hidden; }
   .m-scene { grid-template-columns: 200px minmax(0, 1fr); }
   .m-insp, .m-pill.wide, .m-status > :last-child { display: none; }
   .nav-links { display: none; }
-  .nav-menu { display: inline-grid; }
+  .icon-button.nav-menu { display: inline-grid; }
   .nav-actions, .nav-links + .nav-actions { margin-left: auto; }
   .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card, .card.wide, .card.full { grid-column: span 2; }

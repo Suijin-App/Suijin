@@ -77,9 +77,12 @@ private extension String {
 // MARK: Drop destination
 
 extension SuijinTerminalView {
-    /// The only drag type a terminal takes. Pane and tab drags carry types of their own (and plain text), so they pass
-    /// through to the SwiftUI drop targets around the terminal and never reach the program.
-    static let fileDropTypes: [NSPasteboard.PasteboardType] = [.fileURL]
+    /// The drag types a terminal takes: files, files promised by the dragging app (the screenshot tool's floating
+    /// thumbnail, an image dragged out of a browser) and image data. Pane and tab drags carry types of their own (and
+    /// plain text), so they pass through to the SwiftUI drop targets around the terminal and never reach the program.
+    static let fileDropTypes: [NSPasteboard.PasteboardType] =
+        [.fileURL] + NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) }
+        + TerminalImageStore.imageTypes
 
     func registerForFileDrops() {
         registerForDraggedTypes(Self.fileDropTypes)
@@ -91,21 +94,79 @@ extension SuijinTerminalView {
         return (objects as? [URL] ?? []).filter(\.isFileURL)
     }
 
-    /// Whether a drag with this pasteboard would be taken now: it holds file URLs, the host allows drops
+    /// What a drag offers, in the order it is preferred: files that exist, then files the dragging app promises to
+    /// write, then image data.
+    enum DropContent {
+        case files([URL])
+        case promises([NSFilePromiseReceiver])
+        case image
+    }
+
+    /// The part of a drag this terminal can take; promised files and image data need an image store to be saved in.
+    func dropContent(on pasteboard: NSPasteboard) -> DropContent? {
+        let urls = Self.droppedFileURLs(on: pasteboard)
+        if !urls.isEmpty { return .files(urls) }
+        guard imageStore != nil else { return nil }
+        let promises = pasteboard.readObjects(forClasses: [NSFilePromiseReceiver.self]) as? [NSFilePromiseReceiver] ?? []
+        if !promises.isEmpty { return .promises(promises) }
+        let hasImage = pasteboard.availableType(from: TerminalImageStore.imageTypes) != nil
+        return hasImage ? .image : nil
+    }
+
+    /// Whether a drag with this pasteboard would be taken now: it holds files or an image, the host allows drops
     /// (`acceptsFileDrop`, false while the session reconnects) and the screen is not hidden by a replay or catch-up.
     func canTakeFileDrop(from pasteboard: NSPasteboard) -> Bool {
         guard !isConcealed, acceptsFileDrop?() ?? true else { return false }
-        return !Self.droppedFileURLs(on: pasteboard).isEmpty
+        return dropContent(on: pasteboard) != nil
     }
 
-    /// Pastes the dropped paths and gives this terminal the keyboard. Returns whether anything was pasted.
+    /// Pastes the dropped paths and gives this terminal the keyboard. Returns whether the drop was taken; the paths of
+    /// promised files are pasted once the dragging app has written them.
     @discardableResult
     func takeFileDrop(from pasteboard: NSPasteboard) -> Bool {
-        guard canTakeFileDrop(from: pasteboard) else { return false }
-        let text = TerminalFileDrop.text(for: Self.droppedFileURLs(on: pasteboard))
+        guard canTakeFileDrop(from: pasteboard), let content = dropContent(on: pasteboard) else { return false }
+        switch content {
+        case .files(let urls):
+            guard pasteFilePaths(urls) else { return false }
+        case .promises(let promises):
+            guard receive(promises) else { return false }
+        case .image:
+            guard let png = TerminalImageStore.png(on: pasteboard), pasteImage(png) != nil else { return false }
+        }
+        window?.makeFirstResponder(self)
+        return true
+    }
+
+    /// Pastes the paths of `urls` on the command line. Returns `false` when none is a file.
+    @discardableResult
+    func pasteFilePaths(_ urls: [URL]) -> Bool {
+        let text = TerminalFileDrop.text(for: urls)
         guard !text.isEmpty else { return false }
         send(data: TerminalFileDrop.bytes(for: text, bracketedPaste: isBracketedPasteMode)[...])
-        window?.makeFirstResponder(self)
+        return true
+    }
+
+    /// Asks the dragging app to write its promised files into a new folder of the image store and pastes their paths
+    /// when all of them have arrived, so a path never names a file that does not exist yet. Nothing is pasted when the
+    /// session ended meanwhile; when no file arrives the system alert sound plays.
+    private func receive(_ promises: [NSFilePromiseReceiver]) -> Bool {
+        guard let folder = try? imageStore?.makeDropFolder() else {
+            NSSound.beep()
+            return false
+        }
+        var waiting = promises.reduce(0) { $0 + max($1.fileNames.count, 1) }
+        var received: [URL] = []
+        for promise in promises {
+            // On the main queue: the block only records the result, the dragging app does the writing.
+            promise.receivePromisedFiles(atDestination: folder, options: [:], operationQueue: .main) { [weak self] url, error in
+                MainActor.assumeIsolated {
+                    if error == nil { received.append(url) }
+                    waiting -= 1
+                    guard waiting == 0, let self, self.onInput != nil else { return }
+                    if !self.pasteFilePaths(received) { NSSound.beep() }
+                }
+            }
+        }
         return true
     }
 

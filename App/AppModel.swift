@@ -165,6 +165,7 @@ final class AppModel {
 
     func load() async {
         defer { isLoaded = true }
+        removeExpiredPastedImages()
         let store = store
         let stored: StoredState
         do {

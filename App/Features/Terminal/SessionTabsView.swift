@@ -1,6 +1,7 @@
 import SuijinCore
 import SuijinUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The detail area of a context: a tab per session plus a Changes tab (git contexts), and the selected tab's
 /// content. Custom tab strip on purpose: SwiftUI on macOS has no in-content document tab bar (`TabView` draws a
@@ -16,6 +17,8 @@ struct SessionTabsView: View {
                 switch selected {
                 case .session(let id):
                     SessionPaneContent(session: id, context: context, isFocused: true, closeTitle: "Close Tab")
+                        // A session tab dragged from the title bar lands here too and makes this a split tab.
+                        .modifier(PaneDropTarget(session: id))
                 case .panes(let id):
                     if let layout = model.paneLayouts[id] {
                         PaneTreeView(layout: layout, context: context)
@@ -230,7 +233,8 @@ struct ToolbarTabBar: View {
 }
 
 /// Drag any tab (session, split, Changes or file) onto another to move it there; a bar on the target's leading edge
-/// shows where it lands. The order is kept by `AppModel.moveTab`.
+/// shows where it lands. The order is kept by `AppModel.moveTab`. A session or split tab dragged down onto a pane
+/// moves into that tab instead (`PaneDragAndDrop.swift`).
 private struct TabReordering: ViewModifier {
     @Environment(AppModel.self) private var model
     let tab: DetailTab
@@ -239,7 +243,11 @@ private struct TabReordering: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .draggable(tab.dragPayload)
+            .onDrag {
+                // The drag's start is the only moment SwiftUI reports; the panes need to know which tab is coming.
+                model.paneDrag.beginTab(tab)
+                return tab.dragItemProvider
+            }
             .dropDestination(for: String.self) { items, _ in
                 guard let dragged = items.first.flatMap(DetailTab.init(dragPayload:)) else { return false }
                 withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
@@ -285,11 +293,29 @@ private struct SessionTab: View {
         }
         .help(Text(verbatim: model.sessionTooltip(of: session)))
         .contextMenu { SessionMenuItems(session: session) }
+        .modifier(MoveTabToSelectedTabActions(session: session.id))
     }
 }
 
-/// One tab of the title-bar group: centered content, a close button on the leading edge on hover (as in Safari),
-/// a raised background when selected.
+/// VoiceOver's way to drag a tab onto a pane: actions on the tab that move it into the selected tab. Always attached,
+/// so the tab keeps its identity (and a drag in progress) when the selection changes; an action does nothing while
+/// the move is not possible.
+private struct MoveTabToSelectedTabActions: ViewModifier {
+    @Environment(AppModel.self) private var model
+    let session: UUID
+
+    func body(content: Content) -> some View {
+        content
+            .accessibilityAction(named: Text("Move Tab to Selected Tab, Right")) { move(.right) }
+            .accessibilityAction(named: Text("Move Tab to Selected Tab, Below")) { move(.bottom) }
+    }
+
+    private func move(_ edge: PaneEdge) {
+        guard model.moveTabToSelectedTabUnavailableReason(showing: session) == nil else { return }
+        model.moveTabToSelectedTab(showing: session, edge: edge)
+    }
+}
+
 private struct ToolbarTab<Label: View>: View {
     let isSelected: Bool
     let onClose: (() -> Void)?
@@ -800,5 +826,21 @@ private struct EqualWidthRow: Layout {
         subviews.map { $0.sizeThatFits(.unspecified) }.reduce(.zero) {
             CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height))
         }
+    }
+}
+
+extension DetailTab {
+    /// What a dragged tab carries: its payload as plain text, which another tab takes to reorder, and, for a session
+    /// or split tab, the same payload under the type a pane takes (`UTType.suijinTab`).
+    var dragItemProvider: NSItemProvider {
+        let payload = dragPayload
+        let provider = NSItemProvider(object: payload as NSString)
+        if orderKey != nil {
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.suijinTab.identifier, visibility: .ownProcess) { completion in
+                completion(Data(payload.utf8), nil)
+                return nil
+            }
+        }
+        return provider
     }
 }

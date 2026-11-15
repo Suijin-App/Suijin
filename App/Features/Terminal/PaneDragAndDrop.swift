@@ -15,16 +15,23 @@ private let logger = Logger(subsystem: "com.tekmium.suijin", category: "panes")
 /// in SuijinCore) show where it would land with a Liquid Glass preview and a label; a drop moves it there
 /// (`AppModel.movePane`) with the panes sliding into their new places (`PaneRearrangeAnimation`). Dropping it on the
 /// title-bar tab group moves it into a tab of its own.
+///
+/// The other way round, a session tab dragged from the title bar onto a pane (or onto a plain tab's terminal) moves
+/// the whole tab into the tab on screen (`AppModel.mergeTab`). A tab has nothing to swap with, so the pane is divided
+/// into four zones and the nearest edge takes the drop. Session tabs carry a type of their own for this beside the
+/// plain text that reorders tabs; Changes and file tabs carry the text only, so a pane never takes one.
 extension UTType {
     /// A pane being dragged; the payload is its session id.
     static let suijinPane = UTType(exportedAs: "com.tekmium.suijin.pane")
+    /// A session tab (plain or split) being dragged; the payload is `DetailTab.dragPayload`.
+    static let suijinTab = UTType(exportedAs: "com.tekmium.suijin.tab")
 }
 
 extension NSPasteboard.PasteboardType {
     static let suijinPane = NSPasteboard.PasteboardType(UTType.suijinPane.identifier)
 }
 
-/// The pane drag in progress, if any: which pane is dragged and where it would land.
+/// The pane or tab drag in progress, if any: what is dragged and where it would land.
 @Observable
 @MainActor
 final class PaneDragState {
@@ -35,17 +42,29 @@ final class PaneDragState {
 
     /// The session of the pane being dragged.
     private(set) var source: UUID?
+    /// The session tab being dragged from the title bar. A SwiftUI drag reports its start only, so this can outlive a
+    /// drag that ended without a drop; drop targets also require the tab's type on the drag itself, and the next
+    /// drag of either kind replaces it.
+    private(set) var tab: DetailTab?
     /// The pane under the pointer and the zone it is in; nil while the pointer is over no pane that takes the drop.
     private(set) var target: Target?
 
     func begin(_ pane: UUID) {
         source = pane
+        tab = nil
+        target = nil
+    }
+
+    func beginTab(_ tab: DetailTab) {
+        self.tab = tab
+        source = nil
         target = nil
     }
 
     /// The drag ended: dropped, cancelled (Esc) or released where nothing takes it.
     func end() {
         source = nil
+        tab = nil
         target = nil
     }
 
@@ -79,6 +98,28 @@ extension AppModel {
             return false
         }
         focusPane(source)
+        return true
+    }
+
+    /// Whether the tab being dragged can become panes of the tab that shows `target` (`canMergeTab`). A zoomed pane
+    /// takes it too: the tab then shows every pane again.
+    func canDropDraggedTab(onto target: UUID) -> Bool {
+        guard let tab = paneDrag.tab else { return false }
+        return canMergeTab(tab, beside: target)
+    }
+
+    /// Drops the dragged tab on `target`: its sessions become panes beside it on `edge`, and the pane that had the
+    /// focus in the dragged tab takes the keyboard. Returns whether anything moved.
+    @discardableResult
+    func dropDraggedTab(onto target: UUID, edge: PaneEdge) -> Bool {
+        guard canDropDraggedTab(onto: target), let tab = paneDrag.tab else { return false }
+        paneDrag.end()
+        do {
+            try rearrangePanes { try mergeTab(tab, beside: target, edge: edge) }
+        } catch {
+            logger.error("Could not move a tab into a split: \(String(describing: error), privacy: .public)")
+            return false
+        }
         return true
     }
 
@@ -266,7 +307,8 @@ private struct PaneDragChip: View {
 // MARK: Drop targets
 
 /// Makes a pane of a split tab take the dragged pane: dims it while it is the one dragged, and shows where the dragged
-/// pane would land while the pointer is over it.
+/// pane would land while the pointer is over it. It takes a dragged session tab as well, and so does a plain tab's
+/// terminal, which is why this is used there too (a pane drag never lands on a plain tab: it has no other pane).
 struct PaneDropTarget: ViewModifier {
     @Environment(AppModel.self) private var model
     let session: UUID
@@ -280,7 +322,7 @@ struct PaneDropTarget: ViewModifier {
             .animation(.easeOut(duration: 0.15), value: isSource)
             .overlay { PaneDropPreview(placement: drag.target?.pane == session ? drag.target?.placement : nil) }
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-            .onDrop(of: [.suijinPane], delegate: PaneDropDelegate(model: model, pane: session, size: size))
+            .onDrop(of: [.suijinPane, .suijinTab], delegate: PaneDropDelegate(model: model, pane: session, size: size))
     }
 }
 
@@ -289,8 +331,24 @@ private struct PaneDropDelegate: DropDelegate {
     let pane: UUID
     let size: CGSize
 
+    /// Whether the drag is a session tab from the title bar, not a pane.
+    private func isTab(_ info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.suijinTab])
+    }
+
+    private func canDrop(_ info: DropInfo) -> Bool {
+        if isTab(info) { return model.canDropDraggedTab(onto: pane) }
+        return info.hasItemsConforming(to: [.suijinPane]) && model.canDropDraggedPane(onto: pane)
+    }
+
+    /// Where the drag would land: one of five zones for a pane, the nearest edge for a tab (it has nothing to swap).
+    private func placement(_ info: DropInfo) -> PanePlacement? {
+        if isTab(info) { return PaneEdge(nearestTo: info.location, in: size).map { .edge($0) } }
+        return PanePlacement(dropAt: info.location, in: size)
+    }
+
     func validateDrop(info: DropInfo) -> Bool {
-        info.hasItemsConforming(to: [.suijinPane]) && model.canDropDraggedPane(onto: pane)
+        canDrop(info)
     }
 
     func dropEntered(info: DropInfo) {
@@ -299,7 +357,7 @@ private struct PaneDropDelegate: DropDelegate {
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         update(info)
-        return DropProposal(operation: model.canDropDraggedPane(onto: pane) ? .move : .forbidden)
+        return DropProposal(operation: canDrop(info) ? .move : .forbidden)
     }
 
     func dropExited(info: DropInfo) {
@@ -307,13 +365,17 @@ private struct PaneDropDelegate: DropDelegate {
     }
 
     func performDrop(info: DropInfo) -> Bool {
-        guard let placement = PanePlacement(dropAt: info.location, in: size) else { return false }
+        guard let placement = placement(info) else { return false }
+        if isTab(info) {
+            guard case .edge(let edge) = placement else { return false }
+            return model.dropDraggedTab(onto: pane, edge: edge)
+        }
         return model.dropDraggedPane(onto: pane, placement: placement)
     }
 
     private func update(_ info: DropInfo) {
-        guard model.canDropDraggedPane(onto: pane) else { return }
-        model.paneDrag.hover(pane, placement: PanePlacement(dropAt: info.location, in: size))
+        guard canDrop(info) else { return }
+        model.paneDrag.hover(pane, placement: placement(info))
     }
 }
 

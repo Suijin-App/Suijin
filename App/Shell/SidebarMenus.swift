@@ -85,6 +85,7 @@ struct SessionMenuItems: View {
         Divider()
         let layout = model.layout(containing: session.id)
         PaneMenuItems(session: session.id, layout: layout)
+        MoveTabToSelectedTabMenu(session: session.id)
         if layout == nil { Divider() }
         let others = model.tabSessions(in: context).filter { $0.id != session.id }
         if !others.isEmpty {
@@ -92,6 +93,25 @@ struct SessionMenuItems: View {
         }
         // A split tab closes with all its panes, as its close button does; Close Pane above closes this one.
         Button("Close Tab", role: .destructive) { model.requestCloseTab(model.tab(of: session.id)) }
+    }
+}
+
+/// Moves the session's whole tab (a plain tab, or a split tab with all its panes) into the selected tab, on the right
+/// of that tab's focused pane or below it: what dragging the tab onto the pane does, without the drag. Dimmed, with
+/// the reason as its help, when the tab is the selected one, no session tab is selected or the panes would pass the
+/// limit.
+struct MoveTabToSelectedTabMenu: View {
+    @Environment(AppModel.self) private var model
+    let session: UUID
+
+    var body: some View {
+        let reason = model.moveTabToSelectedTabUnavailableReason(showing: session)
+        Menu("Move Tab to Selected Tab") {
+            Button("Right") { model.moveTabToSelectedTab(showing: session, edge: .right) }
+            Button("Below") { model.moveTabToSelectedTab(showing: session, edge: .bottom) }
+        }
+        .disabled(reason != nil)
+        .help(reason.map { Text($0) } ?? Text("The tab becomes a pane on that side."))
     }
 }
 

@@ -143,8 +143,21 @@ public struct PaneLayout: Codable, Hashable, Sendable, Identifiable {
         guard contains(target) else { throw PaneLayoutError.unknownPane }
         guard !isFull else { throw PaneLayoutError.full }
         var copy = self
-        copy.root = Self.normalize(root.inserting(pane, beside: target, edge: edge))!
+        copy.root = Self.normalize(root.inserting(.pane(pane), beside: target, edge: edge))!
         copy.focused = pane
+        copy.zoomed = nil
+        return copy
+    }
+
+    /// Adds every pane of `other` next to `target` on `edge`: the group takes half of the target's room and keeps its
+    /// own arrangement. The group's focused pane takes the focus. The result keeps this layout's identity.
+    public func inserting(_ other: PaneLayout, beside target: UUID, edge: PaneEdge) throws -> PaneLayout {
+        guard other.panes.allSatisfy({ !contains($0) }) else { throw PaneLayoutError.duplicatePane }
+        guard contains(target) else { throw PaneLayoutError.unknownPane }
+        guard paneCount + other.paneCount <= Self.maxPanes else { throw PaneLayoutError.full }
+        var copy = self
+        copy.root = Self.normalize(root.inserting(other.root, beside: target, edge: edge))!
+        copy.focused = other.focused
         copy.zoomed = nil
         return copy
     }
@@ -171,7 +184,7 @@ public struct PaneLayout: Codable, Hashable, Sendable, Identifiable {
             return try swapping(pane, target)
         case .edge(let edge):
             guard var copy = try removing(pane) else { throw PaneLayoutError.unknownPane }
-            copy.root = Self.normalize(copy.root.inserting(pane, beside: target, edge: edge))!
+            copy.root = Self.normalize(copy.root.inserting(.pane(pane), beside: target, edge: edge))!
             copy.focused = pane
             copy.zoomed = nil
             return copy
@@ -379,24 +392,25 @@ extension PaneNode {
         }
     }
 
-    /// The tree with `pane` beside `target`. Inside a split of the edge's axis the pane joins that split next to the
-    /// target and takes half the target's share; anywhere else the target becomes a two-pane split.
-    func inserting(_ pane: UUID, beside target: UUID, edge: PaneEdge) -> PaneNode {
+    /// The tree with `node` (a pane, or a group of panes) beside `target`. Inside a split of the edge's axis the node
+    /// joins that split next to the target and takes half the target's share; anywhere else the target becomes a
+    /// two-child split. Not normalized: a group split along the same axis is merged into its parent by `normalize`.
+    func inserting(_ node: PaneNode, beside target: UUID, edge: PaneEdge) -> PaneNode {
         switch self {
         case .pane(let id):
             guard id == target else { return self }
-            let children: [PaneNode] = edge.isLeading ? [.pane(pane), self] : [self, .pane(pane)]
+            let children: [PaneNode] = edge.isLeading ? [node, self] : [self, node]
             return .split(axis: edge.axis, children: children, fractions: [0.5, 0.5])
         case .split(let axis, var children, var fractions):
             if axis == edge.axis, let index = children.firstIndex(of: .pane(target)) {
                 let half = fractions[index] / 2
                 fractions[index] = half
                 let position = edge.isLeading ? index : index + 1
-                children.insert(.pane(pane), at: position)
+                children.insert(node, at: position)
                 fractions.insert(half, at: position)
                 return .split(axis: axis, children: children, fractions: fractions)
             }
-            return .split(axis: axis, children: children.map { $0.inserting(pane, beside: target, edge: edge) }, fractions: fractions)
+            return .split(axis: axis, children: children.map { $0.inserting(node, beside: target, edge: edge) }, fractions: fractions)
         }
     }
 

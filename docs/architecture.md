@@ -103,12 +103,22 @@ A new pane (⌘D, ⇧⌘D, the title-bar split button, context menus) runs the a
 default the focused pane's agent and account; the split button's menu can pick another for one pane.
 
 Panes are rearranged by dragging a pane's header (`PaneDragAndDrop.swift`): a system drag session with a payload type
-of its own (`com.tekmium.suijin.pane`, declared in `Info.plist`), so tab drags and pane drags never land on each
-other. Over another pane, `PanePlacement(dropAt:in:)` (SuijinCore) picks one of five zones (an edge places the pane
-beside it, the middle swaps the two), and dropping on the title-bar tab group moves the pane to a tab of its own.
+of its own (`com.tekmium.suijin.pane`, declared in `Info.plist`), so a pane never lands where a tab reorders. Over
+another pane, `PanePlacement(dropAt:in:)` (SuijinCore) picks one of five zones (an edge places the pane beside it,
+the middle swaps the two), and dropping on the title-bar tab group moves the pane to a tab of its own.
 ⌃⌥⌘ arrows and Session ▸ Move Pane swap the focused pane with its neighbor. After any rearrangement,
 `PaneRearrangeAnimation` slides each pane's layer from its old frame to its new one. The terminal views move into
 their new containers and are never recreated.
+
+The other way round, a whole tab moves into another tab (`AppModel.mergeTab`): a plain tab becomes one pane, a split
+tab is added as a group that keeps its arrangement (`PaneLayout.inserting(_:beside:edge:)` taking a layout), and its
+own layout is deleted. A session or split tab dragged from the title bar carries, beside the plain text that reorders
+tabs, a type of its own (`com.tekmium.suijin.tab`, also in `Info.plist`); Changes and file tabs carry the text only.
+Every pane takes that type, and so does the terminal of a plain tab, which then becomes a split tab in its place. A
+tab has nothing to swap with, so `PaneEdge(nearestTo:in:)` divides the pane into four zones and the nearest edge
+takes the drop; a zoomed pane takes it too and the tab shows every pane again. A SwiftUI drag reports only its start,
+so `PaneDragState` remembers the dragged tab from then and drop targets also require the type on the drag itself.
+The tab's context menu (Move Tab to Selected Tab) and VoiceOver actions on the tab do the same without a drag.
 
 ## Keyboard shortcuts
 

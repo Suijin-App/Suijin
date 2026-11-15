@@ -190,6 +190,8 @@ enum ShortcutCatalog {
                      gesture: "Drag a pane header onto the center of another pane", systemImage: "arrow.left.arrow.right"),
         MouseGesture(id: "paneToTab", title: "Move Pane to New Tab", detail: nil,
                      gesture: "Drag a pane header onto the tab bar", systemImage: "macwindow.badge.plus"),
+        MouseGesture(id: "tabToPane", title: "Move a Tab into a Split", detail: "The tab becomes a pane on that side.",
+                     gesture: "Drag a tab onto a pane", systemImage: "rectangle.split.2x1"),
         MouseGesture(id: "equalizeByDivider", title: "Equalize Panes", detail: "Every pane of that split gets the same room.",
                      gesture: "Double-click a divider", systemImage: "equal.square"),
         MouseGesture(id: "openPath", title: "Open a Path or Link",

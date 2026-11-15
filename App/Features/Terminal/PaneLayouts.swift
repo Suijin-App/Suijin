@@ -1,5 +1,6 @@
 import AppKit
 import SuijinCore
+import SwiftUI
 import os
 
 private let logger = Logger(subsystem: "com.tekmium.suijin", category: "panes")
@@ -99,8 +100,76 @@ extension AppModel {
             commit(layout)
             replaceTab(.session(target), with: .panes(layout.id), in: context)
         }
-        removeFromOrder(pane, in: context)
+        removeFromOrder(.session(pane), in: context)
         if let layoutID = paneIndex[pane] { selectedTab[context] = .panes(layoutID) }
+    }
+
+    // MARK: Merging tabs
+
+    /// Whether the session tab `tab` (a plain tab or a split tab) can become panes of the tab that shows `target`:
+    /// another tab of the same context, and the two together hold `PaneLayout.maxPanes` panes at most. Changes and
+    /// file tabs hold no session and never can.
+    func canMergeTab(_ tab: DetailTab, beside target: UUID) -> Bool {
+        let moving = panes(of: tab)
+        guard let first = moving.first, self.tab(of: first) == tab, tab != self.tab(of: target),
+              let targetRecord = sessions.first(where: { $0.id == target }) else { return false }
+        let context = context(of: targetRecord)
+        let sameContext = moving.allSatisfy { id in
+            sessions.first { $0.id == id }.map { self.context(of: $0) == context } ?? false
+        }
+        return sameContext && (layout(containing: target)?.paneCount ?? 1) + moving.count <= PaneLayout.maxPanes
+    }
+
+    /// Moves every session of `tab` into the tab that shows `target`, beside `target` on `edge`: a plain tab becomes
+    /// one pane, a split tab keeps its arrangement as a group. The moved tab is gone from the tab bar, `target`'s
+    /// plain tab becomes a split tab in its place, and a zoomed pane there is shown with the others again. Selects
+    /// the tab; the moved tab's focused pane takes the focus.
+    func mergeTab(_ tab: DetailTab, beside target: UUID, edge: PaneEdge) throws {
+        guard canMergeTab(tab, beside: target), let targetRecord = sessions.first(where: { $0.id == target }) else {
+            if tab == self.tab(of: target) { throw PaneLayoutError.samePane }
+            let fits = (layout(containing: target)?.paneCount ?? 1) + panes(of: tab).count <= PaneLayout.maxPanes
+            throw fits ? PaneLayoutError.unknownPane : PaneLayoutError.full
+        }
+        switch tab {
+        case .session(let pane):
+            try insertPane(pane, beside: target, edge: edge)
+        case .panes(let sourceID):
+            guard let source = paneLayouts[sourceID] else { throw PaneLayoutError.unknownPane }
+            let context = context(of: targetRecord)
+            let existing = layout(containing: target)
+            let merged = try (existing ?? PaneLayout(pane: target)).inserting(source, beside: target, edge: edge)
+            // The moved tab's layout goes first, so no pane is ever in two layouts.
+            drop(source)
+            commit(merged)
+            if existing == nil { replaceTab(.session(target), with: .panes(merged.id), in: context) }
+            removeFromOrder(tab, in: context)
+            selectedTab[context] = .panes(merged.id)
+        case .changes, .file:
+            throw PaneLayoutError.unknownPane
+        }
+    }
+
+    /// Moves the tab that shows `session` into its context's selected tab, beside that tab's focused pane on `edge`,
+    /// and shows the context. What dragging the tab onto that pane does, for context menus and VoiceOver.
+    func moveTabToSelectedTab(showing session: UUID, edge: PaneEdge) {
+        guard let record = sessions.first(where: { $0.id == session }) else { return }
+        let context = context(of: record)
+        guard let target = activeSession(in: context) else { return }
+        selection = context
+        do {
+            try rearrangePanes { try mergeTab(tab(of: session), beside: target, edge: edge) }
+        } catch {
+            logger.error("Could not move a tab into the selected tab: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    /// Why the tab that shows `session` cannot move into its context's selected tab, or nil when it can.
+    func moveTabToSelectedTabUnavailableReason(showing session: UUID) -> LocalizedStringKey? {
+        guard let record = sessions.first(where: { $0.id == session }),
+              let target = activeSession(in: context(of: record)) else { return "Select a session tab to move this tab into it" }
+        let tab = tab(of: session)
+        if tab == self.tab(of: target) { return "This tab is already selected" }
+        return canMergeTab(tab, beside: target) ? nil : "A tab holds up to \(PaneLayout.maxPanes) panes"
     }
 
     // MARK: Rearranging
@@ -282,11 +351,20 @@ extension AppModel {
         }
     }
 
-    private func removeFromOrder(_ session: UUID, in context: SessionContext) {
-        guard var order = sessionOrder[context], let index = order.firstIndex(of: session) else { return }
-        order.remove(at: index)
-        sessionOrder[context] = order
-        saveSessionOrder()
+    /// A session or split tab stopped being a tab of its own (its sessions are panes of another tab now).
+    private func removeFromOrder(_ tab: DetailTab, in context: SessionContext) {
+        if var order = sessionOrder[context], let index = tab.orderKey.flatMap({ order.firstIndex(of: $0) }) {
+            order.remove(at: index)
+            sessionOrder[context] = order
+            saveSessionOrder()
+        }
+        // The dragged tab order too: a place kept there would put the tab back where it was before, instead of
+        // beside its split tab, when a pane is taken out again.
+        if var order = tabOrder[context], let index = order.firstIndex(of: tab.dragPayload) {
+            order.remove(at: index)
+            tabOrder[context] = order
+            saveTabOrder()
+        }
     }
 
     /// The selection as the setter of `selectedTab` stores it: a pane's `.session` becomes its split tab, and the

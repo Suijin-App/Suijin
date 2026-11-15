@@ -40,6 +40,29 @@ struct PaneDropZoneTests {
         #expect(PanePlacement(dropAt: CGPoint(x: CGFloat.nan, y: 10), in: size) == nil)
     }
 
+    @Test func theNearestEdgeTakesTheWholePaneForATab() {
+        func edge(_ x: CGFloat, _ y: CGFloat) -> PaneEdge? { PaneEdge(nearestTo: CGPoint(x: x, y: y), in: size) }
+        #expect(edge(10, 200) == .left)
+        #expect(edge(790, 200) == .right)
+        #expect(edge(400, 10) == .top)
+        #expect(edge(400, 390) == .bottom)
+        // Past the edge bands there is no middle: 30 % from the left, 45 % from the top.
+        #expect(edge(240, 180) == .left)
+        #expect(edge(560, 220) == .right)
+        // 45 % from the left, 30 % from the top: the top is nearer as a share of the size.
+        #expect(edge(360, 120) == .top)
+        #expect(edge(440, 280) == .bottom)
+        // The exact middle and the diagonals always resolve the same way.
+        for _ in 0..<10 {
+            #expect(edge(400, 200) == .left)
+            #expect(edge(0, 0) == .left)
+        }
+        #expect(edge(-1, 200) == nil)
+        #expect(edge(400, 401) == nil)
+        #expect(PaneEdge(nearestTo: .zero, in: .zero) == nil)
+        #expect(PaneEdge(nearestTo: CGPoint(x: CGFloat.nan, y: 10), in: size) == nil)
+    }
+
     @Test func previewCoversWhereThePaneLands() {
         let bounds = CGRect(x: 10, y: 20, width: 800, height: 400)
         #expect(PanePlacement.edge(.left).previewRect(in: bounds) == CGRect(x: 10, y: 20, width: 400, height: 400))

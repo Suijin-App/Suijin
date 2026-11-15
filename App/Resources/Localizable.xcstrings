@@ -1493,6 +1493,9 @@
     "Drag a pane header onto the tab bar" : {
 
     },
+    "Drag a tab onto a pane" : {
+
+    },
     "Drag a tab onto another tab" : {
 
     },
@@ -1960,6 +1963,9 @@
     "Move %@ up" : {
 
     },
+    "Move a Tab into a Split" : {
+
+    },
     "Move a Zoomed Image" : {
 
     },
@@ -1988,6 +1994,15 @@
 
     },
     "Move running sessions when the default account changes" : {
+
+    },
+    "Move Tab to Selected Tab" : {
+
+    },
+    "Move Tab to Selected Tab, Below" : {
+
+    },
+    "Move Tab to Selected Tab, Right" : {
 
     },
     "Move the keyboard focus to the pane next to this one." : {
@@ -2844,6 +2859,9 @@
     "See each plan’s usage in the status bar." : {
 
     },
+    "Select a session tab to move this tab into it" : {
+
+    },
     "Select a session tab to split it" : {
 
     },
@@ -3438,6 +3456,9 @@
     "The sign-in of your own Claude Code login (from the macOS Keychain) and Codex login (`~/.codex/auth.json`), to show how much of your plan's limits you have used." : {
 
     },
+    "The tab becomes a pane on that side." : {
+
+    },
     "The terminal host is missing from the app." : {
 
     },
@@ -3469,6 +3490,9 @@
 
     },
     "This session uses %@" : {
+
+    },
+    "This tab is already selected" : {
 
     },
     "This workspace is a plain folder, so there is no history to compare with. Initialize a git repository to see diffs and create worktrees." : {

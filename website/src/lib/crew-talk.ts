@@ -104,3 +104,18 @@ export const reactions = {
   nap: ["Nap time.", "Did they leave?", "Wake me if they scroll.", "Five minutes."], back: ["You're back!", "Oh! Hello again.", "I wasn't sleeping.", "Where were we?"],
   film: ["Good film, right?", "We were great in that.", "Watch it again?"], dark: ["Who turned off the lights?", "Cosy.", "Night shift."], light: ["My eyes!", "Good morning.", "Too bright!"],
 };
+/** What they say when they play with each other. */
+export const plays = {
+  duel: { start: ["En garde!", "Fight me!", "Show me your kung fu."], won: ["Hi-ya!", "Undefeated.", "And stay wet!"], lost: ["You cheated.", "Lucky kick.", "Best of three?", "I slipped."] },
+  splash: { hit: ["Hey!", "Cold!", "I just dried off!"], tease: ["Hehe.", "Got you.", "Refreshing, right?"], enough: ["That's it!", "Come here, you!", "Oh, it's on."], late: ["Next time.", "You got lucky.", "I let you go."] },
+  chorus: ["A little quieter?", "My ears!", "Somebody is flat.", "Encore! No, wait. Don't."],
+  wave: { start: ["Wave!", "All together now!", "Ready? Wave!"], done: ["Again!", "Nailed it.", "We practised that."] },
+  peekaboo: { start: ["Peekaboo!", "Boo!"], both: ["Aah!", "Eek!"], after: ["You scared me!", "Don't do that!"] },
+  copycat: { stop: ["Stop copying me.", "Really?", "Get your own moves."], who: ["Copying who?", "Me? Never.", "Great minds."] },
+  race: { dare: ["Race you over there!", "Bet I swim faster.", "Last one there is a bug!"], accept: ["You're on.", "Easy.", "Ready when you are."], go: ["Go!", "Three, two, one, go!"] },
+  prank: { hush: ["Shh.", "Watch this.", "Don't tell."], done: ["Hehe.", "Classic.", "Splash!"], wet: ["Not funny.", "I was singing!", "I'll remember that."] },
+  toss: { throw: ["Catch!", "Heads up!", "Here!"], caught: ["Got it!", "Mine now.", "Nice throw!"], missed: ["Oops.", "It slipped.", "It's wet anyway."], tease: ["Butterfingers.", "It was right there.", "We had one job."] },
+  tower: { want: ["I can't see from here.", "Lift me up?", "Hold still."], view: ["I can see the footer!", "Nice view up here.", "So that's the whole page."], heavy: ["You're heavy.", "Hurry up!", "My head!"], wet: ["Never again.", "Worth it.", "Told you."] },
+  envy: ["Me too!", "Press me next!", "What about me?", "My turn!"],
+  wake: { call: ["Wake up!", "Hey. Hey. Hey!", "The human is back!"], up: ["I'm up! I'm up!", "Five more minutes...", "I wasn't sleeping."], hush: ["Shh.", "Some of us are sleeping.", "Roll over."] },
+};

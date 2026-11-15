@@ -129,9 +129,15 @@ The tab's context menu (Move Tab to Selected Tab) and VoiceOver actions on the t
 `ShortcutCatalog` (`App/Features/Settings/ShortcutCatalog.swift`) defines every keyboard shortcut once; menu commands
 and buttons bind `ShortcutCatalog.<entry>.shortcut`, and Settings › Shortcuts (Help › Keyboard Shortcuts, ⌘/) lists
 the same entries with the mouse gestures. While a terminal has focus, `TerminalKeyRouter` (SuijinTerminal) handles
-the tab, pane and edit shortcuts itself. `ShortcutCatalogTests` fails when a `.keyboardShortcut(…)` in the app does not
-come from the catalog (sheets' standard Return and Esc buttons aside), when a terminal route has no catalog entry with
-the same keys, or when a catalog shortcut would reach another route.
+the tab, pane, text size and edit shortcuts itself. `ShortcutCatalogTests` fails when a `.keyboardShortcut(…)` in the
+app does not come from the catalog (sheets' standard Return and Esc buttons aside), when a terminal route has no
+catalog entry with the same keys, or when a catalog shortcut would reach another route.
+
+⌘+, ⌘- and ⌘0 are one catalog entry each with two meanings, by where the keyboard is: in a terminal they change that
+terminal's text size, in the file viewer they zoom its image. A terminal's size is the size in Settings › Terminal
+plus an offset in points kept per session (`App/Features/Terminal/TerminalTextZoom.swift`, user defaults key
+`terminal.fontSizeOffsets`), so a zoomed terminal stays that much larger when the setting changes; the offset follows
+the session between tabs and panes and is dropped when the session closes.
 
 ## Terminal output flow
 

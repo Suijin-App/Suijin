@@ -143,6 +143,9 @@ extension AppModel {
             moveFocusedPane(in: context, toward: PaneEdge(direction))
         case .zoomPane: if layout(containing: pane) != nil { toggleZoom(pane) }
         case .equalizePanes: if let layout = layout(containing: pane) { equalizePanes(layout.id) }
+        case .biggerText: adjustTerminalFontSize(of: pane, by: 1)
+        case .smallerText: adjustTerminalFontSize(of: pane, by: -1)
+        case .defaultTextSize: resetTerminalFontSize(of: pane)
         default: return false
         }
         return true

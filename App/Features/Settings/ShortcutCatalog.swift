@@ -137,11 +137,16 @@ enum ShortcutCatalog {
     static let toggleInspector = AppShortcut(id: "toggleInspector", title: "Show or Hide Inspector",
                                              detail: "Browse the files of the workspace or worktree.",
                                              group: .files, shortcut: KeyboardShortcut("i", modifiers: [.command, .option]))
-    static let viewerZoomIn = AppShortcut(id: "viewerZoomIn", title: "Zoom In", detail: "Enlarge an image in the file viewer.",
+    // The three zoom entries have two meanings, by where the keyboard is: a terminal changes its own text size, the
+    // file viewer zooms its image.
+    static let viewerZoomIn = AppShortcut(id: "viewerZoomIn", title: "Zoom In",
+                                          detail: "Enlarge the focused terminal’s text, or an image in the file viewer.",
                                           group: .files, shortcut: KeyboardShortcut("=", modifiers: .command))
-    static let viewerZoomOut = AppShortcut(id: "viewerZoomOut", title: "Zoom Out", detail: "Shrink an image in the file viewer.",
+    static let viewerZoomOut = AppShortcut(id: "viewerZoomOut", title: "Zoom Out",
+                                           detail: "Shrink the focused terminal’s text, or an image in the file viewer.",
                                            group: .files, shortcut: KeyboardShortcut("-", modifiers: .command))
-    static let viewerFit = AppShortcut(id: "viewerFit", title: "Zoom to Fit", detail: "Fit an image to the file viewer.",
+    static let viewerFit = AppShortcut(id: "viewerFit", title: "Zoom to Fit",
+                                       detail: "Fit an image to the file viewer, or reset the focused terminal’s text size.",
                                        group: .files, shortcut: KeyboardShortcut("0", modifiers: .command))
 
     // MARK: Source Control

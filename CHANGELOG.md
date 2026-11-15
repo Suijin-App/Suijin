@@ -13,6 +13,9 @@
 - **Move a tab into a split.** Drag a session tab from the tab bar onto a pane, or onto the terminal of a plain
   tab, and it becomes a pane on the side nearest to the pointer; a split tab moves with all its panes and keeps
   their arrangement. The same move is in the tab's context menu as Move Tab to Selected Tab.
+- **Text size per terminal.** ⌘+ and ⌘- make the text of the terminal you are typing in larger or smaller, and ⌘0
+  puts it back at the size set in Settings; the other panes and tabs keep theirs. Each session remembers its size
+  until it is closed, across launches too.
 
 ## 0.1.0 (2026-11-15)
 

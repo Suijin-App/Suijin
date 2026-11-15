@@ -64,7 +64,9 @@ struct WorkspaceIconEditor: View {
                     }
                 }
                 HStack {
-                    TextField("Emoji", text: $emoji, prompt: Text(verbatim: "🚀"))
+                    // The placeholder is the word, not an emoji: an emoji is drawn in full color even as a
+                    // placeholder, so an empty field looked filled in while Use Emoji stayed disabled.
+                    TextField("Emoji", text: $emoji)
                         .frame(width: 70)
                         .onSubmit(applyEmoji)
                     Button("Use Emoji", action: applyEmoji).disabled(emoji.trimmingCharacters(in: .whitespaces).isEmpty)

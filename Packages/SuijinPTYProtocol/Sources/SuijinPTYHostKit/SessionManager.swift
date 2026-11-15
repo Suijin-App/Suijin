@@ -163,16 +163,20 @@ public final class SessionManager: @unchecked Sendable {
         session(sessionID)?.resize(cols: cols, rows: rows)
     }
 
-    /// Ends the session's processes and forgets the session: once it is settled (exited, swept, and its exit received
-    /// by every attachment) it is dropped with its scrollback and metadata. A session that already ended is dropped
-    /// the same way, and so is a record left by a previous helper process.
-    public func terminate(sessionID: String, completion: (@Sendable (Int32) -> Void)? = nil) {
+    /// Ends the session's processes and, with `forget` (a client that has no more use for the session: its tab was
+    /// closed, or the app recorded its end), forgets the session: once it is settled (exited, swept, and its exit
+    /// received by every attachment) it is dropped with its scrollback and metadata. A session that already ended is
+    /// dropped the same way, and so is a record left by a previous helper process.
+    ///
+    /// Without `forget` the session only ends, as if it had exited on its own: the app still has to learn how it
+    /// ended, possibly after a relaunch (a worker the orchestration broker stops while the app is closed).
+    public func terminate(sessionID: String, forget: Bool = true, completion: (@Sendable (Int32) -> Void)? = nil) {
         let session: PTYSession? = queue.sync {
             if let session = sessions[sessionID] {
-                released.insert(sessionID)
+                if forget { released.insert(sessionID) }
                 return session
             }
-            if stale.removeValue(forKey: sessionID) != nil { deleteMetadataLocked(sessionID) }
+            if forget, stale.removeValue(forKey: sessionID) != nil { deleteMetadataLocked(sessionID) }
             return nil
         }
         guard let session else {

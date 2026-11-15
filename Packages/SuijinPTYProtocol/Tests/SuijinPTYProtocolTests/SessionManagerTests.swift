@@ -116,6 +116,39 @@ struct SessionManagerTests {
         #expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent("\(info.id).json").path))
     }
 
+    @Test func endingWithoutForgettingKeepsTheSessionForTheApp() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        var configuration = SessionManager.Configuration(metadataDirectory: directory)
+        configuration.sessionTuning.killGrace = 0.2
+        let manager = SessionManager(configuration: configuration)
+        manager.start()
+        let client = UUID()
+        manager.clientConnected(client)
+
+        let info = try manager.spawn(shellRequest("echo last words; sleep 100"))
+        let session = try #require(manager.session(info.id))
+        try await waitUntil { session.scrollbackSnapshot().contains(text: "last words") }
+        let status = await withCheckedContinuation { continuation in
+            manager.terminate(sessionID: info.id, forget: false) { continuation.resume(returning: $0) }
+        }
+        #expect(status == 128 + SIGHUP)
+        try await waitUntil { session.isSettled }
+        #expect(manager.listSessions().first { $0.id == info.id }?.exitStatus == 128 + SIGHUP)
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("\(info.id).json").path))
+
+        // The app, back later, reads the end of the output and the status, then lets the session go.
+        let sink = CollectingSink()
+        let attached = manager.attach(sessionID: info.id, clientID: client, sink: sink) { scrollback, _ in
+            sink.collector.append(scrollback)
+        }
+        #expect(attached)
+        #expect(await sink.collector.waitForExit() == 128 + SIGHUP)
+        #expect(sink.collector.text.contains("last words"))
+        manager.terminate(sessionID: info.id)
+        try await waitUntil { manager.session(info.id) == nil }
+    }
+
     @Test func terminatingARecordOfAPreviousHelperDeletesIt() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

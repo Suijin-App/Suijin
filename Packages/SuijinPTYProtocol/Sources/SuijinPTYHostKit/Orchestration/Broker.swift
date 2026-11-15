@@ -7,7 +7,8 @@ public protocol OrchestrationSessionIO: AnyObject, Sendable {
     func injectInput(hostSessionID: String, data: Data)
     /// Bytes the session has produced so far, nil for an unknown session.
     func bytesRead(hostSessionID: String) -> UInt64?
-    /// Ends the session as closing its tab does (SIGHUP, then SIGKILL); its exit arrives as `sessionExited`.
+    /// Ends the session's processes (SIGHUP, then SIGKILL); its exit arrives as `sessionExited`. The host keeps the
+    /// ended session, as one that exited on its own, until the app has recorded how it ended.
     func terminateSession(hostSessionID: String)
 }
 

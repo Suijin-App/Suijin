@@ -3,7 +3,10 @@ import SuijinPTYProtocol
 import os
 
 /// Owns every `PTYSession` of the helper: lookup by id, which client is attached where, persisted metadata,
-/// reaping of old exited sessions and the idle signal that lets the helper exit.
+/// letting go of ended sessions and the idle signal that lets the helper exit.
+///
+/// What is kept of an ended session: nothing once a client asked to terminate it (closing its tab, or the app having
+/// recorded its end), and otherwise the tail of its scrollback until the retention window is over.
 ///
 /// All mutable state is confined to a private serial queue (hence `@unchecked Sendable`). Session queues never wait on
 /// the manager queue, so the manager may call into sessions synchronously without deadlock.
@@ -15,6 +18,9 @@ public final class SessionManager: @unchecked Sendable {
         public var sessionTuning = PTYSessionTuning()
         /// Exited sessions nobody is attached to are dropped (with their metadata) after this long.
         public var exitedRetention: TimeInterval = 24 * 3600
+        /// Scrollback kept for a session that exited on its own. The app reads only the last lines of it (the end of
+        /// a failure, an agent's resume hint), once.
+        public var exitedTailBytes = 256 * 1024
         /// How long the helper must stay idle (no running session, no connected client) before `onIdle` fires.
         public var idleGrace: TimeInterval = 10
         public var reapInterval: TimeInterval = 600
@@ -39,6 +45,8 @@ public final class SessionManager: @unchecked Sendable {
     // Queue-confined state.
     private var sessions: [String: PTYSession] = [:]
     private var endedAt: [String: Date] = [:]
+    /// Sessions a client asked to terminate: forgotten as soon as they are settled.
+    private var released: Set<String> = []
     /// Sessions recorded by a previous helper process; informative only, never running.
     private var stale: [String: PersistedSession] = [:]
     /// clientID -> sessionID -> attachment token.
@@ -107,6 +115,10 @@ public final class SessionManager: @unchecked Sendable {
                 onExit: { [weak self] session, status in
                     guard let self else { return }
                     self.queue.async { self.sessionExited(session, status: status) }
+                },
+                onSettled: { [weak self] session in
+                    guard let self else { return }
+                    self.queue.async { self.sessionSettled(session) }
                 }
             )
             sessions[session.id] = session
@@ -151,12 +163,27 @@ public final class SessionManager: @unchecked Sendable {
         session(sessionID)?.resize(cols: cols, rows: rows)
     }
 
-    public func terminate(sessionID: String, completion: (@Sendable (Int32) -> Void)? = nil) {
-        guard let session = session(sessionID) else {
+    /// Ends the session's processes and, with `forget` (a client that has no more use for the session: its tab was
+    /// closed, or the app recorded its end), forgets the session: once it is settled (exited, swept, and its exit
+    /// received by every attachment) it is dropped with its scrollback and metadata. A session that already ended is
+    /// dropped the same way, and so is a record left by a previous helper process.
+    ///
+    /// Without `forget` the session only ends, as if it had exited on its own: the app still has to learn how it
+    /// ended, possibly after a relaunch (a worker the orchestration broker stops while the app is closed).
+    public func terminate(sessionID: String, forget: Bool = true, completion: (@Sendable (Int32) -> Void)? = nil) {
+        let session: PTYSession? = queue.sync {
+            if let session = sessions[sessionID] {
+                if forget { released.insert(sessionID) }
+                return session
+            }
+            if forget, stale.removeValue(forKey: sessionID) != nil { deleteMetadataLocked(sessionID) }
+            return nil
+        }
+        guard let session else {
             completion?(-1)
             return
         }
-        session.terminate(completion: completion)
+        session.terminate(completion: completion) // reports settled, now or when the processes are gone
     }
 
     // MARK: Clients
@@ -243,6 +270,21 @@ public final class SessionManager: @unchecked Sendable {
 
     private func isAttachedLocked(_ sessionID: String) -> Bool {
         clients.values.contains { $0[sessionID] != nil }
+    }
+
+    /// Runs after `sessionExited`. A released session goes entirely; one that ended on its own keeps its tail.
+    private func sessionSettled(_ session: PTYSession) {
+        guard sessions[session.id] === session else { return }
+        guard released.contains(session.id) else {
+            session.trimScrollback(toLast: configuration.exitedTailBytes)
+            return
+        }
+        sessions[session.id] = nil
+        endedAt[session.id] = nil
+        released.remove(session.id)
+        for client in clients.keys { clients[client]?[session.id] = nil }
+        deleteMetadataLocked(session.id)
+        Self.logger.info("forgot session \(session.id, privacy: .public)")
     }
 
     private func sessionExited(_ session: PTYSession, status: Int32) {

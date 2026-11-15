@@ -280,7 +280,8 @@ public final class OrchestrationHub: SessionLifecycleObserver, OrchestrationSess
     }
 
     public func terminateSession(hostSessionID: String) {
-        manager?.terminate(sessionID: hostSessionID)
+        // Ended, not forgotten: the app shows how the worker ended, and reads that from the host when it was closed.
+        manager?.terminate(sessionID: hostSessionID, forget: false)
     }
 }
 

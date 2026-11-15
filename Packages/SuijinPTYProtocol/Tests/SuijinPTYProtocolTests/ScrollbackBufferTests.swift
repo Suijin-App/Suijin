@@ -65,6 +65,53 @@ struct ScrollbackBufferTests {
         }
     }
 
+    @Test func trimKeepsTheTailAndTheOffsets() {
+        var buffer = ScrollbackBuffer(capacity: 16)
+        buffer.append(Array("abcdefghij".utf8))
+        buffer.trim(toLast: 4)
+        #expect(buffer.snapshot() == Data("ghij".utf8))
+        #expect(buffer.totalWritten == 10)
+        #expect(buffer.startOffset == 6)
+        #expect(buffer.read(from: 2) == Data("ghij".utf8), "an older offset resumes at what is still held")
+        #expect(buffer.read(from: 8) == Data("ij".utf8))
+
+        buffer.trim(toLast: 8)
+        #expect(buffer.snapshot() == Data("ghij".utf8), "nothing to drop")
+
+        buffer.append(Array("klmnopqrstuvwxyz".utf8)) // fills the ring again and wraps
+        #expect(buffer.snapshot() == Data("klmnopqrstuvwxyz".utf8))
+        #expect(buffer.totalWritten == 26)
+    }
+
+    @Test func trimOfAWrappedRingKeepsTheNewestBytes() {
+        var buffer = ScrollbackBuffer(capacity: 8)
+        buffer.append(Array("abcdef".utf8))
+        buffer.append(Array("ghijkl".utf8)) // wrapped: holds "efghijkl"
+        buffer.trim(toLast: 3)
+        #expect(buffer.snapshot() == Data("jkl".utf8))
+        #expect(buffer.startOffset == 9)
+        buffer.append(Array("mn".utf8))
+        #expect(buffer.snapshot() == Data("jklmn".utf8))
+    }
+
+    @Test func trimStartsAfterALineEnd() {
+        var buffer = ScrollbackBuffer(capacity: 64)
+        buffer.append(Array("first line\nsecond line\nthird\n".utf8))
+        buffer.trim(toLast: 16) // would start inside "second line"
+        #expect(buffer.snapshot() == Data("third\n".utf8))
+        #expect(buffer.startOffset == buffer.totalWritten - 6)
+
+        var unbroken = ScrollbackBuffer(capacity: 64)
+        unbroken.append(Array("no line end in here".utf8))
+        unbroken.trim(toLast: 4)
+        #expect(unbroken.snapshot() == Data("here".utf8))
+
+        var far = ScrollbackBuffer(capacity: 64)
+        far.append(Array("abcdefgh\nij".utf8))
+        far.trim(toLast: 10, lineSearchLimit: 4) // the line end lies beyond the searched prefix
+        #expect(far.snapshot() == Data("bcdefgh\nij".utf8))
+    }
+
     @Test func defaultCapacityIsEightMegabytes() {
         #expect(ScrollbackBuffer().capacity == 8 * 1024 * 1024)
     }

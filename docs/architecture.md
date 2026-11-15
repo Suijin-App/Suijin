@@ -34,8 +34,11 @@ the app.
   `Contents/Library/LaunchAgents/com.tekmium.suijin.ptyhost.plist`) owns every PTY and its process tree, keeps a
   scrollback ring buffer per session, and serves the Mach service `com.tekmium.suijin.ptyhost` over XPC. Sessions
   survive the app quitting or crashing; on launch the app lists the host's sessions and attaches again to those still
-  running, replaying the scrollback. A session whose process ended meanwhile is recorded as ended without being shown
-  (the host keeps an exited session's scrollback for a day). The helper exits once no session remains.
+  running, replaying the scrollback. A session whose process ended meanwhile is recorded as ended without being shown.
+  The helper keeps nothing of a session the app ended or has recorded as ended: `terminate` ends its processes and,
+  once every attached client has received the exit, drops its scrollback and metadata. A session that exits on its
+  own while no app has recorded it keeps the last 256 KB of its scrollback (the app reads only the end of a failure
+  and an agent's resume hint) for up to a day. The helper exits once no session remains.
 
 ## Agent orchestration
 
@@ -248,4 +251,7 @@ Suijin uses no Accessibility, Automation, Screen Recording, camera or microphone
   `SUIJIN_SCREENSHOTS=<dir>` (offscreen renders of forms; use real window captures for anything with a sidebar or
   overlapping views), `SUIJIN_ENDED_SHOT=<file>` (the Session Ended view, captured by window id with
   `screencapture -l`). Pass them with the `TEST_RUNNER_` prefix to `xcodebuild test`.
+- App tests share the real PTY host, so each one ends the sessions it started (see `CLAUDE.md`). To check after a
+  run: no file under `~/Library/Application Support/Suijin/pty-host/sessions` should name a temporary data root in
+  `suijin.dataRoot`.
 - `scripts/ci-local.sh` runs everything; it must be green before a phase closes.

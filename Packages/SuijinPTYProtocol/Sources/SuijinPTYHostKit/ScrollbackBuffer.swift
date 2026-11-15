@@ -85,6 +85,19 @@ public struct ScrollbackBuffer: Sendable {
         return result
     }
 
+    /// Keeps only the most recent `length` bytes and gives the rest of the memory back. Offsets are unchanged: the
+    /// dropped bytes are simply no longer held. When a line ends within the first `lineSearchLimit` kept bytes, the
+    /// kept part starts after it, so it does not begin in the middle of a line or an escape sequence.
+    public mutating func trim(toLast length: Int, lineSearchLimit: Int = 4096) {
+        guard length >= 0, storage.count > length else { return }
+        var kept = [UInt8](read(from: totalWritten - UInt64(length)))
+        if let newline = kept.prefix(lineSearchLimit).firstIndex(of: UInt8(ascii: "\n")), newline + 1 < kept.count {
+            kept = Array(kept[(newline + 1)...])
+        }
+        storage = kept
+        head = 0
+    }
+
     /// Everything currently held, oldest first.
     public func snapshot() -> Data {
         read(from: startOffset)

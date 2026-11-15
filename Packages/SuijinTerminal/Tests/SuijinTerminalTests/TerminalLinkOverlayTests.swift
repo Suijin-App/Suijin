@@ -79,37 +79,6 @@ struct TerminalLinkViewTests {
         view.noteOutputFed(byteCount: bytes.count)
     }
 
-    /// Starts a link scan, then lets go of the view and its window while the scan still waits for its answer.
-    private func scanThenReleaseView() -> (TerminalLinkController, () -> Bool) {
-        autoreleasepool {
-            var (window, view): (NSWindow?, SuijinTerminalView?) = makeView()
-            view?.linkResolver = { matches in matches.map { TerminalFileTarget(path: $0.text, isDirectory: false) } }
-            feed(view!, "see /tmp/x.md and /tmp/y.md\r\n")
-            view?.scanLinksNow()
-            let controller = view!.linkController!
-            weak var released = view
-            view?.removeFromSuperview()
-            window?.close()
-            (window, view) = (nil, nil)
-            return (controller, { released == nil })
-        }
-    }
-
-    @Test("a scan that outlives its view ends quietly, and so does every use of the controller after it")
-    func controllerOutlivesItsView() async throws {
-        let (controller, viewIsGone) = scanThenReleaseView()
-        #expect(await waitUntil(timeout: .seconds(2)) { viewIsGone() }, "the view is released while the scan waits")
-        // What the modifier-key monitor and late callbacks reach for.
-        controller.updateHover()
-        controller.validateLinks()
-        controller.layoutOverlay()
-        #expect(!controller.canScan)
-        #expect(controller.link(at: .zero) == nil)
-        controller.scanNow()
-        // A scan still on its way comes back with its answer for a view that no longer exists.
-        try await Task.sleep(for: .milliseconds(300))
-    }
-
     @Test("verified paths and web links are shown; missing paths and elided paths are not")
     func scan() async throws {
         let (window, view) = makeView()
@@ -195,5 +164,36 @@ struct TerminalLinkViewTests {
         #expect(await waitUntil(timeout: .seconds(2)) { view.shownLinks.first?.match.text == path })
         #expect(view.shownLinks.first?.match.segments.map(\.row) == [0, 1])
         #expect(view.linkController.overlay.marks.first?.underlines.count == 2)
+    }
+
+    /// Starts a link scan, then lets go of the view and its window while the scan still waits for its answer.
+    private func scanThenReleaseView() -> (TerminalLinkController, () -> Bool) {
+        autoreleasepool {
+            var (window, view): (NSWindow?, SuijinTerminalView?) = makeView()
+            view?.linkResolver = { matches in matches.map { TerminalFileTarget(path: $0.text, isDirectory: false) } }
+            feed(view!, "see /tmp/x.md and /tmp/y.md\r\n")
+            view?.scanLinksNow()
+            let controller = view!.linkController!
+            weak var released = view
+            view?.removeFromSuperview()
+            window?.close()
+            (window, view) = (nil, nil)
+            return (controller, { released == nil })
+        }
+    }
+
+    @Test("a scan that outlives its view ends quietly, and so does every use of the controller after it")
+    func controllerOutlivesItsView() async throws {
+        let (controller, viewIsGone) = scanThenReleaseView()
+        #expect(await waitUntil(timeout: .seconds(2)) { viewIsGone() }, "the view is released while the scan waits")
+        // What the modifier-key monitor and late callbacks reach for.
+        controller.updateHover()
+        controller.validateLinks()
+        controller.layoutOverlay()
+        #expect(!controller.canScan)
+        #expect(controller.link(at: .zero) == nil)
+        controller.scanNow()
+        // A scan still on its way comes back with its answer for a view that no longer exists.
+        try await Task.sleep(for: .milliseconds(300))
     }
 }

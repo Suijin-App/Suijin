@@ -1,14 +1,6 @@
 # Changelog
 
-## Unreleased
-
-- **Pull request tags stay on one line.** In a narrow inspector "Review required" broke onto two lines beside the
-  Open button; the button now moves under the tags when there is no room. A merged or closed pull request no longer
-  shows a review tag.
-- **The emoji field of a workspace's icon looks empty when it is.** The field showed a rocket as its placeholder, in
-  full color, so it looked filled in while Use Emoji stayed dimmed. The placeholder is now the word "Emoji".
-
-## 0.1.1 (2026-11-15)
+## 0.1.1 (2026-11-16)
 
 - **Fixed a crash after closing a terminal.** Closing a tab while Suijin was still checking the paths printed on its
   screen could crash the app the next time a modifier key was pressed or released, which ⌘W itself does.
@@ -39,6 +31,11 @@
 - **Text size per terminal.** ⌘+ and ⌘- make the text of the terminal you are typing in larger or smaller, and ⌘0
   puts it back at the size set in Settings; the other panes and tabs keep theirs. Each session remembers its size
   until it is closed, across launches too.
+- **Pull request tags stay on one line.** In a narrow inspector "Review required" broke onto two lines beside the
+  Open button; the button now moves under the tags when there is no room. A merged or closed pull request no longer
+  shows a review tag.
+- **The emoji field of a workspace's icon looks empty when it is.** The field showed a rocket as its placeholder, in
+  full color, so it looked filled in while Use Emoji stayed dimmed. The placeholder is now the word "Emoji".
 
 ## 0.1.0 (2026-11-15)
 

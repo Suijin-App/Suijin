@@ -22,6 +22,10 @@ Suijin 0.1.1 lets you edit Markdown and leave comments for your agents, adds a f
 
 - The background helper that keeps your sessions running held on to the output of every closed tab for a day, up to 8 MB each, so its memory in the Resource Manager grew with every tab you closed. It now lets go of a tab's output as soon as the tab is closed.
 
+- In a narrow inspector, a pull request's "Review required" tag broke onto two lines beside the Open button. The tags now stay on one line and the button moves under them when there is no room. A merged or closed pull request no longer shows a review tag.
+
+- The emoji field of a workspace's icon showed a rocket in full color while it was empty, so it looked filled in although Use Emoji stayed dimmed. An empty field now shows the word "Emoji".
+
 ## Updating
 
 Suijin offers this version by itself within about a day, or at once from Suijin › Check for Updates…. Your running sessions keep running through the update while "Keep sessions running after quitting Suijin" is on in Settings › General, as it is by default.

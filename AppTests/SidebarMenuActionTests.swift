@@ -5,7 +5,7 @@ import Testing
 
 /// The bulk and restart actions behind the sidebar's context menus, on real shell sessions.
 @MainActor
-@Suite(.serialized)
+@Suite(.endsHostedSessions, .serialized)
 struct SidebarMenuActionTests {
     private func makeModel() async throws -> (AppModel, SessionContext, URL) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-menu-\(UUID().uuidString)", isDirectory: true)

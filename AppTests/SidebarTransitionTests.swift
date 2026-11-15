@@ -10,7 +10,7 @@ import Testing
 /// step the file receives `<step> <window number>` and the window stays up for four seconds while the caller captures
 /// it with `screencapture -l` (the test host may not record the screen itself).
 @MainActor
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SIDEBAR_SHOT"] != nil))
+@Suite(.endsHostedSessions, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_SIDEBAR_SHOT"] != nil))
 struct SidebarTransitionTests {
     @Test func sidebarStaysCleanThroughTransitions() async throws {
         let output = try #require(ProcessInfo.processInfo.environment["SUIJIN_SIDEBAR_SHOT"])

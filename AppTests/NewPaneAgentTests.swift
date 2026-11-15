@@ -6,7 +6,7 @@ import Testing
 /// The New pane runs setting and which agent a new pane starts: the setting, a choice made for one pane, and the
 /// focused pane's agent. Live checks only ever start shells; a Claude pane is a record with no process.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct NewPaneAgentTests {
     let root: URL
     let folder: URL

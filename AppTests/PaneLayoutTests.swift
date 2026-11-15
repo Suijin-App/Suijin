@@ -6,7 +6,7 @@ import Testing
 /// Split tabs in the app model: adding, closing, moving and focusing panes, their place among the tabs, and the
 /// layout coming back after a relaunch.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct PaneLayoutTests {
     let root: URL
     let folder: URL

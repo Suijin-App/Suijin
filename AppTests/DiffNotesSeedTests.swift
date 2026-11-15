@@ -16,7 +16,7 @@ import Testing
 /// `SUIJIN_NOTES_SEED_CLAUDE_DIR` below for Claude's folder trust). `SUIJIN_NOTES_SEED_CLEANUP=1`
 /// ends the sessions of that data root again.
 @MainActor
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_ROOT"] != nil))
+@Suite(.endsHostedSessions, .serialized, .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_NOTES_SEED_ROOT"] != nil))
 struct DiffNotesSeedTests {
     private var base: URL {
         get throws {

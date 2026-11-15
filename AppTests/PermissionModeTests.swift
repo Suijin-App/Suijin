@@ -7,7 +7,7 @@ import Testing
 /// starts without permission checks, and the mode a session keeps when it is resumed, started again or repeated.
 /// Live checks run stand-in `claude` and `codex` scripts that record their arguments; no real agent starts.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct PermissionModeTests {
     let root: URL
     let folder: URL

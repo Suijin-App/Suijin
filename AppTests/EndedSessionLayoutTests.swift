@@ -14,7 +14,7 @@ private final class OffscreenWindow: NSWindow {
 /// The ended card of a failed session (with its last output) must not change the window's layout: the main window
 /// hosts the real `RootView` offscreen and the inspector's file list keeps its place when the card appears.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(3)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(3)))
 struct EndedSessionLayoutTests {
     private func eventually(_ condition: () -> Bool) async -> Bool {
         for _ in 0..<200 where !condition() { try? await Task.sleep(for: .milliseconds(50)) }

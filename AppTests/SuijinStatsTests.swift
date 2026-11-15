@@ -8,7 +8,7 @@ import Testing
 /// Suijin's own stats as the session runtime records them: agent starts count, shells do not, and working time is
 /// the sum of the agent's `running` intervals. Uses an in-memory store and never starts an agent CLI.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(1)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(1)))
 struct SuijinStatsTests {
     private func makeModel() throws -> (AppModel, URL) {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-stats-\(UUID().uuidString)", isDirectory: true)

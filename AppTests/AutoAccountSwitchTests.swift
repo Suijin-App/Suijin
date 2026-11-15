@@ -10,7 +10,7 @@ import Testing
 /// and `codex` scripts record their arguments and account folder; account folders are temporary, and the user's own
 /// login is a temporary home.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct AutoAccountSwitchTests {
     let root: URL
     let folder: URL

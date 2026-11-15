@@ -14,7 +14,7 @@ import Testing
 /// naming a helper instance of this build so the user's own helper and sessions are untouched, and
 /// `TEST_RUNNER_SUIJIN_ORCH_E2E_ROOT` a short temporary directory.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(5)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ORCH_E2E"] == "1"))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(5)), .enabled(if: ProcessInfo.processInfo.environment["SUIJIN_ORCH_E2E"] == "1"))
 struct MarkdownCommentE2ETests {
     private func eventually(_ timeout: Duration, every: Duration = .milliseconds(200), _ condition: () async -> Bool) async -> Bool {
         let deadline = ContinuousClock.now + timeout

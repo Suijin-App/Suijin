@@ -6,7 +6,7 @@ import Testing
 /// Closing a tab whose agent still works: asked first, and "Don't ask again" really stops the question until
 /// Settings → General turns it back on. A stand-in `claude` script runs instead of the real one.
 @MainActor
-@Suite(.serialized) struct CloseConfirmationTests {
+@Suite(.endsHostedSessions, .serialized) struct CloseConfirmationTests {
     private struct Fixture {
         let model: AppModel
         let context: SessionContext

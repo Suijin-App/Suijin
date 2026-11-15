@@ -9,7 +9,7 @@ import Testing
 /// Paths printed by a real shell in a real terminal pane: underlined when they exist, resolved against the directory the
 /// shell reports (OSC 7) after a `cd`. Output imitating agents is printed with `printf`; no agent runs.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct TerminalPathLinkTests {
     @MainActor
     struct Fixture {
@@ -213,7 +213,7 @@ struct TerminalPathLinkTests {
 
 /// The right-click menu on paths and links, and finding the full path of an elided one.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(2)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(2)))
 struct TerminalLinkMenuTests {
     private func titles(_ menu: NSMenu?) -> [String] {
         menu?.items.map { $0.isSeparatorItem ? "—" : $0.title } ?? []

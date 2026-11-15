@@ -10,7 +10,7 @@ import Testing
 /// End to end inside the signed app: workspaces (git and folder), worktrees, a shell session in the PTY host over
 /// launchd XPC, re-attaching after a simulated app restart with the scrollback, and clean teardown.
 @MainActor
-@Suite(.serialized, .timeLimit(.minutes(1)))
+@Suite(.endsHostedSessions, .serialized, .timeLimit(.minutes(1)))
 struct SessionFlowTests {
     let root: URL
     let dataRoot: URL

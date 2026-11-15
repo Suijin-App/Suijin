@@ -6,7 +6,12 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   "workers_dev": false,
-  "routes": [{ "pattern": "suijin.app", "custom_domain": true }],
+  // Each custom domain makes Cloudflare create its DNS record and certificate. www serves the same site; every page
+  // names its suijin.app address as canonical (src/layouts/Base.astro).
+  "routes": [
+    { "pattern": "suijin.app", "custom_domain": true },
+    { "pattern": "www.suijin.app", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

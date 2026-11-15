@@ -174,7 +174,12 @@ struct TerminalFeedSchedulerTests {
         // The scheduler's own hold on the main actor per turn. The ticker's gap also contains main-actor work of
         // other suites running in parallel (the engine tests run Process synchronously there), so it is reported,
         // not asserted; run this test alone to see it stay near the turn length.
-        #expect(scheduler.longestTurn < .milliseconds(50))
+        //
+        // The limit is on the single longest of some 600 turns, measured on the wall clock: alone it stays between
+        // 7 and 17 ms (the 5 ms budget plus one chunk), but one turn the system preempts on a busy machine has taken
+        // more than 50 ms. 150 ms leaves room for that and is still far below what the test is there to catch: a
+        // turn that feeds a whole 5 MB chunk takes over a second, and the turn count below guards the average.
+        #expect(scheduler.longestTurn < .milliseconds(150))
         #expect(scheduler.turnCount > 100)
     }
 }

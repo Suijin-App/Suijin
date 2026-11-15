@@ -19,7 +19,7 @@ Website: [suijin.app](https://suijin.app) · Community: [Discord](https://discor
 
 ## Status
 
-Suijin `0.1.0` is the first release. Download the signed and notarized DMG from the
+Suijin `0.1.1` is the latest release. Download the signed and notarized DMG from the
 [latest release](https://github.com/Suijin-App/Suijin/releases/latest); installed copies check for new versions
 themselves. You can also build it from source (see [Build from source](#build-from-source)).
 

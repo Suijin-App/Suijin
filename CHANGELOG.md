@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 (2026-11-15)
 
 - **Fixed a crash after closing a terminal.** Closing a tab while Suijin was still checking the paths printed on its
   screen could crash the app the next time a modifier key was pressed or released, which ⌘W itself does.

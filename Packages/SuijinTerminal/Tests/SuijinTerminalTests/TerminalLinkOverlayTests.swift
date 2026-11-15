@@ -179,7 +179,7 @@ struct TerminalLinkViewTests {
             feed(view!, "see /tmp/x.md and /tmp/y.md\r\n")
             view?.scanLinksNow()
             let controller = view!.linkController!
-            weak var released = view
+            weak let released = view
             view?.removeFromSuperview()
             window?.close()
             (window, view) = (nil, nil)

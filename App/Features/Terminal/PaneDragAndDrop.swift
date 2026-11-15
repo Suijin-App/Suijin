@@ -18,17 +18,23 @@ private let logger = Logger(subsystem: "com.tekmium.suijin", category: "panes")
 ///
 /// The other way round, a session tab dragged from the title bar onto a pane (or onto a plain tab's terminal) moves
 /// the whole tab into the tab on screen (`AppModel.mergeTab`). A tab has nothing to swap with, so the pane is divided
-/// into four zones and the nearest edge takes the drop. Session tabs carry a type of their own for this beside the
-/// plain text that reorders tabs; Changes and file tabs carry the text only, so a pane never takes one.
+/// into four zones and the nearest edge takes the drop. Tabs are dragged the same way as panes, by `PaneDragSource`,
+/// with a type of their own, and `PaneDragState` knows which tab it is from the drag's start to its end; a Changes or
+/// file tab is refused by a pane because it holds no session.
+///
+/// Both payloads are plain strings written straight to the drag's pasteboard. A lazily provided item
+/// (`NSItemProvider`, SwiftUI's `onDrag`) of a custom type reaches AppKit as a promised file, which a terminal takes
+/// as a dropped file before any drop target around it is asked.
 extension UTType {
     /// A pane being dragged; the payload is its session id.
     static let suijinPane = UTType(exportedAs: "com.tekmium.suijin.pane")
-    /// A session tab (plain or split) being dragged; the payload is `DetailTab.dragPayload`.
+    /// A tab being dragged; the payload is `DetailTab.dragPayload`.
     static let suijinTab = UTType(exportedAs: "com.tekmium.suijin.tab")
 }
 
 extension NSPasteboard.PasteboardType {
     static let suijinPane = NSPasteboard.PasteboardType(UTType.suijinPane.identifier)
+    static let suijinTab = NSPasteboard.PasteboardType(UTType.suijinTab.identifier)
 }
 
 /// The pane or tab drag in progress, if any: what is dragged and where it would land.
@@ -42,23 +48,22 @@ final class PaneDragState {
 
     /// The session of the pane being dragged.
     private(set) var source: UUID?
-    /// The session tab being dragged from the title bar. A SwiftUI drag reports its start only, so this can outlive a
-    /// drag that ended without a drop; drop targets also require the tab's type on the drag itself, and the next
-    /// drag of either kind replaces it.
+    /// The tab being dragged from the title bar.
     private(set) var tab: DetailTab?
     /// The pane under the pointer and the zone it is in; nil while the pointer is over no pane that takes the drop.
     private(set) var target: Target?
+    /// The parts of the title-bar tab group a dragged pane is over (the group itself and each tab are drop targets of
+    /// their own); the group lights up while there is any.
+    private(set) var tabBarHover: Set<String> = []
 
     func begin(_ pane: UUID) {
+        end()
         source = pane
-        tab = nil
-        target = nil
     }
 
     func beginTab(_ tab: DetailTab) {
+        end()
         self.tab = tab
-        source = nil
-        target = nil
     }
 
     /// The drag ended: dropped, cancelled (Esc) or released where nothing takes it.
@@ -66,6 +71,12 @@ final class PaneDragState {
         source = nil
         tab = nil
         target = nil
+        tabBarHover = []
+    }
+
+    /// A dragged pane entered (`true`) or left a part of the tab group, named by `zone`.
+    func hoverTabBar(_ zone: String, _ isOver: Bool) {
+        if isOver { tabBarHover.insert(zone) } else { tabBarHover.remove(zone) }
     }
 
     func hover(_ pane: UUID, placement: PanePlacement?) {
@@ -150,17 +161,39 @@ extension AppModel {
 
 // MARK: Drag source
 
-/// Makes its content (the header's logo, status and title) the handle a pane is dragged by. A click without a drag
-/// runs `onClick`. Built on an AppKit view because a SwiftUI drag reports neither its start nor its end, and the
-/// dragged pane must dim exactly while the drag lasts, then come back however the drag ends (dropped, Esc, released
-/// elsewhere).
+/// Makes its content the handle something is dragged by: a pane's header (logo, status and title) or a tab of the
+/// title bar. A click without a drag runs `onClick`. Built on an AppKit view because a SwiftUI drag reports neither
+/// its start nor its end: the dragged pane must dim exactly while the drag lasts and come back however it ends
+/// (dropped, Esc, released elsewhere), and the panes must know which tab is coming for as long as it is dragged.
 struct PaneDragSource: NSViewRepresentable {
-    let session: UUID
-    let agent: AgentKind
+    /// What the drag carries: each pasteboard type with its string.
+    let payload: [(NSPasteboard.PasteboardType, String)]
+    let icon: PaneDragChip.Icon
     let title: String
+    /// The open and closed hand over the handle: a pane header shows it can be grabbed, a tab keeps the arrow.
+    var showsHandCursor = true
     let onBegin: @MainActor () -> Void
     let onEnd: @MainActor () -> Void
     let onClick: @MainActor () -> Void
+
+    /// The handle of a pane.
+    init(session: UUID, agent: AgentKind, title: String, onBegin: @escaping @MainActor () -> Void,
+         onEnd: @escaping @MainActor () -> Void, onClick: @escaping @MainActor () -> Void) {
+        self.init(payload: [(.suijinPane, session.uuidString)], icon: .agent(agent), title: title, onBegin: onBegin,
+                  onEnd: onEnd, onClick: onClick)
+    }
+
+    init(payload: [(NSPasteboard.PasteboardType, String)], icon: PaneDragChip.Icon, title: String, showsHandCursor: Bool = true,
+         onBegin: @escaping @MainActor () -> Void, onEnd: @escaping @MainActor () -> Void,
+         onClick: @escaping @MainActor () -> Void) {
+        self.payload = payload
+        self.icon = icon
+        self.title = title
+        self.showsHandCursor = showsHandCursor
+        self.onBegin = onBegin
+        self.onEnd = onEnd
+        self.onClick = onClick
+    }
 
     func makeNSView(context: Context) -> PaneDragSourceView {
         let view = PaneDragSourceView()
@@ -174,17 +207,22 @@ struct PaneDragSource: NSViewRepresentable {
     }
 
     private func update(_ view: PaneDragSourceView) {
-        view.session = session
+        view.payload = payload
+        if view.showsHandCursor != showsHandCursor {
+            view.showsHandCursor = showsHandCursor
+            view.window?.invalidateCursorRects(for: view)
+        }
         view.onBegin = onBegin
         view.onEnd = onEnd
         view.onClick = onClick
-        let agent = agent, title = title
-        view.makeImage = { appearance, scale in PaneDragChip.image(agent: agent, title: title, appearance: appearance, scale: scale) }
+        let icon = icon, title = title
+        view.makeImage = { appearance, scale in PaneDragChip.image(icon: icon, title: title, appearance: appearance, scale: scale) }
     }
 }
 
 final class PaneDragSourceView: NSView, NSDraggingSource {
-    var session: UUID?
+    var payload: [(NSPasteboard.PasteboardType, String)] = []
+    var showsHandCursor = true
     var onBegin: (@MainActor () -> Void)?
     var onEnd: (@MainActor () -> Void)?
     var onClick: (@MainActor () -> Void)?
@@ -200,7 +238,7 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .openHand)
+        if showsHandCursor { addCursorRect(bounds, cursor: .openHand) }
     }
 
     /// Only plain left clicks and drags stop here: a right click or Control-click goes on to the header's context
@@ -215,15 +253,15 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
 
     override func mouseDown(with event: NSEvent) {
         mouseDown = event
-        NSCursor.closedHand.set()
+        if showsHandCursor { NSCursor.closedHand.set() }
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard !isDragging, let start = mouseDown, let session else { return }
+        guard !isDragging, let start = mouseDown, !payload.isEmpty else { return }
         let dx = event.locationInWindow.x - start.locationInWindow.x
         let dy = event.locationInWindow.y - start.locationInWindow.y
         guard dx * dx + dy * dy >= Self.dragThreshold * Self.dragThreshold else { return }
-        beginDrag(session: session, from: start)
+        beginDrag(from: start)
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -233,10 +271,10 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
         onClick?()
     }
 
-    /// Starts the system drag session with a picture of the pane's logo and title under the pointer.
-    func beginDrag(session: UUID, from event: NSEvent) {
+    /// Starts the system drag session with a picture of the pane's or tab's icon and title under the pointer.
+    func beginDrag(from event: NSEvent) {
         let item = NSPasteboardItem()
-        item.setString(session.uuidString, forType: .suijinPane)
+        for (type, string) in payload { item.setString(string, forType: type) }
         let dragging = NSDraggingItem(pasteboardWriter: item)
         let scale = window?.backingScaleFactor ?? 2
         let start = convert(event.locationInWindow, from: nil)
@@ -254,7 +292,7 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
     }
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-        // Panes only move within the app; other apps and the Finder never take one.
+        // Panes and tabs only move within the app; other apps and the Finder never take one.
         context == .withinApplication ? .move : []
     }
 
@@ -272,15 +310,26 @@ final class PaneDragSourceView: NSView, NSDraggingSource {
     }
 }
 
-/// The picture under the pointer while a pane is dragged: its logo and title on a plain capsule (a picture cannot
-/// show live glass).
-private struct PaneDragChip: View {
-    let agent: AgentKind
+/// The picture under the pointer while a pane or a tab is dragged: its icon and title on a plain capsule (a picture
+/// cannot show live glass).
+struct PaneDragChip: View {
+    /// What stands before the title: an agent's logo, a symbol (the Changes tab) or a file's icon.
+    enum Icon {
+        case agent(AgentKind)
+        case symbol(String)
+        case file(String)
+    }
+
+    let icon: Icon
     let title: String
 
     var body: some View {
         HStack(spacing: 6) {
-            AgentLogo(agent: agent, size: 14)
+            switch icon {
+            case .agent(let agent): AgentLogo(agent: agent, size: 14)
+            case .symbol(let name): Image(systemName: name).foregroundStyle(.secondary)
+            case .file(let path): Image(nsImage: FileIcons.icon(forPath: path)).resizable().frame(width: 14, height: 14)
+            }
             Text(verbatim: title)
                 .font(.callout.weight(.medium))
                 .lineLimit(1)
@@ -295,9 +344,9 @@ private struct PaneDragChip: View {
     }
 
     @MainActor
-    static func image(agent: AgentKind, title: String, appearance: NSAppearance, scale: CGFloat) -> NSImage? {
+    static func image(icon: Icon, title: String, appearance: NSAppearance, scale: CGFloat) -> NSImage? {
         let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        let renderer = ImageRenderer(content: PaneDragChip(agent: agent, title: title)
+        let renderer = ImageRenderer(content: PaneDragChip(icon: icon, title: title)
             .environment(\.colorScheme, isDark ? .dark : .light))
         renderer.scale = scale
         return renderer.nsImage
@@ -435,13 +484,14 @@ extension PanePlacement {
 }
 
 /// Makes the title-bar tab group take a dragged pane: it lights up while the pane is over it, and a drop moves the
-/// pane into a tab of its own.
+/// pane into a tab of its own. Each tab is a drop target of its own for reordering and lies over the group, so the
+/// tabs take the pane as well (`TabDropDelegate`); only the gaps between them reach this one.
 struct PaneTabBarDropTarget: ViewModifier {
     @Environment(AppModel.self) private var model
     let context: SessionContext
-    @State private var isTargeted = false
 
     func body(content: Content) -> some View {
+        let isTargeted = !model.paneDrag.tabBarHover.isEmpty
         content
             .overlay {
                 if isTargeted {
@@ -455,21 +505,62 @@ struct PaneTabBarDropTarget: ViewModifier {
                 }
             }
             .animation(.easeOut(duration: 0.12), value: isTargeted)
-            .onDrop(of: [.suijinPane], delegate: TabBarDropDelegate(model: model, context: context, isTargeted: $isTargeted))
+            .onDrop(of: [.suijinPane], delegate: TabBarDropDelegate(model: model, context: context))
     }
 }
 
 private struct TabBarDropDelegate: DropDelegate {
     let model: AppModel
     let context: SessionContext
-    @Binding var isTargeted: Bool
+
+    static let zone = "group"
 
     func validateDrop(info: DropInfo) -> Bool {
         info.hasItemsConforming(to: [.suijinPane]) && model.canDropDraggedPaneOnTabBar(in: context)
     }
 
-    func dropEntered(info: DropInfo) { isTargeted = true }
-    func dropExited(info: DropInfo) { isTargeted = false }
+    func dropEntered(info: DropInfo) { model.paneDrag.hoverTabBar(Self.zone, true) }
+    func dropExited(info: DropInfo) { model.paneDrag.hoverTabBar(Self.zone, false) }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        model.dropDraggedPaneOnTabBar(in: context)
+    }
+}
+
+/// What a tab of the title bar takes: another tab, which moves to its place (`AppModel.moveTab`), and a dragged pane,
+/// which becomes a tab of its own as it does anywhere on the tab group.
+struct TabDropDelegate: DropDelegate {
+    let model: AppModel
+    let tab: DetailTab
+    let context: SessionContext
+    @Binding var isTargeted: Bool
+
+    private func isPane(_ info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.suijinPane])
+    }
+
+    /// The tab being dragged, when it is another tab than this one.
+    private var draggedTab: DetailTab? {
+        model.paneDrag.tab.flatMap { $0 == tab ? nil : $0 }
+    }
+
+    func validateDrop(info: DropInfo) -> Bool {
+        if isPane(info) { return model.canDropDraggedPaneOnTabBar(in: context) }
+        return info.hasItemsConforming(to: [.suijinTab]) && draggedTab != nil
+    }
+
+    func dropEntered(info: DropInfo) {
+        if isPane(info) { model.paneDrag.hoverTabBar(tab.dragPayload, true) } else { isTargeted = true }
+    }
+
+    func dropExited(info: DropInfo) {
+        model.paneDrag.hoverTabBar(tab.dragPayload, false)
+        isTargeted = false
+    }
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
@@ -477,6 +568,10 @@ private struct TabBarDropDelegate: DropDelegate {
 
     func performDrop(info: DropInfo) -> Bool {
         isTargeted = false
-        return model.dropDraggedPaneOnTabBar(in: context)
+        if isPane(info) { return model.dropDraggedPaneOnTabBar(in: context) }
+        guard let dragged = draggedTab else { return false }
+        model.paneDrag.end()
+        withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
+        return true
     }
 }

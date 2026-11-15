@@ -226,16 +226,23 @@ struct TabMergeTests {
         model.paneDrag.end()
     }
 
-    @Test func onlySessionTabsCarryTheTypeAPaneTakes() {
-        let pane = "com.tekmium.suijin.tab"
-        #expect(DetailTab.session(UUID()).dragItemProvider.hasItemConformingToTypeIdentifier(pane))
-        #expect(DetailTab.panes(UUID()).dragItemProvider.hasItemConformingToTypeIdentifier(pane))
-        #expect(!DetailTab.changes.dragItemProvider.hasItemConformingToTypeIdentifier(pane))
-        #expect(!DetailTab.file("/tmp/a.txt").dragItemProvider.hasItemConformingToTypeIdentifier(pane))
-        // Every tab still carries the text another tab takes to reorder.
-        for tab in [DetailTab.session(UUID()), .changes, .file("/tmp/a.txt")] {
-            #expect(tab.dragItemProvider.canLoadObject(ofClass: NSString.self))
-        }
+    @Test func aPaneOverAnyPartOfTheTabGroupLightsItUpUntilItLeavesEveryPart() {
+        let drag = PaneDragState()
+        drag.begin(UUID())
+        // The pointer moves from the group onto a tab: the tab is entered before or after the group is left.
+        drag.hoverTabBar("group", true)
+        drag.hoverTabBar("session:a", true)
+        drag.hoverTabBar("group", false)
+        #expect(!drag.tabBarHover.isEmpty)
+        drag.hoverTabBar("session:b", true)
+        drag.hoverTabBar("session:a", false)
+        #expect(!drag.tabBarHover.isEmpty)
+        drag.hoverTabBar("session:b", false)
+        #expect(drag.tabBarHover.isEmpty)
+        // A drag that ends over the group leaves nothing lit.
+        drag.hoverTabBar("group", true)
+        drag.end()
+        #expect(drag.tabBarHover.isEmpty && drag.source == nil)
     }
 
     @Test func aTabMovesIntoTheSelectedTabWithoutADrag() async throws {

@@ -234,31 +234,60 @@ struct ToolbarTabBar: View {
 
 /// Drag any tab (session, split, Changes or file) onto another to move it there; a bar on the target's leading edge
 /// shows where it lands. The order is kept by `AppModel.moveTab`. A session or split tab dragged down onto a pane
-/// moves into that tab instead (`PaneDragAndDrop.swift`).
+/// moves into that tab instead, and a pane dropped on a tab becomes a tab of its own (`PaneDragAndDrop.swift`).
+///
+/// The tab is dragged by an AppKit drag source laid over it (`PaneDragSource`), which also takes the click that
+/// selects the tab. It leaves the tab's leading edge free, where the close button is.
 private struct TabReordering: ViewModifier {
     @Environment(AppModel.self) private var model
     let tab: DetailTab
     let context: SessionContext
     @State private var isTargeted = false
 
+    /// The room of the close button at the tab's leading edge (the label starts after it).
+    static let closeButtonWidth: CGFloat = 26
+
     func body(content: Content) -> some View {
+        let model = model, tab = tab, context = context
         content
-            .onDrag {
-                // The drag's start is the only moment SwiftUI reports; the panes need to know which tab is coming.
-                model.paneDrag.beginTab(tab)
-                return tab.dragItemProvider
+            .overlay {
+                PaneDragSource(payload: [(.suijinTab, tab.dragPayload)], icon: icon, title: title, showsHandCursor: false,
+                               onBegin: { model.paneDrag.beginTab(tab) },
+                               onEnd: { model.paneDrag.end() },
+                               onClick: { model.selectedTab[context] = tab })
+                    .padding(.leading, Self.closeButtonWidth)
             }
-            .dropDestination(for: String.self) { items, _ in
-                guard let dragged = items.first.flatMap(DetailTab.init(dragPayload:)) else { return false }
-                withAnimation(.snappy(duration: 0.2)) { model.moveTab(dragged, onto: tab, in: context) }
-                return true
-            } isTargeted: { isTargeted = $0 }
+            .onDrop(of: [.suijinTab, .suijinPane],
+                    delegate: TabDropDelegate(model: model, tab: tab, context: context, isTargeted: $isTargeted))
             .overlay(alignment: .leading) {
                 if isTargeted {
                     Capsule().fill(Color.accentColor).frame(width: 3).padding(.vertical, 4)
                         .transition(.opacity)
+                        .allowsHitTesting(false)
                 }
             }
+    }
+
+    /// The session a session or split tab reads as: its own, or the split tab's focused pane.
+    private var session: AgentSessionRecord? {
+        let id: UUID? = if case .panes(let layout) = tab { model.paneLayouts[layout]?.focused } else { model.panes(of: tab).first }
+        return model.sessions.first { $0.id == id }
+    }
+
+    private var icon: PaneDragChip.Icon {
+        switch tab {
+        case .session, .panes: .agent(session.map { model.runtimes.displayAgent(of: $0) } ?? .shell)
+        case .changes: .symbol("plusminus")
+        case .file(let path): .file(path)
+        }
+    }
+
+    private var title: String {
+        switch tab {
+        case .session, .panes: session.map { model.runtimes.displayTitle(of: $0) } ?? ""
+        case .changes: String(localized: "Changes")
+        case .file(let path): (path as NSString).lastPathComponent
+        }
     }
 }
 
@@ -826,21 +855,5 @@ private struct EqualWidthRow: Layout {
         subviews.map { $0.sizeThatFits(.unspecified) }.reduce(.zero) {
             CGSize(width: max($0.width, $1.width), height: max($0.height, $1.height))
         }
-    }
-}
-
-extension DetailTab {
-    /// What a dragged tab carries: its payload as plain text, which another tab takes to reorder, and, for a session
-    /// or split tab, the same payload under the type a pane takes (`UTType.suijinTab`).
-    var dragItemProvider: NSItemProvider {
-        let payload = dragPayload
-        let provider = NSItemProvider(object: payload as NSString)
-        if orderKey != nil {
-            provider.registerDataRepresentation(forTypeIdentifier: UTType.suijinTab.identifier, visibility: .ownProcess) { completion in
-                completion(Data(payload.utf8), nil)
-                return nil
-            }
-        }
-        return provider
     }
 }

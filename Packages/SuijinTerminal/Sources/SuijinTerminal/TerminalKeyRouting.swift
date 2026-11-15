@@ -3,7 +3,7 @@ import AppKit
 /// Who handles a ⌘ key press while a terminal has keyboard focus.
 ///
 /// Copy, paste (through the paste guard), select all and find belong to the terminal view. Tab, split and pane
-/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
+/// shortcuts (⌘T, ⌘W, ⇧⌘[ / ⇧⌘], ⌘1…⌘9, ⌘D, ⇧⌘D, ⌥⌘ and ⌃⌥⌘ arrows, ⇧⌘↩, ⌃⌘=) go to the session's owner through
 /// `SuijinTerminalView.onKeyRoute`, so the program never receives them as escape sequences. Every other ⌘
 /// shortcut goes on to the app's menus. Keys without ⌘ take the normal event path, where SwiftTerm turns them into
 /// terminal input (and input methods such as Vietnamese Telex compose text), so nothing here touches them.
@@ -12,6 +12,8 @@ public enum TerminalKeyRoute: Equatable, Sendable {
     case closeTab
     case previousTab
     case nextTab
+    /// ⌘1…⌘9: the tab with that number; 9 is the last tab.
+    case selectTab(Int)
     case splitRight
     case splitDown
     /// ⌥⌘ arrow: focus the pane next to this one.
@@ -58,7 +60,11 @@ public enum TerminalKeyRouter {
             case "v": return .paste
             case "a": return .selectAll
             case "f": return .find
-            default: return .app
+            default:
+                // ⌘1…⌘9. A layout whose number row types other characters without ⇧ (AZERTY) does not match here,
+                // and the key goes on to the menu's key equivalent.
+                if key.count == 1, let number = Int(key), (1...9).contains(number) { return .selectTab(number) }
+                return .app
             }
         }
         // ⇧⌘[ and ⇧⌘]; with ⇧ held the key arrives as `{` / `}` on most layouts.

@@ -210,6 +210,13 @@ struct SuijinCommands: Commands {
                 .keyboardShortcut(ShortcutCatalog.previousTab.shortcut)
             Button("Next Tab") { if let context = mainContext { model.selectAdjacentTab(in: context, offset: 1) } }
                 .keyboardShortcut(ShortcutCatalog.nextTab.shortcut)
+            Divider()
+            ForEach(1...9, id: \.self) { number in
+                Button { if let context = mainContext { model.selectTab(number: number, in: context) } } label: {
+                    Text(ShortcutCatalog.selectTab(number).title)
+                }
+                .keyboardShortcut(ShortcutCatalog.selectTab(number).shortcut)
+            }
         }
     }
 

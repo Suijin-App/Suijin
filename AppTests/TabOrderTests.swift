@@ -86,6 +86,19 @@ struct TabOrderTests {
         #expect(model.tabList(in: context) == [.changes, .session(a), .file("/f"), .session(b)])
         #expect(AppModel.savedTabOrder()[context] == ["changes", "session:\(a)", "file:/f", "session:\(b)"])
 
+        // ⌘1…⌘8 select by the position shown, ⌘9 the last tab, and a number past the last tab changes nothing.
+        model.selectTab(number: 1, in: context)
+        #expect(model.selectedTab[context] == .changes)
+        model.selectTab(number: 3, in: context)
+        #expect(model.selectedTab[context] == .file("/f"))
+        model.selectTab(number: 5, in: context)
+        #expect(model.selectedTab[context] == .file("/f"))
+        model.selectTab(number: 9, in: context)
+        #expect(model.selectedTab[context] == .session(b))
+        // Typed in a terminal, the key arrives as a route.
+        #expect(model.handle(.selectTab(2), in: context, from: b))
+        #expect(model.selectedTab[context] == .session(a))
+
         // A new tab opens right after the tab it follows by default: a session after the last session, a file after
         // the last file.
         let c = UUID()

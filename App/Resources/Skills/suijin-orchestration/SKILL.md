@@ -5,7 +5,9 @@ description: >-
   their results back. Use when the user asks for Suijin workers, for another agent ("have Codex do X and report
   back"), or for parallel work in separate worktrees. Also use when you are a dispatched worker: your prompt has a
   preamble with a Task ID and a Dispatch ID (then use `suijin ask` and `suijin done`). Only works in terminals
-  Suijin opened (`$SUIJIN_SESSION_TOKEN` is set).
+  Suijin opened (`$SUIJIN_SESSION_TOKEN` is set). Also covers review comments on a Markdown file that the user sent
+  you from Suijin (a pasted block that starts with "Review comments on …"): report each one with
+  `suijin comment resolve`.
 ---
 
 # Suijin orchestration
@@ -55,6 +57,21 @@ When Suijin wakes you:
   follow-up Task.
 - When every worker has reported, tell the user the outcome of each task, its evidence and any open blockers.
 - Lost track? `suijin worker list` shows every worker's status; `suijin inbox` shows recent messages.
+
+## Review comments on a Markdown file
+
+The user can comment on parts of a Markdown file in Suijin and send you the comments. They arrive as a pasted block:
+`Review comments on <file>` followed by one entry per comment with its id (`[c-7f3a2b]`), its lines, the quoted text
+and the user's note.
+
+- For each comment, edit the file, then report that comment:
+  `suijin comment resolve <id> --fixed --reply "<what you changed>"`
+- When you will not or cannot make the change, say so instead of skipping it:
+  `suijin comment resolve <id> --declined --reply "<why not>"`
+- Report every comment exactly once, each with its own short reply (a sentence; it is shown to the user as plain
+  text). The user sees the result in Suijin and can reopen a comment.
+- `suijin comment list` shows the comments you still have to answer, in the same form (after you lost the block).
+- Only the session the comments were sent to can report them.
 
 ## Task specs
 

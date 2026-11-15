@@ -17,7 +17,11 @@ public enum PTYHostConstants {
     /// Bumped whenever the XPC surface or a JSON payload changes incompatibly.
     /// 2: `ack` flow control (the helper streams at most a window of unacknowledged bytes per attachment).
     /// 3: `orchestrationEndpoint` (the agent orchestration broker lives in the helper).
-    public static let protocolVersion: Int = 3
+    /// 4: Markdown review comments (`OrchestrationHostXPC.registerComments` and friends, `suijin comment`).
+    public static let protocolVersion: Int = 4
+    /// The first protocol whose helper understands Markdown review comments; the app calls the comment methods of
+    /// `OrchestrationHostXPC` only when the helper reports at least this version.
+    public static let commentsProtocolVersion = 4
 
     public static func resolveMachServiceName(environment: [String: String]) -> String {
         guard let override = environment[machServiceOverrideEnv], override.hasPrefix(defaultMachServiceName + "."),

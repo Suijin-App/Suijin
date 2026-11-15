@@ -605,11 +605,14 @@ struct TurnTrackerTests {
     }
 
     @Test func protocolVersionsNegotiate() {
-        #expect(PTYHostConstants.protocolVersion == 3)
+        #expect(PTYHostConstants.protocolVersion == 4)
+        #expect(PTYHostConstants.minimumCompatibleProtocolVersion == 2)
+        #expect(PTYHostConstants.commentsProtocolVersion == 4)
         #expect(PTYHostConstants.negotiatedVersion(clientVersion: 2) == 2, "an app one version behind keeps working")
         #expect(PTYHostConstants.negotiatedVersion(clientVersion: 3) == 3)
-        #expect(PTYHostConstants.negotiatedVersion(clientVersion: 1) == 3)
-        #expect(PTYHostConstants.negotiatedVersion(clientVersion: 9) == 3)
+        #expect(PTYHostConstants.negotiatedVersion(clientVersion: 4) == 4)
+        #expect(PTYHostConstants.negotiatedVersion(clientVersion: 1) == 4)
+        #expect(PTYHostConstants.negotiatedVersion(clientVersion: 9) == 4)
     }
 
     @Test func machServiceOverrideIsLimitedToSuijinNames() {

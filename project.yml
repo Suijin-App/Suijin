@@ -20,6 +20,7 @@ packages:
   SuijinAccounts:    { path: Packages/SuijinAccounts }
   SuijinDiff:        { path: Packages/SuijinDiff }
   SuijinUsage:       { path: Packages/SuijinUsage }
+  SuijinMarkdown:    { path: Packages/SuijinMarkdown }
   # Native SwiftUI Markdown rendering (tables, code blocks) for the file viewer tab. Pinned exactly.
   MarkdownUI:
     url: https://github.com/gonzalezreal/swift-markdown-ui
@@ -74,6 +75,7 @@ targets:
       - package: SuijinAccounts
       - package: SuijinDiff
       - package: SuijinUsage
+      - package: SuijinMarkdown
       - package: MarkdownUI
       - package: Sparkle
       # The PTY host ships next to the app executable (Contents/MacOS/SuijinPTYHost).

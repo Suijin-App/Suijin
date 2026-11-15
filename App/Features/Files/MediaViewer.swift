@@ -185,6 +185,9 @@ final class MediaPlaybackController {
 }
 
 /// Which open tab a saved playback position belongs to.
+/// One file tab: a path opened in a context.
+typealias FileTabKey = MediaPositionKey
+
 struct MediaPositionKey: Hashable {
     let context: SessionContext
     let path: String

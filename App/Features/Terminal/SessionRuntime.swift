@@ -414,7 +414,11 @@ final class SessionRuntimeRegistry {
               runtimes[ended.id] == nil, !resuming.contains(ended.id), !notConnected.contains(ended.id),
               let conversation = ended.agentSessionID.flatMap(AgentResume.validSessionID) else { return }
         resuming.insert(ended.id)
-        defer { resuming.remove(ended.id) }
+        defer {
+            resuming.remove(ended.id)
+            // The resumed agent may still have Markdown comments to answer under this session's id.
+            model.sessionDidStart()
+        }
         // Nothing was said in it, so the agent never saved it and would stop with "No conversation found": start a
         // new conversation in the same place instead.
         if let provider = ended.agent.accountProvider,

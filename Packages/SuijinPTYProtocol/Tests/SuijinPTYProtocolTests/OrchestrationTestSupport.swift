@@ -56,18 +56,22 @@ final class RecordingSessionIO: OrchestrationSessionIO, Sendable {
     }
 }
 
-/// The app side: records worker starts and attention events.
+/// The app side: records worker starts, attention events and comment results.
 final class RecordingAppLink: OrchestrationAppLink, Sendable {
     private let requests = Mutex<[WorkerLaunchRequest]>([])
     private let events = Mutex<[OrchestrationAttention]>([])
     private let changes = Mutex(0)
+    private let resolved = Mutex<[[CommentResult]]>([])
 
     func startWorker(_ request: WorkerLaunchRequest) { requests.withLock { $0.append(request) } }
     func stateChanged() { changes.withLock { $0 += 1 } }
     func attention(_ event: OrchestrationAttention) { events.withLock { $0.append(event) } }
+    func commentsResolved(_ results: [CommentResult]) { resolved.withLock { $0.append(results) } }
 
     var started: [WorkerLaunchRequest] { requests.withLock { $0 } }
     var attentions: [OrchestrationAttention] { events.withLock { $0 } }
+    /// Every `commentsResolved` delivery, in order.
+    var commentDeliveries: [[CommentResult]] { resolved.withLock { $0 } }
 }
 
 /// Collects a reply that may come later.

@@ -74,6 +74,7 @@ enum Migrations {
         registerPaneLayoutMigrations(&migrator)        // v6_pane_layout
         registerAgentSessionMigrations(&migrator)      // v7_agent_session_id
         registerPermissionModeMigrations(&migrator)    // v8_permission_mode
+        registerMarkdownCommentMigrations(&migrator)   // v9_markdown_comment
         return migrator
     }
 }

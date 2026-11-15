@@ -268,4 +268,5 @@ private final class IgnoringClient: NSObject, OrchestrationClientXPC, Sendable {
     func startWorker(_ request: Data) {}
     func stateChanged() {}
     func attention(_ event: Data) {}
+    func commentsResolved(_ results: Data) {}
 }

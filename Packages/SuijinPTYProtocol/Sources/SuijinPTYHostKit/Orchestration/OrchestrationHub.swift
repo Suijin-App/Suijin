@@ -345,6 +345,37 @@ final class OrchestrationHostService: NSObject, OrchestrationHostXPC, @unchecked
         guard let decoded = try? OrchestrationCoding.decoder.decode(WorkerLaunchResult.self, from: result) else { return }
         broker?.workerStartFinished(decoded)
     }
+
+    func registerComments(_ comments: Data) {
+        guard let decoded = Self.decode([PendingComment].self, comments, method: "registerComments") else { return }
+        broker?.registerComments(decoded)
+    }
+
+    func withdrawComments(_ ids: Data) {
+        guard let decoded = Self.decode([String].self, ids, method: "withdrawComments") else { return }
+        broker?.withdrawComments(decoded)
+    }
+
+    func syncComments(_ comments: Data) {
+        guard let decoded = Self.decode([PendingComment].self, comments, method: "syncComments") else { return }
+        broker?.syncComments(decoded, appID: id)
+    }
+
+    func commentResultsApplied(_ ids: Data) {
+        guard let decoded = Self.decode([String].self, ids, method: "commentResultsApplied") else { return }
+        broker?.commentResultsApplied(decoded)
+    }
+
+    private static let logger = Logger(subsystem: "com.tekmium.suijin.ptyhost", category: "orchestration")
+
+    private static func decode<T: Decodable>(_ type: T.Type, _ data: Data, method: String) -> T? {
+        do {
+            return try OrchestrationCoding.decoder.decode(type, from: data)
+        } catch {
+            logger.error("ignoring malformed \(method, privacy: .public) payload from the app")
+            return nil
+        }
+    }
 }
 
 /// The broker's handle on the app: the connection's `OrchestrationClientXPC` proxy.
@@ -370,5 +401,10 @@ final class XPCAppLink: OrchestrationAppLink, @unchecked Sendable {
     func attention(_ event: OrchestrationAttention) {
         guard let data = try? OrchestrationCoding.encoder.encode(event) else { return }
         proxy?.attention(data)
+    }
+
+    func commentsResolved(_ results: [CommentResult]) {
+        guard let data = try? OrchestrationCoding.encoder.encode(results) else { return }
+        proxy?.commentsResolved(data)
     }
 }

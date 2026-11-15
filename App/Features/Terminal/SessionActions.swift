@@ -54,7 +54,7 @@ extension AppModel {
 
     /// Closes the focused pane (the tab, when it has one pane); a file tab closes its file.
     func closeActive(in context: SessionContext) {
-        if case .file(let path)? = currentTab(in: context) { closeFile(path, in: context); return }
+        if case .file(let path)? = currentTab(in: context) { requestCloseFile(path, in: context); return }
         guard let id = activeSession(in: context) else { return }
         requestClose(id)
     }
@@ -69,7 +69,7 @@ extension AppModel {
     func requestCloseTab(_ tab: DetailTab) {
         switch tab {
         case .session, .panes: requestClose(panes(of: tab))
-        case .file(let path): if let context = selection { closeFile(path, in: context) }
+        case .file(let path): if let context = selection { requestCloseFile(path, in: context) }
         case .changes: break
         }
     }
@@ -178,6 +178,28 @@ extension PaneEdge {
         case .right: self = .right
         case .up: self = .top
         case .down: self = .bottom
+        }
+    }
+}
+
+/// Asks what to do with the unsaved changes of a Markdown tab before it closes.
+struct UnsavedFileCloseDialog: ViewModifier {
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(
+            Text("Save changes to “\(((model.pendingFileClose?.path ?? "") as NSString).lastPathComponent)”?"),
+            isPresented: Binding(get: { model.pendingFileClose != nil }, set: { if !$0 { model.pendingFileClose = nil } }),
+            presenting: model.pendingFileClose
+        ) { key in
+            Button("Save") {
+                // A failed save, or a newer version on disk, leaves the tab open with its message.
+                if model.markdownSessions[key]?.save() != false { model.closeFile(key.path, in: key.context) }
+            }
+            Button("Don’t Save", role: .destructive) { model.closeFile(key.path, in: key.context) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Your changes are lost if you don’t save them.")
         }
     }
 }

@@ -100,7 +100,8 @@ struct PTYHostClientNegotiationTests {
     @Test func compatibilityRange() {
         #expect(PTYHostConstants.isCompatible(hostVersion: 2))
         #expect(PTYHostConstants.isCompatible(hostVersion: 3))
+        #expect(PTYHostConstants.isCompatible(hostVersion: 4))
         #expect(!PTYHostConstants.isCompatible(hostVersion: 1))
-        #expect(!PTYHostConstants.isCompatible(hostVersion: 4))
+        #expect(!PTYHostConstants.isCompatible(hostVersion: PTYHostConstants.protocolVersion + 1))
     }
 }

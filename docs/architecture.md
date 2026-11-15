@@ -15,13 +15,16 @@ SuijinTerminal      TerminalEngine protocol, SwiftTerm view, hosted (XPC) engine
 SuijinAgents        agent catalog (claude, codex), launch specs, Claude hooks, status tracking
 SuijinAccounts      managed Claude and Codex accounts: profile homes, login, identity, usage, launch env
 SuijinDiff          native TextKit 2 diff view with tree-sitter highlighting
+SuijinMarkdown      the live-rendered Markdown editor: tree-sitter syntax tree over the source, style runs and
+                    hideable markers, TextKit 1 text view; no domain dependency
 SuijinUsage         token usage and estimated cost from Claude Code and Codex JSONL logs (read-only), cached
                     incrementally in <dataRoot>/usage/cache.json; no dependency
 ```
 
 Arrows point from a package to what it imports: `SuijinAgents → SuijinCore`, `SuijinAccounts → SuijinCore,
 SuijinAgents`, `SuijinTerminal → SwiftTerm, SuijinPTYProtocol`, `SuijinDiff → SuijinGit, SuijinUI`; `SuijinUsage`
-imports nothing (the app passes it the managed account homes). The app imports every package; packages never import
+imports nothing (the app passes it the managed account homes), and `SuijinMarkdown` imports only the tree-sitter
+Markdown grammar (the app passes it a theme and a code highlighter). The app imports every package; packages never import
 the app.
 
 ## Processes
@@ -60,8 +63,51 @@ while the app is closed:
 - The guide (`App/Resources/Skills/suijin-orchestration/SKILL.md`) reaches Claude as a `--plugin-dir` plugin and
   managed Codex homes whose `skills` folder is their own; `~/.claude/skills` only through the Settings toggle.
 
-The app speaks protocol 3 and still works with a protocol 2 helper (the user's sessions keep running); orchestration
-stays off until `HelperVersionCheck` replaces that helper once it is idle.
+- `comment list` and `comment resolve` answer the Markdown comments the user sent to a session (see Markdown editor
+  and comments). The app tells the broker which comments wait on which session (`registerComments`,
+  `withdrawComments`, and the whole list again after every connect with `syncComments`); the broker accepts
+  `resolve` only from the session a comment was sent to, answers every other caller with the same "no such comment"
+  failure, keeps each result in `state.json` until the app acknowledges it (`commentResultsApplied`), and hands
+  results over with `commentsResolved`, at once or when the app connects again.
+
+The app speaks protocol 4 and still works with a protocol 2 or 3 helper (the user's sessions keep running).
+Orchestration needs protocol 3 and agents answering comments needs protocol 4; each stays off, and the Comments
+column says so, until `HelperVersionCheck` replaces that helper once it is idle.
+
+## Markdown editor and comments
+
+A Markdown file tab has two modes (the Read/Edit switch in its header, ⇧⌘E): Read is the MarkdownUI reader, Edit is
+the native editor of `SuijinMarkdown`.
+
+- **The source is the truth.** The editor's text is the file's Markdown, character for character; rendering is
+  attributes only, and nothing regenerates Markdown from a model. Saving (⌘S, `MarkdownFile.write`) writes that text
+  to a file beside the original and puts it in the original's place, so a reader never sees half a file and the
+  permissions and extended attributes stay; it follows symbolic links, keeps a byte order mark and CRLF line endings,
+  and changes no line the user did not edit.
+- **Parsing.** `MarkdownSyntaxTree` keeps a tree-sitter block tree of the source and reparses it incrementally on
+  each edit (documents over 150,000 UTF-16 units reparse when typing pauses); the text of paragraphs and headings is
+  parsed with the inline grammar when it is styled. `MarkdownStyler` turns the tree into style runs and markers;
+  front matter is recognized by one rule shared with the reader (`MarkdownFrontMatter`).
+- **Hidden markers.** Markers away from the lines of the selection are laid out as zero-width control characters
+  (the layout manager's glyph delegate), so they stay in the text for copy, undo, search and accessibility; a list
+  bullet is drawn as a dot, a task box as a checkbox that toggles `[ ]`/`[x]` in the source, a thematic break as a
+  rule. Code blocks, tables and front matter show as source on a background, with nothing hidden.
+- **The file on disk.** `MarkdownEditSession` (kept in `AppModel` while the tab is open, so undo history and scroll
+  position survive switching tabs) compares the file with what it last loaded or saved: its own save changes
+  nothing, another writer's version replaces the text when there are no unsaved changes, and with unsaved changes a
+  bar offers Reload or Keep My Changes; nothing is overwritten or dropped without an answer. Closing a tab or
+  quitting with unsaved changes asks to save.
+- **Comments** live in the database (`markdown_comment`, per workspace or worktree and file path); the file is never
+  touched. A comment keeps the quoted text, up to 64 characters of context on each side, its UTF-16 offsets and
+  lines. While the file is edited the offsets move edit by edit (`MarkdownCommentAnchoring.shift`); when the text is
+  replaced each comment is searched for again (`resolve`: same place, then the quote by context and distance, then
+  an intact context around a rewritten span), and one that is not found is marked detached and kept.
+- **Sending.** The Comments column pastes the unsent comments into a running session of the context (bracketed
+  paste, like diff notes, after saving the file) with a short id per comment and the instructions for
+  `suijin comment resolve`. The agent's result (`fixed` or `declined`, with a reply of at most 500 characters shown
+  as plain text) is applied in one transaction, only to a comment still waiting on that session and not sent again
+  since the answer was given. Writes of one file's comments run in order, and a moved comment writes its position
+  columns only, so a late write cannot undo a newer status or bring back a deleted comment.
 
 ## Agent sessions
 
@@ -132,6 +178,9 @@ the same entries with the mouse gestures. While a terminal has focus, `TerminalK
 the tab, pane, text size and edit shortcuts itself. `ShortcutCatalogTests` fails when a `.keyboardShortcut(…)` in the
 app does not come from the catalog (sheets' standard Return and Esc buttons aside), when a terminal route has no
 catalog entry with the same keys, or when a catalog shortcut would reach another route.
+
+⌘S (Save), ⇧⌘E (Edit or Read Markdown) and ⇧⌘M (Add Comment) act on the selected Markdown tab only; their menu
+items are disabled on every other tab, so typed in a terminal they do nothing.
 
 ⌘+, ⌘- and ⌘0 are one catalog entry each with two meanings, by where the keyboard is: in a terminal they change that
 terminal's text size, in the file viewer they zoom its image. A terminal's size is the size in Settings › Terminal

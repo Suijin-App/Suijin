@@ -309,7 +309,7 @@ public struct BrokerRequest: Codable, Sendable, Hashable {
     /// The caller's `SUIJIN_SESSION_TOKEN`.
     public var token: String?
     /// `worker.start`, `worker.list`, `worker.stop`, `send`, `ask`, `reply`, `done`, `inbox`, `hook.claude`,
-    /// `hook.codex`, `whoami`.
+    /// `hook.codex`, `whoami`, `comment.list`, `comment.resolve`.
     public var command: String
     public var options: [String: String]
 
@@ -492,6 +492,48 @@ public struct OrchestrationAttention: Codable, Sendable, Hashable {
     }
 }
 
+/// A Markdown comment the app pasted into a session and expects that session's agent to answer.
+public struct PendingComment: Codable, Sendable, Hashable, Identifiable {
+    /// The comment's UUID string, lowercased.
+    public var id: String
+    /// The app session UUID the comment was pasted into: the only session that may answer it.
+    public var sessionID: String
+    /// The file as the agent was told (relative to the session's folder when inside it).
+    public var filePath: String
+    /// The comment exactly as pasted (`[c-7f3a2b] lines 12-14`, the quoted lines, the note).
+    public var text: String
+    public var createdAt: Date
+
+    public init(id: String, sessionID: String, filePath: String, text: String, createdAt: Date) {
+        self.id = id
+        self.sessionID = sessionID
+        self.filePath = filePath
+        self.text = text
+        self.createdAt = createdAt
+    }
+}
+
+/// An agent's answer to a comment, queued by the broker until the app has applied it.
+public struct CommentResult: Codable, Sendable, Hashable, Identifiable {
+    /// The comment's UUID string, lowercased.
+    public var id: String
+    /// The session that answered (always the comment's receiver).
+    public var sessionID: String
+    /// `fixed` or `declined`.
+    public var outcome: String
+    /// The agent's short reply: one line, no control characters, at most 500 characters. Plain text, never markup.
+    public var reply: String?
+    public var resolvedAt: Date
+
+    public init(id: String, sessionID: String, outcome: String, reply: String?, resolvedAt: Date) {
+        self.id = id
+        self.sessionID = sessionID
+        self.outcome = outcome
+        self.reply = reply
+        self.resolvedAt = resolvedAt
+    }
+}
+
 /// Exported by the helper on the connection made to `PTYHostXPC.orchestrationEndpoint`. Payloads are JSON.
 @objc public protocol OrchestrationHostXPC {
     /// Registers the connection as the data root's app: worker starts go to it from now on (queued ones right away).
@@ -500,6 +542,20 @@ public struct OrchestrationAttention: Codable, Sendable, Hashable {
     func snapshot(reply: @escaping @Sendable (Data) -> Void)
     /// JSON `WorkerLaunchResult`.
     func workerStartFinished(_ result: Data)
+    /// Protocol 4. JSON `[PendingComment]` the app just pasted into a session. A comment registered again replaces
+    /// its entry and forgets any answer stored for it (it was sent again).
+    func registerComments(_ comments: Data)
+    /// Protocol 4. JSON `[String]` comment ids the user deleted, reopened or edited: the broker forgets them and any
+    /// answer it holds for them.
+    func withdrawComments(_ ids: Data)
+    /// Protocol 4. JSON `[PendingComment]`: every comment the app still waits on, sent right after `hello` on each
+    /// connection. Waiting entries not listed are dropped, listed ones are added, answers are kept. From then on the
+    /// connection receives `OrchestrationClientXPC.commentsResolved`, starting with every unacknowledged answer; a
+    /// connection that never calls this is never sent comment results.
+    func syncComments(_ comments: Data)
+    /// Protocol 4. JSON `[String]` comment ids whose results the app applied (or deliberately ignored): they are not
+    /// delivered again.
+    func commentResultsApplied(_ ids: Data)
 }
 
 /// Exported by the app on the same connection.
@@ -510,6 +566,9 @@ public struct OrchestrationAttention: Codable, Sendable, Hashable {
     func stateChanged()
     /// JSON `OrchestrationAttention`: post a notification.
     func attention(_ event: Data)
+    /// Protocol 4, only after `OrchestrationHostXPC.syncComments`. JSON `[CommentResult]`: agents answered comments.
+    /// A result may arrive again until the app names it in `commentResultsApplied`; applying it twice must be harmless.
+    func commentsResolved(_ results: Data)
 }
 
 public enum OrchestrationXPCInterfaces {

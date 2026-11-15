@@ -109,7 +109,7 @@ struct LegalDocument: Identifiable {
             Section(heading: String(localized: "What Suijin stores"), blocks: [
                 text(AttributedString(localized: "Everything Suijin keeps is on your Mac, in `~/Library/Application Support/Suijin`:")),
                 .bullets([
-                    AttributedString(localized: "A database (`suijin.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes you write, your settings and the counters behind the Stats page."),
+                    AttributedString(localized: "A database (`suijin.sqlite`) with your workspaces (name, folder, icon, color), worktrees, managed accounts (label, email, organization), session records (title, folder, status, times), split-pane layouts, the diff notes and Markdown comments you write (with the text they quote and the replies agents give), your settings and the counters behind the Stats page."),
                     AttributedString(localized: "A usage cache with the numbers described above."),
                     AttributedString(localized: "A home folder for each managed account. Managed Claude sign-ins are kept in the macOS Keychain; managed Codex sign-ins stay in that account's folder, where Codex itself stores them."),
                     AttributedString(localized: "Events from open Claude Code sessions, including the prompts you send, so Suijin knows when an agent waits for you. Each session's file is deleted when you close its tab."),

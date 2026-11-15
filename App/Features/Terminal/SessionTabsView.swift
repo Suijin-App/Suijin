@@ -215,11 +215,18 @@ struct ToolbarTabBar: View {
                         Text("Changes")
                     }
                 case .file(let path):
-                    ToolbarTab(isSelected: selected == tab, onClose: { model.closeFile(path, in: context) }) {
+                    ToolbarTab(isSelected: selected == tab, onClose: { model.requestCloseFile(path, in: context) }) {
                         model.selectedTab[context] = tab
                     } label: {
                         Image(nsImage: FileIcons.icon(forPath: path)).resizable().frame(width: 14, height: 14)
                         Text(verbatim: (path as NSString).lastPathComponent)
+                        if model.markdownSessions[FileTabKey(context: context, path: path)]?.isDirty == true {
+                            // The mark of unsaved changes, as a document window's close button carries.
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 6))
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel(Text("Edited"))
+                        }
                     }
                     .help(Text(verbatim: (path as NSString).abbreviatingWithTildeInPath))
                 }

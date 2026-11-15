@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Copy a code block.** Every code block in the Markdown viewer has a copy button at its top corner; one click
+  copies the whole block, including the part scrolled out of view.
+
 ## 0.1.0 (2026-11-15)
 
 The first release of Suijin: a native macOS app that runs Claude Code, Codex and any other command-line AI coding

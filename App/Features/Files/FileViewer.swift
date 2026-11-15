@@ -745,6 +745,7 @@ private struct PDFDocumentView: NSViewRepresentable {
 extension Theme {
     /// GitHub's theme on the window's own background: its text style paints a fixed white or near-black page behind
     /// every paragraph (and its tables alternate with that color), which showed as a second background in dark mode.
+    /// Code blocks get a copy button.
     @MainActor static let suijin = Theme.gitHub
         .text {
             ForegroundColor(.primary)
@@ -752,6 +753,7 @@ extension Theme {
             FontSize(16)
         }
         .table { MarkdownTable(configuration: $0) }
+        .codeBlock { MarkdownCodeBlock(configuration: $0) }
 }
 
 /// GitHub's table with the system's separator and alternating row colors instead of its fixed page colors.

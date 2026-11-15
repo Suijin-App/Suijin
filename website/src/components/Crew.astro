@@ -190,7 +190,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
       for (const one of members) {
         if (one.state !== "swim") resize(one, one.state === "home" && hiders.has(one) ? small() : pixel);
         if (one.state === "home" && one.home) { const spot = one.home(); if (spot && !(one === codex && one.walking) && !(one === shell && one.busy)) { stand(one, spot.x, spot.y); one.rest = spot.rest; } }
-        if (one.state === "away" && one.perch) { const edge = edgeOf(one.perch); if (edge) stand(one, edge.left + edge.width * one.perch.at + window.scrollX, edge.top + 1 + window.scrollY); }
+        // not in the middle of an act: it may be in the water then, or on somebody's head
+        if (one.state === "away" && one.perch && !one.busy) { const edge = edgeOf(one.perch); if (edge) stand(one, edge.left + edge.width * one.perch.at + window.scrollX, edge.top + 1 + window.scrollY); }
         settle(one);
       }
     };
@@ -377,6 +378,8 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
 
       // Coming down on an edge: a squash, a shake to get dry, then a sign (or, behind a button, sinking into hiding).
       const land = (one: Member, spot: Spot, home: boolean, perch: Perch | null) => {
+        // what this journey was to end with; read now, since by the time it runs a next journey may have set its own
+        const then = arrivals.get(one); arrivals.delete(one);
         one.state = home ? "home" : "away"; one.goal = null; one.perch = perch; one.pose = {}; draw(one);
         if (home && spot.hides) resize(one, small());
         stand(one, spot.x, spot.y); play("land", one); play("shake", one);
@@ -384,7 +387,6 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         animate(one.element, { scaleY: [0.82, 1.06, 1], scaleX: [1.14, 0.96, 1], rotate: [0, -9, 8, -6, 4, 0], duration: 620, ease: "outQuad" });
         feel(one, { eyes: "shut", mouth: "smile" }, 520);
         window.setTimeout(() => {
-          const then = arrivals.get(one); arrivals.delete(one);
           if (one.state === "home" && spot.hides) { one.post.classList.add("hides"); one.rest = spot.rest; animate(one.element, { y: spot.rest, duration: 320, ease: "inOutQuad" }); }
           else if (then) { if (one.state === "away") then(); }
           else if (one.state === "away") { feel(one, { eyes: "happy", mouth: "smile", arms: "wave", blush: true }, 1100); leave(one);
@@ -1097,9 +1099,9 @@ const crew: SpriteColor[] = ["aqua", "claude", "shell", "codex"];
         together([late, caller], () => [
           [0, () => { feel(late, { eyes: "shut" }, 0); leave(late, "zzz"); feel(caller, { ...toward(caller, late), eyes: "r" }, 0); }],
           [500, () => call(12, words)], [900, () => { leave(late, "zzz"); call(18); }], [800, () => call(26, words.toUpperCase())],
-          [500, () => { late.pose.eyes = "n"; feel(late, { eyes: "wide", mouth: "o", arms: "up" }, 0); bounce(late, 22); speak(late, any1(plays.wake.up), "oh"); feel(caller, { ...toward(caller, late), eyes: "happy", mouth: "smile" }, 0); }],
+          [500, () => { feel(late, { eyes: "wide", mouth: "o", arms: "up" }, 0); bounce(late, 22); speak(late, any1(plays.wake.up), "oh"); feel(caller, { ...toward(caller, late), eyes: "happy", mouth: "smile" }, 0); }],
           [1500, () => {}],
-        ]);
+        ], () => { late.pose.eyes = "n"; draw(late); });   // awake at the end, even if the skit was cut short
       };
 
       // Now and then, a game: the next one in turn that can be played with who is free and where they stand.

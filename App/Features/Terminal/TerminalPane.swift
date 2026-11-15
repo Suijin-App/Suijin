@@ -53,6 +53,8 @@ struct TerminalPane: View {
         view.onKeyRoute = { route in model.handle(route, in: context, from: id) }
         // Dropped files become pasted paths, except while the session is reconnecting (nothing would receive them).
         view.acceptsFileDrop = { !model.runtimes.reconnecting.contains(id) }
+        // A pasted screenshot, or one dragged from the screenshot tool's thumbnail, is saved here and pasted as a path.
+        view.imageStore = model.pastedImageStore
         let bases = linkBases
         // ⌘-clicking a link SwiftTerm found itself: with path links off, relative to the session's directory only, as
         // before path links existed.
@@ -241,5 +243,27 @@ private final class FocusingContainer: NSView {
             guard window.firstResponder === window || window.firstResponder is NSTableView else { return }
             window.makeFirstResponder(terminal)
         }
+    }
+}
+
+extension AppModel {
+    /// Where images pasted or dropped on a terminal are saved: `PastedImages` in the app's caches folder, or under the
+    /// data root when that is not the user's own (tests and isolated runs), so those never touch the real folder.
+    var pastedImageStore: TerminalImageStore {
+        let manager = FileManager.default
+        let support = manager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Suijin", isDirectory: true)
+        guard dataRoot.standardizedFileURL == support.standardizedFileURL else {
+            return TerminalImageStore(directory: dataRoot.appendingPathComponent("PastedImages", isDirectory: true))
+        }
+        let caches = manager.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.tekmium.suijin", isDirectory: true)
+        return TerminalImageStore(directory: caches.appendingPathComponent("PastedImages", isDirectory: true))
+    }
+
+    /// Removes pasted images older than a week, off the main thread. Called once at launch.
+    func removeExpiredPastedImages() {
+        let store = pastedImageStore
+        Task.detached(priority: .utility) { store.removeExpired() }
     }
 }

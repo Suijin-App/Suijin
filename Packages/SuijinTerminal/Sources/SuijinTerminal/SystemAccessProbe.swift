@@ -79,6 +79,7 @@ public enum FullDiskAccessProbe {
         let deadline = ContinuousClock.now + timeout
         while ContinuousClock.now < deadline {
             if let info = try? await client.listSessions().first(where: { $0.id == id }), !info.isRunning {
+                client.terminate(id) // read: the host can forget it
                 return result(forExitStatus: info.exitStatus)
             }
             try? await Task.sleep(for: .milliseconds(150))

@@ -55,6 +55,12 @@ Check: `Tools/comment-lint/comment-lint.py` (also runs in `scripts/ci-local.sh c
 - **Never print, log or persist tokens.** Credentials are read into memory only; profile directories are 700, files 600.
 - **No orphan processes.** Every terminal runs in the PTY host helper (`SuijinPTYHost`) so it survives the app
   quitting; closing a tab terminates its session (SIGHUP, then SIGKILL). Tests that spawn processes clean them up.
+- **Tests leave nothing in the PTY host.** App tests share this Mac's registered `SuijinPTYHost` with the installed
+  app. A test that starts a hosted session ends it before it returns (`runtimes.terminate`, or
+  `PTYHostClient.shared.terminate` for a session started without a runtime), also when the test fails (`defer` or a
+  teardown). Ending a session makes the host drop its process, scrollback and metadata; a session left to exit on
+  its own stays in the host for a day. Tests that flood output (`LoadTests`, layout suites) are included. A test
+  never restarts, kills or re-registers the helper: the user's own sessions run in it.
 - **Package boundaries.** The graph is documented in `docs/architecture.md`; packages never import the app, and
   `SuijinUI` imports no domain package.
 - **Verify before done.** `scripts/ci-local.sh` must be green (package tests, app build, no compiler warnings in

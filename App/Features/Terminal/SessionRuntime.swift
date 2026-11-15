@@ -229,9 +229,10 @@ final class SessionRuntimeRegistry {
                 if session.state != .exited && session.state != .failed { await markEnded(session) }
                 continue
             }
-            // A process that is gone is never attached: the host keeps an exited session and its scrollback for a
-            // day, and attaching it showed a dead terminal (behind the reconnecting view) before the ended view on
-            // every launch. A session already recorded as ended needs nothing more.
+            // A process that is gone is never attached: the host still lists a session that exited on its own (with
+            // the tail of its scrollback, for a day), and attaching it showed a dead terminal (behind the
+            // reconnecting view) before the ended view on every launch. A session already recorded as ended needs
+            // nothing more.
             guard info.isRunning else {
                 if session.state != .exited && session.state != .failed { exitedWhileAway.append((session, info)) }
                 continue

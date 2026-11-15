@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **The terminal host gives memory back.** Closing a tab now makes the helper drop that session's scrollback at
+  once; before, it kept up to 8 MB per ended session for a day, so its memory grew with every tab closed. A session
+  that ends on its own while Suijin is closed keeps only the last 256 KB, which is all Suijin reads of it.
 - **Edit Markdown in place.** A Markdown tab has an Edit mode (⇧⌘E) next to Read: headings, bold, lists, task
   boxes, quotes and links show formatted as you type, and the Markdown punctuation appears only on the line you are
   editing. ⌘S saves exactly what you typed, without reformatting the rest of the file. When an agent changes the

@@ -202,18 +202,23 @@ struct XPCRoundTripTests {
         #expect(live.events.first { $0 != "attach-reply" } == "stream-start")
         #expect(live.events.last == "exit")
 
-        let sessions = try await harness.listSessions()
-        let ended = try #require(sessions.first { $0.id == sessionID })
-        #expect(ended.isRunning == false)
-        #expect(ended.exitStatus == 128 + SIGHUP)
-        #expect(FileManager.default.fileExists(atPath: harness.directory.appendingPathComponent("\(sessionID).json").path))
+        // A terminated session is forgotten once its processes are gone: no listing, no metadata, nothing to attach.
+        try await waitUntil { harness.manager.session(sessionID) == nil }
+        #expect(try await harness.listSessions().contains { $0.id == sessionID } == false)
+        #expect(!FileManager.default.fileExists(atPath: harness.directory.appendingPathComponent("\(sessionID).json").path))
+        #expect(try await harness.attach(sessionID) == nil)
 
-        // Re-attaching to an exited session still returns its scrollback, followed by the exit.
-        let exitedCollector = harness.receiver.collector(for: sessionID)
-        exitedCollector.reset()
-        let (finalScrollback, finalInfo) = try #require(try await harness.attach(sessionID))
+        // A session that ended on its own is kept: attaching returns its scrollback, followed by the exit.
+        let (endedID, _) = try await harness.spawn(shellRequest("echo natural-end"))
+        let naturalID = try #require(endedID)
+        try await waitUntil { harness.manager.session(naturalID)?.isSettled == true }
+        let ended = try #require(try await harness.listSessions().first { $0.id == naturalID })
+        #expect(ended.isRunning == false)
+        #expect(ended.exitStatus == 0)
+        let (finalScrollback, finalInfo) = try #require(try await harness.attach(naturalID))
         #expect(finalInfo.isRunning == false)
-        #expect(finalScrollback.contains(text: "after-reattach"))
+        #expect(finalScrollback.contains(text: "natural-end"))
+        #expect(await harness.receiver.collector(for: naturalID).waitForExit() == 0)
         #expect(harness.errors.isEmpty)
 
         // Invalidation detaches the client on the host side.

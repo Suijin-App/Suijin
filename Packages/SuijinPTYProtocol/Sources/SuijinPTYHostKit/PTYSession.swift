@@ -59,6 +59,7 @@ public final class PTYSession: @unchecked Sendable {
     private let queue: DispatchQueue
     private let tuning: PTYSessionTuning
     private let onExit: (@Sendable (PTYSession, Int32) -> Void)?
+    private let onSettled: (@Sendable (PTYSession) -> Void)?
 
     // Queue-confined state.
     private var scrollback: ScrollbackBuffer
@@ -81,7 +82,10 @@ public final class PTYSession: @unchecked Sendable {
     private var sweepInProgress = false
     /// Device number of the slave; only meaningful while the PTY is open (`readSource != nil`).
     private let ttyDevice: dev_t
-    private let readBuffer: UnsafeMutableRawPointer
+    /// Freed when the PTY closes: nothing is read after that.
+    private var readBuffer: UnsafeMutableRawPointer?
+    /// True once `onExit` has run, so `onSettled` never comes before it.
+    private var exitReported = false
     private static let readBufferSize = 64 * 1024
 
     /// Queue-confined per-attachment cursor.
@@ -101,13 +105,15 @@ public final class PTYSession: @unchecked Sendable {
     }
 
     /// Starts `request.executable` on a new pseudo terminal. `onExit` runs on the session queue after the final
-    /// output has been read into the scrollback and pushed to attachments.
+    /// output has been read into the scrollback and pushed to attachments. `onSettled` runs on the session queue,
+    /// after `onExit` and possibly more than once, whenever the session is settled (see `isSettled`).
     public static func spawn(
         id: String = UUID().uuidString,
         request: PTYSpawnRequest,
         scrollbackCapacity: Int = ScrollbackBuffer.defaultCapacity,
         tuning: PTYSessionTuning = PTYSessionTuning(),
-        onExit: (@Sendable (PTYSession, Int32) -> Void)? = nil
+        onExit: (@Sendable (PTYSession, Int32) -> Void)? = nil,
+        onSettled: (@Sendable (PTYSession) -> Void)? = nil
     ) throws -> PTYSession {
         guard !request.executable.isEmpty else { throw PTYSpawnError("Missing executable") }
         let environment = request.environment // complete environment; nothing is inherited from the helper
@@ -135,14 +141,15 @@ public final class PTYSession: @unchecked Sendable {
 
         let session = PTYSession(
             id: id, pid: result.pid, masterFD: result.master_fd, slaveFD: result.slave_fd, request: request,
-            scrollbackCapacity: scrollbackCapacity, tuning: tuning, onExit: onExit
+            scrollbackCapacity: scrollbackCapacity, tuning: tuning, onExit: onExit, onSettled: onSettled
         )
         return session
     }
 
     private init(
         id: String, pid: pid_t, masterFD: Int32, slaveFD: Int32, request: PTYSpawnRequest,
-        scrollbackCapacity: Int, tuning: PTYSessionTuning, onExit: (@Sendable (PTYSession, Int32) -> Void)?
+        scrollbackCapacity: Int, tuning: PTYSessionTuning, onExit: (@Sendable (PTYSession, Int32) -> Void)?,
+        onSettled: (@Sendable (PTYSession) -> Void)?
     ) {
         self.id = id
         self.pid = pid
@@ -153,6 +160,7 @@ public final class PTYSession: @unchecked Sendable {
         self.tuning = tuning
         self.flushCredits = Double(tuning.burstFlushes)
         self.onExit = onExit
+        self.onSettled = onSettled
         self.masterFD = masterFD
         var slaveStat = stat()
         self.ttyDevice = fstat(slaveFD, &slaveStat) == 0 ? slaveStat.st_rdev : -1
@@ -185,7 +193,7 @@ public final class PTYSession: @unchecked Sendable {
         if readPaused { readSource?.resume() } // releasing a suspended source traps
         readSource?.cancel()
         processSource?.cancel()
-        readBuffer.deallocate()
+        readBuffer?.deallocate()
     }
 
     // MARK: Public API (thread-safe; must not be called from a sink callback)
@@ -200,6 +208,26 @@ public final class PTYSession: @unchecked Sendable {
 
     public func scrollbackSnapshot() -> Data {
         queue.sync { scrollback.snapshot() }
+    }
+
+    /// True once nothing more will ever be sent: the process has exited and its exit was reported, the terminate
+    /// sweep is over, and every attachment has received the exit.
+    public var isSettled: Bool {
+        queue.sync { isSettledLocked }
+    }
+
+    /// Bytes of scrollback currently held.
+    public var scrollbackByteCount: Int {
+        queue.sync { scrollback.count }
+    }
+
+    /// Keeps only the last `length` bytes of scrollback. Does nothing unless the session is settled, so no
+    /// attachment loses output it has not received yet.
+    public func trimScrollback(toLast length: Int) {
+        queue.async {
+            guard self.isSettledLocked else { return }
+            self.scrollback.trim(toLast: length)
+        }
     }
 
     /// Registers `sink` and calls `onSnapshot` with the current scrollback, atomically with respect to the read
@@ -225,6 +253,7 @@ public final class PTYSession: @unchecked Sendable {
         queue.async {
             self.attachments[token] = nil
             self.updateReadPause()
+            self.reportSettledIfDue()
         }
     }
 
@@ -282,7 +311,10 @@ public final class PTYSession: @unchecked Sendable {
             if let completion {
                 if !self.running, let status = self.exitStatus { completion(status) } else { self.exitWaiters.append(completion) }
             }
-            guard !self.terminateRequested, self.running || !self.terminalMembers().isEmpty else { return }
+            guard !self.terminateRequested, self.running || !self.terminalMembers().isEmpty else {
+                self.reportSettledIfDue() // already over: whoever asked can let go of the session now
+                return
+            }
             self.terminateRequested = true
             self.sweepInProgress = true
             self.signalTerminal(SIGHUP)
@@ -354,6 +386,15 @@ public final class PTYSession: @unchecked Sendable {
         if running { kill(pid, SIGKILL) } // not reaped yet, so the pid is still ours
         sweepInProgress = false
         if !running { closePTY() }
+        reportSettledIfDue()
+    }
+
+    private var isSettledLocked: Bool {
+        !running && exitReported && !sweepInProgress && attachments.values.allSatisfy(\.exitDelivered)
+    }
+
+    private func reportSettledIfDue() {
+        if isSettledLocked { onSettled?(self) }
     }
 
     private func closePTY() {
@@ -363,6 +404,8 @@ public final class PTYSession: @unchecked Sendable {
         }
         readSource?.cancel() // closes master and slave
         readSource = nil
+        readBuffer?.deallocate()
+        readBuffer = nil
     }
 
     private func drainMaster() {
@@ -370,6 +413,7 @@ public final class PTYSession: @unchecked Sendable {
             discardStragglerOutput()
             return
         }
+        guard let readBuffer else { return }
         var total = 0
         // Bounded per event so one chatty session cannot monopolize the queue; the source fires again.
         while total < 4 * Self.readBufferSize {
@@ -470,6 +514,7 @@ public final class PTYSession: @unchecked Sendable {
               attachment.position >= scrollback.totalWritten else { return }
         attachment.exitDelivered = true
         attachment.sink.deliver(exitStatus: status, sessionID: id)
+        reportSettledIfDue()
     }
 
     private func flushInput() {
@@ -520,7 +565,7 @@ public final class PTYSession: @unchecked Sendable {
     /// After the leader's exit the stream is over for attachments; bytes written during the terminate sweep are read
     /// and dropped so a writer cannot block on a full PTY.
     private func discardStragglerOutput() {
-        guard readSource != nil else { return }
+        guard readSource != nil, let readBuffer else { return }
         while Darwin.read(masterFD, readBuffer, Self.readBufferSize) > 0 {}
     }
 
@@ -539,6 +584,8 @@ public final class PTYSession: @unchecked Sendable {
         exitWaiters.removeAll()
         waiters.forEach { $0(exitCode) }
         onExit?(self, exitCode)
+        exitReported = true
+        reportSettledIfDue()
     }
 
     // MARK: Spawn helpers

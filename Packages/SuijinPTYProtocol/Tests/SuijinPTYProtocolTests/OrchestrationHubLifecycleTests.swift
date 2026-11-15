@@ -171,7 +171,8 @@ struct OrchestrationHubLifecycleTests {
         let stopped = ReplyBox()
         broker.handle(BrokerRequest(token: coordinator.token, command: "worker.stop", options: ["to": "waiter"])) { stopped.set($0) }
         #expect(await stopped.wait()?.ok == true)
-        #expect(await eventually { fixture.manager.session(worker.id)?.isRunning == false }, "the worker's PTY session ends")
+        // The host forgets a session it was asked to end, so it is either gone or no longer running.
+        #expect(await eventually { fixture.manager.session(worker.id)?.isRunning != true }, "the worker's PTY session ends")
         #expect(fixture.manager.session(coordinator.id)?.isRunning == true)
         #expect(await eventually { broker.snapshot().dispatches.first?.stoppedAt != nil })
         #expect(!broker.snapshot().messages.contains { $0.kind == .escalation })

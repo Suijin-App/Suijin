@@ -85,10 +85,7 @@ struct LaunchRestoreTests {
         FileManager.default.createFile(atPath: endedRelease.path, contents: nil)
         #expect(await eventually { first.runtimes.runtime(for: ended.id) == nil })
         #expect(first.sessions.first { $0.id == ended.id }?.state == .exited)
-        let endedHost = try #require(first.sessions.first { $0.id == ended.id }?.hostSessionID)
         let awayHost = try #require(first.sessions.first { $0.id == away.id }?.hostSessionID)
-        // The host keeps the ended session (and its scrollback) after the app let it go.
-        #expect(try await PTYHostClient.shared.listSessions().contains { $0.id == endedHost && !$0.isRunning })
 
         // Quit with sessions kept, then the second agent exits while the app is closed.
         await first.runtimes.prepareForQuit()

@@ -56,6 +56,7 @@ private struct ChangesView: View {
     @State private var isLoading = true
     @State private var error: String?
     @State private var watcher: FileSystemWatcher?
+    @State private var reloader: ReloadCoalescer?
     @State private var book: DiffNotesBook?
     @State private var showsUnsentOnly = false
     @State private var diffWidth: CGFloat = 0
@@ -167,18 +168,24 @@ private struct ChangesView: View {
         }
         .onAppear {
             watcher?.stop()
-            // Any change matters here, including commits and branch moves under `.git`.
-            watcher = FileSystemWatcher(root: directory) { _ in
-                Task {
-                    await reloadFiles()
-                    await reloadDiff()
-                    contentRevision &+= 1
-                }
+            reloader?.stop()
+            // One reload at a time: a slow one would otherwise be joined by a new one at every batch of changes.
+            let reloader = ReloadCoalescer {
+                await reloadFiles()
+                await reloadDiff()
+                contentRevision &+= 1
+            }
+            self.reloader = reloader
+            // Commits and branch moves under `.git` matter here too; only new objects and reflogs do not.
+            watcher = FileSystemWatcher(root: directory) { change in
+                if ReloadCoalescer.matters(change) { reloader.request() }
             }
         }
         .onDisappear {
             watcher?.stop()
             watcher = nil
+            reloader?.stop()
+            reloader = nil
         }
     }
 
@@ -256,10 +263,21 @@ private struct ChangesView: View {
     /// earlier request must not overwrite a newer one.
     private func reloadDiff() async {
         guard let requested = selection else { diff = nil; diffError = nil; return }
-        let service = DiffService(worktree: directory)
         let scope = diffScope(for: requested.group)
+        // The file as the list shows it, so the diff does not list the whole scope again.
+        let listed: [ChangedFile] = switch requested.group {
+        case .uncommitted: uncommitted
+        case .committed: selectedCommit == nil ? committed : commitFiles
+        }
+        let change = listed.first { $0.path == requested.path }
+        let service = DiffService(worktree: directory)
         do {
-            let loaded = try await service.diff(for: requested.path, scope: scope)
+            // A file the list does not hold (the list is being replaced) is looked up in git, as before.
+            let loaded = if let change {
+                try await service.diff(for: change, scope: scope)
+            } else {
+                try await service.diff(for: requested.path, scope: scope)
+            }
             guard requested == selection else { return }
             if scope != loadedScope { loadedScope = scope }
             if loaded != diff { diff = loaded }

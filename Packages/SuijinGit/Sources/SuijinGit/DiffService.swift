@@ -49,8 +49,18 @@ public struct DiffService: Sendable {
 
     /// The diff of one file in `scope` (3 lines of context). A file without changes yields a diff with no hunks.
     public func diff(for path: String, scope: DiffScope) async throws -> FileDiff {
+        guard let change = try await changedFiles(scope).first(where: { $0.path == path }) else {
+            return FileDiff(oldPath: path, newPath: path)
+        }
+        return try await diff(for: change, scope: scope)
+    }
+
+    /// The diff of a file that `changedFiles(scope)` already listed, in the same `scope`. It skips listing the whole
+    /// scope again, which is the costly part for a branch with many changed files. When the checkout changed after
+    /// the listing, the diff can be out of step with it until the list is read again.
+    public func diff(for change: ChangedFile, scope: DiffScope) async throws -> FileDiff {
+        let path = change.path
         let unchanged = FileDiff(oldPath: path, newPath: path)
-        guard let change = try await changedFiles(scope).first(where: { $0.path == path }) else { return unchanged }
 
         let output: Data
         if let tip = Self.tip(of: scope) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Large diffs open at once.** In Changes, a file with a long diff (a bundled stylesheet, a lock file) took seconds
+  to minutes to show, and Suijin seemed to hang, because reading the diff slowed down with the square of its length.
+  A 59,000-line diff now opens in a fraction of a second.
+
 ## 0.1.1 (2026-11-16)
 
 - **Fixed a crash after closing a terminal.** Closing a tab while Suijin was still checking the paths printed on its

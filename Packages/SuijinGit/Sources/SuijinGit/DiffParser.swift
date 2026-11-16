@@ -24,7 +24,9 @@ public enum DiffParser {
         }
 
         for line in lines {
-            if var current = hunk {
+            // Taken out of the optional so `current` is the only owner of the hunk's lines: a copy that `hunk` still
+            // shared would make every append copy all lines read so far, quadratic in the hunk's length.
+            if var current = hunk.take() {
                 let consumed: Bool
                 if line.hasPrefix("\\") {
                     // `\ No newline at end of file`, after the line it applies to.
@@ -33,10 +35,8 @@ public enum DiffParser {
                 } else {
                     consumed = current.isOpen && current.consume(line)
                 }
-                if consumed {
-                    hunk = current
-                    continue
-                }
+                hunk = current
+                if consumed { continue }
                 finishHunk()
             }
 

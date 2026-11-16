@@ -93,6 +93,27 @@ import Testing
         #expect(unchanged == FileDiff(oldPath: "README.md", newPath: "README.md"))
     }
 
+    /// Reading a listed file gives the diff that looking it up by path gives, for every kind of file and every scope.
+    @Test func diffOfAListedFileMatchesTheDiffByPath() async throws {
+        let repo = try await makeFeatureRepo()
+        defer { repo.cleanUp() }
+        try repo.write("untracked.txt", "first\nsecond")
+        try repo.write("blob.bin", Data([0, 1, 2, 0, 255]))
+        let service = DiffService(worktree: repo.url)
+        let commit = try await repo.git("rev-parse", "HEAD").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var compared = 0
+        for scope in [DiffScope.againstBase("main"), .committed("main"), .uncommitted, .commit(commit)] {
+            for change in try await service.changedFiles(scope) {
+                let listed = try await service.diff(for: change, scope: scope)
+                #expect(listed == (try await service.diff(for: change.path, scope: scope)))
+                compared += 1
+            }
+        }
+        // Modified, renamed, deleted, untracked and binary files were all among them.
+        #expect(compared >= 8)
+    }
+
     @Test func diffInLinkedWorktree() async throws {
         let repo = try await TestRepo()
         defer { repo.cleanUp() }

@@ -5,6 +5,11 @@
 - **Large diffs open at once.** In Changes, a file with a long diff (a bundled stylesheet, a lock file) took seconds
   to minutes to show, and Suijin seemed to hang, because reading the diff slowed down with the square of its length.
   A 59,000-line diff now opens in a fraction of a second.
+- **Changes stays responsive while files change.** In a project where files change all the time (a dev server, an
+  agent at work), the Changes tab started a new reload at every change even when the last one was still running, so
+  slow reloads piled up and Suijin could hang. It now runs one reload at a time and follows it with a single reload
+  for everything that changed meanwhile. It also no longer reads the whole list of changes again to show one file, and
+  ignores the files git writes inside `.git/objects` and `.git/logs`.
 
 ## 0.1.1 (2026-11-16)
 

@@ -43,13 +43,23 @@ struct ChangedFilesList: View {
     /// The commit the committed group is narrowed to; nil shows every commit's changes.
     @Binding var selectedCommit: String?
     @State private var showsAllCommits = false
+    /// While set, only this many files are listed (see `firstBatch`).
+    @State private var fileLimit: Int? = Self.firstBatch
 
     /// Commits listed before "Show more".
     static let collapsedCommitCount = 5
 
+    /// Files a list with few rows takes in one update; the rest follow on the next turn. Hundreds of rows inserted at
+    /// once into a nearly empty table (a checkout's changes loading) make AppKit re-measure the table inside the update
+    /// and log a reentrant table view operation, which it says will become an assertion. Rows added after the first
+    /// hundred do not: the table already has its row heights.
+    static let firstBatch = 100
+
     var body: some View {
+        let shown = sections.filter { !$0.files.isEmpty || !$0.commits.isEmpty }
+        let fileCount = shown.reduce(0) { $0 + $1.files.count }
         List(selection: $selection) {
-            ForEach(sections.filter { !$0.files.isEmpty || !$0.commits.isEmpty }) { section in
+            ForEach(Self.limited(shown, files: fileLimit)) { section in
                 Section {
                     if !section.commits.isEmpty {
                         commitRows(section.commits)
@@ -69,6 +79,14 @@ struct ChangedFilesList: View {
                 }
             }
         }
+        .onChange(of: fileCount, initial: true) { _, count in
+            if count <= Self.firstBatch {
+                fileLimit = Self.firstBatch
+            } else if fileLimit != nil {
+                // This update shows the first files; the others go in on the next turn, below them.
+                Task { @MainActor in fileLimit = nil }
+            }
+        }
         .overlay {
             if let error {
                 ContentUnavailableView("Cannot Read Changes", systemImage: "exclamationmark.triangle", description: Text(verbatim: error))
@@ -79,6 +97,18 @@ struct ChangedFilesList: View {
             } else if sections.allSatisfy(\.files.isEmpty) {
                 ContentUnavailableView("No Changes", systemImage: "checkmark.circle", description: emptyDescription)
             }
+        }
+    }
+
+    /// `sections` with only their first `limit` files in list order, or all of them when `limit` is nil.
+    static func limited(_ sections: [ChangeSection], files limit: Int?) -> [ChangeSection] {
+        guard var remaining = limit else { return sections }
+        return sections.compactMap { section in
+            let files = Array(section.files.prefix(remaining))
+            remaining -= files.count
+            guard !files.isEmpty || !section.commits.isEmpty else { return nil }
+            return ChangeSection(group: section.group, title: section.title, detail: section.detail, files: files,
+                                 commits: section.commits)
         }
     }
 

@@ -13,13 +13,20 @@ import QuartzCore
 /// before the run loop sleeps again), `busyMs` the main thread's awake time in the `settle` window after it (follow-up
 /// turns, animations, tasks), `maxTurnMs` its longest single turn. Each action is a points-of-interest signpost, so an
 /// Instruments trace taken meanwhile lines up with the samples.
+///
+/// `SUIJIN_PERF_SCENARIO=changes` runs the Changes tab measurement instead (`PerfChangesProbe`).
 @MainActor
 enum PerfProbe {
     static func startIfRequested(model: AppModel) {
-        guard let out = ProcessInfo.processInfo.environment["SUIJIN_PERF_OUT"] else { return }
+        let environment = ProcessInfo.processInfo.environment
+        guard let out = environment["SUIJIN_PERF_OUT"] else { return }
         Task { @MainActor in
-            let run = Run(model: model, output: URL(fileURLWithPath: out))
-            await run.execute()
+            if environment["SUIJIN_PERF_SCENARIO"] == "changes" {
+                await PerfChangesProbe.execute(model: model, output: URL(fileURLWithPath: out))
+            } else {
+                let run = Run(model: model, output: URL(fileURLWithPath: out))
+                await run.execute()
+            }
             // Not from inside this main-queue job: `terminate` waits in a nested run loop for the delegate's reply,
             // which needs the main queue, so it is called from a plain run-loop block.
             RunLoop.main.perform { MainActor.assumeIsolated { NSApp.terminate(nil) } }
@@ -180,7 +187,7 @@ enum PerfProbe {
 
 /// Records when the main run loop is awake (between waking up and going to sleep again).
 @MainActor
-private final class RunLoopMonitor {
+final class RunLoopMonitor {
     private var observer: CFRunLoopObserver?
     private var awakeSince: UInt64?
     /// Awake intervals in nanoseconds of uptime.

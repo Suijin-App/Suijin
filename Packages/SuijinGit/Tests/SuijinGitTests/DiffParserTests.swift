@@ -3,6 +3,23 @@ import Testing
 @testable import SuijinGit
 
 @Suite struct DiffParserTests {
+    /// One hunk of 200,000 lines, as a rewritten bundled stylesheet produces. Parsing used to copy every line read
+    /// so far for each new line, which took minutes at this size; it is linear now and takes well under a second.
+    @Test func veryLongHunkParsesEveryLine() throws {
+        let count = 100_000
+        var diff = "diff --git a/big.css b/big.css\n--- a/big.css\n+++ b/big.css\n@@ -1,\(count) +1,\(count) @@\n"
+        diff.reserveCapacity(count * 40)
+        for index in 1...count { diff += "-.old-\(index) { color: red; }\n" }
+        for index in 1...count { diff += "+.new-\(index) { color: blue; }\n" }
+
+        let file = try #require(DiffParser.parse(diff).first)
+        let hunk = try #require(file.hunks.first)
+        #expect(file.hunks.count == 1)
+        #expect(hunk.lines.count == 2 * count)
+        #expect(hunk.lines.first == DiffLine(kind: .deleted, text: ".old-1 { color: red; }", oldLine: 1, newLine: nil))
+        #expect(hunk.lines.last == DiffLine(kind: .added, text: ".new-\(count) { color: blue; }", oldLine: nil, newLine: count))
+    }
+
     @Test func modifiedFileWithMultipleHunks() throws {
         let diff = """
         diff --git a/Sources/main.swift b/Sources/main.swift

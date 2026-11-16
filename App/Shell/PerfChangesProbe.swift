@@ -8,11 +8,12 @@ import SuijinCore
 /// `SUIJIN_PERF_REPOS=<path>[:<path>…]`, on its own data root (`SUIJIN_DATA_ROOT`) and its own PTY host service
 /// (`SUIJIN_PTYHOST_SERVICE`, so the user's helper and sessions are never reached).
 ///
-/// Each repository is added as a workspace, its worktrees with it. For the workspace and every worktree the Changes tab
-/// is opened and watched while it loads (`load`), while `perf-churn.txt` in the checkout is rewritten ten times a
-/// second as a dev server or an agent would (`churn`), and after that stops (`drain`). The scenario writes into the
-/// checkouts, so point it at copies. `SUIJIN_PERF_LOAD_SECONDS`, `SUIJIN_PERF_CHURN_SECONDS` and
-/// `SUIJIN_PERF_DRAIN_SECONDS` set the phases (10, 20 and 10 by default).
+/// Each repository is added as a workspace, its worktrees with it. For the workspace and every worktree: the context is
+/// selected (`switch`), its Changes tab opened and watched while it loads (`open`), `perf-churn.txt` in the checkout
+/// rewritten ten times a second as a dev server or an agent would (`churn`), the tab watched after that stops
+/// (`drain`), left (`close`) and opened again (`reopen`). The scenario writes into the checkouts, so point it at copies.
+/// `SUIJIN_PERF_LOAD_SECONDS`, `SUIJIN_PERF_CHURN_SECONDS` and `SUIJIN_PERF_DRAIN_SECONDS` set the `open`, `churn` and
+/// `drain` phases (10, 20 and 10 seconds by default).
 ///
 /// One JSON object per phase: `busyPct` is the main run loop's awake share, `maxTurnMs` its longest single turn, and
 /// `t0`/`t1` the phase's wall-clock bounds, so samples taken outside the app (its child `git` processes, its CPU) line up.
@@ -27,6 +28,9 @@ enum PerfChangesProbe {
         let writer = Writer(output: output)
         writer.write(["name": "start", "pid": Int(ProcessInfo.processInfo.processIdentifier)])
         try? await Task.sleep(for: .seconds(2))
+        // A new data root opens the welcome tour, whose animated sprites keep the window laying out every frame and
+        // would be measured along with the Changes tab.
+        model.onboarding = nil
         NSApp.activate()
 
         var targets: [(SessionContext, URL)] = []
@@ -46,9 +50,11 @@ enum PerfChangesProbe {
         monitor.start()
         for (context, directory) in targets {
             let label = directory.lastPathComponent
+            // The context first, on its own, so its cost is not counted as the Changes tab's.
             model.selection = context
+            await phase("switch", label: label, seconds: 2, monitor: monitor, writer: writer)
             model.selectedTab[context] = .changes
-            await phase("load", label: label, seconds: load, monitor: monitor, writer: writer)
+            await phase("open", label: label, seconds: load, monitor: monitor, writer: writer)
 
             let churnFile = directory.appendingPathComponent("perf-churn.txt")
             let churning = Task { @MainActor in
@@ -63,6 +69,12 @@ enum PerfChangesProbe {
             churning.cancel()
             try? FileManager.default.removeItem(at: churnFile)
             await phase("drain", label: label, seconds: drain, monitor: monitor, writer: writer)
+
+            // Leaving the tab and opening it again: what every later visit costs.
+            model.selectedTab[context] = nil
+            await phase("close", label: label, seconds: 2, monitor: monitor, writer: writer)
+            model.selectedTab[context] = .changes
+            await phase("reopen", label: label, seconds: 3, monitor: monitor, writer: writer)
         }
         monitor.stop()
         writer.write(["name": "done"])

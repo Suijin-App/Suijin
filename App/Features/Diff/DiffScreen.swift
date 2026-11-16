@@ -142,10 +142,8 @@ private struct ChangesView: View {
                 .labelStyle(.iconOnly)
                 .help(Text("Show the diff in one column, or the old and new versions side by side"))
             }
-            if let book {
-                ToolbarItem {
-                    DiffNotesSendMenu(context: context, book: book, showsUnsentOnly: $showsUnsentOnly)
-                }
+            ToolbarItem {
+                DiffNotesSendMenu(context: context, book: book, showsUnsentOnly: $showsUnsentOnly)
             }
         }
         .task { await reloadFiles() }

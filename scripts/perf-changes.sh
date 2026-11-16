@@ -88,7 +88,7 @@ for record in probe:
         print("error:", record)
 print(f"{'target':<20}{'phase':<7}{'busy%':>7}{'maxTurn ms':>12}{'git max':>9}{'git proc·s':>12}{'cpu%':>7}{'MB':>7}")
 for record in probe:
-    if record.get("name") not in ("load", "churn", "drain"):
+    if "t0" not in record:
         continue
     window = [s for s in samples if record["t0"] <= s[0] <= record["t1"]] or [(0, 0, 0, 0)]
     gits = [s[1] for s in window]

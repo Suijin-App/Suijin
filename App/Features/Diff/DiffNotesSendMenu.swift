@@ -18,12 +18,14 @@ enum DiffNotePreferences {
 struct DiffNotesSendMenu: View {
     @Environment(AppModel.self) private var model
     let context: SessionContext
-    let book: DiffNotesBook
+    /// Nil until the context's notes have loaded: the menu is in the toolbar from the start, disabled, so opening the
+    /// Changes tab changes the window toolbar once instead of twice (each change lays out every toolbar item again).
+    let book: DiffNotesBook?
     @Binding var showsUnsentOnly: Bool
     @AppStorage(DiffNotePreferences.sendAutomaticallyKey) private var sendAutomatically = false
 
     var body: some View {
-        let unsent = book.unsentInOrder
+        let unsent = book?.unsentInOrder ?? []
         let targets = model.sendTargets(in: context)
         Menu {
             Section {
@@ -53,6 +55,7 @@ struct DiffNotesSendMenu: View {
             }
             .badge(unsent.count)
         }
+        .disabled(book == nil)
         .help(Text("Send your diff notes to an agent, or copy them"))
         .accessibilityLabel(Text("Notes, \(unsent.count) unsent"))
     }
@@ -61,7 +64,7 @@ struct DiffNotesSendMenu: View {
         guard !notes.isEmpty, let runtime = model.runtimes.runtime(for: session.id) else { return }
         do {
             try runtime.paste(DiffNoteFormatter.format(notes), pressReturn: sendAutomatically)
-            book.markSent(notes.map(\.id))
+            book?.markSent(notes.map(\.id))
             // Show the session so the user can review the prompt and press Return.
             model.selectedTab[context] = .session(session.id)
         } catch {
@@ -74,7 +77,7 @@ struct DiffNotesSendMenu: View {
         guard !notes.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(DiffNoteFormatter.format(notes), forType: .string)
-        book.markSent(notes.map(\.id))
+        book?.markSent(notes.map(\.id))
     }
 }
 

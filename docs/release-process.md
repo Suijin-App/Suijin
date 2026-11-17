@@ -122,8 +122,10 @@ Optional environment (none holds a secret): `SUIJIN_NOTARY_PROFILE`, `SUIJIN_TEA
 - **suijin.app redirects.** `website/` is the Cloudflare Worker bound to `suijin.app`: an Astro site built to static
   files, plus `website/worker/index.js`, which answers `/appcast.xml` with a 302 to
   `https://github.com/Suijin-App/Suijin/releases/latest/download/appcast.xml`. Only that path runs the Worker; every
-  other request is a static file. Deploy with `npm run deploy` in `website/` (Node 24, after `npx wrangler login`,
-  with `CLOUDFLARE_ACCOUNT_ID` set to the account that holds the `suijin.app` zone). After every deploy, check that
+  other request is a static file. Deploy from `website/` with Node 24, after `npx wrangler login`:
+  `tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- npm run deploy`. TSSC (project Suijin,
+  environment `prod`) holds `CLOUDFLARE_ACCOUNT_ID`, the account that holds the `suijin.app` zone; Wrangler needs it
+  because the login sees more than one account. After every deploy, check that
   `curl -sI https://suijin.app/appcast.xml` still answers with that redirect: a broken feed stops every installed
   copy from updating. Moving the downloads elsewhere later means changing that redirect and nothing in the app.
 - **GitHub holds the files.** Each release has `Suijin-<version>.dmg` and `appcast.xml` as assets. The appcast names

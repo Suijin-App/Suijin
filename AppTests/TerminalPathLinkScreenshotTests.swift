@@ -14,7 +14,7 @@ struct TerminalPathLinkScreenshotTests {
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, wait: Duration = .milliseconds(800),
                                  @ViewBuilder _ content: () -> V) async throws {
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled], backing: .buffered, defer: false)
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: content())

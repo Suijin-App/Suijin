@@ -61,7 +61,7 @@ struct TerminalPathLinkTests {
         await model.runtimes.bootstrap()
         let id = try #require(await model.runtimes.start(in: context, agent: .shell, accountID: nil, prompt: nil))
         let runtime = try #require(model.runtimes.runtime(for: id))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1000, height: 500), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 1000, height: 500), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: TerminalPane(runtime: runtime, context: context, isFocused: true).environment(model))
@@ -118,7 +118,7 @@ struct TerminalPathLinkTests {
         await model.addWorkspace(at: root)
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.fileLineReveal = (file.path, 150, UUID())
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: FileViewer(path: file.path, context: context).environment(model))
@@ -284,7 +284,7 @@ struct TerminalLinkMenuTests {
 
         func show(_ elided: String) async throws -> (NSWindow, () -> Bool) {
             var dismissed = false
-            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 500, height: 320), styleMask: [.titled],
+            let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 500, height: 320), styleMask: [.titled],
                                   backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: FullPathFinder(elided: elided, context: fixture.context) { dismissed = true }

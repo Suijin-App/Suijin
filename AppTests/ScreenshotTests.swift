@@ -15,7 +15,7 @@ struct ScreenshotTests {
     static let sizes: [(String, CGSize)] = [("narrow", CGSize(width: 1000, height: 640)), ("wide", CGSize(width: 1280, height: 760))]
 
     private func render<V: View>(_ name: String, size: CGSize, dark: Bool, @ViewBuilder _ content: () -> V) throws {
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: content())

@@ -23,7 +23,7 @@ struct SessionReleaseTests {
 
         weak let runtime = model.runtimes.runtime(for: id)
         let view = runtime?.terminal.view
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 500), styleMask: [.titled],
                               backing: .buffered, defer: false)
         do {
             let pane = TerminalPane(runtime: try #require(runtime), context: context, isFocused: true).environment(model)

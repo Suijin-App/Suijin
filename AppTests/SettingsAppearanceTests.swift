@@ -50,7 +50,7 @@ struct SettingsScreenshotTests {
 
     private func render<V: View>(_ name: String, height: CGFloat, dark: Bool, @ViewBuilder _ content: () -> V) throws {
         let size = CGSize(width: 720, height: height)
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable],
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: content())

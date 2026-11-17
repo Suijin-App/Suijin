@@ -40,7 +40,7 @@ struct ResumeCatchUpTests {
         record.endedAt = Date()
         await model.upsert(record)
         model.selectedTab[context] = .session(record.id)
-        let window = NSWindow(contentRect: CGRect(x: 100, y: 100, width: 1000, height: 600), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 100, y: 100, width: 1000, height: 600), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SessionTabsView(context: context).environment(model))

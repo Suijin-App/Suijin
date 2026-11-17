@@ -335,7 +335,7 @@ struct FileTreeOutlineTests {
     /// A window that is never ordered in: SwiftUI lays out and runs the view's tasks, nothing appears on screen and
     /// nothing takes the keyboard.
     private func hiddenWindow<V: View>(width: CGFloat, dark: Bool = false, _ view: V) -> (NSWindow, NSHostingView<V>) {
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: 420), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: width, height: 420), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

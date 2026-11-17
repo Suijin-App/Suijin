@@ -36,7 +36,7 @@ struct PullRequestSummaryTests {
                      pullRequest(.open, review: "CHANGES_REQUESTED"), pullRequest(.open, review: nil, draft: true)]
         for dark in [false, true] {
             for width in [180.0, 300.0] {
-                let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: width + 32, height: 560), styleMask: [.titled], backing: .buffered, defer: false)
+                let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: width + 32, height: 560), styleMask: [.titled], backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                 let host = NSHostingView(rootView: VStack(alignment: .leading, spacing: 16) {

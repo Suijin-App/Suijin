@@ -9,7 +9,7 @@ import Testing
 struct ImageZoomTests {
     /// A 2000×1500 image in a 400×300 pane, fitted (0.2×).
     private func makeView() -> (NSWindow, CenteringScrollView) {
-        let window = NSWindow(contentRect: NSRect(x: -10_000, y: -10_000, width: 400, height: 300),
+        let window = OffscreenWindow(contentRect: NSRect(x: -10_000, y: -10_000, width: 400, height: 300),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         let scrollView = CenteringScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
         scrollView.allowsMagnification = true

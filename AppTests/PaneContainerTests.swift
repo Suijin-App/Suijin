@@ -51,7 +51,7 @@ struct PaneContainerTests {
         let layout = try #require(model.layout(containing: ids[0]))
         model.setPaneFractions([0.5, 0.3, 0.2], at: [], in: layout.id)
 
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 600), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 600), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SessionTabsView(context: context).environment(model))

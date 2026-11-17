@@ -24,7 +24,7 @@ struct TerminalFocusTests {
         let terminal = try #require(model.runtimes.runtime(for: id)).terminal.view
 
         // The window holds a list (the sidebar) and the terminal; the click left the list focused.
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.titled],
                               backing: .buffered, defer: false)
         let stack = NSStackView()
         let list = NSTableView(frame: CGRect(x: 0, y: 0, width: 200, height: 600))

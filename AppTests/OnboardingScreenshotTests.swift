@@ -13,7 +13,7 @@ struct OnboardingScreenshotTests {
     let output = URL(fileURLWithPath: ProcessInfo.processInfo.environment["SUIJIN_SCREENSHOTS"] ?? NSTemporaryDirectory())
 
     private func render(_ name: String, size: CGSize, dark: Bool, step: OnboardingStep, model: AppModel) throws {
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable],
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: OnboardingOverlay(tour: OnboardingTour(step: step)).environment(model))

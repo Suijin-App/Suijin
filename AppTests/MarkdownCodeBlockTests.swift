@@ -77,7 +77,7 @@ struct MarkdownCodeBlockTests {
                 .frame(maxWidth: .infinity)
         }
         .background(Color(nsColor: .windowBackgroundColor))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: size.1, height: 620), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: size.1, height: 620), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

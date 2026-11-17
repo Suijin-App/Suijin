@@ -93,7 +93,7 @@ struct TerminalFileDropTests {
         let plainView = try #require(model.runtimes.runtime(for: plain)).terminal.view
         let bracketedView = try #require(model.runtimes.runtime(for: bracketed)).terminal.view
 
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1500, height: 460), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 1500, height: 460), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)

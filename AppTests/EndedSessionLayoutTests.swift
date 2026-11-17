@@ -6,11 +6,6 @@ import SwiftUI
 import Testing
 @testable import Suijin
 
-/// Keeps its frame off every screen: AppKit would otherwise move a titled window back onto the user's display.
-private final class OffscreenWindow: NSWindow {
-    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
-}
-
 /// The ended card of a failed session (with its last output) must not change the window's layout: the main window
 /// hosts the real `RootView` offscreen and the inspector's file list keeps its place when the card appears.
 @MainActor

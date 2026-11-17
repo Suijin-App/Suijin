@@ -21,7 +21,7 @@ struct LoadTests {
         #expect(model.runtimes.hostProblem == nil)
 
         // All ten terminal views visible in one window, as in a 5×2 grid of splits.
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1600, height: 900), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 1600, height: 900), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         let grid = NSStackView()
         grid.orientation = .vertical

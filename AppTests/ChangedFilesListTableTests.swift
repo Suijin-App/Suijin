@@ -71,7 +71,7 @@ struct ChangedFilesListTableTests {
             holder.sections = Self.sections(files: from)
             holder.isLoading = false
         }
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 280, height: 700), styleMask: [.titled],
+        let window = OffscreenWindow(contentRect: NSRect(x: 0, y: 0, width: 280, height: 700), styleMask: [.titled],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: Host(holder: holder))

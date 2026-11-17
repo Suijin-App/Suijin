@@ -63,7 +63,7 @@ struct SessionExitTests {
         let context = SessionContext.workspace(try #require(model.workspaces.first).id)
         model.selection = context
         await model.runtimes.bootstrap()
-        let window = NSWindow(contentRect: CGRect(x: 100, y: 100, width: 1000, height: 600), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 100, y: 100, width: 1000, height: 600), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SessionTabsView(context: context).environment(model))

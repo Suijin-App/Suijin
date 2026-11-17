@@ -22,7 +22,7 @@ struct PermissionsScreenshotTests {
 
     private func render(_ name: String, width: CGFloat, dark: Bool, _ permissions: PermissionsModel?, app: AppModel) throws {
         let size = CGSize(width: width, height: 420)
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .fullSizeContentView],
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.titled, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: Form { PermissionsSection(permissions: permissions) }

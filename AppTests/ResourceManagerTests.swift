@@ -182,7 +182,7 @@ struct ResourceManagerTests {
     private func render<V: View>(_ view: V, to url: URL, dark: Bool) throws {
         let host = NSHostingView(rootView: view.fixedSize().background(Color(nsColor: .windowBackgroundColor)))
         let size = host.fittingSize
-        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = OffscreenWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.backgroundColor = .windowBackgroundColor
         window.contentView = host

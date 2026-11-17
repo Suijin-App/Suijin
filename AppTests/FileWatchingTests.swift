@@ -307,7 +307,7 @@ struct FileWatchingTests {
     // MARK: Helpers
 
     private func show(_ view: some View) -> (NSWindow, NSView) {
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled, .resizable],
+        let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 600), styleMask: [.titled, .resizable],
                               backing: .buffered, defer: false)
         let host = NSHostingView(rootView: view)
         window.contentView = host

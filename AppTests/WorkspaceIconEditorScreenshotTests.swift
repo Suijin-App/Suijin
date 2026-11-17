@@ -22,7 +22,7 @@ struct WorkspaceIconEditorScreenshotTests {
         let workspace = try #require(model.workspaces.first)
 
         for dark in [false, true] {
-            let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 340, height: 330), styleMask: [.titled], backing: .buffered, defer: false)
+            let window = OffscreenWindow(contentRect: CGRect(x: 0, y: 0, width: 340, height: 330), styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
             let host = NSHostingView(rootView: WorkspaceIconEditor(workspaceID: workspace.id).environment(model)

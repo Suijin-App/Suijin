@@ -143,17 +143,28 @@ import Testing
     }
 
     @Test func timeoutKillsTheProcessGroup() async throws {
-        let marker = try makeTempDirectory().appendingPathComponent("child.pid")
-        // A background child that would keep stdout open; the group kill must take it down too.
-        let (binary, dir) = try fakeAgent("claude", "sleep 60 &\necho $! > '\(marker.path)'\nsleep 60\n")
-        defer { try? FileManager.default.removeItem(at: dir) }
-        let start = ContinuousClock.now
-        await #expect(throws: HeadlessGenerationError.timedOut) {
-            _ = try await HeadlessTextGenerator.generate(request(.claude, binary, in: dir, timeout: .milliseconds(500)))
+        // While many tests start processes at once, a new process can take more than the timeout to run its first
+        // line. Then the fake agent never starts its background child, and the run proves nothing about the group
+        // kill: it is tried again.
+        for _ in 0..<3 {
+            let marker = try makeTempDirectory().appendingPathComponent("child.pid")
+            // A background child that would keep stdout open; the group kill must take it down too.
+            let (binary, dir) = try fakeAgent("claude", "sleep 60 &\necho $! > '\(marker.path)'\nsleep 60\n")
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let start = ContinuousClock.now
+            await #expect(throws: HeadlessGenerationError.timedOut) {
+                _ = try await HeadlessTextGenerator.generate(request(.claude, binary, in: dir, timeout: .seconds(1)))
+            }
+            #expect(ContinuousClock.now - start < .seconds(5))
+            guard let text = try? String(contentsOf: marker, encoding: .utf8),
+                  let child = pid_t(text.trimmingCharacters(in: .whitespacesAndNewlines)) else { continue }
+            // The killed child lingers until launchd, its parent once the agent is gone, reaps it.
+            let gone = ContinuousClock.now + .seconds(3)
+            while kill(child, 0) == 0, ContinuousClock.now < gone { try await Task.sleep(for: .milliseconds(20)) }
+            #expect(kill(child, 0) != 0)
+            return
         }
-        #expect(ContinuousClock.now - start < .seconds(5))
-        let child = try #require(pid_t(String(contentsOf: marker, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
-        #expect(kill(child, 0) != 0)
+        Issue.record("the fake agent did not start its background child before the timeout in three runs")
     }
 
     @Test func cancellationStopsTheAgent() async throws {

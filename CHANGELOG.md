@@ -10,6 +10,9 @@
   slow reloads piled up and Suijin could hang. It now runs one reload at a time and follows it with a single reload
   for everything that changed meanwhile. It also no longer reads the whole list of changes again to show one file, and
   ignores the files git writes inside `.git/objects` and `.git/logs`.
+- **Saves wait for another copy of Suijin.** While a second copy of Suijin used the same data (a development build
+  next to the installed app), saving could fail at once with "database is locked", and a split tab's arrangement
+  could be lost. Suijin now waits a moment for the other copy and then saves.
 
 ## 0.1.1 (2026-11-16)
 

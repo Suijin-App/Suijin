@@ -240,7 +240,6 @@ struct AutoAccountSwitchTests {
         model.accountsController.setUsageForPreview(spare.id, usage(0.2))
         // The own login's usage is unknown, so it is passed over.
         model.accountsController.setDefaultLoginUsageForPreview(.claude, nil)
-        UserNotifier.shared.clearWithheld()
 
         await model.autoSwitcher.usageChanged()
         await settle()
@@ -253,8 +252,10 @@ struct AutoAccountSwitchTests {
         #expect(note.text == "Moved to \(spare.displayName) because \(busy.displayName) hit its 5-hour limit.")
         #expect(!note.text.contains("\u{2014}"))
         if model.notifiesUser {
-            #expect(UserNotifier.shared.withheld.last?.title == "Claude switched accounts")
-            #expect(UserNotifier.shared.withheld.last?.body.contains(note.text) == true)
+            // Other suites post to the same notifier at the same time, so only this session's notices count.
+            let notice = UserNotifier.shared.withheld.last { $0.identifier == id.uuidString }
+            #expect(notice?.title == "Claude switched accounts")
+            #expect(notice?.body.contains(note.text) == true)
         }
         await tearDown(model)
     }

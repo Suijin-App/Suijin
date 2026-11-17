@@ -6,6 +6,8 @@ Suijin 0.1.2 fixes the Changes tab hanging Suijin in large projects: long diffs 
 
 - In a project where files change all the time, for example while a dev server or an agent is at work, the Changes tab started reading the changes again at every change, even while the last read was still going. Slow reads piled up and could keep your Mac's processors busy until Suijin stopped responding. The tab now does one read at a time and, when it is done, one more for everything that changed meanwhile.
 
+- While a second copy of Suijin used the same data, such as a development build next to the installed app, saving could fail with "database is locked", and a split tab's arrangement could be lost. Suijin now waits a moment for the other copy and then saves.
+
 ## Updating
 
 Suijin offers this version by itself within about a day, or at once from Suijin › Check for Updates…. Your running sessions keep running through the update while "Keep sessions running after quitting Suijin" is on in Settings › General, as it is by default.

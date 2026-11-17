@@ -70,11 +70,12 @@ struct TabMergeTests {
         #expect(sessionTabs(model, context) == [.panes(layout.id)])
 
         // The merged arrangement comes back after a relaunch.
-        #expect(await eventually {
-            let reopened = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
-            await reopened.load()
-            return reopened.layout(containing: ids[1])?.root == grown.root
-        })
+        // The save lands on its own task: wait for it by reading the file, without an app model, whose load would
+        // write layouts of its own beside the ones under test. Then a relaunch must bring the arrangement back.
+        #expect(await eventually { try SuijinStore(url: databaseURL).paneLayouts().contains { $0.layout.root == grown.root } })
+        let reopened = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
+        await reopened.load()
+        #expect(reopened.layout(containing: ids[1])?.root == grown.root)
     }
 
     @Test func aSplitTabMovesAsAGroupAndItsOwnLayoutIsDeleted() async throws {

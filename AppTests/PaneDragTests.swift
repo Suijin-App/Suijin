@@ -93,11 +93,12 @@ struct PaneDragTests {
         #expect(model.paneDrag.source == nil && model.paneDrag.target == nil)
 
         // The new arrangement comes back after a relaunch.
-        #expect(await eventually {
-            let reopened = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
-            await reopened.load()
-            return reopened.layout(containing: ids[0])?.root == layout.root
-        })
+        // The save lands on its own task: wait for it by reading the file, without an app model, whose load would
+        // write layouts of its own beside the ones under test. Then a relaunch must bring the arrangement back.
+        #expect(await eventually { try SuijinStore(url: databaseURL).paneLayouts().contains { $0.layout.root == layout.root } })
+        let reopened = AppModel(store: try SuijinStore(url: databaseURL), dataRoot: root.appendingPathComponent("data"))
+        await reopened.load()
+        #expect(reopened.layout(containing: ids[0])?.root == layout.root)
     }
 
     @Test func droppingInTheMiddleSwapsAndTheDraggedPaneKeepsTheKeyboard() async throws {

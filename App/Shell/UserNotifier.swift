@@ -56,8 +56,4 @@ final class UserNotifier {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
     }
 
-    /// Forgets what was withheld (tests).
-    func clearWithheld() {
-        withheld.removeAll()
-    }
 }

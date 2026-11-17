@@ -1,7 +1,8 @@
 {
   // suijin.app: the website (static files built by Astro into dist/) and the app's update feed (worker/index.js).
-  // Deploy with `npm run deploy` from this folder, after `npx wrangler login` and with CLOUDFLARE_ACCOUNT_ID set to
-  // the account that holds the suijin.app zone. See docs/release-process.md, section 4.
+  // Deploy from this folder with `tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- npm run deploy`
+  // after `npx wrangler login`: TSSC holds CLOUDFLARE_ACCOUNT_ID, the account that holds the suijin.app zone. See
+  // docs/release-process.md, section 4.
   "name": "suijin-site",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",

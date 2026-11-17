@@ -186,8 +186,9 @@ It follows the feed as an installed copy does and checks that the appcast and th
 was built, and that Gatekeeper accepts the download. Then:
 
 - Open the release page and look at the rendered notes: every image loads.
-- Deploy the website so it names the new version: `npm run deploy` in `website/` (see `docs/release-process.md`,
-  section 4), then confirm `curl -sI https://suijin.app/appcast.xml` still answers with the redirect and run this
+- Deploy the website so it names the new version: with Node 24, in `website/`,
+  `tssc run --projectId=8f31fe47-25cc-44ac-bf3b-6020f39c7688 --env=prod -- npm run deploy` (TSSC supplies
+  `CLOUDFLARE_ACCOUNT_ID`; see `docs/release-process.md`, section 4), then confirm `curl -sI https://suijin.app/appcast.xml` still answers with the redirect and run this
   stage's script again.
 - **Prove the update, when a version was released before.** On a Mac with the previous release installed and a
   session running, choose Suijin › Check for Updates…. Confirm, with the owner clicking: the window shows this

@@ -203,7 +203,6 @@ struct SessionExitTests {
     /// Tests run the real session code; nothing they do may reach the user's Notification Center.
     @Test func notificationsAreWithheldUnderTestsAndReadPlainly() async throws {
         #expect(UserNotifier.isTestHost && !UserNotifier.shared.postsToNotificationCenter)
-        UserNotifier.shared.clearWithheld()
         let fixture = try await makeFixture()
         let model = fixture.model
         let workspace = try #require(model.workspaces.first)
@@ -212,8 +211,8 @@ struct SessionExitTests {
         try await model.runtimes.run(record, launch: launch)
         #expect(await eventually { model.runtimes.runtime(for: record.id) == nil })
 
-        let message = try #require(UserNotifier.shared.withheld.last)
-        #expect(message.identifier == record.id.uuidString)
+        // Other suites post to the same notifier at the same time, so only this session's notices count.
+        let message = try #require(UserNotifier.shared.withheld.last { $0.identifier == record.id.uuidString })
         #expect(message.title == "Codex stopped unexpectedly")
         #expect(message.body == "Codex in work quit with an error (code 3). Open it to see what happened.")
         await fixture.tearDown()

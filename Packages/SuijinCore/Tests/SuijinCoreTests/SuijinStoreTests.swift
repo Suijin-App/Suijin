@@ -21,6 +21,34 @@ import Testing
         #expect(try store.workspaces().count == 2)
     }
 
+    /// Two connections to one file, as when a second copy of Suijin runs on the same data root: a write that has to wait
+    /// for the other connection's read waits instead of failing with "database is locked" and being lost.
+    @Test func aWriteWaitsForAnotherConnectionsRead() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("suijin-store-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("suijin.sqlite")
+        let reader = try SuijinStore(url: url)
+        let writer = try SuijinStore(url: url)
+
+        // The reader holds its shared lock for half a second once it has read.
+        let holding = DispatchSemaphore(value: 0)
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            try? reader.dbQueue.read { db in
+                _ = try Workspace.fetchCount(db)
+                holding.signal()
+                Thread.sleep(forTimeInterval: 0.5)
+            }
+            finished.signal()
+        }
+        #expect(holding.wait(timeout: .now() + 5) == .success)
+
+        let workspace = makeWorkspace()
+        try writer.save(workspace)
+        #expect(finished.wait(timeout: .now() + 5) == .success)
+        #expect(try reader.workspaces() == [workspace])
+    }
+
     @Test func worktreeRoundTrip() throws {
         let store = try SuijinStore.inMemory()
         let workspace = makeWorkspace()

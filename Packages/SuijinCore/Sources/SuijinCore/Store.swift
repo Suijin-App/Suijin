@@ -39,6 +39,10 @@ public final class SuijinStore: Sendable {
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
         configuration.label = "SuijinStore"
+        // Another connection to the same file (a second copy of Suijin on the same data root, a test reopening the
+        // database) can hold a lock for a moment. Without a timeout a write then fails at once with "database is
+        // locked", and saves that only log their errors (pane layouts) are lost; with it the write waits its turn.
+        configuration.busyMode = .timeout(5)
         return configuration
     }
 

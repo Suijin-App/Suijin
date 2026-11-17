@@ -133,7 +133,6 @@ struct ShellAgentSessionTests {
     }
 
     @Test func claudeInAShellShowsAsClaudeUntilItExits() async throws {
-        UserNotifier.shared.clearWithheld()
         let fixture = try await makeFixture()
         let model = fixture.model
         let runtimes = model.runtimes
@@ -159,8 +158,8 @@ struct ShellAgentSessionTests {
 
         terminal.send("ask\n")
         #expect(await eventually { (try? runtimes.activity(of: record(id, in: model))) == .waitingForInput })
-        let message = try #require(UserNotifier.shared.withheld.last)
-        #expect(message.identifier == id.uuidString)
+        // Other suites post to the same notifier at the same time, so only this session's notices count.
+        let message = try #require(UserNotifier.shared.withheld.last { $0.identifier == id.uuidString })
         #expect(message.title == "Claude needs your input")
         terminal.send("stop\n")
         #expect(await eventually { (try? runtimes.activity(of: record(id, in: model))) == .idle })
@@ -177,11 +176,11 @@ struct ShellAgentSessionTests {
         #expect(terminal.view.pasteGuardPolicy == .always)
         #expect(back.agentSessionID == Self.hookID)
         // Hook events after the run do not reach the shell's status.
-        let notices = UserNotifier.shared.withheld.count
+        let notices = UserNotifier.shared.withheld.count { $0.identifier == id.uuidString }
         try Data(#"{"hook_event_name":"Notification","notification_type":"permission_prompt"}"#.utf8 + [0x0a])
             .append(to: model.dataRoot.appendingPathComponent("hooks/events/\(id.uuidString).jsonl"))
         try await Task.sleep(for: .milliseconds(500))
-        #expect(UserNotifier.shared.withheld.count == notices)
+        #expect(UserNotifier.shared.withheld.count { $0.identifier == id.uuidString } == notices)
         #expect(runtimes.activity(of: back) == .running)
         await fixture.tearDown()
     }

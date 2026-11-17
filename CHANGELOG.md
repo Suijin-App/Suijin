@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2 (2026-11-17)
 
 - **Large diffs open at once.** In Changes, a file with a long diff (a bundled stylesheet, a lock file) took seconds
   to minutes to show, and Suijin seemed to hang, because reading the diff slowed down with the square of its length.

@@ -19,7 +19,7 @@ export const site = {
   licenseUrl: "https://github.com/Suijin-App/Suijin/blob/main/LICENSE",
   minimumSystem: "macOS 15",
   // Set to the version string once the first release is published; the download wording follows it.
-  releasedVersion: "0.1.1" as string | null,
+  releasedVersion: "0.1.2" as string | null,
   // The introduction film, played in the theater the hero opens: its Mux playback ID, its length as ISO 8601, and
   // the day it was published.
   video: { muxPlaybackId: "4V019K88RfQyloISX02ygzHg7hmqoCQLKwJk00sK1S01Z88", duration: "PT2M2S", published: "2026-11-15" },
